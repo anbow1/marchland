@@ -109,23 +109,37 @@ export function angleDelta(a: number, b: number): number {
   return d;
 }
 
-/** World X of a formation slot. Rank 0 is the front; files are centred on the anchor. */
-export function slotX(r: Regiment, slot: number): number {
+/** Sideways (in files) and backwards (in ranks) position of a slot. The last, short rank is centred too. */
+function slotFile(r: Regiment, slot: number): number {
   const files = Math.min(r.def.files, Math.max(1, r.aliveMen));
   const rank = Math.floor(slot / files);
-  // The last, short rank is centred too.
   const inRank = Math.min(files, r.aliveMen - rank * files);
-  const file = slot - rank * files - (inRank - 1) / 2;
-  // right = (cos f, −sin f), back = −forward
-  return r.anchorX + Math.cos(r.facingRad) * file * r.def.fileSpacingM - Math.sin(r.facingRad) * rank * r.def.rankSpacingM;
+  return slot - rank * files - (inRank - 1) / 2;
+}
+
+function slotRank(r: Regiment, slot: number): number {
+  return Math.floor(slot / Math.min(r.def.files, Math.max(1, r.aliveMen)));
+}
+
+/**
+ * World X of a slot for a formation anchored at `anchorX` and facing `facingRad`. Rank 0 is the
+ * front; files are centred on the anchor. File axis = (cos f, −sin f), back = −forward.
+ */
+export function placeX(r: Regiment, slot: number, anchorX: number, facingRad: number): number {
+  return anchorX + Math.cos(facingRad) * slotFile(r, slot) * r.def.fileSpacingM - Math.sin(facingRad) * slotRank(r, slot) * r.def.rankSpacingM;
+}
+
+export function placeZ(r: Regiment, slot: number, anchorZ: number, facingRad: number): number {
+  return anchorZ - Math.sin(facingRad) * slotFile(r, slot) * r.def.fileSpacingM - Math.cos(facingRad) * slotRank(r, slot) * r.def.rankSpacingM;
+}
+
+/** Where a slot is now. */
+export function slotX(r: Regiment, slot: number): number {
+  return placeX(r, slot, r.anchorX, r.facingRad);
 }
 
 export function slotZ(r: Regiment, slot: number): number {
-  const files = Math.min(r.def.files, Math.max(1, r.aliveMen));
-  const rank = Math.floor(slot / files);
-  const inRank = Math.min(files, r.aliveMen - rank * files);
-  const file = slot - rank * files - (inRank - 1) / 2;
-  return r.anchorZ - Math.sin(r.facingRad) * file * r.def.fileSpacingM - Math.cos(r.facingRad) * rank * r.def.rankSpacingM;
+  return placeZ(r, slot, r.anchorZ, r.facingRad);
 }
 
 /** Width of the front rank in metres. */

@@ -35,6 +35,8 @@ export interface Town {
   recruitQueue: RecruitOrder[];
   /** Regiments whose training finished this step; the world turns them into soldiers. */
   trained: UnitKind[];
+  /** Plots whose building or upgrade was finished this step; the world announces them. */
+  finishedPlots: number[];
   /** The computer's difficulty handicap; 1 for the player. */
   productionFactor: number;
   goldRemainder: number;
@@ -51,7 +53,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.plotCount; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], productionFactor, goldRemainder: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -223,10 +225,12 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
   eat(town, dtSeconds, soldiers);
   addGold(town, TOWN.keepGoldPerSecond * dtSeconds);
-  for (const b of town.plots) {
+  for (let plot = 0; plot < town.plots.length; plot++) {
+    const b = town.plots[plot];
     if (!b) continue;
     if (b.constructionLeftS > 0) {
       b.constructionLeftS = Math.max(0, b.constructionLeftS - dtSeconds);
+      if (b.constructionLeftS === 0) town.finishedPlots.push(plot);
       continue;
     }
     produce(town, b, dtSeconds);

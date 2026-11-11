@@ -7,7 +7,7 @@ import { EventQueue } from './events.ts';
 import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
 import { createRegiment, type Regiment } from './regiment.ts';
-import { facingToEnemy, rallyX, rallyZ } from './terrain.ts';
+import { facingToEnemy, plotX, plotZ, rallyX, rallyZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
 
 // The whole game state and its one fixed update order (rules §10):
@@ -112,6 +112,10 @@ export function stepWorld(world: World, dtSeconds: number): void {
     stepEconomy(town, dtSeconds, menAlive(world, town.side));
     if (town.starving !== wasStarving) world.events.push(town.starving ? 'starving' : 'fed', 0, 0, town.side);
     fieldTrained(world, town);
+    while (town.finishedPlots.length > 0) {
+      const plot = town.finishedPlots.pop() as number;
+      world.events.push('built', plotX(town.side, plot), plotZ(town.side, plot), town.side);
+    }
   }
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);
