@@ -3,11 +3,11 @@ import { DataArrayTexture, LinearFilter, LinearMipmapLinearFilter, MeshStandardN
 import type { Quality } from './stage.ts';
 
 // The scanned surfaces (assets/photo/LICENSE.md): every ground, wall and roof
-// in the game is one of these fourteen, kept as layers of three array textures
+// in the game is one of these sixteen, kept as layers of three array textures
 // so a shader samples three textures however many surfaces it shows
 // (GUIDE §7: more than 16 textures in a shader does not compile on phones).
 
-export const SURFACES = ['meadow', 'dry_grass', 'dirt', 'forest_floor', 'farm_soil', 'plaster', 'beam', 'boards', 'thatch', 'tiles', 'rubble', 'ashlar', 'bark', 'leaves'] as const;
+export const SURFACES = ['meadow', 'dry_grass', 'dirt', 'mud', 'forest_floor', 'farm_soil', 'plaster', 'beam', 'boards', 'thatch', 'shingles', 'tiles', 'rubble', 'ashlar', 'bark', 'leaves'] as const;
 export type SurfaceId = (typeof SURFACES)[number];
 
 export interface SurfaceLibrary {
@@ -107,6 +107,8 @@ function flatArray(r: number, g: number, b: number): DataArrayTexture {
   return t;
 }
 
+/** Share of a scan's baked occlusion applied to sky light. */
+const AO_STRENGTH = 0.5;
 /** How strongly a normal map bends the surface normal (1 = as scanned). */
 const NORMAL_STRENGTH = 1.1;
 
@@ -137,7 +139,8 @@ export function surfaceMaterial(lib: SurfaceLibrary, name: string): MeshStandard
     m.normalNode = transformNormalToView(normalLocal.add(lean.mul(scanned)).normalize());
     const orm = texture(lib.orm, uv).depth(layer).rgb;
     m.roughnessNode = mix(float(0.85), orm.y, scanned);
-    m.aoNode = mix(float(1), orm.x, scanned);
+    // Half the scan's occlusion: at full strength every shaded wall went black.
+    m.aoNode = mix(float(1), orm.x, scanned.mul(AO_STRENGTH));
   } else {
     m.roughness = 0.85;
   }

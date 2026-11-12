@@ -30,7 +30,9 @@ const FAR_FULL_M = 230;
  */
 const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>> = {
   meadow: [0.72, 1.0, 0.62],
-  dry_grass: [0.9, 1.0, 0.72],
+  dry_grass: [0.95, 1.0, 0.72],
+  // Trodden earth in a wet country is grey-brown, not the scan's ochre.
+  dirt: [0.72, 0.7, 0.68],
 };
 
 function distanceToSegmentM(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
@@ -54,17 +56,17 @@ function earthAt(x: number, z: number): number {
     const d = Math.hypot(x - tx, z - tz);
     if (d > TOWN.outerRadiusM + 20) continue;
     // The yard round the keep.
-    earth = Math.max(earth, near(d, 12, 3));
+    earth = Math.max(earth, near(d, 10, 2.5));
     for (let plot = 0; plot < TOWN.plotCount; plot++) {
       const px = plotX(side, plot);
       const pz = plotZ(side, plot);
       // Each plot's own yard, and a lane from it towards the keep (outer plots reach the inner ring).
-      earth = Math.max(earth, near(Math.hypot(x - px, z - pz), 5.5, 2.5));
+      earth = Math.max(earth, near(Math.hypot(x - px, z - pz), 4.2, 2.2));
       const reach = plot < TOWN.innerPlots ? 1 : 0.45;
-      earth = Math.max(earth, 0.85 * near(distanceToSegmentM(x, z, px, pz, px + (tx - px) * reach, pz + (tz - pz) * reach), 0.9, 1.6));
+      earth = Math.max(earth, 0.8 * near(distanceToSegmentM(x, z, px, pz, px + (tx - px) * reach, pz + (tz - pz) * reach), 0.5, 1.5));
     }
     // A lane round the inner ring ties the plots together.
-    earth = Math.max(earth, 0.8 * near(Math.abs(d - TOWN.innerRadiusM - 7), 1.0, 1.6));
+    earth = Math.max(earth, 0.8 * near(Math.abs(d - TOWN.innerRadiusM - 7), 0.6, 1.5));
   }
   return earth;
 }
@@ -127,13 +129,14 @@ export function buildTerrain(lib: SurfaceLibrary): Mesh {
   const cover = coverTexture(extentM);
   const material = new MeshStandardNodeMaterial({ name: 'terrain', metalness: 0 });
   const xz = vec2(positionWorld.x, positionWorld.z);
-  const fine = texture(noise, xz.div(3.1)).r;
-  const coarse = texture(noise, xz.div(27).add(vec2(0.37, 0.11))).r;
-  const patch = texture(noise, xz.div(141).add(vec2(0.71, 0.53))).r;
+  // Features of about 2.5 m (tufts and worn patches) and 9 m (drifts of colour across a meadow).
+  const fine = texture(noise, xz.div(19)).r;
+  const coarse = texture(noise, xz.div(71).add(vec2(0.37, 0.11))).r;
+  const patch = texture(noise, xz.div(233).add(vec2(0.71, 0.53))).r;
   const what = texture(cover, xz.div(extentM).add(0.5));
   // Ragged edges: the noise decides where exactly one surface gives way to the next.
   const ragged = fine.mul(0.6).add(coarse.mul(0.4)).sub(0.5);
-  const dry = smoothstep(0.42, 0.7, what.r.add(patch.sub(0.5).mul(0.7)).add(ragged.mul(0.25)));
+  const dry = smoothstep(0.5, 0.74, what.r.add(patch.sub(0.5).mul(0.7)).add(ragged.mul(0.6)));
   const forest = smoothstep(0.3, 0.6, what.b.add(ragged.mul(0.45)));
   const earth = smoothstep(0.44, 0.56, what.g.add(ragged.mul(0.55)));
   // v runs against z so the scans' normals keep their handedness on the ground (tangent +X, bitangent −Z).
@@ -149,7 +152,7 @@ export function buildTerrain(lib: SurfaceLibrary): Mesh {
     return mix(near, wide, far).mul(season ? vec3(season[0], season[1], season[2]) : vec3(1));
   });
   // A slow drift of tone, so one meadow is not one green.
-  const tone = float(0.8).add(coarse.mul(0.28)).add(patch.mul(0.22));
+  const tone = float(0.62).add(smoothstep(0.3, 0.7, fine).mul(0.42)).add(coarse.mul(0.26)).add(patch.mul(0.2));
   material.colorNode = colour.mul(tone);
   if (lib.detailed) {
     const bump = blend((id) => texture(lib.normal, uvOf(id, 1)).depth(int(layerOf(id))).rgb).mul(2).sub(1);

@@ -1,337 +1,278 @@
 import type { BufferGeometry } from 'three/webgpu';
 import type { BuildingKind } from '../sim/types.ts';
-import { MeshBuilder, type Paint } from './meshBuilder.ts';
-import { layerOf, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
+import * as P from './buildingParts.ts';
+import { MeshBuilder } from './meshBuilder.ts';
+import type { SurfaceLibrary } from './surfaces.ts';
 
-// Buildings from code: each kind has its own silhouette and yard so it can be
-// told apart from the strategy camera. Walls, roofs and yards are scanned
-// surfaces (limewashed daub in a timber frame, thatch, clay tile, rubble and
-// dressed stone), named here by colour constants; small props keep a plain
-// colour. Sizes are true to scale: a storey is 3 m, a door 2.1 m (scale
-// sheet). Level 2 adds a lean-to, level 3 a pennant in the owner's colour.
+// The fourteen buildings and the keep, each a house or shed from
+// buildingParts.ts with the yard that tells its trade from the strategy
+// camera: a pen, a field, a rack of hides, a spoil heap. Doors face +Z (the
+// town view turns that towards the keep). A plot is about 11 m square. Level 2
+// adds a lean-to and more stock in the yard; level 3 a pennant in the owner's
+// colour; the house itself grows from a thatched cottage to a jettied town
+// house. Everything here is geometry from code; modelled buildings may replace
+// it later (BRIEF §9).
 
-// sRGB base colours inside the PBR sheet's range for non-metals.
-const PLASTER = 0xcbbfa6;
-const TIMBER = 0x4a3b30;
-const TIMBER_LIGHT = 0x7a6248;
-const THATCH = 0x9a8650;
-const TILE = 0x8a4b3a;
-const STONE = 0x7a7672;
-const STONE_DARK = 0x5d5a57;
-const STONE_LIGHT = 0x979087;
-const SOIL = 0x5a4a39;
-const MUD = 0x3e3328;
-const CROP = 0xb39a45;
-const CROP_GREEN = 0x6f7f36;
-const LOG = 0x6a5038;
-const HIDE = 0xa98a62;
-const PIG = 0xc79a8c;
-const HORSE = 0x5b4030;
-const IRON = 0x54565a;
-const STRAW_TARGET = 0xc9b678;
-const SOOT = 0x2e2d2c;
-const MEAT = 0x8c4a40;
-const ASHLAR = 0x8f8a80;
+type Build = (b: MeshBuilder, level: number) => void;
 
-/** Which scanned surface each of the constants above is drawn with, and its tint (white = as scanned). */
-const SURFACE_OF: readonly (readonly [hex: number, surface: SurfaceId, tintHex: number])[] = [
-  [PLASTER, 'plaster', 0xffffff],
-  [TIMBER, 'beam', 0xd8cfc6],
-  [TIMBER_LIGHT, 'boards', 0xfff2e0],
-  [THATCH, 'thatch', 0xffffff],
-  [TILE, 'tiles', 0xffffff],
-  [STONE, 'rubble', 0xffffff],
-  [STONE_DARK, 'rubble', 0xb4b0aa],
-  [STONE_LIGHT, 'ashlar', 0xf2efe8],
-  [ASHLAR, 'ashlar', 0xdcd8d0],
-  [SOIL, 'farm_soil', 0xffffff],
-  [MUD, 'dirt', 0xa89a8c],
-  [LOG, 'bark', 0xffffff],
-  // Standing corn and sheaves in straw, green rows in leaf.
-  [CROP, 'thatch', 0xffe9a0],
-  [CROP_GREEN, 'leaves', 0xb8d880],
-];
-
-function paintsFor(lib: SurfaceLibrary): Map<number, Paint> {
-  const paints = new Map<number, Paint>();
-  for (const [hex, surface, tintHex] of SURFACE_OF) paints.set(hex, { layer: layerOf(surface), sizeM: lib.sizeM[surface], tintHex });
-  return paints;
-}
-
-/** A timber-framed cottage on a rubble footing: limewashed panels between posts and rails, a door, a shuttered window, a gable roof. */
-function cottage(b: MeshBuilder, cx: number, cz: number, sx: number, sz: number, wallH: number, roofHex: number, wallHex = PLASTER): void {
-  const footing = 0.35;
-  b.box(cx, 0, cz, sx + 0.24, footing, sz + 0.24, STONE);
-  b.box(cx, footing, cz, sx, wallH - footing, sz, wallHex);
-  // The frame stands a few centimetres proud of the panels.
-  const post = 0.2;
-  const proud = 0.05;
-  const posts = Math.max(2, Math.round(sx / 1.7) + 1);
-  for (const dz of [-1, 1]) {
-    const z = cz + dz * (sz / 2 + proud);
-    for (let i = 0; i < posts; i++) b.box(cx - sx / 2 + (i / (posts - 1)) * sx, footing, z, post, wallH - footing, post * 0.6, TIMBER);
-    for (const y of [footing, footing + (wallH - footing) * 0.52, wallH - 0.2]) b.box(cx, y, z, sx + post, 0.2, post * 0.6, TIMBER);
-  }
-  const endPosts = Math.max(2, Math.round(sz / 1.7) + 1);
-  for (const dx of [-1, 1]) {
-    const x = cx + dx * (sx / 2 + proud);
-    for (let i = 0; i < endPosts; i++) b.box(x, footing, cz - sz / 2 + (i / (endPosts - 1)) * sz, post * 0.6, wallH - footing, post, TIMBER);
-    for (const y of [footing, footing + (wallH - footing) * 0.52, wallH - 0.2]) b.box(x, y, cz, post * 0.6, 0.2, sz + post, TIMBER);
-    // A king post up the gable.
-    b.box(x, wallH, cz, post * 0.6, sz * 0.4, post, TIMBER);
-  }
-  b.box(cx - sx * 0.2, footing, cz + sz / 2 + 0.09, 0.95, 2.0, 0.08, TIMBER_LIGHT);
-  b.box(cx + sx * 0.25, 1.25, cz + sz / 2 + 0.09, 0.75, 0.75, 0.06, SOOT);
-  b.box(cx + sx * 0.25 + 0.5, 1.2, cz + sz / 2 + 0.1, 0.36, 0.85, 0.05, TIMBER_LIGHT);
-  b.gable(cx, wallH, cz, sx, sz, sz * 0.46, roofHex, wallHex, 0.5);
-  // Ridge and barge boards.
-  b.box(cx, wallH + sz * 0.46 - 0.04, cz, sx + 1.0, 0.14, 0.3, roofHex === THATCH ? THATCH : TIMBER);
-}
-
-function chimney(b: MeshBuilder, cx: number, cz: number, height: number, width = 0.8): void {
-  b.box(cx, 0, cz, width, height, width, STONE);
-  b.box(cx, height, cz, width + 0.2, 0.2, width + 0.2, STONE_DARK);
-}
-
-/** A run of fence between two points. */
-function fence(b: MeshBuilder, x0: number, z0: number, x1: number, z1: number): void {
-  const length = Math.hypot(x1 - x0, z1 - z0);
-  const posts = Math.max(2, Math.round(length / 1.6) + 1);
-  for (let i = 0; i < posts; i++) {
-    const t = i / (posts - 1);
-    b.box(x0 + (x1 - x0) * t, 0, z0 + (z1 - z0) * t, 0.12, 1.1, 0.12, TIMBER);
-  }
-  const along = Math.abs(x1 - x0) > Math.abs(z1 - z0);
-  for (const y of [0.45, 0.9]) b.box((x0 + x1) / 2, y, (z0 + z1) / 2, along ? length : 0.07, 0.09, along ? 0.07 : length, TIMBER_LIGHT);
-}
-
-function pen(b: MeshBuilder, cx: number, cz: number, sx: number, sz: number, groundHex: number): void {
-  b.box(cx, 0, cz, sx, 0.06, sz, groundHex);
-  fence(b, cx - sx / 2, cz - sz / 2, cx + sx / 2, cz - sz / 2);
-  fence(b, cx - sx / 2, cz + sz / 2, cx + sx / 2, cz + sz / 2);
-  fence(b, cx - sx / 2, cz - sz / 2, cx - sx / 2, cz + sz / 2);
-  fence(b, cx + sx / 2, cz - sz / 2, cx + sx / 2, cz + sz / 2);
-}
-
-function animal(b: MeshBuilder, cx: number, cz: number, length: number, height: number, hex: number): void {
-  b.box(cx, height * 0.45, cz, length, height * 0.55, length * 0.42, hex);
-  b.box(cx + length * 0.55, height * 0.6, cz, length * 0.3, height * 0.4, length * 0.32, hex);
-  for (const dx of [-0.35, 0.35]) for (const dz of [-0.12, 0.12]) b.box(cx + dx * length, 0, cz + dz * length, length * 0.1, height * 0.45, length * 0.1, hex);
-}
-
-const BUILDERS: Record<BuildingKind, (b: MeshBuilder) => void> = {
-  house: (b) => {
-    cottage(b, 0, -0.5, 6.4, 4.8, 2.9, THATCH);
-    chimney(b, 2.2, -1.2, 5.6, 0.7);
-    // A kitchen garden.
-    b.box(-0.5, 0, 3.4, 5, 0.08, 1.8, SOIL);
-    for (let i = 0; i < 5; i++) b.box(-2.5 + i, 0.08, 3.4, 0.5, 0.25, 1.4, CROP_GREEN);
+const BUILDERS: Record<BuildingKind, Build> = {
+  house: (b, level) => {
+    if (level === 1) {
+      // A cottage under a hipped thatch, with a kitchen garden.
+      P.house(b, { cx: -0.5, cz: -1.6, sx: 6.6, sz: 4.6, wallH: 2.3, wall: P.PLASTER, roof: P.THATCH, hip: 1.0, pitch: 1.45, frame: true });
+    } else if (level === 2) {
+      P.house(b, { cx: -0.5, cz: -1.6, sx: 7.2, sz: 4.8, wallH: 2.8, wall: P.PLASTER, roof: P.SHINGLE, pitch: 1.5, frame: true });
+      P.chimney(b, 2.2, -2.4, 7.4, 0.7);
+    } else {
+      // A town house: the upper floor jettied out over the street.
+      P.house(b, { cx: -0.5, cz: -1.6, sx: 7.4, sz: 4.6, wallH: 2.9, upperH: 2.6, jetty: 0.4, wall: P.OCHRE, roof: P.SHINGLE, pitch: 1.5, frame: true });
+      P.chimney(b, 2.4, -2.6, 10.6, 0.8);
+    }
+    P.yard(b, 0.4, 3.2, 9.4, 3.6, 0, true);
+    P.beds(b, -1.8, 3.3, 3.6, 2.4, true);
+    P.beds(b, 2.6, 3.3, 3.2, 2.4, false);
+    // The privy.
+    b.box(4.4, 0, -3.6, 1.1, 2.0, 1.1, P.BOARDS);
+    b.roof(4.4, 2.0, -3.6, 1.1, 1.1, 0.5, 0, 0.15, 0.08, P.BOARDS_DARK, P.TIMBER);
+    P.barrel(b, 3.4, -0.4);
   },
-  woodcutter: (b) => {
-    cottage(b, -1.5, -1.5, 4.6, 3.8, 2.5, THATCH, TIMBER_LIGHT);
-    // Stacked logs and a chopping block.
-    for (let row = 0; row < 3; row++) for (let i = 0; i < 4 - row; i++) b.log(2.6, 0.3 + row * 0.52, 0.2 + (i + row * 0.5) * 0.6, 0.29, 3.4, 6, LOG);
-    b.cylinder(-0.5, 0, 2.8, 0.45, 0.45, 0.6, 7, LOG);
-    b.box(-0.5, 0.6, 2.8, 0.1, 0.5, 0.5, IRON);
+  woodcutter: (b, level) => {
+    P.house(b, { cx: -2.0, cz: -2.2, sx: 5.0, sz: 4.0, wallH: 2.3, wall: P.BOARDS, roof: P.THATCH, hip: 0.9, pitch: 1.4 });
+    P.logPile(b, 2.6, -1.4, 3.6, 4);
+    if (level >= 2) P.logPile(b, 2.8, 2.6, 3.2, 3);
+    // A chopping block with the axe left in it, split billets beside.
+    b.cylinder(-1.4, 0, 2.2, 0.42, 0.42, 0.55, 8, P.LOG);
+    b.strut([-1.4, 0.55, 2.2], [-1.0, 1.2, 2.3], 0.05, 0.05, P.BOARDS);
+    b.box(-1.36, 0.55, 2.2, 0.08, 0.2, 0.3, P.IRON);
+    for (let i = 0; i < 5; i++) b.box(-2.6 + (i % 3) * 0.4, 0.05 + Math.floor(i / 3) * 0.22, 3.4, 0.3, 0.2, 0.9, P.BOARDS);
+    // A sawing trestle.
+    for (const x of [0.2, 1.6]) {
+      b.strut([x, 0, 3.0], [x, 1.0, 3.9], 0.1, 0.1, P.TIMBER);
+      b.strut([x, 0, 3.9], [x, 1.0, 3.0], 0.1, 0.1, P.TIMBER);
+    }
+    b.log(0.9, 0.85, 3.45, 0.22, 2.6, 7, P.LOG);
   },
-  quarry: (b) => {
-    // A cut face of rock, dressed blocks, and a hoist.
-    b.box(-1.5, 0, -2.2, 6, 2.6, 2.4, STONE_DARK);
-    b.box(-2.6, 0, -0.6, 3.4, 1.5, 1.6, STONE);
-    b.box(1.2, 0, -1.4, 2.2, 1.9, 1.2, STONE_LIGHT);
-    for (let i = 0; i < 3; i++) b.box(-1 + i * 1.5, 0, 2.6, 1.2, 0.7, 0.8, STONE_LIGHT);
-    b.box(0.5, 0.7, 2.6, 1.2, 0.7, 0.8, STONE);
-    b.box(3.2, 0, 0.8, 0.25, 4.2, 0.25, TIMBER);
-    b.box(2.3, 4.0, 0.8, 2.4, 0.2, 0.2, TIMBER);
-    b.box(1.3, 2.4, 0.8, 0.06, 1.6, 0.06, SOOT);
-    b.box(1.3, 1.9, 0.8, 0.7, 0.5, 0.7, STONE_LIGHT);
+  quarry: (b, level) => {
+    // A cut face of rock stepping down, dressed blocks, and a hoist.
+    b.box(-1.5, 0, -3.2, 7.4, 3.0, 2.4, P.STONE_DARK);
+    b.box(-2.8, 0, -1.4, 4.2, 1.7, 1.8, P.STONE);
+    b.box(1.6, 0, -2.2, 2.4, 2.2, 1.4, P.STONE);
+    for (let i = 0; i < 2 + level; i++) b.box(-2.4 + i * 1.5, 0, 2.8, 1.2, 0.7, 0.8, P.STONE_LIGHT);
+    b.box(-0.9, 0.7, 2.8, 1.2, 0.7, 0.8, P.STONE_LIGHT);
+    b.box(3.6, 0, 0.4, 0.26, 4.6, 0.26, P.TIMBER);
+    b.strut([3.6, 4.4, 0.4], [0.9, 4.9, 0.4], 0.2, 0.2, P.TIMBER);
+    b.strut([3.6, 2.6, 0.4], [2.2, 4.6, 0.4], 0.14, 0.14, P.TIMBER);
+    b.box(1.1, 2.1, 0.4, 0.04, 2.7, 0.04, P.STRAW);
+    b.box(1.1, 1.5, 0.4, 0.8, 0.6, 0.8, P.STONE_LIGHT);
+    // The masons' lodge.
+    P.house(b, { cx: 3.4, cz: 3.2, sx: 3.2, sz: 2.6, wallH: 2.0, wall: P.BOARDS_DARK, roof: P.SHINGLE, pitch: 1.2 });
+    P.cart(b, -3.6, 1.2, 0.5, P.STONE);
   },
-  farm: (b) => {
-    cottage(b, -2.6, -2.6, 4.2, 3.4, 2.4, THATCH);
-    // Strips of ripening grain.
-    b.box(0.6, 0, 1.2, 9.6, 0.07, 6.6, SOIL);
-    for (let i = 0; i < 8; i++) b.box(-3.6 + i * 1.2, 0.07, 1.2, 0.8, 0.55, 6.2, i % 3 === 0 ? CROP_GREEN : CROP);
-    // Sheaves.
-    for (const [x, z] of [[2.6, -3.2], [3.6, -2.6]] as const) b.cylinder(x, 0, z, 0.45, 0.15, 1.1, 6, CROP);
+  farm: (b, level) => {
+    P.house(b, { cx: -3.2, cz: -3.2, sx: 4.6, sz: 3.8, wallH: 2.2, wall: P.PLASTER, roof: P.THATCH, hip: 0.9, pitch: 1.45, frame: true });
+    // Strips of ripening corn inside a rail fence.
+    P.yard(b, 1.0, 1.6, 9.6, 7.0, P.SOIL, false, false);
+    for (let i = 0; i < 7; i++) b.box(-2.9 + i * 1.3, 0.05, 1.6, 0.95, i % 3 === 0 ? 0.4 : 0.75, 6.2, i % 3 === 0 ? P.GREEN : P.CROP);
+    P.haystack(b, 3.4, -3.6, 1.2);
+    if (level >= 2) P.haystack(b, 0.9, -3.9, 1.0);
+    P.cart(b, -0.6, -3.2, 1.2, level >= 2 ? P.CROP : 0);
   },
-  bakery: (b) => {
-    cottage(b, -0.6, -0.4, 6.2, 4.6, 2.8, TILE);
+  bakery: (b, level) => {
+    P.house(b, { cx: -1.0, cz: -1.4, sx: 6.4, sz: 4.6, wallH: 2.8, wall: P.PLASTER, roof: P.TILE, pitch: 1.3, frame: true });
     // The oven: a stone dome with a tall flue.
-    b.cylinder(3.3, 0, 1.2, 1.5, 1.2, 1.3, 8, STONE);
-    b.cylinder(3.3, 1.3, 1.2, 1.2, 0.3, 0.8, 8, STONE_LIGHT);
-    chimney(b, 3.3, -0.5, 6.2, 0.9);
-    b.box(-1, 0, 3, 2.2, 0.9, 0.9, TIMBER_LIGHT);
-    for (let i = 0; i < 3; i++) b.box(-1.6 + i * 0.6, 0.9, 3, 0.45, 0.22, 0.45, CROP);
+    b.cylinder(3.6, 0, 0.6, 1.5, 1.25, 1.3, 9, P.STONE);
+    b.cylinder(3.6, 1.3, 0.6, 1.25, 0.3, 0.9, 9, P.STONE_LIGHT);
+    b.box(3.6, 0.3, 1.95, 0.7, 0.6, 0.2, P.SOOT);
+    P.chimney(b, 3.6, -1.2, 7.4, 0.9);
+    P.stall(b, -1.6, 3.4, P.CANVAS_RED, P.BREAD);
+    if (level >= 2) P.stall(b, 1.6, 3.4, P.CANVAS_BLUE, P.BREAD);
+    for (let i = 0; i < 3; i++) b.box(4.2, 0.05 + i * 0.3, 3.4, 0.9, 0.3, 0.5, P.CANVAS_PALE);
   },
-  pigFarm: (b) => {
+  pigFarm: (b, level) => {
     // A low sty and a muddy pen.
-    b.box(-2.6, 0, -2.6, 4.4, 1.6, 3, TIMBER_LIGHT);
-    b.gable(-2.6, 1.6, -2.6, 4.4, 3, 1.1, THATCH, TIMBER_LIGHT);
-    pen(b, 1, 1.4, 8, 5.6, MUD);
-    animal(b, -0.8, 0.6, 1.2, 0.8, PIG);
-    animal(b, 1.8, 2.4, 1.3, 0.85, PIG);
-    animal(b, 3.2, 0.2, 1.1, 0.75, PIG);
-    b.box(-2, 0, 3.4, 1.8, 0.4, 0.6, TIMBER);
+    P.house(b, { cx: -2.8, cz: -3.0, sx: 4.6, sz: 3.2, wallH: 1.6, wall: P.BOARDS, roof: P.THATCH, hip: 1.0, pitch: 1.3 });
+    P.yard(b, 1.0, 1.6, 9.0, 6.2, P.MUD, false, false);
+    P.animal(b, -1.4, 0.4, 1.2, 0.8, P.PIG);
+    P.animal(b, 1.8, 2.6, 1.3, 0.85, P.PIG);
+    P.animal(b, 3.4, 0.2, 1.1, 0.75, P.PIG);
+    if (level >= 2) P.animal(b, 0.2, 3.6, 1.2, 0.8, P.PIG);
+    if (level >= 3) P.animal(b, -2.6, 2.8, 1.0, 0.7, P.PIG);
+    P.trough(b, 2.6, -0.9);
+    P.haystack(b, 2.8, -3.6, 0.9);
   },
-  butcher: (b) => {
-    cottage(b, -0.4, -1, 6, 4.4, 2.8, TILE);
-    // A smoke rack hung with sausages and sides of meat, under an awning.
-    b.box(-2.2, 0, 2.8, 0.14, 2.3, 0.14, TIMBER);
-    b.box(2.2, 0, 2.8, 0.14, 2.3, 0.14, TIMBER);
-    b.box(0, 2.25, 2.8, 4.6, 0.12, 0.12, TIMBER);
-    for (let i = 0; i < 6; i++) b.box(-1.9 + i * 0.75, 1.3 + (i % 2) * 0.25, 2.8, 0.22, 0.95 - (i % 2) * 0.25, 0.22, MEAT);
-    b.box(3.4, 0, 0.4, 1.2, 1.9, 1.2, STONE);
-    b.cylinder(3.4, 1.9, 0.4, 0.5, 0.25, 1.4, 6, SOOT);
+  butcher: (b, level) => {
+    P.house(b, { cx: -0.8, cz: -1.8, sx: 6.2, sz: 4.4, wallH: 2.8, wall: P.PLASTER, roof: P.SHINGLE, pitch: 1.45, frame: true });
+    // A smoke rack hung with sausages and sides of meat.
+    b.box(-2.4, 0, 2.8, 0.14, 2.3, 0.14, P.TIMBER);
+    b.box(2.0, 0, 2.8, 0.14, 2.3, 0.14, P.TIMBER);
+    b.box(-0.2, 2.25, 2.8, 4.8, 0.12, 0.12, P.TIMBER);
+    for (let i = 0; i < 4 + level; i++) b.box(-2.1 + i * 0.6, 1.3 + (i % 2) * 0.25, 2.8, 0.2, 0.95 - (i % 2) * 0.25, 0.2, P.MEAT);
+    // The smokehouse.
+    b.box(3.8, 0, -0.4, 1.4, 2.2, 1.4, P.STONE);
+    b.roof(3.8, 2.2, -0.4, 1.4, 1.4, 0.9, 0.5, 0.15, 0.1, P.SHINGLE, P.TIMBER);
+    b.cylinder(-3.6, 0, 3.6, 0.45, 0.45, 0.8, 8, P.LOG);
+    P.barrel(b, 3.6, 3.4);
   },
-  tannery: (b) => {
-    // An open shed, drying frames with stretched hides, and tanning vats.
-    for (const dx of [-2.2, 2.2]) for (const dz of [-3.4, -1.2]) b.box(dx, 0, dz, 0.22, 2.6, 0.22, TIMBER);
-    b.gable(0, 2.6, -2.3, 4.8, 2.6, 1.2, THATCH, TIMBER_LIGHT);
-    b.box(0, 0, -2.3, 3.6, 0.9, 1.2, TIMBER_LIGHT);
-    for (let i = 0; i < 3; i++) {
-      const x = -3 + i * 3;
-      b.box(x - 1, 0, 2.6, 0.1, 2.2, 0.1, TIMBER);
-      b.box(x + 1, 0, 2.6, 0.1, 2.2, 0.1, TIMBER);
-      b.box(x, 2.1, 2.6, 2.1, 0.1, 0.1, TIMBER);
-      b.box(x, 0.5, 2.6, 1.6, 1.5, 0.05, HIDE);
+  tannery: (b, level) => {
+    // An open shed on posts, drying frames with stretched hides, and tanning vats.
+    for (const dx of [-2.4, 0, 2.4]) for (const dz of [-4.2, -1.8]) b.box(dx, 0, dz, 0.22, 2.5, 0.22, P.TIMBER);
+    b.roof(0, 2.5, -3.0, 5.2, 2.6, 1.7, 1.0, 0.5, 0.4, P.THATCH, P.THATCH);
+    b.box(0, 0, -3.0, 4.0, 0.9, 1.2, P.BOARDS);
+    b.box(0.2, 0, 1.6, 10, 0.05, 6.8, P.MUD);
+    for (let i = 0; i < 2 + level; i++) {
+      const x = -3.6 + i * 2.3;
+      b.box(x - 0.9, 0, 3.6, 0.1, 2.2, 0.1, P.TIMBER);
+      b.box(x + 0.9, 0, 3.6, 0.1, 2.2, 0.1, P.TIMBER);
+      b.box(x, 2.1, 3.6, 1.9, 0.1, 0.1, P.TIMBER);
+      b.box(x, 0.5, 3.6, 1.45, 1.5, 0.05, P.HIDE);
     }
-    for (const [x, z] of [[-3, 0.4], [-1.2, 0.6], [0.6, 0.3]] as const) {
-      b.cylinder(x, 0, z, 0.75, 0.75, 0.8, 8, LOG);
-      b.cylinder(x, 0.72, z, 0.62, 0.62, 0.05, 8, MUD);
+    for (const [x, z] of [[-3.2, 0.6], [-1.2, 0.9], [0.8, 0.5]] as const) {
+      b.cylinder(x, 0, z, 0.8, 0.8, 0.75, 9, P.LOG);
+      b.cylinder(x, 0.7, z, 0.66, 0.66, 0.04, 9, P.MUD);
     }
+    P.barrel(b, 3.4, 0.6, 1.1);
   },
-  ironMine: (b) => {
+  ironMine: (b, level) => {
     // A spoil heap with a timbered adit, and an ore cart on rails.
-    b.cylinder(-1, 0, -1.6, 4.6, 1.6, 3.6, 9, STONE_DARK);
-    b.cylinder(1.6, 0, -2.6, 2.8, 0.8, 2.4, 7, STONE);
-    b.box(-1, 0, 2.5, 2.2, 2.2, 0.5, SOOT);
-    b.box(-2.1, 0, 2.7, 0.28, 2.5, 0.28, TIMBER);
-    b.box(0.1, 0, 2.7, 0.28, 2.5, 0.28, TIMBER);
-    b.box(-1, 2.4, 2.7, 2.8, 0.28, 0.28, TIMBER);
-    b.box(-1, 0, 4.2, 0.1, 0.08, 3, IRON);
-    b.box(-0.2, 0, 4.2, 0.1, 0.08, 3, IRON);
-    b.box(-0.6, 0.25, 4.6, 1.1, 0.7, 1.4, TIMBER_LIGHT);
-    b.box(-0.6, 0.95, 4.6, 0.9, 0.25, 1.2, 0x6a4a3a);
+    b.cylinder(-1.2, 0, -2.2, 4.8, 1.8, 3.8, 9, P.STONE_DARK);
+    b.cylinder(1.8, 0, -3.2, 3.0, 0.9, 2.6, 7, P.STONE);
+    b.box(-1.2, 0, 2.2, 2.2, 2.2, 0.5, P.SOOT);
+    b.box(-2.3, 0, 2.4, 0.28, 2.5, 0.28, P.TIMBER);
+    b.box(-0.1, 0, 2.4, 0.28, 2.5, 0.28, P.TIMBER);
+    b.box(-1.2, 2.4, 2.4, 2.8, 0.28, 0.28, P.TIMBER);
+    b.box(-1.6, 0, 4.0, 0.1, 0.08, 3.0, P.IRON);
+    b.box(-0.8, 0, 4.0, 0.1, 0.08, 3.0, P.IRON);
+    b.box(-1.2, 0.25, 4.4, 1.1, 0.7, 1.4, P.BOARDS);
+    b.box(-1.2, 0.95, 4.4, 0.9, 0.25, 1.2, 0x6a4a3a);
+    // The windlass shed.
+    P.house(b, { cx: 3.0, cz: 2.8, sx: 3.0, sz: 2.6, wallH: 2.0, wall: P.BOARDS_DARK, roof: P.SHINGLE, pitch: 1.2 });
+    if (level >= 2) for (let i = 0; i < 3; i++) b.cylinder(3.4 - i * 0.8, 0, 5.2, 0.5, 0.2, 0.5, 6, 0x6a4a3a);
   },
-  smithy: (b) => {
-    cottage(b, -0.8, -1, 5.6, 4.6, 2.9, TILE, STONE_LIGHT);
-    chimney(b, -2.6, -2.2, 7.2, 1.2);
-    // The forge under a lean-to, an anvil and a quenching trough.
-    for (const dx of [1.6, 4]) b.box(dx, 0, 2.6, 0.2, 2.3, 0.2, TIMBER);
-    b.quad([1.4, 2.9, 0.6], [1.4, 2.3, 2.9], [4.2, 2.3, 2.9], [4.2, 2.9, 0.6], TILE);
-    b.box(2.9, 0, 0.9, 1.6, 1, 1, STONE_DARK);
-    b.box(2.9, 1, 0.9, 1.2, 0.12, 0.7, 0xb5502a);
-    b.box(2.9, 0, 2.3, 0.35, 0.6, 0.35, LOG);
-    b.box(2.9, 0.6, 2.3, 0.75, 0.24, 0.3, IRON);
-    b.box(0.4, 0, 2.8, 1.4, 0.5, 0.6, TIMBER);
+  smithy: (b, level) => {
+    P.house(b, { cx: -1.0, cz: -1.8, sx: 6.0, sz: 4.6, wallH: 2.9, wall: P.STONE, roof: P.SHINGLE, pitch: 1.35 });
+    P.chimney(b, -3.2, -3.0, 8.6, 1.2);
+    // The forge under a lean-to: hearth, anvil on its block, quenching trough.
+    for (const dx of [1.8, 4.4]) b.box(dx, 0, 2.6, 0.2, 2.3, 0.2, P.TIMBER);
+    b.roof(3.1, 2.3, 1.4, 3.0, 2.6, 0.9, 0, 0.2, 0.12, P.SHINGLE, P.TIMBER);
+    b.box(3.1, 0, 0.6, 1.6, 1.0, 1.0, P.STONE_DARK);
+    b.box(3.1, 1.0, 0.6, 1.2, 0.12, 0.7, P.EMBER);
+    b.cylinder(3.1, 0, 2.2, 0.3, 0.3, 0.6, 7, P.LOG);
+    b.box(3.1, 0.6, 2.2, 0.75, 0.24, 0.3, P.IRON);
+    P.trough(b, 0.2, 2.8);
+    if (level >= 2) for (let i = 0; i < 4; i++) b.box(-3.4 + i * 0.3, 0.05, 3.6, 0.06, 1.3, 0.06, P.IRON);
   },
-  armourer: (b) => {
-    b.box(-0.4, 0, -0.8, 6.4, 3.4, 4.8, STONE_LIGHT);
-    b.gable(-0.4, 3.4, -0.8, 6.4, 4.8, 2, TILE, STONE_LIGHT);
-    b.box(-1.6, 0, 1.63, 1, 2.1, 0.08, TIMBER);
-    chimney(b, 2.2, -2.4, 7, 1);
+  armourer: (b, level) => {
+    P.house(b, { cx: -0.6, cz: -1.6, sx: 6.6, sz: 4.8, wallH: 3.0, upperH: 2.4, jetty: 0.3, base: P.STONE, wall: P.PLASTER, roof: P.TILE, pitch: 1.3, frame: true });
+    P.chimney(b, 2.4, -3.0, 10.4, 1.0);
     // Armour stands in the yard.
-    for (let i = 0; i < 4; i++) {
-      const x = -3 + i * 1.6;
-      b.box(x, 0, 3.4, 0.1, 1.5, 0.1, TIMBER);
-      b.box(x, 0.95, 3.4, 0.62, 0.7, 0.36, 0x8d9096);
-      b.box(x, 1.65, 3.4, 0.3, 0.3, 0.3, 0x9a9da3);
+    for (let i = 0; i < 3 + level; i++) {
+      const x = -3.4 + i * 1.4;
+      b.box(x, 0, 3.6, 0.1, 1.5, 0.1, P.TIMBER);
+      b.box(x, 0.95, 3.6, 0.62, 0.7, 0.36, 0x8d9096);
+      b.cylinder(x, 1.65, 3.6, 0.17, 0.12, 0.3, 7, 0x9a9da3);
     }
   },
-  fletcher: (b) => {
-    cottage(b, -1.2, -1.4, 5.2, 4, 2.6, THATCH, TIMBER_LIGHT);
+  fletcher: (b, level) => {
+    P.house(b, { cx: -1.6, cz: -2.0, sx: 5.6, sz: 4.2, wallH: 2.5, wall: P.BOARDS, roof: P.THATCH, hip: 1.0, pitch: 1.4 });
     // Straw butts to shoot at, and a rack of bow staves.
     for (const x of [2.6, 4.2]) {
-      b.box(x, 0, 3.2, 0.12, 1.2, 0.12, TIMBER);
-      b.cylinder(x, 0.7, 3.2, 0.75, 0.75, 0.3, 10, STRAW_TARGET);
+      b.box(x, 0, 3.6, 0.12, 1.3, 0.12, P.TIMBER);
+      b.log(x, 0.85, 3.6, 0.75, 0.28, 10, P.STRAW);
     }
-    b.box(-2.6, 0, 2.8, 2.6, 1.9, 0.14, TIMBER);
-    for (let i = 0; i < 6; i++) b.box(-3.6 + i * 0.42, 0.1, 3, 0.06, 1.85, 0.06, TIMBER_LIGHT);
-    b.log(3.4, 0.25, -0.6, 0.24, 2.6, 6, LOG);
+    b.box(-2.8, 0, 2.6, 2.8, 1.9, 0.14, P.TIMBER);
+    for (let i = 0; i < 4 + level * 2; i++) b.box(-3.9 + i * 0.3, 0.1, 2.8, 0.06, 1.85, 0.06, P.BOARDS);
+    b.log(3.4, 0.25, -0.2, 0.24, 2.6, 7, P.LOG);
   },
-  stable: (b) => {
-    // A long low stable with stall doors, and a paddock.
-    b.box(-0.2, 0, -2.6, 9.4, 2.6, 3.2, TIMBER_LIGHT);
-    b.gable(-0.2, 2.6, -2.6, 9.4, 3.2, 1.5, THATCH, TIMBER_LIGHT);
-    for (let i = 0; i < 4; i++) b.box(-3.6 + i * 2.3, 0, -0.97, 1.3, 2, 0.08, TIMBER);
-    pen(b, 0, 2.4, 9, 4.6, 0x6b6038);
-    animal(b, -1.6, 2.2, 2.1, 1.6, HORSE);
-    animal(b, 2.2, 3, 2, 1.55, 0x8a6a4a);
-    b.box(-3.6, 0, 0.8, 1.6, 0.45, 0.6, TIMBER);
+  stable: (b, level) => {
+    // A long low stable under a hipped thatch, stall doors, and a paddock.
+    P.house(b, { cx: -0.2, cz: -3.0, sx: 9.6, sz: 3.6, wallH: 2.4, wall: P.BOARDS, roof: P.THATCH, hip: 1.1, pitch: 1.35 });
+    for (let i = 0; i < 4; i++) b.box(-3.4 + i * 2.2, 0.4, -1.12, 1.2, 1.9, 0.08, P.BOARDS_DARK);
+    P.yard(b, 0, 2.4, 9.6, 5.0, 0);
+    P.animal(b, -1.8, 2.0, 2.1, 1.6, P.HORSE);
+    P.animal(b, 2.2, 3.2, 2.0, 1.55, P.HORSE_PALE);
+    if (level >= 2) P.animal(b, 0.4, 0.8, 2.0, 1.55, 0x3d2f26);
+    P.trough(b, -3.4, 0.8);
+    P.haystack(b, 3.6, 0.6, 0.9);
   },
-  barracks: (b) => {
-    // A long hall inside a palisade, a drill yard with practice posts.
-    b.box(0, 0, -2.6, 8.6, 3.2, 3.6, STONE_LIGHT);
-    b.gable(0, 3.2, -2.6, 8.6, 3.6, 1.8, TILE, STONE_LIGHT);
-    b.box(0, 0, -0.77, 1.3, 2.2, 0.08, TIMBER);
-    const half = 5.2;
-    for (let i = 0; i <= 13; i++) {
-      const t = -half + (i / 13) * 2 * half;
+  barracks: (b, level) => {
+    // A stone hall inside a palisade, a drill yard with practice posts.
+    P.house(b, { cx: 0, cz: -2.8, sx: 8.8, sz: 4.0, wallH: 3.2, wall: P.STONE, roof: P.TILE, pitch: 1.25 });
+    const half = 5.3;
+    for (let i = 0; i <= 15; i++) {
+      const t = -half + (i / 15) * 2 * half;
       for (const [x, z] of [[t, half], [-half, t], [half, t]] as const) {
         // A gap in the front wall for the gate.
         if (z === half && Math.abs(x) < 1.3) continue;
-        b.cylinder(x, 0, z, 0.2, 0.08, 2.4, 5, LOG);
+        b.cylinder(x, 0, z, 0.2, 0.06, 2.5 + ((i * 5) % 3) * 0.12, 5, P.LOG);
       }
     }
-    b.box(0, 0, 2.4, 6, 0.05, 3.6, SOIL);
-    for (const x of [-2, 0, 2]) {
-      b.box(x, 0, 2.6, 0.16, 1.7, 0.16, TIMBER);
-      b.box(x, 1.25, 2.6, 0.9, 0.14, 0.14, TIMBER);
+    for (const x of [-2.2, 0, 2.2]) {
+      b.box(x, 0, 2.6, 0.16, 1.7, 0.16, P.TIMBER);
+      b.box(x, 1.25, 2.6, 0.9, 0.14, 0.14, P.TIMBER);
     }
+    // Racks of pole arms against the hall.
+    for (let i = 0; i < 3 * level; i++) b.strut([-3.6 + i * 0.35, 0.05, -0.2], [-3.6 + i * 0.35, 2.3, -0.7], 0.05, 0.05, P.BOARDS);
   },
 };
 
 /** The lean-to that marks level 2. */
 function annex(b: MeshBuilder): void {
-  b.box(-4.1, 0, -3.6, 1.9, 2, 2.6, TIMBER_LIGHT);
-  b.quad([-5.1, 2, -2.2], [-3.1, 2.7, -2.2], [-3.1, 2.7, -5], [-5.1, 2, -5], THATCH);
+  b.box(-4.6, 0, -3.8, 1.9, 2.0, 2.6, P.BOARDS);
+  b.quad([-5.7, 2.0, -2.4], [-3.6, 2.9, -2.4], [-3.6, 2.9, -5.2], [-5.7, 2.0, -5.2], P.SHINGLE);
+  b.quad([-3.6, 2.8, -2.4], [-5.7, 1.9, -2.4], [-5.7, 1.9, -5.2], [-3.6, 2.8, -5.2], P.TIMBER);
 }
 
 /** Level 3: a pennant in the owner's colour. */
 function pennant(b: MeshBuilder, teamHex: number): void {
-  b.box(4.4, 0, -4.2, 0.12, 7.5, 0.12, TIMBER);
-  b.tri([4.46, 7.4, -4.2], [4.46, 6.4, -4.2], [6.2, 6.9, -4.2], teamHex);
-  b.tri([4.46, 6.4, -4.2], [4.46, 7.4, -4.2], [6.2, 6.9, -4.2], teamHex);
+  b.box(4.9, 0, -4.9, 0.12, 8.5, 0.12, P.TIMBER);
+  b.tri([4.96, 8.4, -4.9], [4.96, 7.4, -4.9], [6.7, 7.9, -4.9], teamHex);
+  b.tri([4.96, 7.4, -4.9], [4.96, 8.4, -4.9], [6.7, 7.9, -4.9], teamHex);
 }
 
 export function buildingGeometry(kind: BuildingKind, level: number, teamHex: number, lib: SurfaceLibrary): BufferGeometry {
-  const b = new MeshBuilder(0, paintsFor(lib));
-  BUILDERS[kind](b);
-  if (level >= 2) annex(b);
+  const b = new MeshBuilder(0, P.paintsFor(lib));
+  BUILDERS[kind](b, level);
+  // The house grows by itself; the others gain a lean-to.
+  if (level >= 2 && kind !== 'house') annex(b);
   if (level >= 3) pennant(b, teamHex);
   return b.build();
 }
 
-/** The keep: a square stone tower with battlements, corner turrets, a gate and the owner's banner. */
+/** The keep: a square stone tower with battlements, corner turrets under shingled spires, a gate and the owner's banner. */
 export function keepGeometry(teamHex: number, lib: SurfaceLibrary): BufferGeometry {
-  const b = new MeshBuilder(0, paintsFor(lib));
+  const b = new MeshBuilder(0, P.paintsFor(lib));
   const half = 4.6;
-  b.box(0, 0, 0, half * 2 + 1.2, 1.2, half * 2 + 1.2, STONE_DARK);
-  b.box(0, 1.2, 0, half * 2, 10.8, half * 2, ASHLAR);
-  // Battlements.
-  b.box(0, 12, 0, half * 2 + 0.8, 0.5, half * 2 + 0.8, STONE_DARK);
+  // A battered plinth.
+  b.box(0, 0, 0, half * 2 + 1.4, 1.4, half * 2 + 1.4, P.STONE_DARK);
+  b.box(0, 1.4, 0, half * 2, 10.6, half * 2, P.ASHLAR);
+  // String courses, the wall-walk and its battlements.
+  for (const y of [5.2, 8.6]) b.box(0, y, 0, half * 2 + 0.16, 0.2, half * 2 + 0.16, P.STONE_LIGHT);
+  b.box(0, 12, 0, half * 2 + 0.9, 0.5, half * 2 + 0.9, P.STONE_DARK);
   for (let i = 0; i < 6; i++) {
     const t = -half + 0.5 + i * ((half * 2 - 1) / 5);
-    for (const [x, z] of [[t, half + 0.15], [t, -half - 0.15], [half + 0.15, t], [-half - 0.15, t]] as const) b.box(x, 12.5, z, 0.9, 0.9, 0.9, STONE_LIGHT);
+    for (const [x, z] of [[t, half + 0.2], [t, -half - 0.2], [half + 0.2, t], [-half - 0.2, t]] as const) b.box(x, 12.5, z, 0.9, 1.0, 0.9, P.STONE_LIGHT);
   }
+  // A timber roof over the hall within the battlements.
+  b.roof(0, 12.5, 0, half * 2 - 1.6, half * 2 - 1.6, 3.0, 2.2, 0.1, 0.14, P.SHINGLE, P.TIMBER);
   // Corner turrets with pointed roofs.
   for (const dx of [-1, 1]) {
     for (const dz of [-1, 1]) {
-      b.cylinder(dx * half, 0, dz * half, 1.7, 1.6, 14, 8, STONE_LIGHT);
-      b.cylinder(dx * half, 14, dz * half, 2.1, 0, 3.4, 8, TILE);
+      b.cylinder(dx * half, 0, dz * half, 1.8, 1.65, 14.4, 10, P.STONE_LIGHT);
+      b.cylinder(dx * half, 14.4, dz * half, 2.0, 2.0, 0.3, 10, P.STONE_DARK);
+      b.cylinder(dx * half, 14.7, dz * half, 2.2, 0, 4.2, 10, P.SHINGLE);
     }
   }
-  // Gate and arrow slits on every face.
+  // A gate and arrow slits on every face.
   for (let face = 0; face < 4; face++) {
     b.at(0, 0, 0, (face * Math.PI) / 2);
-    b.box(0, 1.2, half + 0.05, 2.4, 3.2, 0.2, TIMBER);
-    b.box(0, 4.4, half + 0.05, 2.8, 0.3, 0.25, STONE_DARK);
-    for (const x of [-2.4, 2.4]) for (const y of [6, 9]) b.box(x, y, half + 0.03, 0.25, 1.1, 0.1, SOOT);
+    b.box(0, 1.4, half + 0.05, 2.4, 3.2, 0.2, P.BOARDS_DARK);
+    b.box(0, 4.6, half + 0.05, 2.9, 0.34, 0.3, P.STONE_LIGHT);
+    for (const x of [-2.4, 2.4]) for (const y of [6.2, 9.4]) b.box(x, y, half + 0.03, 0.22, 1.2, 0.1, P.SOOT);
   }
   b.at(0, 0, 0, 0);
   // The banner.
-  b.box(0, 12.5, 0, 0.18, 7, 0.18, TIMBER);
-  b.quad([0.09, 19.3, 0], [0.09, 17.2, 0], [3.4, 17.2, 0], [3.4, 19.3, 0], teamHex);
-  b.quad([3.4, 19.3, 0], [3.4, 17.2, 0], [0.09, 17.2, 0], [0.09, 19.3, 0], teamHex);
+  b.box(0, 15.2, 0, 0.18, 6.4, 0.18, P.TIMBER);
+  b.quad([0.09, 21.4, 0], [0.09, 19.2, 0], [3.6, 19.2, 0], [3.6, 21.4, 0], teamHex);
+  b.quad([3.6, 21.4, 0], [3.6, 19.2, 0], [0.09, 19.2, 0], [0.09, 21.4, 0], teamHex);
   return b.build();
 }

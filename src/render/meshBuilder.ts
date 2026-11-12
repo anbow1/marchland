@@ -120,26 +120,6 @@ export class MeshBuilder {
     return this;
   }
 
-  /** A gable roof over a `sx` × `sz` rectangle: ridge along X, eaves at `y0`, overhanging by `overhang`. */
-  gable(cx: number, y0: number, cz: number, sx: number, sz: number, rise: number, hex: number, gableHex: number, overhang = 0.35): this {
-    const x0 = cx - sx / 2 - overhang;
-    const x1 = cx + sx / 2 + overhang;
-    const z0 = cz - sz / 2 - overhang;
-    const z1 = cz + sz / 2 + overhang;
-    const yr = y0 + rise;
-    this.quad([x0, y0, z1], [x1, y0, z1], [x1, yr, cz], [x0, yr, cz], hex);
-    this.quad([x1, y0, z0], [x0, y0, z0], [x0, yr, cz], [x1, yr, cz], hex);
-    // Underside, so the eaves are not see-through from below.
-    this.quad([x1, y0, z1], [x0, y0, z1], [x0, yr - 0.05, cz], [x1, yr - 0.05, cz], gableHex);
-    this.quad([x0, y0, z0], [x1, y0, z0], [x1, yr - 0.05, cz], [x0, yr - 0.05, cz], gableHex);
-    // Gable ends, flush with the walls.
-    const gx0 = cx - sx / 2;
-    const gx1 = cx + sx / 2;
-    this.tri([gx0, y0, cz - sz / 2], [gx0, y0, cz + sz / 2], [gx0, yr, cz], gableHex);
-    this.tri([gx1, y0, cz + sz / 2], [gx1, y0, cz - sz / 2], [gx1, yr, cz], gableHex);
-    return this;
-  }
-
   /** An upright prism of `sides` faces; `r1` is the top radius (0 makes a cone). */
   cylinder(cx: number, y0: number, cz: number, r0: number, r1: number, height: number, sides: number, hex: number): this {
     const y1 = y0 + height;
@@ -175,6 +155,92 @@ export class MeshBuilder {
       this.tri([x1, cy, cz], [x1, y0, z0], [x1, y1, z1], hex);
       this.tri([x0, cy, cz], [x0, y1, z1], [x0, y0, z0], hex);
     }
+    return this;
+  }
+
+  /** A quad whose normal is made to point away from `inside` (a point within the solid it belongs to). */
+  private quadOut(a: Vec3, b: Vec3, c: Vec3, d: Vec3, inside: Vec3, hex: number): this {
+    const nx = (b[1] - a[1]) * (c[2] - a[2]) - (b[2] - a[2]) * (c[1] - a[1]);
+    const ny = (b[2] - a[2]) * (c[0] - a[0]) - (b[0] - a[0]) * (c[2] - a[2]);
+    const nz = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+    const outward = nx * (a[0] - inside[0]) + ny * (a[1] - inside[1]) + nz * (a[2] - inside[2]) >= 0;
+    return outward ? this.quad(a, b, c, d, hex) : this.quad(a, d, c, b, hex);
+  }
+
+  /** A squared timber from `a` to `b`, `width` across and `depth` the other way: a brace, a rafter, a rail. */
+  strut(a: Vec3, b: Vec3, width: number, depth: number, hex: number): this {
+    const ux = b[0] - a[0];
+    const uy = b[1] - a[1];
+    const uz = b[2] - a[2];
+    const length = Math.hypot(ux, uy, uz);
+    if (length < 1e-6) throw new Error('strut needs two different end points');
+    // Any direction not along the timber gives a first side; the second is square to both.
+    const upright = Math.abs(uy) > 0.99 * length;
+    let sx = upright ? 1 : -uz;
+    let sy = 0;
+    let sz = upright ? 0 : ux;
+    const sl = Math.hypot(sx, sy, sz);
+    sx = (sx / sl) * (width / 2);
+    sz = (sz / sl) * (width / 2);
+    let tx = (sy * uz - sz * uy) / length;
+    let ty = (sz * ux - sx * uz) / length;
+    let tz = (sx * uy - sy * ux) / length;
+    const tl = Math.hypot(tx, ty, tz);
+    tx = (tx / tl) * (depth / 2);
+    ty = (ty / tl) * (depth / 2);
+    tz = (tz / tl) * (depth / 2);
+    sy = 0;
+    const corner = (end: Vec3, i: number, j: number): Vec3 => [end[0] + sx * i + tx * j, end[1] + sy * i + ty * j, end[2] + sz * i + tz * j];
+    const mid: Vec3 = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2];
+    const ring: readonly (readonly [number, number])[] = [[-1, -1], [1, -1], [1, 1], [-1, 1]];
+    for (let k = 0; k < 4; k++) {
+      const [i0, j0] = ring[k] as readonly [number, number];
+      const [i1, j1] = ring[(k + 1) % 4] as readonly [number, number];
+      this.quadOut(corner(a, i0, j0), corner(a, i1, j1), corner(b, i1, j1), corner(b, i0, j0), mid, hex);
+    }
+    this.quadOut(corner(a, -1, -1), corner(a, 1, -1), corner(a, 1, 1), corner(a, -1, 1), mid, hex);
+    this.quadOut(corner(b, -1, -1), corner(b, 1, -1), corner(b, 1, 1), corner(b, -1, 1), mid, hex);
+    return this;
+  }
+
+  /**
+   * A roof with thickness over a `sx` × `sz` rectangle whose eaves are at `y0`: the ridge runs along
+   * X and rises by `rise`. `hip` shortens the ridge at each end, sloping the ends too (0 leaves open
+   * gables for the wall to fill); `overhang` carries the eaves past the walls; `thick` is the depth of
+   * the covering, shown at the eaves in `edgeHex`.
+   */
+  roof(cx: number, y0: number, cz: number, sx: number, sz: number, rise: number, hip: number, overhang: number, thick: number, hex: number, edgeHex: number): this {
+    const x0 = cx - sx / 2 - overhang;
+    const x1 = cx + sx / 2 + overhang;
+    const z0 = cz - sz / 2 - overhang;
+    const z1 = cz + sz / 2 + overhang;
+    // The slope continues past the wall, so the overhanging eave hangs lower than the wall head.
+    const drop = (rise / (sz / 2)) * overhang;
+    const ye = y0 - drop;
+    const yr = y0 + rise;
+    const r0 = x0 + (hip > 0 ? hip + overhang : 0);
+    const r1 = x1 - (hip > 0 ? hip + overhang : 0);
+    const inside: Vec3 = [cx, y0, cz];
+    const lift = (p: Vec3): Vec3 => [p[0], p[1] + thick, p[2]];
+    const a: Vec3 = [x0, ye, z1];
+    const b: Vec3 = [x1, ye, z1];
+    const c: Vec3 = [x1, ye, z0];
+    const d: Vec3 = [x0, ye, z0];
+    const e: Vec3 = [r0, yr, cz];
+    const f: Vec3 = [r1, yr, cz];
+    // Top, then the underside (so the roof is a closed solid for shadows), then the rim.
+    this.quadOut(lift(a), lift(b), lift(f), lift(e), inside, hex);
+    this.quadOut(lift(c), lift(d), lift(e), lift(f), inside, hex);
+    this.quad(b, a, e, f, edgeHex);
+    this.quad(d, c, f, e, edgeHex);
+    if (hip > 0) {
+      this.tri(lift(d), lift(a), lift(e), hex);
+      this.tri(lift(b), lift(c), lift(f), hex);
+      this.tri(a, d, e, edgeHex);
+      this.tri(c, b, f, edgeHex);
+    }
+    const rim: readonly (readonly [Vec3, Vec3])[] = hip > 0 ? [[a, b], [b, c], [c, d], [d, a]] : [[a, b], [c, d], [b, f], [f, c], [d, e], [e, a]];
+    for (const [p, q] of rim) this.quadOut(p, q, lift(q), lift(p), inside, edgeHex);
     return this;
   }
 

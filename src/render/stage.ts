@@ -34,7 +34,7 @@ const GOVERNOR_STEPS: readonly GovernorStep[] = [{ scale: 1 }, { scale: 0.87 }, 
 
 /** Near and far planes: the camera never comes closer than 20 m to what it looks at. */
 const CAMERA_NEAR_M = 1;
-const CAMERA_FAR_M = 2500;
+const CAMERA_FAR_M = 6000;
 
 export class Stage {
   readonly renderer: WebGPURenderer;

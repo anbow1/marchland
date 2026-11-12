@@ -3,6 +3,7 @@ import { heightAtM } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
 import { ArmyView } from '../render/armyView.ts';
 import { buildForest } from '../render/forestView.ts';
+import { addHorizon } from '../render/horizonView.ts';
 import { shareStaticInstanceShaders } from '../render/instancing.ts';
 import { AFTERNOON, Lighting } from '../render/lighting.ts';
 import { Markers } from '../render/markers.ts';
@@ -50,6 +51,7 @@ export class WorldView {
     const surfaces = await loadSurfaces(quality, (share) => onProgress(0.15 + share * 0.25));
     t = logStage('textures', t);
     scene.add(buildTerrain(surfaces));
+    addHorizon(scene);
     t = logStage('terrain', t);
     onProgress(0.45);
     for (const mesh of buildForest(quality, surfaces)) scene.add(mesh);

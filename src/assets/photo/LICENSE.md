@@ -17,7 +17,9 @@ roughness, metalness). `meta.json` holds the real size of one repeat.
 | `plaster/`      | https://polyhaven.com/a/medieval_wall_01   | limewashed daub walls              |
 | `beam/`         | https://polyhaven.com/a/dark_wooden_planks | timber frames, posts, doors        |
 | `boards/`       | https://polyhaven.com/a/dark_planks        | boarded walls, sheds, fences       |
-| `thatch/`       | https://polyhaven.com/a/reed_roof_04       | thatched roofs                     |
+| `thatch/`       | https://polyhaven.com/a/thatch_roof_angled | weathered thatch                   |
+| `shingles/`     | https://polyhaven.com/a/grey_roof_01       | wooden shingle roofs               |
+| `mud/`          | https://polyhaven.com/a/brown_mud_03       | trodden, wet ground in the towns   |
 | `tiles/`        | https://polyhaven.com/a/roof_09            | clay tile roofs                    |
 | `rubble/`       | https://polyhaven.com/a/castle_wall_slates | rubble walls, footings, the quarry |
 | `ashlar/`       | https://polyhaven.com/a/rustic_stone_wall  | the keeps and dressed stone        |

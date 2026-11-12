@@ -25,20 +25,22 @@ export interface LightPreset {
   hazePerM: number;
 }
 
-// A clear summer afternoon. Lighting sheet: clear noon 100 000 lx at 60–75° elevation; at 42° the
-// direct beam has lost about a tenth of that, and a clear sky adds roughly a fifth of the sun on
-// level ground. Sun 5200 K (slightly warm), zenith about 10 000 K. EV100 just under the sunny-16
-// value (15): the scanned grass and thatch then sit in the middle of the tone curve.
+// A clear late afternoon in early autumn: the sun 30° up and warm, long shadows that model every
+// roof and rank. Lighting sheet: clear noon 100 000 lx, golden hour 12 000 lx; at 30° the direct beam
+// is about two thirds of noon. A bright hazy sky with broken cloud adds nearly half of that on level
+// ground, which is what keeps the shaded side of a house readable. Sun about
+// 4500 K, zenith 10 000 K. EV100 half a stop under the sunny-16 value (15): scanned grass and thatch
+// sit in the middle of the tone curve. The haze is a light autumn one (visibility about 8 km).
 export const AFTERNOON: LightPreset = {
-  sunAzimuthDeg: 232,
-  sunElevationDeg: 42,
-  sunIlluminanceLux: 90_000,
-  skyIlluminanceLux: 18_000,
-  sunTint: [1, 0.94, 0.85],
-  zenithTint: [0.32, 0.5, 1],
-  horizonTint: [0.78, 0.86, 1],
-  ev100: 14.9,
-  hazePerM: 0.00022,
+  sunAzimuthDeg: 236,
+  sunElevationDeg: 30,
+  sunIlluminanceLux: 68_000,
+  skyIlluminanceLux: 30_000,
+  sunTint: [1, 0.9, 0.74],
+  zenithTint: [0.3, 0.48, 1],
+  horizonTint: [0.74, 0.84, 1],
+  ev100: 14.3,
+  hazePerM: 0.00042,
 };
 
 /** Pre-exposure for an EV100 (Lagarde & de Rousiers 2014). */
@@ -47,7 +49,7 @@ export function exposureFor(ev100: number): number {
 }
 
 /** Mean reflectance of grassland for the ground half of the probe. */
-const GROUND_ALBEDO: readonly [number, number, number] = [0.09, 0.12, 0.05];
+const GROUND_ALBEDO: readonly [number, number, number] = [0.16, 0.18, 0.09];
 const SUN_DISTANCE_M = 400;
 
 export class Lighting {
@@ -95,7 +97,7 @@ export class Lighting {
     this.sun.shadow.camera.far = SUN_DISTANCE_M * 2;
     scene.add(this.sun, this.sun.target);
 
-    this.dome = this.buildDome(2000);
+    this.dome = this.buildDome(5000);
     scene.add(this.dome);
     // Haze takes distant ground towards the horizon's colour: the same sky function, so they meet.
     const distanceM = positionWorld.sub(cameraPosition).length();
