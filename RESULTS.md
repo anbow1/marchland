@@ -5,7 +5,43 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
-## 2026-11-12 · Skany powierzchni i skład dziesięciu oddziałów (commit: ten)
+## 2026-11-12 · Budynki z części, strome dachy, niskie słońce, horyzont (commit 7e828d4)
+
+Jak mierzone: `tools/measure/load.mjs --game generic --extra '&q=high&scene=battle&seed=3'`
+(WebGPU, High); zrzuty `shots.mjs --gpu webgl`, scena `town`.
+
+| | Przed (d6b0b0c) | Po |
+|---|---|---|
+| Potoki / moduły shaderów | 54 / 72 | 56 / 74 (materiał horyzontu) |
+| Pamięć tekstur wgranych | 226,3 MB (14 warstw) | 258,3 MB (16 warstw: doszedł gont i błoto) |
+| Pamięć celów renderowania | 64,4 MB | 64,4 MB |
+| Etapy ładowania gry | 1,95 s | 2,68 s |
+| Gotowość / GPU bezczynne | 7,3 s / 8,4 s | 9,1 s / 11,0 s |
+| Testy | 43 | 43 |
+
+Zrzuty: `results/2026-11-12/buildings_{town,keep}.jpg` (po); stan sprzed:
+`webgpu-high_town-close.jpg` z tego samego dnia.
+
+Decyzje i liczby za nimi:
+
+- **Słońce 42° → 30°, niebo 18 → 30 tys. lx**: przy 15–22 tys. lx zacienione
+  ściany wychodziły prawie czarne (cień do światła około 1 : 8). Podniesione
+  światło nieba i odbicie od gruntu (albedo sondy 0,09 → 0,16) dają czytelny
+  cień bez podnoszenia „ambientu”.
+- **Okluzja ze skanów w połowie siły**: w pełnej każda zacieniona ściana gasła.
+- **Strzecha rysowana na 2,4 m zamiast 0,54 m**: skan pokrywa pół metra; z 40 m
+  był płaską szarością.
+- **Odrzucone**: ciemne prostokąty „podwórza” pod każdym budynkiem i dysk błota
+  pod zamkiem — rysowały ostre kształty na trawie. Podwórza robi teraz teren
+  (ścieżki i place z mapy pokrycia), własny grunt mają tylko wybiegi i pola.
+- **Pamięć tekstur 258 MB** jest blisko budżetu 300 MB: kolejne warstwy dopiero
+  po KTX2.
+
+Czego nie zmierzyłem: klatek na prawdziwym GPU; zrzutu WebGPU po tej zmianie
+(WebGL2 bez błędów konsoli). Jeden zrzut z bliska przekroczył 30 s na
+programowym GPU — widok miasta jest dla niego wyraźnie cięższy niż wcześniej.
+
+## 2026-11-12 · Skany powierzchni i skład dziesięciu oddziałów (commit d6b0b0c)
 
 Jak mierzone: `node tools/measure/load.mjs --game generic --extra '&q=high&scene=battle&seed=3'`
 (WebGPU, preset High, scena bitwy: po regimencie każdego rodzaju na stronę, 182 żołnierzy);
