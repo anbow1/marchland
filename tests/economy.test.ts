@@ -120,20 +120,20 @@ describe('economy', () => {
 
   it('recruiting needs a barracks of the right level, gold and equipment per man', () => {
     const town = richTown();
-    expect(startRecruit(town, 'levy', 0)).toBe('needsBarracks');
+    expect(startRecruit(town, 'militia', 0)).toBe('needsBarracks');
     startBuilding(town, 0, 'barracks');
     runTown(town, BUILDINGS.barracks.buildSeconds + 1);
     expect(barracksLevel(town)).toBe(1);
-    expect(startRecruit(town, 'menAtArms', 0)).toBe('needsBarracks');
-    expect(startRecruit(town, 'spearmen', 0)).toBe('cannotAfford');
+    expect(startRecruit(town, 'swordsmen', 0)).toBe('needsBarracks');
+    expect(startRecruit(town, 'pikemen', 0)).toBe('cannotAfford');
     town.stock.weapon = 12;
     town.stock.leatherArmor = 12;
-    expect(startRecruit(town, 'spearmen', 0)).toBe('ok');
+    expect(startRecruit(town, 'pikemen', 0)).toBe('ok');
     expect(town.stock.weapon).toBe(0);
     expect(town.stock.leatherArmor).toBe(0);
-    expect(startRecruit(town, 'levy', 100 - UNITS.spearmen.men - UNITS.levy.men + 1)).toBe('armyFull');
-    runTown(town, UNITS.spearmen.recruitSeconds + 0.1);
-    expect(town.trained).toEqual(['spearmen']);
+    expect(startRecruit(town, 'militia', 100 - UNITS.pikemen.men - UNITS.militia.men + 1)).toBe('armyFull');
+    runTown(town, UNITS.pikemen.recruitSeconds + 0.1);
+    expect(town.trained).toEqual(['pikemen']);
   });
 
   it('a trained regiment takes the field with all its men', () => {
@@ -143,13 +143,13 @@ describe('economy', () => {
     world.towns[PLAYER].stock.stone = 100;
     expect(cmdBuild(world, PLAYER, 0, 'barracks')).toBe('ok');
     run(world, BUILDINGS.barracks.buildSeconds + 0.5);
-    expect(cmdRecruit(world, PLAYER, 'levy')).toBe('ok');
-    run(world, UNITS.levy.recruitSeconds + 0.5);
+    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('ok');
+    run(world, UNITS.militia.recruitSeconds + 0.5);
     expect(world.regiments).toHaveLength(1);
-    expect(world.regiments[0]?.aliveMen).toBe(UNITS.levy.men);
+    expect(world.regiments[0]?.aliveMen).toBe(UNITS.militia.men);
   });
 
-  it('balance: a plain opening fields spearmen within seven minutes', () => {
+  it('balance: a plain opening fields pikemen within seven minutes', () => {
     const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
     const town = world.towns[PLAYER];
     const opening = ['woodcutter', 'farm', 'house', 'house', 'quarry', 'pigFarm', 'bakery', 'tannery', 'ironMine', 'barracks', 'smithy'] as const;
@@ -158,7 +158,7 @@ describe('economy', () => {
     const seconds = runUntil(world, 600, () => {
       const kind = opening[next];
       if (kind !== undefined && cmdBuild(world, PLAYER, next, kind) === 'ok') next++;
-      if (!recruited && next === opening.length && cmdRecruit(world, PLAYER, 'spearmen') === 'ok') recruited = true;
+      if (!recruited && next === opening.length && cmdRecruit(world, PLAYER, 'pikemen') === 'ok') recruited = true;
       return world.regiments.length > 0;
     });
     expect(town.starving).toBe(false);

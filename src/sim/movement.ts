@@ -150,7 +150,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       faceGoal = true;
       const distanceM = Math.hypot(goalX - r.anchorX, goalZ - r.anchorZ);
       // Archers stop inside range and shoot; everyone else presses into the enemy's ranks.
-      stopDistanceM = isArcher(r) && !isEngaged(r) ? r.def.missileRangeM * 0.85 : target.radiusM * 0.4 + 1;
+      stopDistanceM = isArcher(r) && (!isEngaged(r) || r.def.engine) ? r.def.missileRangeM * 0.85 : target.radiusM * 0.4 + 1;
       run = distanceM < ARMY.runWithinM || target.state === 'routing';
     }
   } else if (r.order === 'attackBuilding') {
@@ -288,7 +288,8 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
     const placeZ = slotZ(r, s.slot);
     lagM = Math.hypot(placeX - s.x, placeZ - s.z);
     s.searchS -= dtSeconds;
-    if (s.searchS <= 0) {
+    // An engine's crew serves the engine: it never goes looking for a fight.
+    if (s.searchS <= 0 && !def.engine) {
       s.searchS = ARMY.targetSearchIntervalS;
       // Archers with something to shoot at only defend themselves at arm's length.
       const shooting = isArcher(r) && r.fireTargetId >= 0 && !isEngaged(r);

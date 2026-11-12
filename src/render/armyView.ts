@@ -28,6 +28,8 @@ const STRIKE_S = 0.45;
 /** A fallen man goes down in this time, then sinks out of sight over the last seconds he is shown. */
 const FALL_S = 0.5;
 const SINK_S = 2;
+/** Size of the arrow model for each missile look: arrow, crossbow bolt, ballista bolt. */
+const BOLT_SCALE: readonly number[] = [1, 0.7, 2.6];
 
 interface KindMesh {
   mesh: InstancedMesh;
@@ -87,6 +89,7 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
   private readonly arrows: InstancedMesh;
+  private readonly stones: InstancedMesh;
 
   constructor(scene: Scene) {
     const footman = soldierMaterial(false);
@@ -123,6 +126,17 @@ export class ArmyView {
     this.arrows.count = 0;
     this.arrows.frustumCulled = false;
     scene.add(this.arrows);
+    // A trebuchet's stone: about 45 cm across.
+    const stone = new MeshBuilder();
+    stone.cylinder(0, -0.2, 0, 0.16, 0.23, 0.2, 7, 0x7a7672);
+    stone.cylinder(0, 0, 0, 0.23, 0.12, 0.2, 7, 0x8a857e);
+    this.stones = new InstancedMesh(stone.build(), arrowMaterial, 32);
+    this.stones.name = 'stones';
+    this.stones.instanceMatrix.setUsage(DynamicDrawUsage);
+    this.stones.count = 0;
+    this.stones.frustumCulled = false;
+    this.stones.castShadow = true;
+    scene.add(this.stones);
   }
 
   /** Writes one man into slot `i` of his kind's mesh. */
@@ -173,9 +187,26 @@ export class ArmyView {
 
   private updateArrows(world: World): void {
     const e = this.arrows.instanceMatrix.array as Float32Array;
+    const st = this.stones.instanceMatrix.array as Float32Array;
     let n = 0;
+    let stones = 0;
     for (const a of world.arrows) {
       if (!a.active) continue;
+      const x = a.x0 + a.vx * a.ageS;
+      const y = arrowY(a);
+      const z = a.z0 + a.vz * a.ageS;
+      if (a.look === 3) {
+        if (stones >= 32) continue;
+        // A stone tumbles: no heading, just a place.
+        const o = stones * 16;
+        st.fill(0, o, o + 16);
+        st[o] = st[o + 5] = st[o + 10] = st[o + 15] = 1;
+        st[o + 12] = x;
+        st[o + 13] = y;
+        st[o + 14] = z;
+        stones++;
+        continue;
+      }
       // Forward (−Z of the model) along the velocity: build the basis from it.
       const vy = a.vy - MISSILE.gravityMs2 * a.ageS;
       const len = Math.hypot(a.vx, vy, a.vz) || 1;
@@ -189,26 +220,30 @@ export class ArmyView {
       const ux = -rz * fy;
       const uy = rz * fx - rx * fz;
       const uz = rx * fy;
+      // A crossbow bolt is short and stout, a ballista's is a small spear.
+      const size = BOLT_SCALE[a.look] ?? 1;
       const o = n * 16;
-      e[o] = rx;
+      e[o] = rx * size;
       e[o + 1] = 0;
-      e[o + 2] = rz;
+      e[o + 2] = rz * size;
       e[o + 3] = 0;
-      e[o + 4] = ux;
-      e[o + 5] = uy;
-      e[o + 6] = uz;
+      e[o + 4] = ux * size;
+      e[o + 5] = uy * size;
+      e[o + 6] = uz * size;
       e[o + 7] = 0;
-      e[o + 8] = -fx;
-      e[o + 9] = -fy;
-      e[o + 10] = -fz;
+      e[o + 8] = -fx * size;
+      e[o + 9] = -fy * size;
+      e[o + 10] = -fz * size;
       e[o + 11] = 0;
-      e[o + 12] = a.x0 + a.vx * a.ageS;
-      e[o + 13] = arrowY(a);
-      e[o + 14] = a.z0 + a.vz * a.ageS;
+      e[o + 12] = x;
+      e[o + 13] = y;
+      e[o + 14] = z;
       e[o + 15] = 1;
       n++;
     }
     this.arrows.count = n;
     this.arrows.instanceMatrix.needsUpdate = true;
+    this.stones.count = stones;
+    this.stones.instanceMatrix.needsUpdate = true;
   }
 }

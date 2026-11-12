@@ -13,13 +13,13 @@ istniejącej gry: bierze z gatunku trzy pomysły opisane niżej.
 | Założenie z opisu | Co to znaczy w tej grze |
 |---|---|
 | „Ekonomia jak Kingdom Rush” | Jedna główna waluta (złoto), stałe **działki budowlane** zamiast dowolnego stawiania, trzy poziomy każdego budynku z jasną ceną, złoto za pokonanych wrogów. Bez robotników do prowadzenia ręką. |
-| „Walka jak Total War, mniejsza skala” | Rozkazy dostaje **regiment** (12 pieszych albo 8 konnych), nie pojedynczy żołnierz. Szyk, kierunek frontu, morale, ucieczka i zbiórka, atak z flanki i od tyłu, szarża, włócznie na konnicę, łucznicy strzelający salwami po torze balistycznym. |
+| „Walka jak Total War, mniejsza skala” | Rozkazy dostaje **regiment** (12 pieszych, 8 konnych albo 1–2 machiny), nie pojedynczy żołnierz. Szyk, kierunek frontu, morale, ucieczka i zbiórka, atak z flanki i od tyłu, szarża, włócznie na konnicę, łucznicy strzelający salwami po torze balistycznym. |
 | „Do 200 żołnierzy” | Limit **100 ludzi na stronę**, razem 200 na polu. To jedna stała w `config.ts`. |
 | „Budynki jak w Total War” | Miasto ma zamek i 18 działek; budynek zajmuje działkę, ma poziomy 1–3; koszary odblokowują kolejne klasy wojska poziomem. |
 | „Wyżywienie powiązane z produkcją” | Robotnicy, mieszkańcy i żołnierze jedzą racje. Bez jedzenia: produkcja o połowę wolniej, brak podatków, niższe morale wojska. |
 | „Trzoda → mięso i skóry → kiełbasy i zbroje” | Chlewnia zjada zboże i daje mięso oraz skóry; masarnia robi z mięsa kiełbasy (2 racje), garbarnia ze skór zbroje skórzane dla wojska 1. klasy. |
 | „Zoom i przesuwanie mapy” | Kamera strategiczna: przesuwanie (WASD, strzałki, krawędź ekranu, przeciąganie środkowym przyciskiem, jeden palec), zoom do kursora (kółko, szczypanie), obrót (Q/E). |
-| „Nie może być zbyt wielki” | Mapa 400 × 400 m, geometria generowana kodem, bez pobieranych modeli w pierwszej wersji; paczka do 5 MB. |
+| „Nie może być zbyt wielki” | Mapa 400 × 400 m; paczka do 40 MB (skany tekstur), reszta z kodu. |
 
 ## 2. Pętla gry
 
@@ -54,18 +54,24 @@ Złoto przychodzi z podatków, z zamku i za każdego pokonanego wroga.
 
 | Klasa | Oddział | Ludzi | Koszary | Ekwipunek na człowieka | Rola |
 |---|---|---|---|---|---|
-| 0 | Pospolite ruszenie | 12 | 1 | — | tanie, kruche morale |
-| 1 | Włócznicy | 12 | 1 | broń, zbroja skórzana | trzymają front, kontra na konnicę |
+| 0 | Milicja | 12 | 1 | drewno (tarcza) | tania, pod tarczą trzyma się nieźle, kruche morale |
+| 1 | Pikinierzy | 12 | 1 | broń, zbroja skórzana | las pik: kontra na jazdę; bez tarcz giną od strzał |
 | 1 | Łucznicy | 12 | 1 | łuk, zbroja skórzana | ostrzał z 80 m, słabi w zwarciu |
-| 2 | Zbrojni | 12 | 2 | broń, kolczuga | ciężka piechota |
-| 2 | Lekka jazda | 8 | 2 | koń, broń, zbroja skórzana | szybka, szarża, pościg |
-| 3 | Rycerze | 8 | 3 | koń, broń, kolczuga | przełamująca szarża |
+| 2 | Miecznicy | 12 | 2 | broń, kolczuga | miecz, tarcza, kolczuga: wygrywają walkę piechoty |
+| 2 | Halabardnicy | 12 | 2 | broń, kolczuga | biją mocniej, zatrzymują konie, bez tarcz |
+| 2 | Kusznicy | 12 | 2 | łuk, zbroja skórzana, drewno | 70 m, wolne napinanie, bełt przebija kolczugę |
+| 2 | Lekka jazda | 8 | 2 | koń, broń, zbroja skórzana | szybka, szarża, pościg, na machiny |
+| 3 | Ciężka jazda (rycerstwo) | 8 | 3 | koń, broń, kolczuga | przełamująca szarża |
+| 2 | Balisty | 2 machiny | 2 | drewno 12, broń 2 (na machinę) | 110 m, bełt przebija zbroję, bezbronne z bliska |
+| 3 | Trebusz | 1 machina | 3 | drewno 40, kamień 10 | 135 m (nie bliżej niż 35), kamień rozbija szyk i burzy mury |
 
 Walka: każdy żołnierz jest osobnym agentem ze swoim miejscem w szyku. Trafienie
-zależy od ataku i obrony, kierunku (front / flanka / tył), szarży i zmęczenia
-szyku; obrażenia zmniejsza zbroja. Morale regimentu spada od strat, ataków z
-boku i od tyłu, szarży, ostrzału i głodu; przy zerze oddział ucieka do zamku i
-może się zebrać. Las spowalnia konnicę i osłania przed strzałami.
+zależy od ataku i obrony, kierunku (front / flanka / tył), szarży i zmęczenia;
+obrażenia zmniejsza zbroja. Morale regimentu spada od strat, ataków z boku i od
+tyłu, szarży, ostrzału i głodu; przy zerze oddział ucieka do zamku i może się
+zebrać. Las spowalnia konnicę i osłania przed strzałami. Bieg męczy: zmęczony
+oddział bije słabiej i wolniej biega. Pociski lecą po torze balistycznym (strzała
+45 m/s, bełt 60, bełt balisty 70, kamień trebusza stromym torem).
 
 ## 5. Komputer
 
@@ -79,13 +85,13 @@ trudności to jeden mnożnik szybkości jego produkcji.
 | ID | Funkcja | Kryterium |
 |---|---|---|
 | F1 | Kamera | zoom 25–260 m do punktu pod kursorem, przesuwanie pięcioma sposobami, obrót; nie wychodzi poza mapę; test jednostkowy matematyki kamery |
-| F2 | Ekonomia | wszystkie łańcuchy z §3 działają; test: z jednej chlewni powstaje zbroja skórzana tylko przez garbarnię; test bilansu: pierwszy regiment włóczników do 6. minuty typowego otwarcia |
+| F2 | Ekonomia | wszystkie łańcuchy z §3 działają; test: z jednej chlewni powstaje zbroja skórzana tylko przez garbarnię; test bilansu: pierwszy regiment pikinierów do 7. minuty prostego otwarcia |
 | F3 | Wyżywienie | głód włącza kary i wyłącza je po dostawie; test |
 | F4 | Budowa | 14 rodzajów budynków, 3 poziomy, rozbiórka, czas budowy widoczny na budynku |
 | F5 | Regimenty | zaznaczanie kliknięciem i ramką, ruch z ustawieniem frontu, atak, stój; szyk trzyma się w marszu; test: oddział dochodzi do celu w szyku |
 | F6 | Walka | flanka i tył liczą się w trafieniu i morale; szarża; włócznie na jazdę; test dla każdej z tych reguł |
 | F7 | Morale | ucieczka przy zerze, zbiórka, rozbicie; test |
-| F8 | Łucznicy | strzały lecą po paraboli (g = 9,81), trafiają tam, gdzie spadną; test zasięgu z wzoru v²·sin2θ/g |
+| F8 | Strzelcy i machiny | pociski lecą po paraboli (g = 9,81), trafiają tam, gdzie spadną; test zasięgu z wzoru v²·sin2θ/g; bełt przebija kolczugę; balista sięga dalej niż łuk; trebusz burzy budynek z dystansu; machiny nie walczą wręcz — test dla każdej z tych reguł |
 | F9 | Komputer | sam buduje, werbuje i atakuje; test: w symulacji bez gracza burzy zamek bezczynnej strony w 30 minut |
 | F10 | HUD | zapasy, panel działki / budynku / oddziału, minimapa, karty oddziałów nad wojskiem, komunikaty; polski i angielski |
 | F11 | Koniec gry | ekran zwycięstwa i porażki, restart |
@@ -114,44 +120,67 @@ trudności to jeden mnożnik szybkości jego produkcji.
 | Wywołania rysowania / trójkąty | ≤ 400 / ≤ 1,5 M | ≤ 250 / ≤ 0,6 M |
 | Materiały | ≤ 30 | ≤ 30 |
 | Krok symulacji (200 żołnierzy) | ≤ 2 ms | ≤ 4 ms |
-| Ładowanie | ≤ 5 s | ≤ 10 s |
-| Paczka | ≤ 5 MB | ≤ 5 MB |
+| Ładowanie | ≤ 8 s | ≤ 15 s |
+| Paczka | ≤ 40 MB | ≤ 40 MB |
+| Pamięć tekstur | ≤ 300 MB | ≤ 80 MB |
 
 Sufity z reguł (2500 wywołań, 12 M trójkątów) są dla gier z widokiem z ziemi;
-RTS z góry widzi całą mapę naraz, więc budżet jest ciaśniejszy.
+RTS z góry widzi całą mapę naraz, więc budżet jest ciaśniejszy. Paczka urosła z
+5 do 40 MB świadomie: priorytetem stała się jakość tekstur.
 
 ## 9. Kolejność budowy
 
-1. **Szkielet i symulacja** — projekt, konfiguracja, teren, ekonomia, regimenty,
-   walka, morale, łucznicy, komputer; testy. *(ta sesja)*
-2. **Pierwsza grywalna wersja** — renderer, światło, teren, las, miasta, wojsko
-   instancjonowane z animacją w shaderze, kamera, HUD, minimapa, dźwięk, menu.
-   *(ta sesja)*
-3. **Pomiar i telefon** — przycisk Benchmark, nakładka F3, regulator klatki,
-   pomiary `tools/measure`, preset Low na telefonie, wariant APK w `android/`.
-4. **Głębia taktyki** — szerokość szyku przeciąganiem, grupy 1–9, bieg / marsz,
-   zmęczenie, przewaga wysokości, rzeka z brodami, punkty do zajęcia na mapie
-   (kopalnia, młyn), wieże.
-5. **Wygląd** — modele CC0 (budynki, ludzie, konie) zamiast geometrii z kodu,
-   tekstury gruntu ze skanów w KTX2, pył i dym, ślady na trawie, pory dnia.
-6. **Pętla krytyka** — zrzuty z ustalonych widoków obok zdjęć wzorcowych, pięć
-   największych różnic naraz.
+1. **Szkielet i symulacja** — zrobione: ekonomia, regimenty, walka, morale,
+   pociski, machiny, komputer; 43 testy.
+2. **Pierwsza grywalna wersja** — zrobione: renderer, światło, teren, las,
+   miasta, wojsko, kamera, HUD, minimapa, dźwięk, menu.
+3. **Skład wojska i tekstury** — zrobione: dziesięć rodzajów oddziałów z
+   balistami i trebuszem; czternaście skanów CC0 (grunt, ściany, dachy, kora).
+4. **Sylwetki i zwierzęta z Blendera** — ludzie z prawdziwymi proporcjami
+   (MPFB, `tools/assets/people`), konie, animacje z mocapu wypalone do tekstur
+   animacji wierzchołków; herby na tarczach i kropierzach ciężkiej jazdy.
+   Wymaga Blendera, którego w tej sesji nie było.
+5. **Drzewa i roślinność** — modele drzew CC0 z kartami liści i impostorami,
+   trawa przy kamerze, zboże jako łan zamiast brył.
+6. **Budynki drugiego przejścia** — modele z Blendera na wzór wsi z muru
+   pruskiego: krzywe belki, strzecha z grubością, płoty z plecionki, podwórza
+   z narzędziami; etapy budowy (szkielet → ściany → dach).
+7. **Życie miasta** — robotnicy widoczni na mapie: tragarze noszą towar między
+   budynkami, budowniczy stawiają budynek, rolnik idzie w pole, kowal kuje;
+   towar leży w stosach pod budynkiem. Najpierw jako obraz tego, co liczy
+   ekonomia, potem (osobna decyzja) jako prawdziwa logistyka z czasem dostaw.
+8. **Pomiar i telefon** — przycisk Benchmark, pomiary `tools/measure` na obu
+   presetach, KTX2 dla tekstur, wariant APK w `android/`.
+9. **Głębia taktyki** — szerokość szyku przeciąganiem, grupy 1–9, przewaga
+   wysokości, rzeka z brodami, punkty do zajęcia na mapie, wieże i mury.
+10. **Pętla krytyka** — zrzuty z ustalonych widoków obok zdjęć wzorcowych,
+    pięć największych różnic naraz.
 
 ## 10. Zasoby (stan i plan)
 
-| Kategoria | Co | Źródło | Licencja | Etap |
+| Kategoria | Co | Źródło | Licencja | Stan |
 |---|---|---|---|---|
-| Żołnierze, konie | bryły z kodu, animacja w shaderze wierzchołków | kod | własna | 2 |
-| Budynki, zamek | bryły z kodu, kolor w wierzchołkach | kod | własna | 2 |
-| Drzewa | 2 gatunki z kodu | kod | własna | 2 |
-| Grunt | szum proceduralny w dwóch skalach | kod | własna | 2 |
-| Dźwięk | synteza WebAudio | kod | własna | 2 |
-| Modele ludzi, koni, budynków | do wybrania: tylko CC0 / CC BY, sprawdzone przed użyciem | do ustalenia | CC0 / CC BY | 5 |
-| Tekstury gruntu | skany CC0 (4–8 materiałów) w KTX2 | do ustalenia | CC0 | 5 |
+| Grunt | łąka, sucha trawa, ubita ziemia, ściółka, rola | Poly Haven | CC0 | w grze |
+| Ściany i dachy | tynk na glinie, belki, deski, strzecha, dachówka, mur łamany, cios | Poly Haven | CC0 | w grze |
+| Kora i listowie | kora, plamista zieleń na korony | Poly Haven | CC0 | w grze (korony do wymiany) |
+| Budynki, zamek | bryły z kodu z ramą szkieletową | kod | własna | w grze, etap 6 je zastąpi |
+| Żołnierze, konie, machiny | bryły z kodu, animacja w shaderze | kod | własna | w grze, etap 4 je zastąpi |
+| Drzewa | 2 gatunki z kodu | kod | własna | w grze, etap 5 je zastąpi |
+| Dźwięk | synteza WebAudio | kod | własna | w grze |
+| Ludzie i konie | MPFB (MakeHuman) + mocap | do zbudowania w Blenderze | CC0 | etap 4 |
+| Drzewa | modele Poly Haven (jodła, drzewa liściaste) | Poly Haven | CC0 | etap 5 |
 
-Zdjęć wzorcowych (`target-look/`) jeszcze nie ma: nie mam prawa użyć cudzych
-kadrów, a własnych nie dostałem. Do Etapu 5 potrzebne są 6–10 zdjęć (wieś z
-muru pruskiego, pole, las mieszany, zamek z kamienia) z licencją CC0 / CC BY.
+Pełna lista plików i źródeł: `src/assets/photo/LICENSE.md`. Biblioteki, do
+których ta sesja miała dostęp: Poly Haven i ambientCG. Nie ma w nich
+średniowiecznych budynków ani postaci, dlatego te powstaną w Blenderze.
+
+**Wzorce jakości** (cel, nie źródło zasobów — niczego z tych gier nie kopiuję):
+budynki jak w najlepszych budowniczych osad (mur pruski, strzecha, podwórza),
+praca widoczna na mapie jak w klasycznych strategiach gospodarczych (każdy
+towar ktoś niesie), rycerstwo jak w grach bitewnych o XIII wieku (hełmy
+garnczkowe, tuniki herbowe, kropierze). Zdjęć wzorcowych (`target-look/`)
+nadal nie ma: do pętli krytyka potrzebne są 6–10 fotografii z licencją CC0 /
+CC BY (wieś z muru pruskiego, pole, las mieszany, zamek), nie kadry z gier.
 
 ## 11. Odstępstwa od reguł, z powodem
 
@@ -160,9 +189,9 @@ muru pruskiego, pole, las mieszany, zamek z kamienia) z licencją CC0 / CC BY.
 | „Stop po Etapie 0 do zatwierdzenia” | plan i od razu budowa | tak brzmiało polecenie |
 | Kaskadowe mapy cieni (CSM) | jedna mapa cieni dopasowana do pola widzenia kamery | kamera patrzy z góry na ograniczony fragment ziemi; dopasowanie daje 2–15 cm na teksel bez kosztu kaskad. CSM wraca, jeśli pomiar pokaże braki |
 | Auto-ekspozycja z histogramu | stała EV na preset pogody | brak wnętrz, kamera zawsze widzi oświetlony teren |
-| Ludzie ze skanów i mocap (R1) | bryły z kodu | etap 5; z 40–260 m sylwetka ma kilkanaście pikseli |
+| Ludzie ze skanów i mocap (R1) | bryły z kodu | etap 4; w tej sesji nie było Blendera |
 | Wnętrze / zewnętrze kamery (§6) | jedna kamera strategiczna | gra bez pojazdów |
 | Biblioteka fizyki (Rapier) | własny krok: sterowanie do miejsc w szyku i rozpychanie | 200 agentów na płaszczyźnie, brak brył sztywnych |
-| KTX2, LOD, impostory | brak | w pierwszej wersji nie ma plików tekstur ani modeli |
-| APK od pierwszej grywalnej wersji | etap 3 | nowy wariant w `android/` zmienia wspólny workflow wydania pięciu gier; osobna zmiana po akceptacji |
+| KTX2 | tekstury w JPEG, dekodowane do RGBA8 | brak kodera KTX2 w tej sesji; etap 8. LOD i impostory: etap 5 |
+| APK od pierwszej grywalnej wersji | etap 8 | nowy wariant w `android/` zmienia wspólny workflow wydania pięciu gier; osobna zmiana po akceptacji |
 | Zasięg łuku | 80 m | prawdziwy łuk niesie dalej; mapa ma 400 m, więc zasięg skrócony, tor lotu fizyczny |

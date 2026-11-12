@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, SIM } from '../src/config.ts';
+import { ARMY, SIM, UNITS } from '../src/config.ts';
 import { createAiState, stepAi } from '../src/sim/ai.ts';
 import { cmdAttackBuilding, cmdAttackRegiment } from '../src/sim/commands.ts';
 import { COMPUTER, PLAYER, UNIT_KINDS } from '../src/sim/types.ts';
@@ -52,7 +52,7 @@ describe('a whole game', () => {
   it('a keep falls to an army that is left to batter it', () => {
     const world = createWorld({ seed: 2, difficulty: 'normal', computerPlays: false });
     for (let i = 0; i < 6; i++) {
-      const r = spawnRegiment(world, PLAYER, 'menAtArms', 40 + i * 10, -40, 0);
+      const r = spawnRegiment(world, PLAYER, 'swordsmen', 40 + i * 10, -40, 0);
       expect(cmdAttackBuilding(world, r.id, COMPUTER, -1)).toBe('ok');
     }
     runUntil(world, 600, () => world.winner !== -1);
@@ -71,20 +71,22 @@ describe('a whole game', () => {
 });
 
 describe('budget', () => {
-  it('a step with 200 soldiers in one melee stays inside the 2 ms budget', () => {
+  it('a step with every kind of unit on both sides in one melee stays inside the 2 ms budget', () => {
     const world = createWorld({ seed: 9, difficulty: 'normal', computerPlays: false });
-    // 100 men a side of every kind, in two lines 40 m apart, all ordered to attack.
-    const kinds = [...UNIT_KINDS, 'spearmen', 'menAtArms', 'archers'] as const;
-    let x = -50;
+    // One regiment of each kind a side, in two lines 40 m apart, all ordered to attack.
+    let x = -60;
+    let men = 0;
     const mine: number[] = [];
     const theirs: number[] = [];
-    for (const kind of kinds) {
+    for (const kind of UNIT_KINDS) {
       mine.push(spawnRegiment(world, PLAYER, kind, x, 20, Math.PI).id);
       theirs.push(spawnRegiment(world, COMPUTER, kind, x, -20, 0).id);
-      x += 12;
+      men += UNITS[kind].men;
+      x += 13;
     }
-    expect(menAlive(world, PLAYER)).toBe(100);
-    expect(menAlive(world, COMPUTER)).toBe(100);
+    expect(menAlive(world, PLAYER)).toBe(men);
+    expect(men).toBeGreaterThan(85);
+    expect(men).toBeLessThanOrEqual(ARMY.maxSoldiersPerSide);
     for (let i = 0; i < mine.length; i++) {
       cmdAttackRegiment(world, mine[i] as number, theirs[i] as number);
       cmdAttackRegiment(world, theirs[i] as number, mine[i] as number);
@@ -94,7 +96,7 @@ describe('budget', () => {
     const t0 = performance.now();
     for (let i = 0; i < steps; i++) stepWorld(world, SIM.stepSeconds);
     const msPerStep = (performance.now() - t0) / steps;
-    console.log(`[budget] sim step with 200 soldiers: ${msPerStep.toFixed(3)} ms`);
+    console.log(`[budget] sim step with ${2 * men} soldiers: ${msPerStep.toFixed(3)} ms`);
     // The budget is 2 ms on the target machine; a shared CI runner gets a wide margin.
     expect(msPerStep).toBeLessThan(2 * 2.5);
   });

@@ -57,7 +57,7 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'armourer',
 ];
 
-const RECRUIT_ROTA: readonly UnitKind[] = ['spearmen', 'archers', 'spearmen', 'lightCavalry', 'menAtArms', 'archers', 'knights', 'spearmen'];
+const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'ballista', 'heavyCavalry', 'archers', 'trebuchet', 'swordsmen'];
 
 /** Upgrades in the order they pay back for an army. */
 const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'farm', 'bakery', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'house', 'armourer', 'stable', 'fletcher', 'butcher', 'woodcutter', 'quarry'];
@@ -116,8 +116,8 @@ function recruit(world: World, ai: AiState): void {
       return;
     }
   }
-  // Nothing better for a long time and gold to spare: call up the levy.
-  if (ai.sinceRecruitS > 120 && world.towns[ai.side].stock.gold > 180 && cmdRecruit(world, ai.side, 'levy') === 'ok') ai.sinceRecruitS = 0;
+  // Nothing better for a long time and gold to spare: call up the militia.
+  if (ai.sinceRecruitS > 120 && world.towns[ai.side].stock.gold > 180 && cmdRecruit(world, ai.side, 'militia') === 'ok') ai.sinceRecruitS = 0;
 }
 
 /** Lower is a better target for `r`. */

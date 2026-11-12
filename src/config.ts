@@ -104,16 +104,19 @@ export const FOOD = {
 } as const;
 
 export interface UnitDef {
+  /** Men in a regiment; for siege engines, the number of engines (each with its crew). */
   men: number;
   /** Men abreast in the default formation. */
   files: number;
   fileSpacingM: number;
   rankSpacingM: number;
   cavalry: boolean;
+  /** A siege engine: it shoots and can be wrecked, but its crew does not fight hand to hand. */
+  engine: boolean;
   /** Barracks level that trains it. */
   barracksLevel: number;
   goldCost: number;
-  /** Equipment taken from the stock, per man. */
+  /** Equipment taken from the stock, per man (per engine). */
   equipment: Cost;
   recruitSeconds: number;
   hp: number;
@@ -124,16 +127,27 @@ export interface UnitDef {
   damage: number;
   reachM: number;
   attackIntervalS: number;
-  /** Added to attack against mounted men (spears). */
+  /** Added to attack against mounted men (pikes, halberds). */
   bonusVsCavalry: number;
   /** Added to attack for the first seconds of a charge, and the morale shock to whoever receives it. */
   chargeBonus: number;
   chargeShock: number;
-  /** Chance that a shield stops an arrow that would otherwise hit. */
+  /** Chance that a shield (or an engine's timbers) stops a missile that would otherwise hit. */
   missileBlock: number;
   /** 0 for melee units. */
   missileRangeM: number;
+  /** Nothing closer than this can be shot at (engines cannot depress that far). */
+  missileMinRangeM: number;
   missileDamage: number;
+  /** Share of the target's armour the missile ignores. */
+  missilePierce: number;
+  missileSpeedMs: number;
+  /** Lobbed on the steep trajectory instead of the flat one. */
+  missileHighArc: boolean;
+  /** Everyone within this distance of where it lands is hurt; 0 = one man at most. */
+  missileSplashM: number;
+  /** Damage one missile does to a building. */
+  missileSiegeDamage: number;
   reloadS: number;
   morale: number;
   walkSpeedMs: number;
@@ -145,18 +159,34 @@ export interface UnitDef {
 }
 
 // Speeds: a marching man 1.4 m/s, a running armed man about 3 m/s, a horse at
-// the trot 3.5–4 and at the gallop 8–11 m/s (common gait figures). Everything
-// else in this table is game balance, tuned in tests/balance.test.ts.
-const FOOT = { men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, missileRangeM: 0, missileDamage: 0, reloadS: 0 };
-const HORSE = { men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, missileRangeM: 0, missileDamage: 0, reloadS: 0, bonusVsCavalry: 0, missileBlock: 0 };
+// the trot 3.5–4 and at the gallop 8–11 m/s (common gait figures); an engine
+// is dragged at a crawl. Missile speeds: a war arrow 45–55 m/s, a crossbow
+// bolt about 60, a torsion engine's bolt 70 (published reconstructions).
+// Everything else in this table is game balance, tuned in tests/.
+const NO_MISSILE = { missileRangeM: 0, missileMinRangeM: 0, missileDamage: 0, missilePierce: 0, missileSpeedMs: 0, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 0, reloadS: 0 };
+const FOOT = { ...NO_MISSILE, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const HORSE = { ...NO_MISSILE, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const ENGINE = { cavalry: false, engine: true, attack: 0, defence: 0, armour: 0, damage: 0, reachM: 0, attackIntervalS: 1, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, turnRateRadS: 0.5, recruitSeconds: 20 };
 
 export const UNITS: Record<UnitKind, UnitDef> = {
-  levy: { ...FOOT, barracksLevel: 1, goldCost: 30, equipment: {}, hp: 24, attack: 4, defence: 3, armour: 0, damage: 4, reachM: 1.5, attackIntervalS: 1.5, bonusVsCavalry: 0, chargeBonus: 1, chargeShock: 1, missileBlock: 0, morale: 45, runSpeedMs: 3.1, bounty: 1 },
-  spearmen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 8, armour: 0.2, damage: 5, reachM: 2.3, attackIntervalS: 1.5, bonusVsCavalry: 7, chargeBonus: 1, chargeShock: 2, missileBlock: 0.3, morale: 60, runSpeedMs: 3.0, bounty: 2 },
-  archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, missileBlock: 0, missileRangeM: 80, missileDamage: 9, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
-  menAtArms: { ...FOOT, barracksLevel: 2, goldCost: 90, equipment: { weapon: 1, mailArmor: 1 }, hp: 36, attack: 9, defence: 9, armour: 0.4, damage: 7, reachM: 1.6, attackIntervalS: 1.4, bonusVsCavalry: 0, chargeBonus: 2, chargeShock: 3, missileBlock: 0.35, morale: 75, runSpeedMs: 2.7, bounty: 3 },
-  lightCavalry: { ...HORSE, barracksLevel: 2, goldCost: 100, equipment: { horse: 1, weapon: 1, leatherArmor: 1 }, hp: 40, attack: 7, defence: 5, armour: 0.2, damage: 6, reachM: 1.9, attackIntervalS: 1.5, chargeBonus: 8, chargeShock: 9, morale: 65, runSpeedMs: 8.5, bounty: 4 },
-  knights: { ...HORSE, barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, attackIntervalS: 1.5, chargeBonus: 12, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.3, bounty: 6 },
+  // Townsmen with a shield and a spear: cheap, steady enough behind the shield, quick to run.
+  militia: { ...FOOT, barracksLevel: 1, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
+  // A hedge of pikes: the answer to horsemen, open to arrows.
+  pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, bounty: 2 },
+  archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 9, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
+  // Sword, shield and mail: the line that wins a straight fight on foot.
+  swordsmen: { ...FOOT, barracksLevel: 2, goldCost: 90, equipment: { weapon: 1, mailArmor: 1 }, hp: 36, attack: 9, defence: 9, armour: 0.4, damage: 7, attackIntervalS: 1.4, chargeBonus: 2, chargeShock: 3, missileBlock: 0.35, morale: 75, runSpeedMs: 2.7, bounty: 3 },
+  // Two-handed polearms: hit harder than swords and stop horses, but carry no shield.
+  halberdiers: { ...FOOT, barracksLevel: 2, goldCost: 100, equipment: { weapon: 1, mailArmor: 1 }, hp: 34, attack: 10, defence: 6, armour: 0.35, damage: 10, reachM: 2.3, bonusVsCavalry: 5, chargeBonus: 2, chargeShock: 3, morale: 70, runSpeedMs: 2.7, bounty: 3 },
+  // Slow to span, flat-shooting, and a bolt goes through mail.
+  crossbowmen: { ...FOOT, barracksLevel: 2, goldCost: 80, equipment: { bow: 1, leatherArmor: 1, wood: 1 }, hp: 26, attack: 4, defence: 5, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileBlock: 0.3, missileRangeM: 70, missileDamage: 16, missilePierce: 0.6, missileSpeedMs: 60, missileSiegeDamage: 2, reloadS: 10, morale: 55, runSpeedMs: 2.9, bounty: 3 },
+  lightCavalry: { ...HORSE, barracksLevel: 2, goldCost: 100, equipment: { horse: 1, weapon: 1, leatherArmor: 1 }, hp: 40, attack: 7, defence: 5, armour: 0.2, damage: 6, reachM: 1.9, chargeBonus: 8, chargeShock: 9, morale: 65, runSpeedMs: 8.5, bounty: 4 },
+  // Knights: the charge that breaks a line.
+  heavyCavalry: { ...HORSE, barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 12, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.3, bounty: 6 },
+  // Two bolt-throwers: long reach, a bolt that ignores armour, helpless once reached.
+  ballista: { ...ENGINE, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 2, goldCost: 120, equipment: { wood: 12, weapon: 2 }, hp: 70, missileBlock: 0.7, missileRangeM: 110, missileMinRangeM: 12, missileDamage: 45, missilePierce: 0.8, missileSpeedMs: 70, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 14, reloadS: 9, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
+  // One counterweight engine: it lobs stones that scatter a formation and bring down walls.
+  trebuchet: { ...ENGINE, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 3, goldCost: 200, equipment: { wood: 40, stone: 10 }, hp: 140, missileBlock: 0.8, missileRangeM: 135, missileMinRangeM: 35, missileDamage: 26, missilePierce: 0.5, missileSpeedMs: 45, missileHighArc: true, missileSplashM: 3.5, missileSiegeDamage: 90, reloadS: 14, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.4, bounty: 15 },
 };
 
 export const ARMY = {
@@ -213,7 +243,6 @@ export const COMBAT = {
   damageSpread: 0.2,
   /** Damage to walls per blow, as a share of the unit's damage. */
   siegeDamageFactor: 0.5,
-  arrowSiegeDamage: 1.5,
 } as const;
 
 export const FATIGUE = {
@@ -235,6 +264,8 @@ export const MORALE = {
   flankHitShock: 0.5,
   rearHitShock: 1,
   arrowHitShock: 0.6,
+  /** To every regiment a trebuchet's stone lands among. */
+  stoneShock: 6,
   killBoost: 0.5,
   recoverPerSecond: 1.5,
   /** While running away with no enemy near. */
@@ -250,7 +281,7 @@ export const MORALE = {
 } as const;
 
 export const MISSILE = {
-  /** A war arrow leaves the bow at about 45–55 m/s (published longbow tests). */
+  /** The keep's garrison shoots war arrows: about 45–55 m/s off the bow (published longbow tests). */
   arrowSpeedMs: 45,
   gravityMs2: 9.81,
   /** Aim error (standard deviation) at full range, shrinking linearly to a third up close. */

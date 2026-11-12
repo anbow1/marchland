@@ -47,7 +47,7 @@ export const BUILDING_KINDS = [
 ] as const;
 export type BuildingKind = (typeof BUILDING_KINDS)[number];
 
-export const UNIT_KINDS = ['levy', 'spearmen', 'archers', 'menAtArms', 'lightCavalry', 'knights'] as const;
+export const UNIT_KINDS = ['militia', 'pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen', 'lightCavalry', 'heavyCavalry', 'ballista', 'trebuchet'] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
 /** Why a command was refused; 'ok' when it was carried out. The HUD turns these into messages. */

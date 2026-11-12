@@ -17,6 +17,7 @@ const TUNIC_GREEN = 0x4f5a39;
 const LEATHER = 0x6b4a2f;
 const HOSE = 0x4b4136;
 const WOOD = 0x6a5038;
+const WOOD_DARK = 0x4a3b30;
 /** Bare steel: metals are bright (PBR sheet, iron F0). */
 const STEEL = 0xc4c5c8;
 const STRAW = 0xb9a25a;
@@ -56,19 +57,26 @@ interface Kit {
   tunic: number;
   head: 'none' | 'hat' | 'helmet' | 'hood';
   mail: boolean;
-  weapon: 'fork' | 'spear' | 'sword' | 'bow' | 'lance';
+  weapon: 'spear' | 'pike' | 'halberd' | 'sword' | 'bow' | 'crossbow' | 'lance' | 'none';
   shield: boolean;
 }
 
-/** A man standing with his feet at `y0`; `mounted` spreads the legs round a horse. */
-function man(f: Figure, kit: Kit, y0: number, mounted: boolean): void {
+/** Length of each pole weapon in metres. */
+const POLE_M = { spear: 2.2, pike: 4.6, halberd: 2.4, lance: 3.4 } as const;
+
+/**
+ * A man standing with his feet at `y0`; `mounted` spreads the legs round a horse. With `rigged` false
+ * (an engine's crew, drawn away from the model's middle) his limbs carry no pivots and stay still.
+ */
+function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true): void {
   const b = f.b;
   const hip = y0 + 0.86;
   const shoulder = y0 + 1.44;
+  const limb = (part: Part): Part => (rigged ? part : BODY);
   // Legs: opposite phases.
   const legX = mounted ? 0.36 : 0.11;
   for (const side of [-1, 1]) {
-    f.cloth(mounted ? BODY : [hip, 0, side, 0]);
+    f.cloth(mounted ? BODY : limb([hip, 0, side, 0]));
     if (mounted) b.box(side * legX, y0 + 0.25, -0.05, 0.17, 0.7, 0.24, kit.mail ? STEEL : HOSE);
     else b.box(side * legX, y0, 0, 0.17, 0.86, 0.2, HOSE);
   }
@@ -92,28 +100,30 @@ function man(f: Figure, kit: Kit, y0: number, mounted: boolean): void {
     b.box(0, shoulder + 0.2, 0.02, 0.27, 0.16, 0.28, kit.tunic);
   }
   // Left arm and shield.
-  const leftArm: Part = [shoulder, 0, -0.5, 0];
+  const leftArm: Part = limb([shoulder, 0, -0.5, 0]);
   f.cloth(leftArm);
   b.box(-0.3, shoulder - 0.58, 0, 0.13, 0.58, 0.14, kit.mail ? STEEL : kit.tunic);
   if (kit.shield) {
-    f.team([shoulder, 0, -0.15, 0]);
+    f.team(limb([shoulder, 0, -0.15, 0]));
     b.box(-0.36, y0 + 0.78, -0.17, 0.5, 0.72, 0.06, WHITE);
-    f.steel([shoulder, 0, -0.15, 0]);
+    f.steel(limb([shoulder, 0, -0.15, 0]));
     b.box(-0.36, y0 + 1.07, -0.21, 0.14, 0.14, 0.04, STEEL);
   }
   // Right arm swings forward to strike; the weapon swings down with it.
-  f.cloth([shoulder, 0, 0.5, -0.45]);
+  f.cloth(limb([shoulder, 0, 0.5, -0.45]));
   b.box(0.3, shoulder - 0.58, 0, 0.13, 0.58, 0.14, kit.mail ? STEEL : kit.tunic);
-  const weapon: Part = [shoulder - 0.5, -0.1, 0.12, 1];
-  if (kit.weapon === 'spear' || kit.weapon === 'fork' || kit.weapon === 'lance') {
-    const length = kit.weapon === 'lance' ? 3.4 : kit.weapon === 'spear' ? 2.6 : 1.9;
+  const weapon: Part = limb([shoulder - 0.5, -0.1, 0.12, 1]);
+  if (kit.weapon === 'spear' || kit.weapon === 'pike' || kit.weapon === 'halberd' || kit.weapon === 'lance') {
+    const length = POLE_M[kit.weapon];
     const base = shoulder - 0.5 - length * 0.3;
     f.cloth(weapon);
     b.box(0.33, base, -0.12, 0.05, length, 0.05, WOOD);
     f.steel(weapon);
-    if (kit.weapon === 'fork') {
-      b.box(0.33, base + length, -0.12, 0.3, 0.04, 0.04, STEEL);
-      for (const dx of [-0.13, 0.13]) b.box(0.33 + dx, base + length, -0.12, 0.035, 0.3, 0.035, STEEL);
+    if (kit.weapon === 'halberd') {
+      // An axe blade, a back spike and a top spike.
+      b.box(0.33, base + length - 0.45, -0.25, 0.03, 0.34, 0.24, STEEL);
+      b.box(0.33, base + length - 0.33, 0.0, 0.03, 0.08, 0.16, STEEL);
+      b.box(0.33, base + length, -0.12, 0.04, 0.34, 0.03, STEEL);
     } else {
       b.box(0.33, base + length, -0.12, 0.08, 0.32, 0.03, STEEL);
     }
@@ -125,14 +135,87 @@ function man(f: Figure, kit: Kit, y0: number, mounted: boolean): void {
     f.steel(weapon);
     b.box(0.33, shoulder - 0.52, -0.12, 0.05, 0.95, 0.02, STEEL);
     b.box(0.33, shoulder - 0.54, -0.12, 0.2, 0.04, 0.05, STEEL);
-  } else {
+  } else if (kit.weapon === 'bow') {
     // A bow in the left hand, a quiver on the back; the right arm draws.
-    f.cloth([shoulder, 0, -0.15, 0]);
+    f.cloth(limb([shoulder, 0, -0.15, 0]));
     b.box(-0.33, y0 + 0.62, -0.26, 0.04, 1.5, 0.05, WOOD);
     b.box(-0.33, y0 + 0.62, -0.2, 0.012, 1.5, 0.012, STRAW);
     f.cloth();
     b.box(0.1, hip + 0.1, 0.19, 0.14, 0.6, 0.12, LEATHER);
+  } else if (kit.weapon === 'crossbow') {
+    // Held level at the chest: the stock points forward, the bow lies across it.
+    f.cloth();
+    b.box(0.0, shoulder - 0.28, -0.42, 0.07, 0.07, 0.8, WOOD);
+    f.steel();
+    b.box(0.0, shoulder - 0.27, -0.74, 0.78, 0.04, 0.05, STEEL);
+    f.cloth();
+    b.box(0.12, hip + 0.05, 0.19, 0.16, 0.34, 0.12, LEATHER);
   }
+}
+
+/** Squared timber between two points in the model's YZ plane at a given X (an engine's frame). */
+function beam(f: Figure, x: number, y0: number, z0: number, y1: number, z1: number, thick: number, hex: number): void {
+  const steps = Math.max(1, Math.ceil(Math.hypot(y1 - y0, z1 - z0) / 0.45));
+  // A slanted beam as a run of short blocks: the builder only makes upright boxes.
+  for (let i = 0; i < steps; i++) {
+    const t = (i + 0.5) / steps;
+    f.b.box(x, y0 + (y1 - y0) * t - thick / 2, z0 + (z1 - z0) * t, thick, thick + Math.abs(y1 - y0) / steps, thick + Math.abs(z1 - z0) / steps, hex);
+  }
+}
+
+const CREW: Kit = { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'none', shield: false };
+
+/** A bolt-thrower on a wheeled carriage, with its crew of two. Shoots towards −Z. */
+function ballista(f: Figure): void {
+  const b = f.b;
+  f.cloth();
+  // Carriage, wheels, the stock on its stand.
+  b.box(0, 0.45, 0.2, 1.1, 0.16, 2.2, WOOD);
+  for (const dx of [-0.75, 0.75]) b.log(dx, 0.5, 0.2, 0.5, 0.14, 10, WOOD_DARK);
+  b.box(0, 0.6, 0.1, 0.22, 0.7, 0.22, WOOD);
+  beam(f, 0, 1.25, 1.2, 1.45, -1.3, 0.16, WOOD);
+  // The bow frame and its two arms, drawn back.
+  b.box(0, 1.2, -1.0, 1.5, 0.5, 0.2, WOOD_DARK);
+  for (const dx of [-1, 1]) b.box(dx * 1.15, 1.38, -0.75, 0.9, 0.09, 0.09, WOOD);
+  f.steel();
+  b.box(0, 1.5, -1.6, 0.05, 0.05, 1.1, STEEL);
+  f.team();
+  b.box(0, 0.62, 1.2, 0.9, 0.5, 0.06, WHITE);
+  b.at(1.25, 0, 0.9, 0.3);
+  man(f, CREW, 0, false, false);
+  b.at(-1.25, 0, 0.5, -0.3);
+  man(f, CREW, 0, false, false);
+  b.at(0, 0, 0, 0);
+}
+
+/** A counterweight trebuchet with a crew of three. The throwing arm swings when it shoots (towards −Z). */
+function trebuchet(f: Figure): void {
+  const b = f.b;
+  const axle = 4.4;
+  f.cloth();
+  // Ground frame.
+  for (const dx of [-1.3, 1.3]) b.box(dx, 0, 0, 0.3, 0.3, 6.4, WOOD);
+  for (const dz of [-2.9, 0, 2.9]) b.box(0, 0.05, dz, 2.9, 0.26, 0.3, WOOD_DARK);
+  // Two A-frames up to the axle.
+  for (const dx of [-1.3, 1.3]) {
+    beam(f, dx, 0.3, -2.2, axle, 0, 0.26, WOOD);
+    beam(f, dx, 0.3, 2.2, axle, 0, 0.26, WOOD);
+    b.box(dx, 0.3, 0, 0.24, axle - 0.3, 0.24, WOOD_DARK);
+  }
+  b.log(0, axle, 0, 0.16, 3.0, 8, WOOD_DARK);
+  // The arm, its counterweight box and the sling: one part that turns about the axle.
+  const arm: Part = [axle, 0, 0, 1];
+  f.cloth(arm);
+  beam(f, 0, axle + 1.3, -1.7, axle - 3.4, 4.6, 0.24, WOOD);
+  b.box(0, axle + 0.2, -2.2, 1.3, 1.5, 1.3, WOOD_DARK);
+  b.box(0, axle - 3.9, 4.6, 0.04, 0.6, 0.04, STRAW);
+  f.team(arm);
+  b.box(0, axle + 0.5, -2.86, 0.9, 0.9, 0.05, WHITE);
+  for (const [x, z, turn] of [[2.2, 2.6, 0.4], [-2.2, 1.4, -0.5], [1.9, -1.6, 0.2]] as const) {
+    b.at(x, 0, z, turn);
+    man(f, CREW, 0, false, false);
+  }
+  b.at(0, 0, 0, 0);
 }
 
 function horse(f: Figure, coat: number, caparison: boolean): void {
@@ -159,19 +242,23 @@ function horse(f: Figure, coat: number, caparison: boolean): void {
   }
 }
 
-const KITS: Record<UnitKind, Kit> = {
-  levy: { tunic: TUNIC_BROWN, head: 'hat', mail: false, weapon: 'fork', shield: false },
-  spearmen: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'spear', shield: true },
+const KITS: Record<Exclude<UnitKind, 'ballista' | 'trebuchet'>, Kit> = {
+  militia: { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'spear', shield: true },
+  pikemen: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'pike', shield: false },
   archers: { tunic: TUNIC_GREEN, head: 'hood', mail: false, weapon: 'bow', shield: false },
-  menAtArms: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'sword', shield: true },
+  swordsmen: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'sword', shield: true },
+  halberdiers: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'halberd', shield: false },
+  crossbowmen: { tunic: TUNIC_GREEN, head: 'helmet', mail: false, weapon: 'crossbow', shield: false },
   lightCavalry: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'spear', shield: true },
-  knights: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'lance', shield: true },
+  heavyCavalry: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'lance', shield: true },
 };
 
 export function soldierGeometry(kind: UnitKind): BufferGeometry {
   const f = new Figure();
-  if (kind === 'lightCavalry' || kind === 'knights') {
-    horse(f, kind === 'knights' ? HORSE_GREY : HORSE_BAY, kind === 'knights');
+  if (kind === 'ballista') ballista(f);
+  else if (kind === 'trebuchet') trebuchet(f);
+  else if (kind === 'lightCavalry' || kind === 'heavyCavalry') {
+    horse(f, kind === 'heavyCavalry' ? HORSE_GREY : HORSE_BAY, kind === 'heavyCavalry');
     man(f, KITS[kind], 0.72, true);
   } else {
     man(f, KITS[kind], 0, false);

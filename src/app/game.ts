@@ -128,6 +128,7 @@ export class Game implements ControlTarget {
       case 'arrowShot':
         this.sound.play('arrow', distanceM);
         break;
+      case 'stoneFall':
       case 'arrowHit':
       case 'death':
         this.sound.play('thud', distanceM);

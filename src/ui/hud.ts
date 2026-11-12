@@ -60,7 +60,7 @@ const RESOURCE_CSS: Record<ResourceId, string> = {
   horse: '#6b4a34',
 };
 
-const UNIT_GLYPH: Record<UnitKind, string> = { levy: '⚒', spearmen: '↟', archers: '➶', menAtArms: '⚔', lightCavalry: '♞', knights: '♛' };
+const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', ballista: '⇶', trebuchet: '☄' };
 
 const MAX_CARDS = 48;
 const PANEL_REFRESH_S = 0.25;
@@ -264,7 +264,7 @@ export class Hud {
     const level = barracksLevel(town);
     if (level === 0) return '';
     const men = menAlive(world, PLAYER);
-    let html = `<div class="row"><span class="label">${T.recruit}</span>`;
+    let html = `<div class="row wrap"><span class="label">${T.recruit}</span>`;
     for (const kind of UNIT_KINDS) {
       const def = UNITS[kind];
       const locked = def.barracksLevel > level;

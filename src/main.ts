@@ -60,8 +60,8 @@ function prepareScene(game: Game, scene: string): void {
     for (let i = 0; i < 20 * 60; i++) stepWorld(world, SIM.stepSeconds);
   }
   if (scene === 'battle') {
-    // 100 men a side meet in the middle of the field.
-    const kinds = [...UNIT_KINDS, 'spearmen', 'menAtArms', 'archers'] as const;
+    // A regiment of every kind a side (91 men each) meets in the middle of the field.
+    const kinds = UNIT_KINDS;
     const mine: number[] = [];
     const theirs: number[] = [];
     kinds.forEach((kind, i) => {

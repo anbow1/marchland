@@ -110,7 +110,7 @@ export function stepMelee(world: World): void {
   const n = world.regiments.length;
   for (let k = 0; k < n; k++) {
     const r = world.regiments[world.stepCount % 2 === 0 ? k : n - 1 - k] as Regiment;
-    if (r.aliveMen === 0 || r.state !== 'formed') continue;
+    if (r.aliveMen === 0 || r.state !== 'formed' || r.def.engine) continue;
     const sieging = r.order === 'attackBuilding' && !isArcher(r) && buildingStands(world, r.targetSide, r.targetPlot);
     for (const s of r.soldiers) {
       if (!s.alive || s.attackCooldownS > 0) continue;
