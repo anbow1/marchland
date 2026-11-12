@@ -4,6 +4,17 @@ import { BufferAttribute, BufferGeometry, Color } from 'three/webgpu';
 // colour per vertex and optional extra per-vertex data. Buildings, trees and
 // soldiers are all made with it: one material can then draw every one of them.
 // Colours are given as sRGB hex and stored linear, as vertex colours must be.
+//
+// A colour can also stand for a scanned surface (`paints`): shapes drawn with
+// it then carry that surface's layer and scale in `aLayer`, and a tint in
+// place of the colour, for surfaces.ts' material.
+
+/** A scanned surface a colour constant stands for: its layer, metres per repeat, and a tint (white = as scanned). */
+export interface Paint {
+  layer: number;
+  sizeM: number;
+  tintHex: number;
+}
 
 export type Vec3 = readonly [number, number, number];
 
@@ -12,7 +23,10 @@ export class MeshBuilder {
   private readonly normals: number[] = [];
   private readonly colours: number[] = [];
   private readonly extras: number[] = [];
+  private readonly layers: number[] = [];
   private readonly colour = new Color();
+  private layer = -1;
+  private repeatsPerM = 1;
   /** Per-vertex extra values written with every vertex that follows (see `extraSize`). */
   extra: readonly number[] = [];
   /** Turn (radians about Y) and offset applied to every shape that follows. */
@@ -21,7 +35,25 @@ export class MeshBuilder {
   private oy = 0;
   private oz = 0;
 
-  constructor(private readonly extraSize = 0) {}
+  /** `paints` maps colour constants to scanned surfaces; with it the geometry gets an `aLayer` attribute. */
+  constructor(
+    private readonly extraSize = 0,
+    private readonly paints: ReadonlyMap<number, Paint> | null = null,
+  ) {}
+
+  /** Sets the colour, or the surface and tint that colour stands for, of the vertices that follow. */
+  private paint(hex: number): void {
+    const paint = this.paints?.get(hex);
+    if (paint) {
+      this.colour.setHex(paint.tintHex);
+      this.layer = paint.layer;
+      this.repeatsPerM = 1 / paint.sizeM;
+    } else {
+      this.colour.setHex(hex);
+      this.layer = -1;
+      this.repeatsPerM = 1;
+    }
+  }
 
   /** Places what follows at (x, y, z), turned about the vertical axis. */
   at(x: number, y: number, z: number, turnRad = 0): this {
@@ -38,6 +70,7 @@ export class MeshBuilder {
     this.positions.push(this.ox + p[0] * c + p[2] * s, this.oy + p[1], this.oz - p[0] * s + p[2] * c);
     this.normals.push(n[0] * c + n[2] * s, n[1], -n[0] * s + n[2] * c);
     this.colours.push(this.colour.r, this.colour.g, this.colour.b);
+    if (this.paints) this.layers.push(this.layer, this.repeatsPerM);
     if (this.extraSize > 0) {
       if (this.extra.length !== this.extraSize) throw new Error(`mesh builder extra has ${this.extra.length} values; expected ${this.extraSize}`);
       for (const v of this.extra) this.extras.push(v);
@@ -46,7 +79,7 @@ export class MeshBuilder {
 
   /** A flat triangle, counter-clockwise seen from outside. */
   tri(a: Vec3, b: Vec3, c: Vec3, hex: number): this {
-    this.colour.setHex(hex);
+    this.paint(hex);
     const ux = b[0] - a[0];
     const uy = b[1] - a[1];
     const uz = b[2] - a[2];
@@ -156,6 +189,7 @@ export class MeshBuilder {
     g.setAttribute('normal', new BufferAttribute(new Float32Array(this.normals), 3));
     g.setAttribute('color', new BufferAttribute(new Float32Array(this.colours), 3));
     if (this.extraSize > 0) g.setAttribute(extraName, new BufferAttribute(new Float32Array(this.extras), this.extraSize));
+    if (this.paints) g.setAttribute('aLayer', new BufferAttribute(new Float32Array(this.layers), 2));
     g.computeBoundingSphere();
     g.computeBoundingBox();
     return g;

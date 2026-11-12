@@ -27,8 +27,8 @@ export interface LightPreset {
 
 // A clear summer afternoon. Lighting sheet: clear noon 100 000 lx at 60–75° elevation; at 42° the
 // direct beam has lost about a tenth of that, and a clear sky adds roughly a fifth of the sun on
-// level ground. Sun 5200 K (slightly warm), zenith about 10 000 K. EV100 one stop under the sunny-16
-// value (15) so the grass sits in the middle of the tone curve.
+// level ground. Sun 5200 K (slightly warm), zenith about 10 000 K. EV100 just under the sunny-16
+// value (15): the scanned grass and thatch then sit in the middle of the tone curve.
 export const AFTERNOON: LightPreset = {
   sunAzimuthDeg: 232,
   sunElevationDeg: 42,
@@ -37,7 +37,7 @@ export const AFTERNOON: LightPreset = {
   sunTint: [1, 0.94, 0.85],
   zenithTint: [0.32, 0.5, 1],
   horizonTint: [0.78, 0.86, 1],
-  ev100: 14.2,
+  ev100: 14.9,
   hazePerM: 0.00022,
 };
 

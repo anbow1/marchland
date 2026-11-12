@@ -1,4 +1,4 @@
-import { type BufferGeometry, Mesh, MeshStandardNodeMaterial, type Scene } from 'three/webgpu';
+import { type BufferGeometry, Mesh, type MeshStandardNodeMaterial, type Scene } from 'three/webgpu';
 import { TOWN } from '../config.ts';
 import type { Building } from '../sim/economy.ts';
 import { heightAtM, plotX, plotZ, townX, townZ } from '../sim/terrain.ts';
@@ -6,6 +6,7 @@ import type { BuildingKind, Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
 import { TEAM_HEX } from './palette.ts';
+import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // The two towns: a mesh per plot and one per keep, all with one material. A
 // plot's mesh takes the geometry of whatever stands on it; a building under
@@ -16,17 +17,21 @@ import { TEAM_HEX } from './palette.ts';
 const MIN_BUILT_SHARE = 0.18;
 
 export class TownView {
-  private readonly material = new MeshStandardNodeMaterial({ name: 'building', vertexColors: true, roughness: 0.86, metalness: 0 });
+  private readonly material: MeshStandardNodeMaterial;
   private readonly cache = new Map<string, BufferGeometry>();
   private readonly plots: Mesh[][] = [[], []];
   private readonly shown: string[][] = [[], []];
   private readonly keeps: Mesh[] = [];
 
-  constructor(scene: Scene) {
+  constructor(
+    scene: Scene,
+    private readonly lib: SurfaceLibrary,
+  ) {
+    this.material = surfaceMaterial(lib, 'building');
     for (const side of [0, 1] as const satisfies readonly Side[]) {
       const tx = townX(side);
       const tz = townZ(side);
-      const keep = new Mesh(keepGeometry(TEAM_HEX[side]), this.material);
+      const keep = new Mesh(keepGeometry(TEAM_HEX[side], lib), this.material);
       keep.name = `keep ${side}`;
       keep.position.set(tx, heightAtM(tx, tz), tz);
       // Banner and gate towards the enemy.
@@ -57,7 +62,7 @@ export class TownView {
     const key = `${kind}:${level}:${side}`;
     let g = this.cache.get(key);
     if (!g) {
-      g = buildingGeometry(kind, level, TEAM_HEX[side]);
+      g = buildingGeometry(kind, level, TEAM_HEX[side], this.lib);
       this.cache.set(key, g);
     }
     return g;

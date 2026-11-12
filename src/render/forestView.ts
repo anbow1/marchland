@@ -1,10 +1,11 @@
-import { Color, InstancedMesh, Matrix4, MeshStandardNodeMaterial, Quaternion, Vector3 } from 'three/webgpu';
+import { Color, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three/webgpu';
 import { MAP } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { forestCoverAt, heightAtM } from '../sim/terrain.ts';
 import { markStaticInstances } from './instancing.ts';
-import { MeshBuilder } from './meshBuilder.ts';
+import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import type { Quality } from './stage.ts';
+import { layerOf, surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // Trees, placed where the simulation's cover function says there is forest, so
 // the woods the player sees are the woods that slow cavalry and stop arrows.
@@ -21,8 +22,22 @@ const PINE_LIGHT = 0x3f5030;
 const LEAF = 0x47602c;
 const LEAF_LIGHT = 0x5a7434;
 
-function pineGeometry(): MeshBuilder {
-  const b = new MeshBuilder();
+/** Trunks in scanned bark; crowns in a mottled green scan, tinted per species. */
+function paintsFor(lib: SurfaceLibrary): Map<number, Paint> {
+  const bark = { layer: layerOf('bark'), sizeM: lib.sizeM.bark, tintHex: 0xffffff };
+  // The scan is of mossy ground from the air; at a few metres a repeat it reads as clumps of leaves.
+  const crown = (tintHex: number): Paint => ({ layer: layerOf('leaves'), sizeM: 5, tintHex });
+  return new Map<number, Paint>([
+    [BARK, bark],
+    [PINE, crown(0x6f8f5a)],
+    [PINE_LIGHT, crown(0x86a868)],
+    [LEAF, crown(0xb0cf78)],
+    [LEAF_LIGHT, crown(0xcfe88c)],
+  ]);
+}
+
+function pineGeometry(paints: Map<number, Paint>): MeshBuilder {
+  const b = new MeshBuilder(0, paints);
   b.cylinder(0, 0, 0, 0.28, 0.16, 4.5, 6, BARK);
   b.cylinder(0, 2.6, 0, 2.5, 0, 4.2, 7, PINE);
   b.cylinder(0, 5.0, 0, 1.9, 0, 3.6, 7, PINE_LIGHT);
@@ -30,8 +45,8 @@ function pineGeometry(): MeshBuilder {
   return b;
 }
 
-function broadleafGeometry(): MeshBuilder {
-  const b = new MeshBuilder();
+function broadleafGeometry(paints: Map<number, Paint>): MeshBuilder {
+  const b = new MeshBuilder(0, paints);
   b.cylinder(0, 0, 0, 0.36, 0.22, 4.2, 6, BARK);
   // A crown of stacked, tapering drums reads as a round canopy from above.
   b.cylinder(0, 3.4, 0, 2.2, 3.3, 1.6, 8, LEAF);
@@ -41,9 +56,10 @@ function broadleafGeometry(): MeshBuilder {
   return b;
 }
 
-export function buildForest(quality: Quality): InstancedMesh[] {
-  // Vertex colours for bark and leaves, times a tint per tree (the instance colour).
-  const material = new MeshStandardNodeMaterial({ name: 'tree', roughness: 0.88, metalness: 0, vertexColors: true });
+export function buildForest(quality: Quality, lib: SurfaceLibrary): InstancedMesh[] {
+  // Scanned bark and leaves, times a tint per tree (the instance colour).
+  const material = surfaceMaterial(lib, 'tree');
+  const paints = paintsFor(lib);
   const rng = new Rng(MAP.terrainSeed + 101);
   const matrices: Matrix4[][] = [[], []];
   const tints: Color[][] = [[], []];
@@ -79,7 +95,7 @@ export function buildForest(quality: Quality): InstancedMesh[] {
     }
   }
   const meshes: InstancedMesh[] = [];
-  const builders = [pineGeometry(), broadleafGeometry()];
+  const builders = [pineGeometry(paints), broadleafGeometry(paints)];
   for (let species = 0; species < 2; species++) {
     const list = matrices[species] as Matrix4[];
     const mesh = new InstancedMesh((builders[species] as MeshBuilder).build(), material, Math.max(1, list.length));

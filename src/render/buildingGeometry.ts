@@ -1,12 +1,14 @@
 import type { BufferGeometry } from 'three/webgpu';
 import type { BuildingKind } from '../sim/types.ts';
-import { MeshBuilder } from './meshBuilder.ts';
+import { MeshBuilder, type Paint } from './meshBuilder.ts';
+import { layerOf, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
 
 // Buildings from code: each kind has its own silhouette and yard so it can be
-// told apart from the strategy camera. Colour is in the vertices (one material
-// for the whole town). Sizes are true to scale: a storey is 3 m, a door 2.1 m
-// (scale sheet). Level 2 adds a lean-to, level 3 a stone footing and a pennant
-// in the owner's colour. Modelled buildings replace these in stage 5.
+// told apart from the strategy camera. Walls, roofs and yards are scanned
+// surfaces (limewashed daub in a timber frame, thatch, clay tile, rubble and
+// dressed stone), named here by colour constants; small props keep a plain
+// colour. Sizes are true to scale: a storey is 3 m, a door 2.1 m (scale
+// sheet). Level 2 adds a lean-to, level 3 a pennant in the owner's colour.
 
 // sRGB base colours inside the PBR sheet's range for non-metals.
 const PLASTER = 0xcbbfa6;
@@ -29,16 +31,61 @@ const IRON = 0x54565a;
 const STRAW_TARGET = 0xc9b678;
 const SOOT = 0x2e2d2c;
 const MEAT = 0x8c4a40;
+const ASHLAR = 0x8f8a80;
 
-/** A timber-framed cottage: plastered walls, corner posts, a door, a gable roof. */
+/** Which scanned surface each of the constants above is drawn with, and its tint (white = as scanned). */
+const SURFACE_OF: readonly (readonly [hex: number, surface: SurfaceId, tintHex: number])[] = [
+  [PLASTER, 'plaster', 0xffffff],
+  [TIMBER, 'beam', 0xd8cfc6],
+  [TIMBER_LIGHT, 'boards', 0xfff2e0],
+  [THATCH, 'thatch', 0xffffff],
+  [TILE, 'tiles', 0xffffff],
+  [STONE, 'rubble', 0xffffff],
+  [STONE_DARK, 'rubble', 0xb4b0aa],
+  [STONE_LIGHT, 'ashlar', 0xf2efe8],
+  [ASHLAR, 'ashlar', 0xdcd8d0],
+  [SOIL, 'farm_soil', 0xffffff],
+  [MUD, 'dirt', 0xa89a8c],
+  [LOG, 'bark', 0xffffff],
+  // Standing corn and sheaves in straw, green rows in leaf.
+  [CROP, 'thatch', 0xffe9a0],
+  [CROP_GREEN, 'leaves', 0xb8d880],
+];
+
+function paintsFor(lib: SurfaceLibrary): Map<number, Paint> {
+  const paints = new Map<number, Paint>();
+  for (const [hex, surface, tintHex] of SURFACE_OF) paints.set(hex, { layer: layerOf(surface), sizeM: lib.sizeM[surface], tintHex });
+  return paints;
+}
+
+/** A timber-framed cottage on a rubble footing: limewashed panels between posts and rails, a door, a shuttered window, a gable roof. */
 function cottage(b: MeshBuilder, cx: number, cz: number, sx: number, sz: number, wallH: number, roofHex: number, wallHex = PLASTER): void {
-  b.box(cx, 0, cz, sx, wallH, sz, wallHex);
-  for (const dx of [-1, 1]) for (const dz of [-1, 1]) b.box(cx + (dx * sx) / 2, 0, cz + (dz * sz) / 2, 0.22, wallH, 0.22, TIMBER);
-  b.box(cx, wallH - 0.2, cz + sz / 2 + 0.02, sx, 0.2, 0.06, TIMBER);
-  b.box(cx, wallH - 0.2, cz - sz / 2 - 0.02, sx, 0.2, 0.06, TIMBER);
-  b.box(cx - sx * 0.2, 0, cz + sz / 2 + 0.03, 0.95, 2.1, 0.08, TIMBER);
-  b.box(cx + sx * 0.25, 1.2, cz + sz / 2 + 0.03, 0.7, 0.7, 0.06, SOOT);
-  b.gable(cx, wallH, cz, sx, sz, sz * 0.42, roofHex, wallHex);
+  const footing = 0.35;
+  b.box(cx, 0, cz, sx + 0.24, footing, sz + 0.24, STONE);
+  b.box(cx, footing, cz, sx, wallH - footing, sz, wallHex);
+  // The frame stands a few centimetres proud of the panels.
+  const post = 0.2;
+  const proud = 0.05;
+  const posts = Math.max(2, Math.round(sx / 1.7) + 1);
+  for (const dz of [-1, 1]) {
+    const z = cz + dz * (sz / 2 + proud);
+    for (let i = 0; i < posts; i++) b.box(cx - sx / 2 + (i / (posts - 1)) * sx, footing, z, post, wallH - footing, post * 0.6, TIMBER);
+    for (const y of [footing, footing + (wallH - footing) * 0.52, wallH - 0.2]) b.box(cx, y, z, sx + post, 0.2, post * 0.6, TIMBER);
+  }
+  const endPosts = Math.max(2, Math.round(sz / 1.7) + 1);
+  for (const dx of [-1, 1]) {
+    const x = cx + dx * (sx / 2 + proud);
+    for (let i = 0; i < endPosts; i++) b.box(x, footing, cz - sz / 2 + (i / (endPosts - 1)) * sz, post * 0.6, wallH - footing, post, TIMBER);
+    for (const y of [footing, footing + (wallH - footing) * 0.52, wallH - 0.2]) b.box(x, y, cz, post * 0.6, 0.2, sz + post, TIMBER);
+    // A king post up the gable.
+    b.box(x, wallH, cz, post * 0.6, sz * 0.4, post, TIMBER);
+  }
+  b.box(cx - sx * 0.2, footing, cz + sz / 2 + 0.09, 0.95, 2.0, 0.08, TIMBER_LIGHT);
+  b.box(cx + sx * 0.25, 1.25, cz + sz / 2 + 0.09, 0.75, 0.75, 0.06, SOOT);
+  b.box(cx + sx * 0.25 + 0.5, 1.2, cz + sz / 2 + 0.1, 0.36, 0.85, 0.05, TIMBER_LIGHT);
+  b.gable(cx, wallH, cz, sx, sz, sz * 0.46, roofHex, wallHex, 0.5);
+  // Ridge and barge boards.
+  b.box(cx, wallH + sz * 0.46 - 0.04, cz, sx + 1.0, 0.14, 0.3, roofHex === THATCH ? THATCH : TIMBER);
 }
 
 function chimney(b: MeshBuilder, cx: number, cz: number, height: number, width = 0.8): void {
@@ -247,8 +294,8 @@ function pennant(b: MeshBuilder, teamHex: number): void {
   b.tri([4.46, 6.4, -4.2], [4.46, 7.4, -4.2], [6.2, 6.9, -4.2], teamHex);
 }
 
-export function buildingGeometry(kind: BuildingKind, level: number, teamHex: number): BufferGeometry {
-  const b = new MeshBuilder();
+export function buildingGeometry(kind: BuildingKind, level: number, teamHex: number, lib: SurfaceLibrary): BufferGeometry {
+  const b = new MeshBuilder(0, paintsFor(lib));
   BUILDERS[kind](b);
   if (level >= 2) annex(b);
   if (level >= 3) pennant(b, teamHex);
@@ -256,11 +303,11 @@ export function buildingGeometry(kind: BuildingKind, level: number, teamHex: num
 }
 
 /** The keep: a square stone tower with battlements, corner turrets, a gate and the owner's banner. */
-export function keepGeometry(teamHex: number): BufferGeometry {
-  const b = new MeshBuilder();
+export function keepGeometry(teamHex: number, lib: SurfaceLibrary): BufferGeometry {
+  const b = new MeshBuilder(0, paintsFor(lib));
   const half = 4.6;
   b.box(0, 0, 0, half * 2 + 1.2, 1.2, half * 2 + 1.2, STONE_DARK);
-  b.box(0, 1.2, 0, half * 2, 10.8, half * 2, STONE);
+  b.box(0, 1.2, 0, half * 2, 10.8, half * 2, ASHLAR);
   // Battlements.
   b.box(0, 12, 0, half * 2 + 0.8, 0.5, half * 2 + 0.8, STONE_DARK);
   for (let i = 0; i < 6; i++) {
