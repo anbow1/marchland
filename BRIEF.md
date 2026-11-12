@@ -130,6 +130,12 @@ RTS z góry widzi całą mapę naraz, więc budżet jest ciaśniejszy. Paczka ur
 
 ## 9. Kolejność budowy
 
+Plan rozgrywki i kamienie milowe M1–M6: [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md).
+Zadania do zrobienia w Blenderze (modele, animacje) i kontrakt plików:
+[`docs/BLENDER.md`](docs/BLENDER.md). Prace rutynowe rozpisane dla słabszego
+modelu: [`docs/ROUTINE.md`](docs/ROUTINE.md). Lista niżej to stan etapów
+graficznych i technicznych.
+
 1. **Szkielet i symulacja** — zrobione: ekonomia, regimenty, walka, morale,
    pociski, machiny, komputer; 43 testy.
 2. **Pierwsza grywalna wersja** — zrobione: renderer, światło, teren, las,
