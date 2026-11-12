@@ -1,6 +1,6 @@
 import { AI, AI_TUNING } from '../config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdMoveGroup, cmdRecruit, cmdUpgrade } from './commands.ts';
-import { canAffordBuilding } from './economy.ts';
+import { canAffordBuilding, canStandOn, type Town } from './economy.ts';
 import { isArcher, type Regiment } from './regiment.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { type BuildingKind, enemyOf, type Side, type UnitKind } from './types.ts';
@@ -34,7 +34,10 @@ export function createAiState(side: Side): AiState {
   return { side, thinkS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0 };
 }
 
-/** Food and timber first, then the armour and weapon chains, then the luxuries. One entry per plot. */
+/**
+ * Timber, food and houses first (people are what everything else needs), then the armour and weapon
+ * chains, then the luxuries. Each goes on the first free plot of the right ground.
+ */
 const BUILD_ORDER: readonly BuildingKind[] = [
   'woodcutter',
   'farm',
@@ -42,25 +45,37 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'bakery',
   'house',
   'quarry',
+  'fisher',
   'farm',
+  'house',
   'pigFarm',
   'ironMine',
   'barracks',
   'tannery',
   'smithy',
-  // The smithy and the fletcher burn timber: a second woodcutter before them, or building stops.
+  'house',
   'woodcutter',
   'butcher',
   'fletcher',
+  'house',
   'farm',
   'stable',
   'armourer',
+  'house',
+  'fisher',
+  'house',
 ];
+
+/** First free plot a building of this kind may stand on; -1 if there is none. */
+function freePlotFor(town: Town, kind: BuildingKind): number {
+  for (let plot = 0; plot < town.plots.length; plot++) if (town.plots[plot] === null && canStandOn(kind, plot)) return plot;
+  return -1;
+}
 
 const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'ballista', 'heavyCavalry', 'archers', 'trebuchet', 'swordsmen'];
 
 /** Upgrades in the order they pay back for an army. */
-const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'farm', 'bakery', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'house', 'armourer', 'stable', 'fletcher', 'butcher', 'woodcutter', 'quarry'];
+const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'bakery', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'armourer', 'stable', 'fletcher', 'butcher', 'woodcutter', 'fisher', 'quarry'];
 
 /** Staging point: this far short of the enemy keep, on the line from home. */
 const STAGE_DISTANCE_M = 115;
@@ -76,23 +91,21 @@ function runTown(world: World, ai: AiState): void {
   }
   const next = BUILD_ORDER[ai.buildIndex];
   if (next !== undefined) {
-    const plot = town.plots.indexOf(null);
-    if (plot < 0) ai.buildIndex = BUILD_ORDER.length;
-    else if (cmdBuild(world, ai.side, plot, next) === 'ok') ai.buildIndex += 1;
+    const plot = freePlotFor(town, next);
+    // No ground left for it: on to the next.
+    if (plot < 0 || cmdBuild(world, ai.side, plot, next) === 'ok') ai.buildIndex += 1;
     return;
   }
-  // Every plot is taken (or was, before a raid): rebuild what was razed, then improve.
-  const empty = town.plots.indexOf(null);
-  if (empty >= 0) {
-    for (const kind of BUILD_ORDER) {
-      let have = 0;
-      let want = 0;
-      for (const b of town.plots) if (b && b.kind === kind) have++;
-      for (const k of BUILD_ORDER) if (k === kind) want++;
-      if (have < want) {
-        cmdBuild(world, ai.side, empty, kind);
-        return;
-      }
+  // The order is built (or was, before a raid): rebuild what was razed, then improve.
+  for (const kind of BUILD_ORDER) {
+    let have = 0;
+    let want = 0;
+    for (const b of town.plots) if (b && b.kind === kind) have++;
+    for (const k of BUILD_ORDER) if (k === kind) want++;
+    const plot = have < want ? freePlotFor(town, kind) : -1;
+    if (plot >= 0) {
+      cmdBuild(world, ai.side, plot, kind);
+      return;
     }
   }
   if (town.stock.gold < AI.upgradeReserveGold) return;

@@ -1,4 +1,5 @@
-import { demolish, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
+import { canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
+import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { frontageM, isArcher, type Regiment } from './regiment.ts';
 import { clampToMap } from './terrain.ts';
@@ -28,9 +29,16 @@ export function cmdTogglePaused(world: World, side: Side, plot: number): Command
   return togglePaused(world.towns[side], plot);
 }
 
+/** Orders a regiment: it is paid for now, and its people leave their work and walk to the barracks. */
 export function cmdRecruit(world: World, side: Side, kind: UnitKind): CommandResult {
   if (world.winner !== -1) return 'gameOver';
-  return startRecruit(world.towns[side], kind, menAlive(world, side));
+  const town = world.towns[side];
+  const able = canRecruit(town, kind, menAlive(world, side));
+  if (able !== 'ok') return able;
+  if (freePeople(world, side) < peopleFor(kind)) return 'noPeople';
+  const result = startRecruit(town, kind, menAlive(world, side));
+  if (result === 'ok') callUp(world, side, peopleFor(kind));
+  return result;
 }
 
 function commandable(world: World, regimentId: number): Regiment | CommandResult {

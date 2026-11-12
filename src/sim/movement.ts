@@ -1,6 +1,6 @@
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, plotX, plotZ, townX, townZ } from './terrain.ts';
+import { clampToMap, isForest, isWater, lakeX, lakeZ, plotX, plotZ, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 
@@ -234,12 +234,28 @@ function findTarget(world: World, s: Soldier, radiusM: number, placeX: number, p
   return best;
 }
 
+/** Puts a soldier who has stepped into a lake back on its bank. */
+function avoidWater(s: Soldier): void {
+  if (!isWater(s.x, s.z)) return;
+  for (const side of [0, 1] as const) {
+    const dx = s.x - lakeX(side);
+    const dz = s.z - lakeZ(side);
+    const d = Math.hypot(dx, dz);
+    if (d >= TOWN.lakeRadiusM || d < 1e-6) continue;
+    s.x = lakeX(side) + (dx / d) * TOWN.lakeRadiusM * 0.94;
+    s.z = lakeZ(side) + (dz / d) * TOWN.lakeRadiusM * 0.94;
+  }
+}
+
+const OUTLYING_PLOT_M = 160;
+
 /** Keeps a soldier out of the keeps and buildings, sliding him round them. */
 function avoidBuildings(world: World, s: Soldier, dtSeconds: number): void {
   for (const town of world.towns) {
     const tx = townX(town.side);
     const tz = townZ(town.side);
-    if ((s.x - tx) ** 2 + (s.z - tz) ** 2 > (TOWN.outerRadiusM + TOWN.buildingRadiusM + 2) ** 2) continue;
+    // The furthest plot (a forest edge) is within this of the keep.
+    if ((s.x - tx) ** 2 + (s.z - tz) ** 2 > OUTLYING_PLOT_M ** 2) continue;
     for (let plot = -1; plot < town.plots.length; plot++) {
       if (plot >= 0 && !town.plots[plot]) continue;
       if (plot < 0 && town.keepHp <= 0) continue;
@@ -376,6 +392,7 @@ export function stepSoldiers(world: World, dtSeconds: number): void {
     for (const s of r.soldiers) {
       if (!s.alive) continue;
       avoidBuildings(world, s, dtSeconds);
+      avoidWater(s);
       s.x = Math.min(limit, Math.max(-limit, s.x));
       s.z = Math.min(limit, Math.max(-limit, s.z));
     }

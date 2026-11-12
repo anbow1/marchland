@@ -29,12 +29,29 @@ export const MAP = {
 } as const;
 
 export const TOWN = {
-  /** Building plots: an inner ring and an outer ring around the keep. */
+  /** Town plots for houses, crafts and the barracks: an inner ring and an outer ring around the keep. */
   innerPlots: 6,
   innerRadiusM: 24,
-  outerPlots: 12,
+  outerPlots: 8,
   outerRadiusM: 44,
-  plotCount: 18,
+  /** Farming plots along the village street; forest plots at the nearest wood; plots on the lake shore; plots on rock. */
+  villagePlots: 6,
+  forestPlots: 2,
+  lakePlots: 2,
+  rockPlots: 2,
+  plotCount: 26,
+  /** The village: its street starts this far from the keep towards the enemy and to one side, plots this far apart. */
+  villageForwardM: 70,
+  villageSideM: 75,
+  villagePitchM: 13,
+  /** The lake: its centre from the keep (towards the enemy, to the other side) and its radius. */
+  lakeForwardM: 25,
+  lakeSideM: 80,
+  lakeRadiusM: 27,
+  lakeDepthM: 2.4,
+  /** Quarry and mine stand on the rock behind the town. */
+  rockBackM: 52,
+  rockSideM: 24,
   /** Footprint radius used for clicks, melee reach on buildings and keeping soldiers out. */
   buildingRadiusM: 5.5,
   keepRadiusM: 8,
@@ -47,8 +64,66 @@ export const TOWN = {
   keepTopM: 13,
   /** New regiments form up this far from the keep, towards the middle of the map. */
   rallyDistanceM: 66,
-  keepGoldPerSecond: 0.5,
-  startingStock: { gold: 320, wood: 80, stone: 30, bread: 30 } as Cost,
+  keepGoldPerSecond: 0.4,
+  startingStock: { gold: 340, wood: 90, stone: 40, bread: 40 } as Cost,
+} as const;
+
+export const PEOPLE = {
+  /** The keep's own household: the people a game starts with, and who they are again after a disaster. */
+  keepResidents: 8,
+  /** People a house holds at levels 1…3. */
+  houseResidents: [6, 10, 14] as readonly number[],
+  /** A fed house with room takes in a newcomer this often. */
+  growSeconds: 30,
+  /** Rations one person eats a minute at home (tuned with the soldiers' 0.25: work makes hungrier). */
+  rationsPerMinute: 0.3,
+  /** Tax from each fed townsman. */
+  taxGoldPerSecond: 0.02,
+  /** A person walks at marching pace; under a load the same (a sack, not a millstone). */
+  walkSpeedMs: 1.4,
+  /** Units of one good a carrier takes at once. */
+  carryCapacity: 3,
+  /** Seconds to pick a load up or set it down. */
+  handlingSeconds: 1,
+  /** A building's stores: carriers fill inputs up to the target; work stops when an output reaches its cap. */
+  inputTarget: 6,
+  outputCap: 8,
+  /** Outputs are carried to the keep once this many lie in the yard. */
+  clearOutputAt: 3,
+  /** Rations a house likes to have in the larder. */
+  houseFoodTarget: 5,
+  /** Share of the people without a workplace who build while anything is being built; the rest carry. */
+  builderShare: 0.3,
+  maxBuildersPerSite: 3,
+  /** People run for the keep when an enemy regiment is this close, and come back this long after it has gone. */
+  fleeRadiusM: 32,
+  calmSeconds: 6,
+  /** How close a person must be to a door or a spot to be "there". */
+  arriveM: 1.2,
+  /** Most people a side can have (pool size). */
+  maxPerSide: 170,
+} as const;
+
+export const FIELDS = {
+  /** Strips of land a farm works at levels 1…3: the farmland grows with the farm. */
+  stripsPerLevel: [2, 4, 6] as readonly number[],
+  maxStrips: 6,
+  /** A strip: this long along the village street, this wide; the first lies this far behind the farm. */
+  stripLengthM: 12,
+  stripWidthM: 6,
+  firstStripM: 11,
+  /** Breaking new ground, sowing, the wait for the corn, and the harvest, in seconds at level 1. */
+  establishSeconds: 14,
+  sowSeconds: 9,
+  growSeconds: 60,
+  harvestSeconds: 11,
+  grainPerHarvest: 7,
+} as const;
+
+/** Trades whose worker goes out to the land and comes back with a load: seconds on the spot and what a trip brings. */
+export const GATHER = {
+  woodcutter: { seconds: 9, amount: 2, reachM: 16 },
+  fisher: { seconds: 11, amount: 2, reachM: 9 },
 } as const;
 
 export interface Recipe {
@@ -62,8 +137,6 @@ export interface BuildingDef {
   cost: Cost;
   buildSeconds: number;
   hp: number;
-  /** Rations its workers eat per minute, per level. */
-  rationsPerMinute: number;
   recipe: Recipe | null;
 }
 
@@ -76,26 +149,29 @@ export const UPGRADE_SECONDS = 15;
 export const DEMOLISH_REFUND = 0.5;
 
 export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
-  house: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, rationsPerMinute: 2, recipe: { inputs: {}, outputs: { gold: 1 }, cycleSeconds: 2.5 } },
-  woodcutter: { cost: { gold: 30 }, buildSeconds: 8, hp: 250, rationsPerMinute: 1, recipe: { inputs: {}, outputs: { wood: 1 }, cycleSeconds: 3 } },
-  quarry: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 300, rationsPerMinute: 1, recipe: { inputs: {}, outputs: { stone: 1 }, cycleSeconds: 6 } },
-  farm: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, rationsPerMinute: 1, recipe: { inputs: {}, outputs: { grain: 1 }, cycleSeconds: 5 } },
-  bakery: { cost: { gold: 50, wood: 15, stone: 5 }, buildSeconds: 12, hp: 300, rationsPerMinute: 1, recipe: { inputs: { grain: 1 }, outputs: { bread: 1 }, cycleSeconds: 5 } },
-  pigFarm: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, rationsPerMinute: 1, recipe: { inputs: { grain: 1 }, outputs: { meat: 2, hide: 1 }, cycleSeconds: 12 } },
-  butcher: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, rationsPerMinute: 1, recipe: { inputs: { meat: 1 }, outputs: { sausage: 1 }, cycleSeconds: 5 } },
-  tannery: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, rationsPerMinute: 1, recipe: { inputs: { hide: 1 }, outputs: { leatherArmor: 1 }, cycleSeconds: 8 } },
-  ironMine: { cost: { gold: 80, wood: 25 }, buildSeconds: 14, hp: 300, rationsPerMinute: 1, recipe: { inputs: {}, outputs: { ironOre: 1 }, cycleSeconds: 6 } },
-  smithy: { cost: { gold: 80, wood: 20, stone: 20 }, buildSeconds: 14, hp: 350, rationsPerMinute: 1, recipe: { inputs: { ironOre: 1, wood: 1 }, outputs: { weapon: 1 }, cycleSeconds: 7 } },
-  armourer: { cost: { gold: 120, wood: 20, stone: 40 }, buildSeconds: 16, hp: 350, rationsPerMinute: 1, recipe: { inputs: { ironOre: 2 }, outputs: { mailArmor: 1 }, cycleSeconds: 12 } },
-  fletcher: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, rationsPerMinute: 1, recipe: { inputs: { wood: 1 }, outputs: { bow: 1 }, cycleSeconds: 8 } },
-  stable: { cost: { gold: 100, wood: 40, stone: 10 }, buildSeconds: 14, hp: 300, rationsPerMinute: 1, recipe: { inputs: { grain: 3 }, outputs: { horse: 1 }, cycleSeconds: 25 } },
-  barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, rationsPerMinute: 1, recipe: null },
+  house: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: { inputs: {}, outputs: { gold: 1 }, cycleSeconds: 2.5 } },
+  // The woodcutter, the fisher and the farm have no cycle here: their workers go out to the land (GATHER, FIELDS).
+  woodcutter: { cost: { gold: 30 }, buildSeconds: 8, hp: 250, recipe: null },
+  fisher: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: null },
+  quarry: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 300, recipe: { inputs: {}, outputs: { stone: 1 }, cycleSeconds: 6 } },
+  farm: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: null },
+  bakery: { cost: { gold: 50, wood: 15, stone: 5 }, buildSeconds: 12, hp: 300, recipe: { inputs: { grain: 1 }, outputs: { bread: 1 }, cycleSeconds: 5 } },
+  pigFarm: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, recipe: { inputs: { grain: 1 }, outputs: { meat: 2, hide: 1 }, cycleSeconds: 12 } },
+  butcher: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { meat: 1 }, outputs: { sausage: 1 }, cycleSeconds: 5 } },
+  tannery: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { hide: 1 }, outputs: { leatherArmor: 1 }, cycleSeconds: 8 } },
+  ironMine: { cost: { gold: 80, wood: 25 }, buildSeconds: 14, hp: 300, recipe: { inputs: {}, outputs: { ironOre: 1 }, cycleSeconds: 6 } },
+  smithy: { cost: { gold: 80, wood: 20, stone: 20 }, buildSeconds: 14, hp: 350, recipe: { inputs: { ironOre: 1, wood: 1 }, outputs: { weapon: 1 }, cycleSeconds: 7 } },
+  armourer: { cost: { gold: 120, wood: 20, stone: 40 }, buildSeconds: 16, hp: 350, recipe: { inputs: { ironOre: 2 }, outputs: { mailArmor: 1 }, cycleSeconds: 12 } },
+  fletcher: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, recipe: { inputs: { wood: 1 }, outputs: { bow: 1 }, cycleSeconds: 8 } },
+  stable: { cost: { gold: 100, wood: 40, stone: 10 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grain: 3 }, outputs: { horse: 1 }, cycleSeconds: 25 } },
+  barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, recipe: null },
 };
 
 export const FOOD = {
   /** One soldier eats this many rations a minute (tuned: 100 men need about two bakeries). */
   soldierRationsPerMinute: 0.25,
   breadRations: 1,
+  fishRations: 1,
   /** Sausage feeds two: the reason to run pigs through the butcher. */
   sausageRations: 2,
   /** A starving town works at this speed, pays no tax and its soldiers lose this much top morale. */
@@ -106,6 +182,8 @@ export const FOOD = {
 export interface UnitDef {
   /** Men in a regiment; for siege engines, the number of engines (each with its crew). */
   men: number;
+  /** Townspeople each man (or engine) takes from the town: 1, or an engine's crew. */
+  crew: number;
   /** Men abreast in the default formation. */
   files: number;
   fileSpacingM: number;
@@ -164,8 +242,8 @@ export interface UnitDef {
 // bolt about 60, a torsion engine's bolt 70 (published reconstructions).
 // Everything else in this table is game balance, tuned in tests/.
 const NO_MISSILE = { missileRangeM: 0, missileMinRangeM: 0, missileDamage: 0, missilePierce: 0, missileSpeedMs: 0, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 0, reloadS: 0 };
-const FOOT = { ...NO_MISSILE, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
-const HORSE = { ...NO_MISSILE, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const FOOT = { ...NO_MISSILE, crew: 1, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const HORSE = { ...NO_MISSILE, crew: 1, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
 const ENGINE = { cavalry: false, engine: true, attack: 0, defence: 0, armour: 0, damage: 0, reachM: 0, attackIntervalS: 1, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, turnRateRadS: 0.5, recruitSeconds: 20 };
 
 export const UNITS: Record<UnitKind, UnitDef> = {
@@ -184,9 +262,9 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   // Knights: the charge that breaks a line.
   heavyCavalry: { ...HORSE, barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 12, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.3, bounty: 6 },
   // Two bolt-throwers: long reach, a bolt that ignores armour, helpless once reached.
-  ballista: { ...ENGINE, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 2, goldCost: 120, equipment: { wood: 12, weapon: 2 }, hp: 70, missileBlock: 0.7, missileRangeM: 110, missileMinRangeM: 12, missileDamage: 45, missilePierce: 0.8, missileSpeedMs: 70, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 14, reloadS: 9, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
+  ballista: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 2, goldCost: 120, equipment: { wood: 12, weapon: 2 }, hp: 70, missileBlock: 0.7, missileRangeM: 110, missileMinRangeM: 12, missileDamage: 45, missilePierce: 0.8, missileSpeedMs: 70, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 14, reloadS: 9, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
   // One counterweight engine: it lobs stones that scatter a formation and bring down walls.
-  trebuchet: { ...ENGINE, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 3, goldCost: 200, equipment: { wood: 40, stone: 10 }, hp: 140, missileBlock: 0.8, missileRangeM: 135, missileMinRangeM: 35, missileDamage: 26, missilePierce: 0.5, missileSpeedMs: 45, missileHighArc: true, missileSplashM: 3.5, missileSiegeDamage: 90, reloadS: 14, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.4, bounty: 15 },
+  trebuchet: { ...ENGINE, crew: 8, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 3, goldCost: 200, equipment: { wood: 40, stone: 10 }, hp: 140, missileBlock: 0.8, missileRangeM: 135, missileMinRangeM: 35, missileDamage: 26, missilePierce: 0.5, missileSpeedMs: 45, missileHighArc: true, missileSplashM: 3.5, missileSiegeDamage: 90, reloadS: 14, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.4, bounty: 15 },
 };
 
 export const ARMY = {

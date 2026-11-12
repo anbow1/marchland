@@ -1,6 +1,7 @@
 import { ARMY, COMBAT, FATIGUE, FOOD, MORALE, TOWN } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
 import { assignSlots, facingToward, forwardX, forwardZ, isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
+import { returnHome } from './people.ts';
 import { townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
 import type { World } from './world.ts';
@@ -21,6 +22,7 @@ export function kill(world: World, victim: Soldier, bySide: Side, by: Regiment |
   r.sinceLastDeathS = 0;
   assignSlots(r);
   r.morale -= MORALE.casualtyShock * (12 / r.initialMen);
+  world.towns[r.side].underArms = Math.max(0, world.towns[r.side].underArms - r.def.crew);
   world.towns[bySide].stock.gold += r.def.bounty;
   world.kills[bySide] += 1;
   if (by) by.morale = Math.min(by.def.morale, by.morale + MORALE.killBoost);
@@ -175,8 +177,9 @@ function rally(world: World, r: Regiment): void {
   world.events.push('rally', r.centreX, r.centreZ, r.side);
 }
 
-/** Sends the last men of a shattered regiment home for good. */
-function disband(r: Regiment): void {
+/** Sends the last men of a shattered regiment home for good: they are townspeople again. */
+function disband(world: World, r: Regiment): void {
+  returnHome(world, r.side, r.aliveMen * r.def.crew, r.centreX, r.centreZ);
   for (const s of r.soldiers) {
     if (!s.alive) continue;
     s.alive = false;
@@ -207,7 +210,7 @@ export function stepMorale(world: World, dtSeconds: number): void {
     if (safe) r.morale = Math.min(topMorale, r.morale + MORALE.routRecoverPerSecond * dtSeconds);
     if (r.shattered) {
       const homeM = Math.hypot(r.centreX - townX(r.side), r.centreZ - townZ(r.side));
-      if (homeM < TOWN.outerRadiusM + 25) disband(r);
+      if (homeM < TOWN.outerRadiusM + 25) disband(world, r);
     } else if (safe && r.morale >= MORALE.rallyAt) {
       rally(world, r);
     }

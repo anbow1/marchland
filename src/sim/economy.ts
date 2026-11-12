@@ -1,35 +1,70 @@
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, FOOD, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, TOWN, UNITS, UPGRADE_SECONDS } from '../config.ts';
-import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
+import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS } from '../config.ts';
+import { plotKind } from './terrain.ts';
+import { type BuildingKind, BUILDS_ON, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
 
-// A town's economy: one shared stock, buildings on plots that turn inputs into
-// outputs on a cycle, rations eaten by workers, townsfolk and soldiers, and a
-// recruiting queue that spends gold and equipment. Pure data and functions.
+// A town's economy. The keep is the storehouse (`stock`); every building has
+// its own small stores: inputs that carriers fill, outputs that pile up in its
+// yard until someone carries them off. A building works only while its worker
+// is there, and is built only while builders are there and the timber and
+// stone have been carried to the site. People themselves (who carries what,
+// who works where) are in people.ts; this file is the stores and the clocks.
+
+/** A strip of a farm's land: not yet broken, bare, sown and growing, or ripe. */
+export type StripState = 'wild' | 'bare' | 'growing' | 'ripe';
+
+export interface FieldStrip {
+  state: StripState;
+  /** 0…1 while growing. */
+  growth: number;
+}
 
 export interface Building {
   kind: BuildingKind;
   level: number;
   hp: number;
-  /** Above zero while being built or upgraded; nothing is produced meanwhile. */
+  /** Builder-seconds of work left; above zero while being built or upgraded. */
   constructionLeftS: number;
   constructionTotalS: number;
-  /** True once the inputs of the current cycle have been taken from the stock. */
+  /** Timber and stone for the work in hand: still at the keep, and how much of the total has reached the site. */
+  matWaiting: { wood: number; stone: number };
+  matDelivered: number;
+  matTotal: number;
+  /** Goods waiting to be used, goods made and not yet carried off, and goods a carrier is bringing. */
+  inp: Stock;
+  out: Stock;
+  incoming: Stock;
+  /** True once the inputs of the current cycle have been taken from the input store. */
   cycleStarted: boolean;
   cycleProgressS: number;
   /** Switched off by the player (to save grain for bread, say). */
   paused: boolean;
+  /** Set by the people's step every tick: work being done here now (1 per fed worker, 0.5 per hungry one), builders on site, people living here. */
+  workRate: number;
+  buildersPresent: number;
+  residents: number;
+  /** Houses: rations owed, whether the larder is empty, and the clock to the next newcomer. */
+  rationDebt: number;
+  starving: boolean;
+  growS: number;
+  /** Farms: the land behind the farm, nearest strip first. */
+  strips: FieldStrip[];
 }
 
 export interface RecruitOrder {
   kind: UnitKind;
   leftS: number;
+  /** Townspeople who must reach the barracks, and how many have. */
+  needPeople: number;
+  arrived: number;
 }
 
 export interface Town {
   side: Side;
+  /** What lies in the keep. */
   stock: Stock;
   plots: (Building | null)[];
   keepHp: number;
-  /** Rations owed; one is eaten whenever this reaches 1. */
+  /** Rations owed by the keep's household and the army; one is eaten whenever this reaches 1. */
   rationDebt: number;
   starving: boolean;
   recruitQueue: RecruitOrder[];
@@ -40,6 +75,11 @@ export interface Town {
   /** The computer's difficulty handicap; 1 for the player. */
   productionFactor: number;
   goldRemainder: number;
+  /** Townspeople now serving as soldiers: they still count against the houses' room. */
+  underArms: number;
+  /** The keep's own household: people living there now (set by the people's step) and the clock to the next newcomer. */
+  keepResidents: number;
+  keepGrowS: number;
 }
 
 export function emptyStock(): Stock {
@@ -53,7 +93,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.plotCount; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -72,21 +112,57 @@ export function canAffordBuilding(stock: Stock, kind: BuildingKind, level: numbe
   return true;
 }
 
-function payBuilding(stock: Stock, kind: BuildingKind, level: number): void {
-  for (const id of RESOURCE_IDS) stock[id] -= buildingCost(kind, level, id);
+/** Takes the price from the keep: gold is spent, timber and stone are set aside for carriers to bring to the site. */
+function orderWork(town: Town, b: Building, level: number, seconds: number): void {
+  for (const id of RESOURCE_IDS) town.stock[id] -= buildingCost(b.kind, level, id);
+  b.matWaiting.wood = buildingCost(b.kind, level, 'wood');
+  b.matWaiting.stone = buildingCost(b.kind, level, 'stone');
+  b.matTotal = b.matWaiting.wood + b.matWaiting.stone;
+  b.matDelivered = 0;
+  b.constructionLeftS = seconds;
+  b.constructionTotalS = seconds;
 }
 
 function plotIndexOk(town: Town, plot: number): void {
   if (!Number.isInteger(plot) || plot < 0 || plot >= town.plots.length) throw new Error(`plot '${plot}' is not in 0…${town.plots.length - 1}`);
 }
 
+export function canStandOn(kind: BuildingKind, plot: number): boolean {
+  return BUILDS_ON[kind].includes(plotKind(plot));
+}
+
 export function startBuilding(town: Town, plot: number, kind: BuildingKind): CommandResult {
   plotIndexOk(town, plot);
   if (town.plots[plot] !== null) return 'plotTaken';
+  if (!canStandOn(kind, plot)) return 'wrongPlot';
   if (!canAffordBuilding(town.stock, kind, 1)) return 'cannotAfford';
-  payBuilding(town.stock, kind, 1);
-  const seconds = BUILDINGS[kind].buildSeconds;
-  town.plots[plot] = { kind, level: 1, hp: buildingMaxHp(kind, 1), constructionLeftS: seconds, constructionTotalS: seconds, cycleStarted: false, cycleProgressS: 0, paused: false };
+  const strips: FieldStrip[] = [];
+  if (kind === 'farm') for (let i = 0; i < FIELDS.maxStrips; i++) strips.push({ state: 'wild', growth: 0 });
+  const b: Building = {
+    kind,
+    level: 1,
+    hp: buildingMaxHp(kind, 1),
+    constructionLeftS: 0,
+    constructionTotalS: 0,
+    matWaiting: { wood: 0, stone: 0 },
+    matDelivered: 0,
+    matTotal: 0,
+    inp: emptyStock(),
+    out: emptyStock(),
+    incoming: emptyStock(),
+    cycleStarted: false,
+    cycleProgressS: 0,
+    paused: false,
+    workRate: 0,
+    buildersPresent: 0,
+    residents: 0,
+    rationDebt: 0,
+    starving: false,
+    growS: 0,
+    strips,
+  };
+  orderWork(town, b, 1, BUILDINGS[kind].buildSeconds);
+  town.plots[plot] = b;
   return 'ok';
 }
 
@@ -97,12 +173,10 @@ export function startUpgrade(town: Town, plot: number): CommandResult {
   if (b.constructionLeftS > 0) return 'underConstruction';
   if (b.level >= MAX_LEVEL) return 'maxLevel';
   if (!canAffordBuilding(town.stock, b.kind, b.level + 1)) return 'cannotAfford';
-  payBuilding(town.stock, b.kind, b.level + 1);
   // The level counts from the moment the work is paid for; the building stands idle until it is done.
+  orderWork(town, b, b.level + 1, UPGRADE_SECONDS);
   b.level += 1;
   b.hp = buildingMaxHp(b.kind, b.level);
-  b.constructionLeftS = UPGRADE_SECONDS;
-  b.constructionTotalS = UPGRADE_SECONDS;
   return 'ok';
 }
 
@@ -111,6 +185,8 @@ export function demolish(town: Town, plot: number): CommandResult {
   const b = town.plots[plot];
   if (!b) return 'plotEmpty';
   for (const id of RESOURCE_IDS) town.stock[id] += Math.floor(buildingCost(b.kind, 1, id) * DEMOLISH_REFUND);
+  // What lay in its yard goes back to the keep with the salvage.
+  for (const id of RESOURCE_IDS) town.stock[id] += b.out[id] + b.inp[id];
   town.plots[plot] = null;
   return 'ok';
 }
@@ -121,6 +197,11 @@ export function togglePaused(town: Town, plot: number): CommandResult {
   if (!b) return 'plotEmpty';
   b.paused = !b.paused;
   return 'ok';
+}
+
+/** True for a building that is finished and not being upgraded. */
+export function isBuilt(b: Building): boolean {
+  return b.constructionLeftS <= 0;
 }
 
 /** Highest level among finished barracks; 0 without one. */
@@ -149,15 +230,29 @@ export function queuedMen(town: Town): number {
   return men;
 }
 
-export function startRecruit(town: Town, kind: UnitKind, menUnderArms: number): CommandResult {
+/** Townspeople a regiment of this kind takes from the town. */
+export function peopleFor(kind: UnitKind): number {
+  return UNITS[kind].men * UNITS[kind].crew;
+}
+
+/** Why a regiment cannot be ordered now, apart from the people it needs; 'ok' if it can. */
+export function canRecruit(town: Town, kind: UnitKind, menUnderArms: number): CommandResult {
   const def = UNITS[kind];
   if (barracksLevel(town) < def.barracksLevel) return 'needsBarracks';
   if (town.recruitQueue.length >= ARMY.maxRecruitQueue) return 'queueFull';
   if (menUnderArms + queuedMen(town) + def.men > ARMY.maxSoldiersPerSide) return 'armyFull';
   if (!canAffordUnit(town.stock, kind)) return 'cannotAfford';
+  return 'ok';
+}
+
+/** Pays for a regiment and queues it; its people still have to walk to the barracks (people.ts). */
+export function startRecruit(town: Town, kind: UnitKind, menUnderArms: number): CommandResult {
+  const able = canRecruit(town, kind, menUnderArms);
+  if (able !== 'ok') return able;
+  const def = UNITS[kind];
   town.stock.gold -= def.goldCost;
   for (const id of RESOURCE_IDS) town.stock[id] -= (def.equipment[id] ?? 0) * def.men;
-  town.recruitQueue.push({ kind, leftS: def.recruitSeconds });
+  town.recruitQueue.push({ kind, leftS: def.recruitSeconds, needPeople: peopleFor(kind), arrived: 0 });
   return 'ok';
 }
 
@@ -166,32 +261,43 @@ function hasInputs(stock: Stock, inputs: Cost): boolean {
   return true;
 }
 
-/** Rations per second the town needs with `soldiers` men under arms. */
-export function rationDemandPerSecond(town: Town, soldiers: number): number {
-  let perMinute = soldiers * FOOD.soldierRationsPerMinute;
-  for (const b of town.plots) {
-    if (b && b.constructionLeftS <= 0) perMinute += BUILDINGS[b.kind].rationsPerMinute * b.level;
-  }
-  return perMinute / 60;
+/** Rations in a store, counted as meals. */
+export function rationsIn(stock: Stock): number {
+  return stock.bread * FOOD.breadRations + stock.fish * FOOD.fishRations + stock.sausage * FOOD.sausageRations;
 }
 
-function eat(town: Town, dtSeconds: number, soldiers: number): void {
-  town.rationDebt += rationDemandPerSecond(town, soldiers) * dtSeconds;
-  while (town.rationDebt >= 1) {
-    if (town.stock.bread > 0) {
-      town.stock.bread -= 1;
-      town.rationDebt -= FOOD.breadRations;
-    } else if (town.stock.sausage > 0) {
-      town.stock.sausage -= 1;
-      town.rationDebt -= FOOD.sausageRations;
-    } else {
-      // Nothing to eat: hunger does not pile up as a debt to be repaid later.
-      town.rationDebt = 1;
-      town.starving = true;
-      return;
-    }
-    town.starving = false;
+/** Eats one meal from a store; false when there is nothing. Bread first: it is the cheapest. */
+function eatOne(stock: Stock): number {
+  if (stock.bread > 0) {
+    stock.bread -= 1;
+    return FOOD.breadRations;
   }
+  if (stock.fish > 0) {
+    stock.fish -= 1;
+    return FOOD.fishRations;
+  }
+  if (stock.sausage > 0) {
+    stock.sausage -= 1;
+    return FOOD.sausageRations;
+  }
+  return 0;
+}
+
+/** Runs down a ration debt against a store; returns [debt left, starving]. Hunger does not pile up as a debt to repay. */
+function eat(stock: Stock, debt: number, wasStarving: boolean): [number, boolean] {
+  let starving = wasStarving;
+  while (debt >= 1) {
+    const meal = eatOne(stock);
+    if (meal === 0) return [1, true];
+    debt -= meal;
+    starving = false;
+  }
+  return [debt, starving];
+}
+
+/** Rations per second the keep must find: its own household and the army. */
+export function keepRationDemandPerSecond(town: Town, soldiers: number): number {
+  return (soldiers * FOOD.soldierRationsPerMinute + town.keepResidents * PEOPLE.rationsPerMinute) / 60;
 }
 
 function addGold(town: Town, amount: number): void {
@@ -201,42 +307,76 @@ function addGold(town: Town, amount: number): void {
   town.goldRemainder -= whole;
 }
 
+/** True when an output has piled up to the cap: the yard is full and work stops. */
+export function outputFull(b: Building): boolean {
+  const recipe = BUILDINGS[b.kind].recipe;
+  if (!recipe) return false;
+  for (const id of RESOURCE_IDS) if ((recipe.outputs[id] ?? 0) > 0 && b.out[id] + (recipe.outputs[id] ?? 0) > PEOPLE.outputCap) return true;
+  return false;
+}
+
 function produce(town: Town, b: Building, dtSeconds: number): void {
   const recipe = BUILDINGS[b.kind].recipe;
-  if (!recipe || b.paused) return;
-  // Houses pay tax only when the town is fed.
-  if (b.kind === 'house' && town.starving) return;
+  if (!recipe || b.paused || b.workRate <= 0) return;
   if (!b.cycleStarted) {
-    if (!hasInputs(town.stock, recipe.inputs)) return;
-    for (const id of RESOURCE_IDS) town.stock[id] -= recipe.inputs[id] ?? 0;
+    if (outputFull(b) || !hasInputs(b.inp, recipe.inputs)) return;
+    for (const id of RESOURCE_IDS) b.inp[id] -= recipe.inputs[id] ?? 0;
     b.cycleStarted = true;
     b.cycleProgressS = 0;
   }
-  const speed = (LEVEL_SPEED[b.level - 1] as number) * (town.starving ? FOOD.starvingSpeedFactor : 1) * town.productionFactor;
-  b.cycleProgressS += dtSeconds * speed;
+  b.cycleProgressS += dtSeconds * (LEVEL_SPEED[b.level - 1] as number) * b.workRate * town.productionFactor;
   if (b.cycleProgressS >= recipe.cycleSeconds) {
-    for (const id of RESOURCE_IDS) town.stock[id] += recipe.outputs[id] ?? 0;
+    for (const id of RESOURCE_IDS) b.out[id] += recipe.outputs[id] ?? 0;
     b.cycleStarted = false;
     b.cycleProgressS = 0;
   }
 }
 
+/** A house: its people eat from its larder and, fed, pay tax. */
+function keepHouse(town: Town, b: Building, dtSeconds: number): void {
+  b.rationDebt += ((b.residents * PEOPLE.rationsPerMinute) / 60) * dtSeconds;
+  [b.rationDebt, b.starving] = eat(b.inp, b.rationDebt, b.starving);
+  if (!b.starving) addGold(town, b.residents * PEOPLE.taxGoldPerSecond * dtSeconds);
+}
+
+/** Builders raise a building only as far as the timber and stone on site allow. */
+function construct(town: Town, b: Building, plot: number, dtSeconds: number): void {
+  if (b.buildersPresent <= 0) return;
+  const allowed = b.matTotal === 0 ? 1 : b.matDelivered / b.matTotal;
+  const floorS = b.constructionTotalS * (1 - allowed);
+  if (b.constructionLeftS <= floorS) return;
+  const hands = Math.min(b.buildersPresent, PEOPLE.maxBuildersPerSite);
+  b.constructionLeftS = Math.max(floorS, b.constructionLeftS - dtSeconds * hands * town.productionFactor);
+  if (b.constructionLeftS <= 0) {
+    b.constructionLeftS = 0;
+    town.finishedPlots.push(plot);
+  }
+}
+
 /** One fixed step of a town. `soldiers` is the number of its men alive on the field. */
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
-  eat(town, dtSeconds, soldiers);
+  town.rationDebt += keepRationDemandPerSecond(town, soldiers) * dtSeconds;
+  [town.rationDebt, town.starving] = eat(town.stock, town.rationDebt, town.starving);
   addGold(town, TOWN.keepGoldPerSecond * dtSeconds);
+  if (!town.starving) addGold(town, town.keepResidents * PEOPLE.taxGoldPerSecond * dtSeconds);
   for (let plot = 0; plot < town.plots.length; plot++) {
     const b = town.plots[plot];
     if (!b) continue;
     if (b.constructionLeftS > 0) {
-      b.constructionLeftS = Math.max(0, b.constructionLeftS - dtSeconds);
-      if (b.constructionLeftS === 0) town.finishedPlots.push(plot);
+      construct(town, b, plot, dtSeconds);
       continue;
     }
-    produce(town, b, dtSeconds);
+    if (b.kind === 'house') keepHouse(town, b, dtSeconds);
+    else produce(town, b, dtSeconds);
+    // Corn grows whether or not anyone is watching.
+    for (const strip of b.strips) {
+      if (strip.state !== 'growing') continue;
+      strip.growth += (dtSeconds / FIELDS.growSeconds) * town.productionFactor;
+      if (strip.growth >= 1) strip.state = 'ripe';
+    }
   }
   const first = town.recruitQueue[0];
-  if (first && barracksLevel(town) > 0) {
+  if (first && first.arrived >= first.needPeople && barracksLevel(town) > 0) {
     first.leftS -= dtSeconds;
     if (first.leftS <= 0) {
       town.recruitQueue.shift();
@@ -245,7 +385,25 @@ export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): vo
   }
 }
 
-/** True while the building is taking part in production (for smoke and the HUD). */
-export function isWorking(b: Building): boolean {
-  return b.constructionLeftS <= 0 && !b.paused && b.cycleStarted;
+/** Room for people in the town: the keep's household and every finished house. */
+export function housingCapacity(town: Town): number {
+  let room: number = PEOPLE.keepResidents;
+  for (const b of town.plots) if (b && b.kind === 'house' && isBuilt(b)) room += PEOPLE.houseResidents[b.level - 1] as number;
+  return room;
+}
+
+/** Why a finished building is not working, for the HUD; 'working' if it is. */
+export type WorkState = 'working' | 'building' | 'paused' | 'noWorker' | 'noInput' | 'yardFull' | 'waiting';
+
+export function workState(b: Building): WorkState {
+  if (b.constructionLeftS > 0) return 'building';
+  if (b.paused) return 'paused';
+  if (b.kind === 'house' || b.kind === 'barracks') return 'working';
+  if (b.workRate <= 0) return 'noWorker';
+  const recipe = BUILDINGS[b.kind].recipe;
+  if (!recipe) return 'working';
+  if (b.cycleStarted) return 'working';
+  if (outputFull(b)) return 'yardFull';
+  if (!hasInputs(b.inp, recipe.inputs)) return 'noInput';
+  return 'waiting';
 }

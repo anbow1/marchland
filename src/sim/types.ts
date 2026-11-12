@@ -15,6 +15,7 @@ export const RESOURCE_IDS = [
   'stone',
   'grain',
   'bread',
+  'fish',
   'meat',
   'sausage',
   'hide',
@@ -34,6 +35,7 @@ export const BUILDING_KINDS = [
   'woodcutter',
   'quarry',
   'farm',
+  'fisher',
   'bakery',
   'pigFarm',
   'butcher',
@@ -55,6 +57,8 @@ export type CommandResult =
   | 'ok'
   | 'cannotAfford'
   | 'plotTaken'
+  | 'wrongPlot'
+  | 'noPeople'
   | 'plotEmpty'
   | 'maxLevel'
   | 'underConstruction'
@@ -66,3 +70,25 @@ export type CommandResult =
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
+
+/** What ground a plot stands on, which decides what may be built there. */
+export type PlotKind = 'town' | 'village' | 'forest' | 'lake' | 'rock';
+
+/** Which buildings each kind of plot takes: crafts and houses by the keep, farming in the village, the rest where the land gives it. */
+export const BUILDS_ON: Record<BuildingKind, readonly PlotKind[]> = {
+  house: ['town', 'village'],
+  woodcutter: ['forest'],
+  quarry: ['rock'],
+  farm: ['village'],
+  fisher: ['lake'],
+  bakery: ['town'],
+  pigFarm: ['village'],
+  butcher: ['town'],
+  tannery: ['town'],
+  ironMine: ['rock'],
+  smithy: ['town'],
+  armourer: ['town'],
+  fletcher: ['town'],
+  stable: ['village'],
+  barracks: ['town'],
+};

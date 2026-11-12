@@ -1,4 +1,4 @@
-import { AI_TUNING, ARMY, MAP } from '../config.ts';
+import { AI_TUNING, ARMY, MAP, PEOPLE } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, stepAi } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
@@ -6,6 +6,7 @@ import { createTown, stepEconomy, type Town } from './economy.ts';
 import { EventQueue } from './events.ts';
 import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
+import { doorX, doorZ, KEEP, type Person, spawnPerson, stepPeople } from './people.ts';
 import { createRegiment, type Regiment } from './regiment.ts';
 import { facingToEnemy, plotX, plotZ, rallyX, rallyZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
@@ -13,7 +14,7 @@ import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './t
 // The whole game state and its one fixed update order (rules §10):
 //
 //   1. computer player thinks (issues the same commands the player does)
-//   2. economy of both towns; trained regiments take the field
+//   2. townspeople carry, work and build; then the economy's stores and clocks; trained regiments take the field
 //   3. regiments move their formations (anchors, facing, fatigue)
 //   4. soldiers look for enemies, steer to their places or their enemy, push apart
 //   5. melee blows, blows on buildings
@@ -26,6 +27,10 @@ export interface World {
   rng: Rng;
   towns: [Town, Town];
   regiments: Regiment[];
+  /** The townspeople of both sides. */
+  people: Person[];
+  /** Clock to the next handing-out of jobs. */
+  rolesS: number;
   arrows: Arrow[];
   events: EventQueue;
   /** -1 while the game is being played. */
@@ -50,11 +55,13 @@ export interface WorldOptions {
 
 export function createWorld(options: WorldOptions): World {
   const tuning = AI_TUNING[options.difficulty];
-  return {
+  const world: World = {
     timeS: 0,
     rng: new Rng(options.seed),
     towns: [createTown(PLAYER), createTown(COMPUTER, tuning.productionFactor)],
     regiments: [],
+    people: [],
+    rolesS: 0,
     arrows: createArrowPool(),
     events: new EventQueue(),
     winner: -1,
@@ -66,6 +73,11 @@ export function createWorld(options: WorldOptions): World {
     kills: [0, 0],
     stepCount: 0,
   };
+  // Each keep starts with its household: the first carriers and builders.
+  for (const side of [PLAYER, COMPUTER] as const) {
+    for (let i = 0; i < PEOPLE.keepResidents; i++) spawnPerson(world, side, doorX(side, KEEP) + (i % 4) - 1.5, doorZ(side, KEEP) + Math.floor(i / 4) - 0.5, KEEP);
+  }
+  return world;
 }
 
 export function findRegiment(world: World, id: number): Regiment | null {
@@ -107,6 +119,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
   if (world.winner !== -1) return;
   world.timeS += dtSeconds;
   if (world.ai) stepAi(world, world.ai, dtSeconds);
+  stepPeople(world, dtSeconds);
   for (const town of world.towns) {
     const wasStarving = town.starving;
     stepEconomy(town, dtSeconds, menAlive(world, town.side));
