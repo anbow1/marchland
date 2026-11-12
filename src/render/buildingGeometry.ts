@@ -229,8 +229,9 @@ function pennant(b: MeshBuilder, teamHex: number): void {
   b.tri([4.96, 7.4, -4.9], [4.96, 8.4, -4.9], [6.7, 7.9, -4.9], teamHex);
 }
 
-export function buildingGeometry(kind: BuildingKind, level: number, teamHex: number, lib: SurfaceLibrary): BufferGeometry {
-  const b = new MeshBuilder(0, P.paintsFor(lib));
+/** `flat` draws it in the storybook palette with no scans, for the style comparison. */
+export function buildingGeometry(kind: BuildingKind, level: number, teamHex: number, lib: SurfaceLibrary, flat = false): BufferGeometry {
+  const b = new MeshBuilder(0, flat ? P.flatPaints() : P.paintsFor(lib));
   BUILDERS[kind](b, level);
   // The house grows by itself; the others gain a lean-to.
   if (level >= 2 && kind !== 'house') annex(b);

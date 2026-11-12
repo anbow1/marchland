@@ -5,6 +5,31 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-12 · Porównanie stylów: rysunkowy i realistyczny (do decyzji)
+
+Jak zrobione: strona `compare.html` (`npx vite build --config vite.compare.config.ts`,
+modele podane pod `dist-compare/models/`), ten sam teren, światło i kamera co w grze,
+WebGL2 na programowym GPU, 1280 × 720. Plansze: `results/2026-11-12/style/`.
+
+| Eksponat | Trójkąty | Wywołania po scaleniu wg materiału | Tekstury |
+|---|---|---|---|
+| A. kuźnia i dom z kodu, płaska paleta | bez zmian względem B | 1 materiał | brak |
+| B. kuźnia i dom z kodu, skany | — | 1 materiał | wspólne tablice gry |
+| C. kuźnia z młynem, Zenchuck (CC BY 4.0) | 14 248 | 2 | paleta 256 px, 2,5 KB |
+| D. kuźnia, Daniel (CC BY 4.0) | 33 377 | 23 | 22 pliki do 2048 px, ok. 88 MB w pamięci bez kompresji |
+| D. dom z winiarnią, Don_Dzen (CC BY 4.0) | 672 534 | 27 (z 9457 siatek) | brak (płaskie kolory) |
+| wioska, Etherlyte (CC BY 4.0), same zabudowania | 253 037 z 1 345 681 | 22 | 20 plików do 4096 px, ok. 626 MB bez kompresji |
+
+Czego nie pokazuję i dlaczego: karczma (CGI Tutorials) i druga kuźnia (Pixman) mają
+kolory w wycofanym rozszerzeniu `KHR_materials_pbrSpecularGlossiness`; po przeniesieniu
+`diffuseFactor` wychodzą zielone i prawie czarne — trzeba by je poprawić w Blenderze.
+„Fantasy Book” to diorama w książce, nie budynek. Wioska to jedna scena dzielona
+materiałami, nie budynkami: połowa trójkątów to grządka marchwi.
+
+Wnioski liczbowe: model rysunkowy kosztuje 14 tys. trójkątów i 2 wywołania; realistyczna
+kuźnia 33 tys. i 23 wywołania (do scalenia w atlas); dom z winiarnią wymaga uproszczenia
+około 30× przed użyciem. Decyzja o stylu należy do użytkownika.
+
 ## 2026-11-12 · Budynki z części, strome dachy, niskie słońce, horyzont (commit 7e828d4)
 
 Jak mierzone: `tools/measure/load.mjs --game generic --extra '&q=high&scene=battle&seed=3'`

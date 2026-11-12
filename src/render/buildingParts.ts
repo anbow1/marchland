@@ -80,6 +80,39 @@ export function paintsFor(lib: SurfaceLibrary): Map<number, Paint> {
   return paints;
 }
 
+/**
+ * The same constants as flat colours of a storybook palette, with no scans (layer −1): warm plaster,
+ * straw-yellow thatch, red tile, blue-grey shingle and stone. For the style comparison (tools/compare.ts).
+ */
+const FLAT_COLOUR: readonly (readonly [hex: number, flatHex: number])[] = [
+  // Kept in the middle of the range: under the game's sun a pale flat colour burns out to white.
+  [PLASTER, 0xd6c49a],
+  [OCHRE, 0xd09a44],
+  [TIMBER, 0x4e3222],
+  [BOARDS, 0x86603c],
+  [BOARDS_DARK, 0x5c3e2a],
+  [THATCH, 0xb8963e],
+  [THATCH_PALE, 0xc8a84a],
+  [SHINGLE, 0x4e5868],
+  [TILE, 0xb04a30],
+  [STONE, 0x7e7e8a],
+  [STONE_DARK, 0x5e5e68],
+  [STONE_LIGHT, 0x96949c],
+  [ASHLAR, 0x8a8890],
+  [SOIL, 0x6a4c32],
+  [MUD, 0x5a402c],
+  [YARD, 0x76583c],
+  [LOG, 0x6e4a30],
+  [CROP, 0xd0b03a],
+  [GREEN, 0x5c9432],
+];
+
+export function flatPaints(): Map<number, Paint> {
+  const paints = new Map<number, Paint>();
+  for (const [hex, flatHex] of FLAT_COLOUR) paints.set(hex, { layer: -1, sizeM: 1, tintHex: flatHex });
+  return paints;
+}
+
 export interface HouseSpec {
   cx: number;
   cz: number;
