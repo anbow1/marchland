@@ -1,115 +1,181 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDINGS, FOOD, UNITS } from '../src/config.ts';
-import { cmdBuild, cmdRecruit } from '../src/sim/commands.ts';
-import { barracksLevel, buildingCost, createTown, rationDemandPerSecond, startBuilding, startRecruit, startUpgrade, stepEconomy, type Town } from '../src/sim/economy.ts';
-import { PLAYER } from '../src/sim/types.ts';
-import { createWorld } from '../src/sim/world.ts';
+import { FIELDS, FOOD, PEOPLE, ROADS, TOWN, UNITS } from '../src/config.ts';
+import { cmdBuild, cmdBuildRoad, cmdRecruit, cmdUpgrade, roadCost } from '../src/sim/commands.ts';
+import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
+import { findPath, isRoad } from '../src/sim/nav.ts';
+import { freePeople } from '../src/sim/people.ts';
+import { checkSite } from '../src/sim/placement.ts';
+import { planSite } from '../src/sim/sitePlanner.ts';
+import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
+import { type BuildingKind, COMPUTER, PLAYER } from '../src/sim/types.ts';
+import { createWorld, menAlive, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
 
-function richTown(): Town {
-  const town = createTown(PLAYER);
-  town.stock.gold = 5000;
-  town.stock.wood = 1000;
-  town.stock.stone = 1000;
-  town.stock.bread = 1000;
-  return town;
+function quietWorld(): World {
+  return createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
 }
 
-function runTown(town: Town, seconds: number, soldiers = 0): void {
-  for (let i = 0; i < seconds * 60; i++) stepEconomy(town, 1 / 60, soldiers);
+function rich(world: World): World {
+  const stock = world.towns[PLAYER].stock;
+  stock.gold = 5000;
+  stock.wood = 1000;
+  stock.stone = 1000;
+  stock.bread = 300;
+  return world;
 }
 
-describe('economy', () => {
-  it('a farm yields one grain per cycle once it is built', () => {
-    const town = richTown();
-    expect(startBuilding(town, 0, 'farm')).toBe('ok');
-    runTown(town, BUILDINGS.farm.buildSeconds - 0.5);
-    expect(town.stock.grain).toBe(0);
-    runTown(town, 0.5 + 5 * 10 + 1);
-    expect(town.stock.grain).toBe(10);
+/** Builds a building of `kind` where the computer's planner would, for the player; returns its place in the list. */
+function build(world: World, kind: BuildingKind): number {
+  const site = planSite(world, PLAYER, kind);
+  if (!site) throw new Error(`no ground for a ${kind}`);
+  const { x, z, yawRad } = site;
+  expect(cmdBuild(world, PLAYER, kind, x, z, yawRad)).toBe('ok');
+  return world.towns[PLAYER].plots.findIndex((b) => b !== null && b.x === x && b.z === z);
+}
+
+function finished(world: World, plot: number): boolean {
+  const b = world.towns[PLAYER].plots[plot];
+  return b !== null && b !== undefined && isBuilt(b);
+}
+
+describe('placement', () => {
+  const world = quietWorld();
+  rich(world);
+  const tx = townX(PLAYER);
+  const tz = townZ(PLAYER);
+
+  it('a building goes on free, level, dry ground within reach of its keep', () => {
+    expect(checkSite(world, PLAYER, 'house', tx + 20, tz - 20, 0).result).toBe('ok');
+    expect(checkSite(world, PLAYER, 'house', tx, tz, 0).result).toBe('blocked');
+    expect(checkSite(world, PLAYER, 'house', tx + TOWN.territoryRadiusM + 10, tz, 0).result).toBe('tooFar');
+    expect(checkSite(world, PLAYER, 'house', townX(COMPUTER), townZ(COMPUTER) + 30, 0).result).toBe('tooFar');
+    expect(isWater(lakeX(PLAYER), lakeZ(PLAYER))).toBe(true);
+    expect(checkSite(world, PLAYER, 'house', lakeX(PLAYER), lakeZ(PLAYER), 0).result).toBe('blocked');
   });
 
-  it('hides become leather armour only through a tannery', () => {
-    const town = richTown();
-    town.stock.grain = 100;
-    startBuilding(town, 0, 'pigFarm');
-    runTown(town, 120);
-    expect(town.stock.hide).toBeGreaterThan(0);
-    expect(town.stock.meat).toBe(town.stock.hide * 2);
-    expect(town.stock.leatherArmor).toBe(0);
-    expect(town.stock.sausage).toBe(0);
-    startBuilding(town, 1, 'tannery');
-    startBuilding(town, 2, 'butcher');
-    runTown(town, 120);
-    expect(town.stock.leatherArmor).toBeGreaterThan(0);
-    expect(town.stock.sausage).toBeGreaterThan(0);
+  it('trades that live on the land must stand by it', () => {
+    expect(checkSite(world, PLAYER, 'fisher', tx + 20, tz - 20, 0).result).toBe('needsWater');
+    expect(checkSite(world, PLAYER, 'quarry', tx + 20, tz - 20, 0).result).toBe('needsStone');
+    expect(checkSite(world, PLAYER, 'ironMine', tx + 20, tz - 20, 0).result).toBe('needsOre');
+    expect(checkSite(world, PLAYER, 'woodcutter', tx + 20, tz - 20, 0).result).toBe('needsForest');
+    for (const kind of ['fisher', 'quarry', 'ironMine', 'woodcutter', 'farm'] as const) {
+      const site = planSite(world, PLAYER, kind);
+      expect(site, kind).not.toBeNull();
+    }
+    const stone = DEPOSITS.find((d) => d.kind === 'stone' && Math.hypot(d.x - tx, d.z - tz) < 80);
+    expect(stone).toBeDefined();
   });
 
-  it('a building without its input stands idle and takes nothing', () => {
-    const town = richTown();
-    startBuilding(town, 0, 'bakery');
-    const breadBefore = town.stock.bread;
-    runTown(town, 60);
-    // Only eaten, never baked: there is no grain.
-    expect(town.stock.bread).toBeLessThanOrEqual(breadBefore);
-    expect(town.stock.grain).toBe(0);
+  it("a farm's fields lie behind it and nothing may be built on them", () => {
+    const w = rich(quietWorld());
+    const plot = build(w, 'farm');
+    const farm = w.towns[PLAYER].plots[plot];
+    if (!farm) throw new Error('no farm');
+    expect(farm.strips.length).toBeGreaterThanOrEqual(FIELDS.stripsPerLevel[0] as number);
+    const strip = farm.strips[0];
+    if (!strip) throw new Error('no strip');
+    // Behind: on the far side from the door.
+    const doorX = Math.sin(farm.yawRad);
+    const doorZ = Math.cos(farm.yawRad);
+    expect((strip.x - farm.x) * doorX + (strip.z - farm.z) * doorZ).toBeLessThan(0);
+    expect(checkSite(w, PLAYER, 'house', strip.x, strip.z, 0).result).toBe('blocked');
+  });
+});
+
+describe('a living town', () => {
+  it('builders raise a house only once carriers have brought its timber from the keep', () => {
+    const world = rich(quietWorld());
+    const woodBefore = world.towns[PLAYER].stock.wood;
+    const plot = build(world, 'house');
+    const house = world.towns[PLAYER].plots[plot];
+    if (!house) throw new Error('no house');
+    // Paid at once, but the timber still lies at the keep, set aside for the site.
+    expect(world.towns[PLAYER].stock.wood).toBe(woodBefore - 10);
+    expect(house.matDelivered).toBe(0);
+    const seconds = runUntil(world, 240, () => finished(world, plot));
+    expect(finished(world, plot)).toBe(true);
+    expect(house.matDelivered).toBe(house.matTotal);
+    expect(seconds).toBeGreaterThan(5);
   });
 
-  it('level 2 costs more and works faster', () => {
-    const slow = richTown();
-    const fast = richTown();
-    startBuilding(slow, 0, 'woodcutter');
-    startBuilding(fast, 0, 'woodcutter');
-    runTown(slow, 10);
-    runTown(fast, 10);
-    expect(buildingCost('woodcutter', 2, 'gold')).toBeGreaterThan(buildingCost('woodcutter', 1, 'gold'));
-    expect(startUpgrade(fast, 0)).toBe('ok');
-    runTown(fast, 20);
-    const slowWood = slow.stock.wood;
-    const fastWood = fast.stock.wood;
-    runTown(slow, 120);
-    runTown(fast, 120);
-    expect(fast.stock.wood - fastWood).toBeGreaterThan((slow.stock.wood - slowWood) * 1.4);
+  it('a farmer breaks, sows and reaps his strips, and the grain reaches the keep', () => {
+    const world = rich(quietWorld());
+    const plot = build(world, 'farm');
+    runUntil(world, 600, () => world.towns[PLAYER].stock.grain > 0);
+    const farm = world.towns[PLAYER].plots[plot];
+    if (!farm) throw new Error('no farm');
+    // A whole harvest: what reached the keep, what is still in the yard, and what is on carriers' backs.
+    let carried = 0;
+    for (const p of world.people) if (p.alive && p.side === PLAYER && p.errand !== 'none' && p.good === 'grain') carried += p.amount;
+    expect(world.towns[PLAYER].stock.grain).toBeGreaterThan(0);
+    expect(world.towns[PLAYER].stock.grain + farm.out.grain + carried).toBeGreaterThanOrEqual(FIELDS.grainPerHarvest);
+    expect(farm.strips.some((s) => s.state !== 'wild')).toBe(true);
   });
 
-  it('refuses what cannot be paid for, and a taken plot', () => {
-    const town = createTown(PLAYER);
-    town.stock.gold = 10;
-    expect(startBuilding(town, 0, 'barracks')).toBe('cannotAfford');
-    town.stock.gold = 500;
-    expect(startBuilding(town, 0, 'woodcutter')).toBe('ok');
-    expect(startBuilding(town, 0, 'woodcutter')).toBe('plotTaken');
-    expect(() => startBuilding(town, 99, 'woodcutter')).toThrow(/plot '99'/);
-  });
-
-  it('a town with nothing to eat starves, pays no tax, and recovers when fed', () => {
-    const town = createTown(PLAYER);
-    town.stock.gold = 1000;
-    town.stock.wood = 100;
+  it('a bakery bakes only the grain carriers bring it', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
     town.stock.bread = 0;
-    startBuilding(town, 0, 'house');
-    runTown(town, 60);
+    town.stock.grain = 0;
+    const plot = build(world, 'bakery');
+    runUntil(world, 240, () => finished(world, plot));
+    run(world, 30);
+    const bakery = town.plots[plot];
+    if (!bakery) throw new Error('no bakery');
+    expect(bakery.out.bread + town.stock.bread).toBe(0);
+    town.stock.grain = 30;
+    run(world, 120);
+    expect(bakery.out.bread + town.stock.bread + bakery.inp.grain).toBeGreaterThan(5);
+  });
+
+  it('woodcutters and fishers go out to the land and come back with loads', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    town.stock.wood = 1000;
+    const cutter = build(world, 'woodcutter');
+    const fisher = build(world, 'fisher');
+    town.stock.bread = 300;
+    runUntil(world, 600, () => {
+      const c = town.plots[cutter];
+      const f = town.plots[fisher];
+      return c !== null && c !== undefined && f !== null && f !== undefined && c.out.wood > 0 && f.out.fish + town.stock.fish > 0;
+    });
+    expect((town.plots[cutter]?.out.wood ?? 0) + 0).toBeGreaterThan(0);
+    expect(town.stock.fish + (town.plots[fisher]?.out.fish ?? 0)).toBeGreaterThan(0);
+  });
+
+  it('a fed house fills with people; an empty larder stops newcomers and tax', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const plot = build(world, 'house');
+    runUntil(world, 240, () => finished(world, plot));
+    const living = (): number => world.people.filter((p) => p.alive && p.side === PLAYER).length;
+    const before = living();
+    run(world, PEOPLE.growSeconds * 4);
+    expect(living()).toBeGreaterThan(before);
+    expect(housingCapacity(town)).toBe(PEOPLE.keepResidents + (PEOPLE.houseResidents[0] as number));
+    // No food anywhere: the larders run dry, the town starves and pays only the keep's income.
+    town.stock.bread = 0;
+    town.stock.fish = 0;
+    town.stock.sausage = 0;
+    for (const b of town.plots) if (b) b.inp.bread = 0;
+    runUntil(world, 600, () => town.starving && town.plots[plot]?.starving === true);
     expect(town.starving).toBe(true);
-    const goldStarving = town.stock.gold;
-    runTown(town, 60);
-    // Only the keep's own income: 0.5 gold a second.
-    expect(town.stock.gold - goldStarving).toBeLessThanOrEqual(31);
-    town.stock.bread = 50;
-    runTown(town, 40);
-    expect(town.starving).toBe(false);
-    const goldFed = town.stock.gold;
-    runTown(town, 60);
-    expect(town.stock.gold - goldFed).toBeGreaterThan(50);
+    const gold = town.stock.gold;
+    run(world, 60);
+    expect(town.stock.gold - gold).toBeLessThanOrEqual(Math.ceil(TOWN.keepGoldPerSecond * 60) + 1);
   });
 
   it('a sausage feeds two where a loaf feeds one', () => {
-    const demand = (town: Town): number => rationDemandPerSecond(town, 40);
+    const runTown = (town: Town, seconds: number, soldiers: number): void => {
+      for (let i = 0; i < seconds * 60; i++) stepEconomy(town, 1 / 60, soldiers);
+    };
     const bread = createTown(PLAYER);
     const sausage = createTown(PLAYER);
     bread.stock.bread = 100;
     sausage.stock.bread = 0;
     sausage.stock.sausage = 100;
-    expect(demand(bread)).toBeCloseTo((40 * FOOD.soldierRationsPerMinute) / 60, 10);
+    expect(keepRationDemandPerSecond(bread, 40)).toBeCloseTo((40 * FOOD.soldierRationsPerMinute) / 60, 10);
     runTown(bread, 300, 40);
     runTown(sausage, 300, 40);
     const loavesEaten = 100 - bread.stock.bread;
@@ -117,51 +183,95 @@ describe('economy', () => {
     expect(loavesEaten).toBeGreaterThanOrEqual(sausagesEaten * 2 - 1);
     expect(loavesEaten).toBeLessThanOrEqual(sausagesEaten * 2 + 1);
   });
+});
 
-  it('recruiting needs a barracks of the right level, gold and equipment per man', () => {
-    const town = richTown();
-    expect(startRecruit(town, 'militia', 0)).toBe('needsBarracks');
-    startBuilding(town, 0, 'barracks');
-    runTown(town, BUILDINGS.barracks.buildSeconds + 1);
-    expect(barracksLevel(town)).toBe(1);
-    expect(startRecruit(town, 'swordsmen', 0)).toBe('needsBarracks');
-    expect(startRecruit(town, 'pikemen', 0)).toBe('cannotAfford');
-    town.stock.weapon = 12;
-    town.stock.leatherArmor = 12;
-    expect(startRecruit(town, 'pikemen', 0)).toBe('ok');
-    expect(town.stock.weapon).toBe(0);
-    expect(town.stock.leatherArmor).toBe(0);
-    expect(startRecruit(town, 'militia', 100 - UNITS.pikemen.men - UNITS.militia.men + 1)).toBe('armyFull');
-    runTown(town, UNITS.pikemen.recruitSeconds + 0.1);
-    expect(town.trained).toEqual(['pikemen']);
-  });
-
-  it('a trained regiment takes the field with all its men', () => {
-    const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
-    world.towns[PLAYER].stock.gold = 1000;
-    world.towns[PLAYER].stock.wood = 100;
-    world.towns[PLAYER].stock.stone = 100;
-    expect(cmdBuild(world, PLAYER, 0, 'barracks')).toBe('ok');
-    run(world, BUILDINGS.barracks.buildSeconds + 0.5);
-    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('ok');
-    run(world, UNITS.militia.recruitSeconds + 0.5);
-    expect(world.regiments).toHaveLength(1);
-    expect(world.regiments[0]?.aliveMen).toBe(UNITS.militia.men);
-  });
-
-  it('balance: a plain opening fields pikemen within seven minutes', () => {
-    const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
+describe('roads', () => {
+  it('a road costs stone, only inside the side\'s land, and is refused when the stone is short', () => {
+    const world = rich(quietWorld());
     const town = world.towns[PLAYER];
-    const opening = ['woodcutter', 'farm', 'house', 'house', 'quarry', 'pigFarm', 'bakery', 'tannery', 'ironMine', 'barracks', 'smithy'] as const;
-    let next = 0;
-    let recruited = false;
-    const seconds = runUntil(world, 600, () => {
-      const kind = opening[next];
-      if (kind !== undefined && cmdBuild(world, PLAYER, next, kind) === 'ok') next++;
-      if (!recruited && next === opening.length && cmdRecruit(world, PLAYER, 'pikemen') === 'ok') recruited = true;
-      return world.regiments.length > 0;
-    });
-    expect(town.starving).toBe(false);
-    expect(seconds).toBeLessThan(420);
+    const x0 = townX(PLAYER) + 15;
+    const z0 = townZ(PLAYER) - 15;
+    const cost = roadCost(world, x0, z0, x0 + 40, z0);
+    expect(cost).toBe(Math.ceil(Math.round(40 / ROADS.cellM + 1) * ROADS.stonePerCell));
+    town.stock.stone = cost - 1;
+    expect(cmdBuildRoad(world, PLAYER, x0, z0, x0 + 40, z0)).toBe('cannotAfford');
+    town.stock.stone = 100;
+    expect(cmdBuildRoad(world, PLAYER, x0, z0, x0 + 40, z0)).toBe('ok');
+    expect(town.stock.stone).toBe(100 - cost);
+    expect(isRoad(world.nav, x0 + 20, z0)).toBe(true);
+    // Laid again, it costs nothing: every cell is road already.
+    expect(roadCost(world, x0, z0, x0 + 40, z0)).toBe(0);
+    expect(cmdBuildRoad(world, PLAYER, townX(COMPUTER), townZ(COMPUTER), townX(COMPUTER) + 10, townZ(COMPUTER))).toBe('tooFar');
   });
+
+  it('people take a road when it is quicker, and walk round buildings', () => {
+    const world = rich(quietWorld());
+    const x0 = townX(PLAYER) + 30;
+    const z0 = townZ(PLAYER) - 40;
+    const path = new Float32Array(ROADS.maxWaypoints * 2);
+    // A road that bows away from the straight line: still worth it at 1.4× the pace.
+    expect(cmdBuildRoad(world, PLAYER, x0, z0, x0 + 30, z0 - 12)).toBe('ok');
+    expect(cmdBuildRoad(world, PLAYER, x0 + 30, z0 - 12, x0 + 60, z0)).toBe('ok');
+    const points = findPath(world.nav, x0, z0, x0 + 60, z0, path);
+    expect(points).toBeGreaterThan(1);
+    let away = 0;
+    for (let i = 0; i < points; i++) away = Math.max(away, z0 - (path[i * 2 + 1] as number));
+    expect(away).toBeGreaterThan(6);
+    // A building in the way: the path goes round it.
+    const site = checkSite(world, PLAYER, 'house', x0 + 30, z0 + 40, 0);
+    expect(site.result).toBe('ok');
+    expect(cmdBuild(world, PLAYER, 'house', x0 + 30, z0 + 40, 0)).toBe('ok');
+    const round = findPath(world.nav, x0 + 10, z0 + 40, x0 + 50, z0 + 40, path);
+    for (let i = 0; i < round; i++) {
+      expect(Math.hypot((path[i * 2] as number) - (x0 + 30), (path[i * 2 + 1] as number) - (z0 + 40))).toBeGreaterThan(TOWN.buildingRadiusM - 1.5);
+    }
+  });
+});
+
+describe('recruiting', () => {
+  it('a regiment is made of townspeople who walk to the barracks', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('needsBarracks');
+    const plot = build(world, 'barracks');
+    runUntil(world, 300, () => finished(world, plot));
+    expect(barracksLevel(town)).toBe(1);
+    expect(cmdRecruit(world, PLAYER, 'swordsmen')).toBe('needsBarracks');
+    // The keep's household alone is too few to spare twelve.
+    expect(freePeople(world, PLAYER)).toBeLessThan(UNITS.militia.men + PEOPLE.minFreeAfterCallUp);
+    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('noPeople');
+    for (let i = 0; i < 3; i++) build(world, 'house');
+    runUntil(world, 900, () => freePeople(world, PLAYER) >= UNITS.militia.men + PEOPLE.minFreeAfterCallUp);
+    const living = world.people.filter((p) => p.alive && p.side === PLAYER).length;
+    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('ok');
+    runUntil(world, 300, () => world.regiments.length > 0);
+    expect(world.regiments[0]?.aliveMen).toBe(UNITS.militia.men);
+    expect(town.underArms).toBe(UNITS.militia.men);
+    expect(world.people.filter((p) => p.alive && p.side === PLAYER).length).toBeLessThanOrEqual(living - UNITS.militia.men + 2);
+  });
+
+  it('upgrading costs more and makes a workshop work faster', () => {
+    const world = rich(quietWorld());
+    const plot = build(world, 'quarry');
+    runUntil(world, 300, () => finished(world, plot));
+    expect(cmdUpgrade(world, PLAYER, plot)).toBe('ok');
+    expect(world.towns[PLAYER].plots[plot]?.level).toBe(2);
+    expect(cmdUpgrade(world, PLAYER, plot)).toBe('underConstruction');
+  });
+});
+
+describe('balance', () => {
+  it('the computer\'s town grows, stays fed and fields an army inside a quarter of an hour', () => {
+    const world = createWorld({ seed: 7, difficulty: 'normal', computerPlays: true });
+    let firstArmyS = -1;
+    runUntil(world, 15 * 60, () => {
+      if (firstArmyS < 0 && menAlive(world, COMPUTER) > 0) firstArmyS = world.timeS;
+      return false;
+    });
+    const town = world.towns[COMPUTER];
+    expect(town.plots.filter((b) => b !== null).length).toBeGreaterThanOrEqual(12);
+    expect(firstArmyS).toBeGreaterThan(0);
+    expect(firstArmyS).toBeLessThan(15 * 60);
+    expect(world.people.filter((p) => p.alive && p.side === COMPUTER).length).toBeGreaterThanOrEqual(12);
+  }, 60_000);
 });

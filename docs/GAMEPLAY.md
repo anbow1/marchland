@@ -21,8 +21,11 @@ flanka, a nie liczba kliknięć.
    postaci za rękę. Aktywna pauza zamiast szybkich palców.
 
 Czego gra **nie** ma mieć: mgły wojny (mapa jest mała i ma być czytelna),
-dowolnego stawiania budynków (zostają działki), drzewka technologii,
-mikrotransakcji, krwi.
+drzewka technologii, mikrotransakcji, krwi.
+
+**Zmiana z 2026-11-13** (prośba gracza): działki zniknęły. Budynki stawia się
+dowolnie w promieniu własnych ziem, z obrotem; ludzie chodzą po drogach, które
+gracz rysuje. Szczegóły i liczby: `ECONOMY.md` §6 i `BUILDINGS.md`.
 
 ## 2. Przebieg sesji
 
@@ -90,13 +93,25 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
 
 ## 5. Miasto i mapa
 
-- **Zamek ma trzy poziomy** (jak poziom osady): 1 — dwór z palisadą, 8 działek
-  w mieście, koszary do poziomu 1; 2 — kamienna wieża, 12 działek, koszary do
-  poziomu 2, brama; 3 — zamek, 14 działek, koszary do poziomu 3, mocniejszy
-  garnizon. Koszt rośnie w złocie i kamieniu.
-- **Działki mają rodzaj**: miejskie (chaty, rzemiosło, koszary), polne (pole,
-  chlewnia, stajnia — 4 na stronę, 60–90 m od zamku), leśne (drwal — 2),
-  skalne (kamieniołom — 1, kopalnia — 1). Działki poza miastem są celem
+- **Dowolne stawianie** (zrobione): budynek idzie w dowolne miejsce do
+  180 m od własnego zamku, na suchym i dość płaskim terenie, z odstępem od
+  innych budynków i pól. Gracz wybiera budynek z listy, widzi „ducha”
+  (zielony — można, czerwony — nie, z powodem w podpowiedzi), obraca go klawiszem
+  R i stawia lewym przyciskiem; Shift stawia kolejne tego samego rodzaju.
+- **Teren decyduje o rzemiośle** (zrobione): drwal stoi przy lesie, rybak nad
+  jeziorem, kamieniołom przy wychodni kamienia, kopalnia przy rudzie. Zagroda
+  potrzebuje wolnej ziemi za plecami: jej pasy pola leżą za nią i rosną z
+  poziomem, więc rolnictwo zajmuje teren i naturalnie tworzy wieś obok miasta.
+  Rzemiosło i chaty stawia się przy zamku.
+- **Drogi** (zrobione): rysowane od punktu do punktu (klawisz G albo przycisk
+  w menu budowy), kosztują kamień. Ludzie sami wybierają najszybszą trasę:
+  drogą idą 1,4× szybciej, w lesie wolniej, budynki i wodę omijają. Gdzie drogi
+  nie ma, wydeptują ścieżki (na razie tylko pod budynkami i przy drzwiach).
+- **Zamek ma trzy poziomy** (plan): 1 — dwór z palisadą, koszary do poziomu 1;
+  2 — kamienna wieża, koszary do poziomu 2, brama, szerszy zasięg ziem;
+  3 — zamek, koszary do poziomu 3, mocniejszy garnizon. Koszt rośnie w złocie
+  i kamieniu.
+- **Budynki za miastem** (wieś, kamieniołom, kopalnia, drwal) są celem
   zagonów: to tam lekka jazda ma co robić.
 - **Punkty na środku mapy** (zajmuje je oddział, który stoi przy nich 20 s bez
   wroga w pobliżu): bogata kopalnia (ruda bez kopalni własnej), kamieniołom,
@@ -105,8 +120,15 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
   *Przeprawa* (rzeka z mostem i dwoma brodami — wąskie gardła), *Trakt przez
   bór* (dwie polany połączone drogą przez las — zasadzki piechoty, jazda
   bezużyteczna między drzewami).
-- **Wzniesienia liczą się**: strzelcy z góry mają +15 % zasięgu, szarża w dół
-  +25 % premii, walka pod górę −1 do ataku.
+- **Wzniesienia liczą się** (plan): strzelcy z góry mają +15 % zasięgu,
+  szarża w dół +25 % premii, walka pod górę −1 do ataku.
+- **Wygląd terenu** (zrobione): pagórki z fałdami, dwa wzgórza po bokach pola
+  bitwy, po jeziorze na stronę, wychodnie kamienia i rudy z głazami, luźne
+  kamienie i kępy krzaków. Łąka ma kolor zdjęcia lotniczego prawdziwej łąki
+  (90 m bez powtórzeń), a skany z bliska dodają tylko źdźbła; każda tekstura
+  jest czytana dwa razy pod różnym kątem, więc nie widać siatki powtórzeń.
+  Drogi, podwórza, zaorane pasy i zboże (zielone → złote) są rysowane na
+  ziemi na bieżąco; drzewa i krzaki znikają tam, gdzie stanie budynek.
 
 ## 6. Wojsko
 
@@ -164,6 +186,21 @@ jednostka nie wygrywa z każdą inną; każda ma kontrę tańszą od siebie.
 
 ## 9. Interfejs
 
+Zrobione (2026-11-13):
+
+- Kamera: kółko oddala aż do widoku całej mapy (z góry, bez mgły);
+  obrót klawiszami Q/E, przeciąganiem środkowym przyciskiem, dwoma palcami
+  na dotyku i przyciskami ⟲ ⟳ na górnym pasku.
+- Menu budowy (zakładka „Buduj”) i werbunku (zakładka „Werbunek”, gdy są
+  koszary); ceny z zaznaczeniem braków.
+- Panel budynku: stan pracy (pracuje / brak pracownika / czeka na surowiec /
+  podwórze pełne), skład wejściowy i podwórze, mieszkańcy chaty, pola zagrody,
+  postęp budowy z dostarczonymi materiałami.
+- Górny pasek: ludność (i ilu wolnych), racje w zamku i chatach wobec
+  zjadanych na minutę, wojsko.
+
+Do zrobienia:
+
 - Dolny pasek kart oddziałów (jak dziś nad wojskiem, ale stały): siła, morale,
   stopień, postawa; klik zaznacza, dwuklik centruje kamerę.
 - Ekran produkcji: każdy towar z bilansem na minutę i wskazaniem zatoru
@@ -183,7 +220,7 @@ w `BLENDER.md`.
 
 | # | Kamień | Zakres | Kto | Kryterium |
 |---|---|---|---|---|
-| M1 | **Żywe miasto** | ludność, role, tragarze, składy budynków, budowa z dostawą, głód per chata, ucieczka przed wrogiem; najpierw jako obraz, potem prawdziwe czasy | silny model | test: 12 zbroi skórzanych w 6 min przy 3 tragarzach; test: bez tragarzy produkcja staje z pełnym składem; test: werbunek zmniejsza ludność; komputer nadal wygrywa z bezczynnym graczem w 30 min |
+| M1 | **Żywe miasto** ✔ | ludność, role, tragarze, składy budynków, budowa z dostawą, głód per chata, ucieczka przed wrogiem, pola, drwale i rybacy w terenie, dowolne stawianie, drogi i szukanie drogi | silny model | zrobione 2026-11-13: testy w `tests/economy.test.ts` (miejsce budowy, dostawa materiałów, żniwa, piekarnia, drwal i rybak, chata i głód, drogi, werbunek z ludności); komputer wygrywa z bezczynnym graczem w 30 min; komputer–komputer: pierwsze starcia ok. 20. minuty, bez zwycięzcy w 40 min |
 | M2 | **Bitwa v2** | szyki, szerokość frontu, postawy, cofanie, weterani, kapitan, uzupełnienia, żołd, wzniesienia, aktywna pauza z kolejką | silny model (symulacja), rutyna (HUD) | macierz pojedynków spełnia miary z §6; test na każdy szyk i postawę |
 | M3 | **Mapa ma znaczenie** | rodzaje działek, działki za miastem, punkty do zajęcia, poziomy zamku, trzy układy mapy, rzeka i brody | silny model (generator, zasady), rutyna (panele) | komputer–komputer kończy partię w 25–40 min na każdym układzie; zagon na pole zatrzymuje jego produkcję |
 | M4 | **Obraz** | żołnierze i robotnicy z modeli (animacja wypalona do tekstur), konie, las z impostorów, trawa przy kamerze, okluzja, pył i dym, budynki z modeli, etapy budowy | silny model (technika), Blender (modele) | zrzuty z ustalonych widoków obok wzorców; budżety z `BRIEF.md` §8 dotrzymane |

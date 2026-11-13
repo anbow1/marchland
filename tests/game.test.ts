@@ -36,7 +36,8 @@ describe('a whole game', () => {
     const play = (seed: number): World => {
       const world = createWorld({ seed, difficulty: 'normal', computerPlays: true });
       const second = createAiState(PLAYER);
-      for (let step = 0; step < 20 * 60 * 60 && world.winner === -1; step++) {
+      // Armies are raised from the towns' people now: the first blows fall after about twenty minutes.
+      for (let step = 0; step < 30 * 60 * 60 && world.winner === -1; step++) {
         stepAi(world, second, SIM.stepSeconds);
         stepWorld(world, SIM.stepSeconds);
       }

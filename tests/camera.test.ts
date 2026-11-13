@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { groundHit } from '../src/app/picking.ts';
 import { pitchForDistance, RtsCamera } from '../src/app/rtsCamera.ts';
 import { CAMERA, MAP, TOWN } from '../src/config.ts';
-import { heightAtM, isForest, plotX, plotZ, townX, townZ } from '../src/sim/terrain.ts';
+import { DEPOSITS, heightAtM, isForest, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
 
 describe('strategy camera', () => {
   it('zoom keeps the point under the cursor in the same proportion to the target', () => {
@@ -83,19 +83,27 @@ describe('picking and the map', () => {
     expect(groundHit({ ox: 0, oy: 80, oz: 0, dx: d, dy: d, dz: 0 }, hit)).toBe(false);
   });
 
-  it('towns stand on level, open ground and their plots do not overlap', () => {
+  it('towns stand on level, open ground; each side has its lake, stone and ore within reach', () => {
     for (const side of [0, 1] as const) {
       expect(heightAtM(townX(side), townZ(side))).toBeCloseTo(0, 10);
       expect(isForest(townX(side), townZ(side))).toBe(false);
-      for (let a = 0; a < TOWN.plotCount; a++) {
-        expect(heightAtM(plotX(side, a), plotZ(side, a))).toBeCloseTo(0, 10);
-        expect(Math.hypot(plotX(side, a) - townX(side), plotZ(side, a) - townZ(side))).toBeGreaterThan(TOWN.keepRadiusM + TOWN.buildingRadiusM);
-        for (let b = a + 1; b < TOWN.plotCount; b++) {
-          expect(Math.hypot(plotX(side, a) - plotX(side, b), plotZ(side, a) - plotZ(side, b))).toBeGreaterThan(2 * TOWN.buildingRadiusM);
-        }
+      const lake = Math.hypot(lakeX(side) - townX(side), lakeZ(side) - townZ(side));
+      expect(lake).toBeLessThan(TOWN.territoryRadiusM - TOWN.lakeRadiusM);
+      for (const kind of ['stone', 'ore'] as const) {
+        const nearest = Math.min(...DEPOSITS.filter((d) => d.kind === kind).map((d) => Math.hypot(d.x - townX(side), d.z - townZ(side))));
+        expect(nearest).toBeLessThan(TOWN.territoryRadiusM * 0.5);
       }
     }
-    expect(() => plotX(0, TOWN.plotCount)).toThrow(/plot/);
+  });
+
+  it('zoomed out all the way, the whole map is in view', () => {
+    const cam = new RtsCamera(0, 0, Math.PI / 4);
+    cam.zoomAt(100, 0, 0);
+    expect(cam.goal.distanceM).toBe(CAMERA.maxDistanceM);
+    // The visible ground's half-height at the target, from the vertical field of view, covers the map's half-diagonal on a 16:9 screen.
+    const halfHeightM = Math.tan(((CAMERA.fovDeg / 2) * Math.PI) / 180) * CAMERA.maxDistanceM;
+    expect(halfHeightM).toBeGreaterThan(MAP.halfM);
+    expect(pitchForDistance(CAMERA.maxDistanceM)).toBeGreaterThan(1.2);
   });
 
   it('the field between the towns is open, and there is forest to fight in elsewhere', () => {

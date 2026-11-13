@@ -3,7 +3,7 @@ import { MISSILE, UNITS } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdMove, cmdMoveGroup } from '../src/sim/commands.ts';
 import { launchElevationRad } from '../src/sim/missiles.ts';
 import { type Regiment, slotX, slotZ } from '../src/sim/regiment.ts';
-import { plotX, plotZ } from '../src/sim/terrain.ts';
+import { townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
@@ -169,12 +169,17 @@ describe('archery', () => {
   });
 
   it('archers wear down infantry that stands in range, and not beyond it', () => {
+    // Men left standing, on average over three seeds: one volley's luck is not the rule.
     const shootAt = (distanceM: number): number => {
-      const world = emptyWorld();
-      spawnRegiment(world, PLAYER, 'archers', 0, 0, Math.PI);
-      const target = spawnRegiment(world, COMPUTER, 'militia', 0, -distanceM, 0);
-      run(world, 90);
-      return target.aliveMen;
+      let alive = 0;
+      for (const seed of [3, 4, 5]) {
+        const world = emptyWorld(seed);
+        spawnRegiment(world, PLAYER, 'archers', 0, 0, Math.PI);
+        const target = spawnRegiment(world, COMPUTER, 'militia', 0, -distanceM, 0);
+        run(world, 90);
+        alive += target.aliveMen;
+      }
+      return alive / 3;
     };
     expect(shootAt(60)).toBeLessThan(8);
     expect(shootAt(UNITS.archers.missileRangeM + 25)).toBe(12);
@@ -268,9 +273,11 @@ describe('the wider roster', () => {
     const town = siege.towns[COMPUTER];
     town.stock.gold = 1000;
     town.stock.wood = 100;
-    expect(cmdBuild(siege, COMPUTER, 0, 'house')).toBe('ok');
-    // 100 m short of the enemy's plot 0, on the open field side.
-    const engine = spawnRegiment(siege, PLAYER, 'trebuchet', plotX(COMPUTER, 0) - 70, plotZ(COMPUTER, 0) + 70, 0);
+    const hx = townX(COMPUTER) - 25;
+    const hz = townZ(COMPUTER) + 25;
+    expect(cmdBuild(siege, COMPUTER, 'house', hx, hz, 0)).toBe('ok');
+    // 100 m short of the house, on the open field side.
+    const engine = spawnRegiment(siege, PLAYER, 'trebuchet', hx - 70, hz + 70, 0);
     expect(cmdAttackBuilding(siege, engine.id, COMPUTER, 0)).toBe('ok');
     runUntil(siege, 400, () => town.plots[0] === null || engine.aliveMen === 0);
     expect(town.plots[0]).toBeNull();

@@ -9,8 +9,8 @@ roughness, metalness). `meta.json` holds the real size of one repeat.
 
 | Folder          | Source                                     | Used for                           |
 | --------------- | ------------------------------------------ | ---------------------------------- |
-| `meadow/`       | https://polyhaven.com/a/forrest_ground_01  | grassland                          |
-| `dry_grass/`    | https://polyhaven.com/a/leafy_grass        | hilltops and worn grass            |
+| `meadow/`       | https://polyhaven.com/a/forrest_ground_01  | fine grain of the grassland        |
+| `dry_grass/`    | https://polyhaven.com/a/leafy_grass        | fine grain of dry grass; corn      |
 | `dirt/`         | https://polyhaven.com/a/brown_mud_dry      | roads, yards, pens                 |
 | `forest_floor/` | https://polyhaven.com/a/forest_ground_04   | ground under the trees             |
 | `farm_soil/`    | https://polyhaven.com/a/farm_soil          | fields and gardens                 |
@@ -24,4 +24,6 @@ roughness, metalness). `meta.json` holds the real size of one repeat.
 | `rubble/`       | https://polyhaven.com/a/castle_wall_slates | rubble walls, footings, the quarry |
 | `ashlar/`       | https://polyhaven.com/a/rustic_stone_wall  | the keeps and dressed stone        |
 | `bark/`         | https://polyhaven.com/a/bark_brown_02      | tree trunks, logs, palisades       |
-| `leaves/`       | https://polyhaven.com/a/aerial_grass_rock  | tree crowns                        |
+| `leaves/`       | https://polyhaven.com/a/aerial_grass_rock  | tree crowns, bushes                |
+| `rock/`         | https://polyhaven.com/a/rock_ground        | bare rock, outcrops, boulders      |
+| `pasture/`      | https://polyhaven.com/a/rocky_terrain_02   | colour of the grassland (aerial)   |

@@ -5,6 +5,57 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Żywe miasto: dowolne stawianie, drogi, ludzie, teren bez powtórzeń
+
+Co się zmieniło (szczegóły: `docs/ECONOMY.md`, `docs/BUILDINGS.md`, `docs/GAMEPLAY.md` §5, §9):
+
+- **Budynki stawia się dowolnie** w promieniu 180 m od zamku, z obrotem (R) i
+  podglądem miejsca; drwal przy lesie, rybak nad jeziorem, kamieniołom i kopalnia
+  przy skale, zagroda z pasami pola za plecami. Komputer korzysta z tych samych
+  zasad (planer miejsc: pierścienie wokół zamku, wieś z polami, skraj lasu,
+  brzeg jeziora, wychodnie) i od każdych drzwi kładzie drogę do bramy.
+- **Drogi** na siatce 2 m za kamień (G); ludzie szukają drogi algorytmem A*,
+  drogą idą 1,4× szybciej, omijają budynki i wodę.
+- **Ludzie są widoczni**: tragarze z ładunkiem w kolorze towaru, rolnicy na
+  polach, drwale w lesie, budowniczowie; pięć póz (stoi, dwa kroki, dwa ruchy
+  pracy). Zboże na pasach rośnie od zielonego do złotego.
+- **Kamera**: oddalenie do całej mapy (860 m, prawie z góry, mgła rzednie z
+  wysokością); obrót Q/E, środkowym przyciskiem, dwoma palcami i przyciskami.
+- **Teren**: pagórki i dwa wzgórza, jeziora z wodą, wychodnie z głazami, luźne
+  kamienie, krzaki. Łąka bierze kolor ze zdjęcia lotniczego łąki (CC0, 90 m),
+  każda tekstura czytana dwa razy pod innym kątem — znikł regularny wzór, który
+  wskazał gracz. Pod nowymi budynkami i drogami drzewa i krzaki znikają.
+- **Dokumenty generowane z liczb gry** (`npm run docs`), test pilnuje, żeby
+  były aktualne.
+
+Ekonomia w liczbach (`npm run timeline`, komputer sam, ziarno 7): po 3 min 9
+budynków i 13 osób; po 10 min 12 budynków, 26 osób, koszary; pierwszy regiment
+w 13. minucie, bez głodu. Komputer przeciw bezczynnemu graczowi wygrywa przed
+30. minutą. Komputer przeciw komputerowi (ziarno 11): pierwsze starcia ok. 20.
+minuty, 84 polegli do 30. minuty, bez zwycięzcy po 40 minutach — obrona wciąż
+silniejsza od ataku (ryzyko z `GAMEPLAY.md` §11).
+
+Strojenie, które to umożliwiło: tragarz niesie 5 sztuk (było 3), idzie 1,7 m/s
+(było 1,4); drwal przynosi 4 drewna, rybak 3 ryby; pierwszeństwo dla wywozu
+towaru, którego zamkowi brakuje; żadnych dostaw do warsztatu z pełnym
+podwórzem; werbunek zostawia w mieście co najmniej 4 wolnych ludzi; żołnierze
+nie zajmują miejsc w chatach.
+
+Testy: 51 z 51 (`npx vitest run`), w tym nowe testy żywego miasta, dróg,
+werbunku z ludności i zgodności dokumentów.
+
+Wczytywanie (WebGL2 na programowym GPU, High): tekstury 1,27 s, teren 0,96 s,
+rozgrzewka potoków 4,26 s, razem 6,7 s.
+
+Zrzuty (`results/2026-11-13/`, WebGL2 na programowym GPU, 1280 × 720):
+`town.jpg` (miasto komputera-planera po 4 min, z drogami i wsią), `whole-map.jpg`
+(maksymalne oddalenie), `meadow-220m.jpg` i `meadow-40m.jpg` (łąka bez
+powtórzeń), `placing-a-farm.jpg` (duch zagrody z jej polami).
+
+Znane braki: chodzenie poza drogami nie wydeptuje jeszcze ścieżek; pola przy
+dużym oddaleniu są płaskimi prostokątami koloru; panel budowy zajmuje sporo
+ekranu na telefonie; budynki komputera stoją czasem ciasno przy jeziorze.
+
 ## 2026-11-12 · Porównanie stylów: rysunkowy i realistyczny (do decyzji)
 
 Jak zrobione: strona `compare.html` (`npx vite build --config vite.compare.config.ts`,
