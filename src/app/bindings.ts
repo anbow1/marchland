@@ -61,6 +61,11 @@ export class ActionState {
     };
   }
 
+  /** True while Ctrl (or Cmd) is down. */
+  isCtrlHeld(): boolean {
+    return this.ctrl;
+  }
+
   isHeld(action: Action): boolean {
     if (NEEDS_CTRL.has(action) !== this.ctrl) return false;
     for (const code of BINDINGS[action]) if (this.held.has(code)) return true;

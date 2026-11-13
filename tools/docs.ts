@@ -9,7 +9,7 @@
 //
 // tests/docs.test.ts fails while a document on disk is not what this produces.
 import { existsSync } from 'node:fs';
-import { AI, ARMY, BUILDINGS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../src/config.ts';
+import { AI, ARMY, BUILDINGS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WALLS, WINE } from '../src/config.ts';
 import { BUILDING_KINDS, type BuildingKind, type Cost, RESOURCE_IDS, type ResourceId, SITE_NEED, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 
 const GOOD_EN: Record<ResourceId, string> = {
@@ -75,6 +75,7 @@ const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   armourer: { name: 'Armourer', role: 'Makes mail from iron for swordsmen, halberdiers and knights. Armour stands, a rack of polearms and shields in the town\'s colour outside.' },
   fletcher: { name: 'Fletcher', role: 'Makes bows and crossbows from timber.' },
   stable: { name: 'Stable', role: 'Raises war horses on grain.' },
+  tower: { name: 'Watchtower', role: 'A stone tower for up to 4 archers or crossbowmen of one kind, who shoot from its top further than from the ground. It may stand anywhere: by the town, an outlying mine or a village.' },
   barracks: { name: 'Barracks', role: 'Townspeople called up walk here, take their equipment and form a regiment. Its level decides which units can be trained.' },
 };
 
@@ -120,7 +121,7 @@ const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKin
   { name: 'Iron, weapons and mail', pl: 'Żelazo, broń i kolczugi', kinds: ['ironMine', 'smelter', 'smithy', 'armourer'], planned: [] },
   { name: 'Leather armour and bows', pl: 'Zbroje skórzane i łuki', kinds: ['tannery', 'fletcher'], planned: [] },
   { name: 'Horses', pl: 'Konie', kinds: ['stable'], planned: [] },
-  { name: 'Army and defence', pl: 'Wojsko i obrona', kinds: ['barracks'], planned: ['Siege Workshop', 'Watchtower', 'Palisade and Gate', 'Keep, levels 2 and 3'] },
+  { name: 'Army and defence', pl: 'Wojsko i obrona', kinds: ['barracks', 'tower'], planned: ['Siege Workshop', 'Gate (a wall that opens for its own side)', 'Keep, levels 2 and 3'] },
 ];
 
 for (const kind of BUILDING_KINDS) {
@@ -167,16 +168,19 @@ config (or the text in \`tools/docs.ts\`) and regenerate.*
 | 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; ${PEOPLE.keepResidents} residents; ${fixed(TOWN.keepGoldPerSecond * 60)} gold a minute; archers who shoot ${TOWN.keepRangeM} m. Lose it and the game is lost | — | ${TOWN.keepHp} |
 ${rows.join('\n')}
 | ${BUILDING_KINDS.length + 2} | **Road** | ${fixed(ROADS.stonePerCell * (10 / ROADS.cellM), 1)} stone for 10 m | own land, not water | people walk ${fixed(ROADS.roadSpeedFactor)}× as fast on it and prefer it when finding their way | — | — |
+| ${BUILDING_KINDS.length + 3} | **Wall** | ${WALLS.stonePerCell * Math.round(10 / ROADS.cellM)} stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; ${WALLS.hp} blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | ${WALLS.hp} per 2 m |
 
 What each is for:
 
 - **Keep** — the heart of the town: storehouse, first household, last defence.
 ${roles.join('\n')}
 - **Road** — drawn from point to point; carriers, workers and builders take it whenever it shortens the walk.
+- **Wall** — drawn from point to point like a road; it blocks people and soldiers of both sides, so leave a gap where your own must pass.
 
 Rules common to all buildings:
 
-- **Free placement.** A building goes anywhere within ${TOWN.territoryRadiusM} m of its side's keep (and no nearer
+- **Free placement.** A building goes anywhere within ${TOWN.territoryRadiusM} m of its side's keep (farms and vineyards
+  ${TOWN.fieldTerritoryRadiusM} m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than ${TOWN.enemyKeepClearM} m to the enemy's) where the ground under it rises no more than ${TOWN.maxFootprintRiseM} m, is not
   water, and is ${TOWN.buildingGapM} m clear of other buildings and of farm strips. A side may have ${TOWN.maxBuildings} buildings.
 - **Three levels.** Level ${MAX_LEVEL} is the top. A level costs ×${LEVEL_COST.join(' / ×')} of the base price and works
@@ -215,9 +219,8 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 
 | Priority | Building | Why it is needed |
 |---|---|---|
+| A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
 | A | **Storehouse** | A second place to store goods: carriers bring and fetch from the nearest one, so a village far from the keep stops costing long walks. |
-| A | **Watchtower** | Archers on a tower: protects an outlying village or a quarry from raids. |
-| A | **Palisade** and **Gate** | Walls drawn like roads; soldiers must break a section or the gate. Gives siege engines their purpose. |
 | A | **Siege Workshop** | Builds ballistae and trebuchets instead of the barracks (timber, weapons, stone), so engines are a separate investment. |
 | B | **Sawmill** | Logs → planks: higher levels of buildings and engines ask for planks, so timber gets a second tier. |
 | B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |
@@ -316,7 +319,8 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 7. Stawianie budynków i drogi
 
-- Budynek stawia się **w dowolnym miejscu** w promieniu ${TOWN.territoryRadiusM} m od własnego zamku (i nie bliżej niż
+- Budynek stawia się **w dowolnym miejscu** w promieniu ${TOWN.territoryRadiusM} m od własnego zamku (zagrody i winnice do
+  ${TOWN.fieldTerritoryRadiusM} m; drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy), ale nie bliżej niż
   ${TOWN.enemyKeepClearM} m od wrogiego): teren pod nim może się wznosić najwyżej o ${TOWN.maxFootprintRiseM} m, nie może to być woda,
   a od innych budynków i pól dzieli go co najmniej ${TOWN.buildingGapM} m. Budynek można obrócić przed postawieniem;
   drzwi wyznaczają, gdzie podchodzą ludzie. Limit: ${TOWN.maxBuildings} budynków na stronę.

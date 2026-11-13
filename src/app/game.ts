@@ -1,10 +1,10 @@
 import { AI, CAMERA, FIELDS, MAP, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdDemolish, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUpgrade, roadCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
-import { cellX, cellZ, roadCells } from '../sim/nav.ts';
-import { checkSite, yawToKeep } from '../sim/placement.ts';
+import { cellX, cellZ, roadCells, wallCells } from '../sim/nav.ts';
+import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { heightAtM, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
@@ -32,7 +32,7 @@ export interface GameOptions {
 }
 
 /** What the player is placing on the map: a building (turned by `turns` eighths of a circle from facing the keep), or a road from a point. */
-type Tool = { kind: 'build'; building: BuildingKind; turns: number } | { kind: 'road'; fromX: number; fromZ: number; started: boolean };
+type Tool = { kind: 'build'; building: BuildingKind; turns: number } | { kind: 'road' | 'wall'; fromX: number; fromZ: number; started: boolean };
 
 /** Least seconds between two "enemy at the town" warnings. */
 const WARNING_GAP_S = 45;
@@ -76,6 +76,8 @@ export class Game implements ControlTarget {
     this.hud = new Hud(hudRoot, {
       pickBuilding: (kind) => this.pickTool({ kind: 'build', building: kind, turns: 0 }),
       pickRoad: () => this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false }),
+      pickWall: () => this.pickTool({ kind: 'wall', fromX: 0, fromZ: 0, started: false }),
+      ungarrison: (plot) => this.report(cmdUngarrison(this.world, PLAYER, plot)),
       rotateCamera: (direction) => this.camera.rotate(direction * CAMERA.rotateStepRad),
       upgrade: (plot) => this.report(cmdUpgrade(this.world, PLAYER, plot)),
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
@@ -168,6 +170,13 @@ export class Game implements ControlTarget {
           this.hud.toast(T.built, 'good');
         }
         break;
+      case 'garrisoned':
+        if (mine) this.hud.toast(T.garrisoned, 'good');
+        break;
+      case 'wallBroken':
+        this.sound.play('thud', distanceM);
+        if (!mine) this.hud.toast(T.wallBroken, 'bad');
+        break;
       case 'rearmed':
         if (mine) {
           this.sound.play('build');
@@ -219,7 +228,7 @@ export class Game implements ControlTarget {
     this.view.render(this.world, this.camera, this.selected, this.selectedPlot >= 0 ? this.selectedPlot : -2, placing === 'ghost' ? this.ghost : null, placing === 'none' ? null : this.tiles, frameSeconds);
     this.timer.lap('draw');
     this.updateCorners();
-    const tool = this.tool === null ? '' : this.tool.kind === 'road' ? 'road' : this.tool.building;
+    const tool = this.tool === null ? '' : this.tool.kind === 'build' ? this.tool.building : this.tool.kind;
     this.hud.update(this.world, { regiments: this.selected, plot: this.selectedPlot, tool }, (x, y, z, out) => this.view.project(x, y, z, out), heightAtM, this.corners, frameSeconds);
     this.timer.lap('hud');
     if (this.hud.debugVisible) this.hud.setDebugText(this.debugText());
@@ -276,7 +285,7 @@ export class Game implements ControlTarget {
 
   /** Puts down the tool; a road in the middle of a stretch first lets go of its start. */
   private dropTool(): void {
-    if (this.tool?.kind === 'road' && this.tool.started) this.tool.started = false;
+    if (this.tool && this.tool.kind !== 'build' && this.tool.started) this.tool.started = false;
     else this.tool = null;
     if (!this.tool) this.setHint(T.hintIdle);
   }
@@ -296,7 +305,7 @@ export class Game implements ControlTarget {
       return;
     }
     if (tool.started) {
-      const result = cmdBuildRoad(this.world, PLAYER, tool.fromX, tool.fromZ, x, z);
+      const result = tool.kind === 'wall' ? cmdBuildWall(this.world, PLAYER, tool.fromX, tool.fromZ, x, z) : cmdBuildRoad(this.world, PLAYER, tool.fromX, tool.fromZ, x, z);
       this.report(result);
       if (result !== 'ok') return;
     } else {
@@ -334,17 +343,18 @@ export class Game implements ControlTarget {
       this.setHint(check.result === 'ok' ? `${T.buildings[tool.building].name}: ${T.hintBuild}` : `${T.buildings[tool.building].name}: ${T.results[check.result]}`);
       return 'ghost';
     }
+    const wall = tool.kind === 'wall';
     if (!tool.started || !pointing) {
-      this.setHint(tool.started ? T.hintRoadEnd : T.hintRoadStart);
+      this.setHint(wall ? (tool.started ? T.hintWallEnd : T.hintWallStart) : tool.started ? T.hintRoadEnd : T.hintRoadStart);
       return 'none';
     }
-    const cells = roadCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch);
+    const cells = wall ? wallCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch) : roadCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch);
     for (let i = 0; i < cells; i++) this.tiles.values.push(cellX(this.roadScratch[i] as number), cellZ(this.roadScratch[i] as number), ROADS.cellM, ROADS.cellM, 0);
     this.tiles.count = cells;
-    const cost = roadCost(this.world, tool.fromX, tool.fromZ, this.hit.x, this.hit.z);
-    const inReach = Math.hypot(this.hit.x - townX(PLAYER), this.hit.z - townZ(PLAYER)) <= TOWN.territoryRadiusM;
+    const cost = wall ? wallCost(this.world, tool.fromX, tool.fromZ, this.hit.x, this.hit.z) : roadCost(this.world, tool.fromX, tool.fromZ, this.hit.x, this.hit.z);
+    const inReach = mayLayRoadAt(PLAYER, this.hit.x, this.hit.z) && mayLayRoadAt(PLAYER, tool.fromX, tool.fromZ);
     this.tiles.allowed = inReach && this.world.towns[PLAYER].stock.stone >= cost;
-    this.setHint(`${T.hintRoadEnd} ${cost} ${T.roadCost}${inReach ? '' : ` — ${T.results.tooFar}`}`);
+    this.setHint(`${wall ? T.hintWallEnd : T.hintRoadEnd} ${cost} ${T.roadCost}${inReach ? '' : ` — ${T.results.tooFar}`}`);
     return 'tiles';
   }
 
@@ -453,6 +463,18 @@ export class Game implements ControlTarget {
     const enemy = this.regimentAt(x, z, COMPUTER);
     if (enemy && faceToX === null) {
       this.attackRegiment(enemy.id);
+      return;
+    }
+    // On one of our own watchtowers: the shooters among the chosen go up to man it.
+    const ownPlot = this.plotAt(x, z, PLAYER);
+    const ownTower = ownPlot >= 0 ? this.world.towns[PLAYER].plots[ownPlot] : null;
+    if (ownTower && ownTower.kind === 'tower' && faceToX === null) {
+      let result: CommandResult = 'cannotGarrison';
+      for (const id of ids) {
+        const r = cmdGarrison(this.world, id, ownPlot);
+        if (r === 'ok' || result !== 'ok') result = r;
+      }
+      this.report(result);
       return;
     }
     const plot = this.plotAt(x, z, COMPUTER);

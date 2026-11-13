@@ -71,6 +71,10 @@ export interface Building {
   /** Houses: wine owed, and whether there is wine in the house now. */
   wineDebt: number;
   hasWine: boolean;
+  /** Towers: archers or crossbowmen inside, their kind, and the seconds to the next shot. */
+  garrison: number;
+  garrisonKind: UnitKind | null;
+  shotS: number;
 }
 
 export interface RecruitOrder {
@@ -191,6 +195,9 @@ export function startBuilding(town: Town, kind: BuildingKind, site: Site): numbe
     strips,
     wineDebt: 0,
     hasWine: false,
+    garrison: 0,
+    garrisonKind: null,
+    shotS: 0,
   };
   orderWork(town, b, 1, BUILDINGS[kind].buildSeconds);
   town.plots[plot] = b;
@@ -450,7 +457,7 @@ export type WorkState = 'working' | 'building' | 'paused' | 'noWorker' | 'noInpu
 export function workState(b: Building): WorkState {
   if (b.constructionLeftS > 0) return 'building';
   if (b.paused) return 'paused';
-  if (b.kind === 'house' || b.kind === 'barracks') return 'working';
+  if (b.kind === 'house' || b.kind === 'barracks' || b.kind === 'tower') return 'working';
   if (b.workRate <= 0) return 'noWorker';
   const recipe = BUILDINGS[b.kind].recipe;
   if (!recipe) return 'working';

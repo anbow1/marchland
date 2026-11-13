@@ -1,13 +1,13 @@
-import { ARMY, PEOPLE, REARM, ROADS, TOWN, UNITS } from '../config.ts';
+import { ARMY, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
-import { layRoad, roadCells, stampBuilding } from './nav.ts';
-import { checkSite } from './placement.ts';
+import { layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
+import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { frontageM, isArcher, type Regiment } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
-import { findRegiment, menAlive, type World } from './world.ts';
+import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
 // Everything a player can do, human or computer. The HUD and the computer
@@ -34,7 +34,7 @@ export function roadCost(world: World, x0: number, z0: number, x1: number, z1: n
 export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x1: number, z1: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   const town = world.towns[side];
-  for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (hypot2(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return 'tooFar';
+  for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (!mayLayRoadAt(side, x, z)) return 'tooFar';
   const cells = roadCells(world.nav, x0, z0, x1, z1, roadScratch);
   const cost = Math.ceil(cells * ROADS.stonePerCell);
   if (town.stock.stone < cost) return 'cannotAfford';
@@ -233,5 +233,56 @@ export function cmdMoveGroup(world: World, regimentIds: readonly number[], x: nu
   // With no melee troops the archers form the front line themselves.
   placeRow(front, 0);
   placeRow(rear, front.length > 0 ? SECOND_LINE_M : 0);
+  return 'ok';
+}
+
+const wallScratch: number[] = [];
+
+/** Stone a wall from one point to another would cost now. */
+export function wallCost(world: World, x0: number, z0: number, x1: number, z1: number): number {
+  return wallCells(world.nav, x0, z0, x1, z1, wallScratch) * WALLS.stonePerCell;
+}
+
+/** Builds a straight wall between two points, paid for in stone. Leave a gap for a gate. */
+export function cmdBuildWall(world: World, side: Side, x0: number, z0: number, x1: number, z1: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (!mayLayRoadAt(side, x, z)) return 'tooFar';
+  const cells = wallCells(world.nav, x0, z0, x1, z1, wallScratch);
+  const town = world.towns[side];
+  if (town.stock.stone < cells * WALLS.stonePerCell) return 'cannotAfford';
+  town.stock.stone -= cells * WALLS.stonePerCell;
+  layWall(world.nav, wallScratch, side, x0, z0, x1, z1, WALLS.hp);
+  return 'ok';
+}
+
+/** Sends archers or crossbowmen to man one of their side's watchtowers; up to its free places go in. */
+export function cmdGarrison(world: World, regimentId: number, plot: number): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  const b = plot >= 0 ? world.towns[r.side].plots[plot] : null;
+  if (!b || b.kind !== 'tower' || b.constructionLeftS > 0) return 'cannotGarrison';
+  if (r.def.missileRangeM <= 0 || r.def.engine || (b.garrisonKind !== null && b.garrisonKind !== r.kind)) return 'cannotGarrison';
+  if (b.garrison >= TOWER.maxGarrison) return 'towerFull';
+  const result = cmdMove(world, r.id, doorOfX(b), doorOfZ(b), null, false);
+  if (result !== 'ok') return result;
+  r.garrisonPlot = plot;
+  return 'ok';
+}
+
+/** Brings a tower's garrison out as a small regiment before its door. */
+export function cmdUngarrison(world: World, side: Side, plot: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const b = plot >= 0 ? world.towns[side].plots[plot] : null;
+  if (!b || b.kind !== 'tower' || b.garrison === 0 || b.garrisonKind === null) return 'plotEmpty';
+  const r = spawnRegiment(world, side, b.garrisonKind, doorOfX(b), doorOfZ(b), b.yawRad);
+  r.soldiers.forEach((s, i) => {
+    if (i < b.garrison) return;
+    s.alive = false;
+    s.deadS = 999;
+  });
+  r.aliveMen = b.garrison;
+  r.initialMen = b.garrison;
+  b.garrison = 0;
+  b.garrisonKind = null;
   return 'ok';
 }

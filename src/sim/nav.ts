@@ -33,6 +33,10 @@ export interface Nav {
   road: Uint8Array;
   /** 1 where a building stands. */
   built: Uint8Array;
+  /** Walls: blows left in each cell (0 = no wall), the side that built it, and its line (0 along X, 1 along Z, 2 and 3 the diagonals). */
+  wallHp: Uint16Array;
+  wallSide: Uint8Array;
+  wallDir: Uint8Array;
   /** Goes up whenever roads or buildings change: paths and the view's ground refresh on it. */
   version: number;
   /** Cells the path finder may still look at this step. */
@@ -40,7 +44,7 @@ export interface Nav {
 }
 
 export function createNav(): Nav {
-  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
+  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), wallHp: new Uint16Array(CELLS), wallSide: new Uint8Array(CELLS), wallDir: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
 }
 
 export const NAV_CELLS_PER_SIDE = N;
@@ -197,7 +201,77 @@ function nearestOpen(nav: Nav, cell: number): number {
 }
 
 function passable(nav: Nav, i: number): boolean {
-  return nav.built[i] === 0 && WATER[i] === 0;
+  return nav.built[i] === 0 && WATER[i] === 0 && nav.wallHp[i] === 0;
+}
+
+/** The wall cell at a point, or -1 where there is no wall. */
+export function wallCellAt(nav: Nav, x: number, z: number): number {
+  if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) return -1;
+  const i = cellOf(z) * N + cellOf(x);
+  return nav.wallHp[i] > 0 ? i : -1;
+}
+
+/** Cells a straight wall from one point to another would take: not water, not built on, not wall already. */
+export function wallCells(nav: Nav, x0: number, z0: number, x1: number, z1: number, out: number[]): number {
+  out.length = 0;
+  const steps = Math.max(1, Math.ceil(hypot2(x1 - x0, z1 - z0) / (ROADS.cellM * 0.5)));
+  let last = -1;
+  for (let s = 0; s <= steps; s++) {
+    const t = s / steps;
+    const i = cellOf(z0 + (z1 - z0) * t) * N + cellOf(x0 + (x1 - x0) * t);
+    if (i === last) continue;
+    last = i;
+    if (nav.wallHp[i] > 0 || nav.built[i] === 1 || WATER[i] === 1 || out.includes(i)) continue;
+    out.push(i);
+  }
+  return out.length;
+}
+
+/** Builds wall on the cells, for a side, along the line from (x0, z0) to (x1, z1); a road under it is gone. */
+export function layWall(nav: Nav, cells: readonly number[], side: number, x0: number, z0: number, x1: number, z1: number, hp: number): void {
+  const a = Math.atan2(z1 - z0, x1 - x0);
+  const octant = ((Math.round(a / (Math.PI / 4)) % 4) + 4) % 4;
+  // 0 along X, 1 the diagonal up, 2 along Z, 3 the other diagonal: stored as 0 X, 1 Z, 2 and 3 diagonals.
+  const dir = octant === 0 ? 0 : octant === 2 ? 1 : octant === 1 ? 2 : 3;
+  for (const i of cells) {
+    nav.wallHp[i] = hp;
+    nav.wallSide[i] = side;
+    nav.wallDir[i] = dir;
+    nav.road[i] = 0;
+  }
+  if (cells.length > 0) nav.version += 1;
+}
+
+/** Takes `amount` off a wall cell; true when that brought it down. */
+export function damageWall(nav: Nav, cell: number, amount: number): boolean {
+  const hp = nav.wallHp[cell] as number;
+  if (hp === 0) return false;
+  const left = Math.max(0, hp - Math.max(1, Math.round(amount)));
+  nav.wallHp[cell] = left;
+  if (left > 0) return false;
+  nav.version += 1;
+  return true;
+}
+
+/** The nearest cell to a wall cell (of the eight round it) that is not wall, nearest the given point; -1 if none. */
+export function freeCellBeside(nav: Nav, cell: number, nearX: number, nearZ: number): number {
+  const cx = cell % N;
+  const cz = (cell / N) | 0;
+  let best = -1;
+  let bestD = Number.POSITIVE_INFINITY;
+  for (let k = 0; k < 8; k++) {
+    const nx = cx + (DX[k] as number);
+    const nz = cz + (DZ[k] as number);
+    if (nx < 0 || nz < 0 || nx >= N || nz >= N) continue;
+    const i = nz * N + nx;
+    if (nav.wallHp[i] > 0) continue;
+    const d = (centreOf(nx) - nearX) ** 2 + (centreOf(nz) - nearZ) ** 2;
+    if (d < bestD) {
+      best = i;
+      bestD = d;
+    }
+  }
+  return best;
 }
 
 function costOf(nav: Nav, i: number): number {

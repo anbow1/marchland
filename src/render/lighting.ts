@@ -35,12 +35,12 @@ export const AFTERNOON: LightPreset = {
   sunAzimuthDeg: 236,
   sunElevationDeg: 30,
   sunIlluminanceLux: 68_000,
-  skyIlluminanceLux: 30_000,
+  skyIlluminanceLux: 24_000,
   sunTint: [1, 0.9, 0.74],
   zenithTint: [0.3, 0.48, 1],
   horizonTint: [0.74, 0.84, 1],
   ev100: 14.3,
-  hazePerM: 0.00042,
+  hazePerM: 0.00034,
 };
 
 /** Pre-exposure for an EV100 (Lagarde & de Rousiers 2014). */

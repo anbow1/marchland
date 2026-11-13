@@ -81,7 +81,8 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 7. Stawianie budynków i drogi
 
-- Budynek stawia się **w dowolnym miejscu** w promieniu 180 m od własnego zamku (i nie bliżej niż
+- Budynek stawia się **w dowolnym miejscu** w promieniu 180 m od własnego zamku (zagrody i winnice do
+  260 m; drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy), ale nie bliżej niż
   90 m od wrogiego): teren pod nim może się wznosić najwyżej o 2.2 m, nie może to być woda,
   a od innych budynków i pól dzieli go co najmniej 1.5 m. Budynek można obrócić przed postawieniem;
   drzwi wyznaczają, gdzie podchodzą ludzie. Limit: 48 budynków na stronę.

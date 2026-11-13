@@ -1,8 +1,8 @@
 import { cameraPosition, float, int, max, mix, normalWorld, positionWorld, smoothstep, texture, transformNormalToView, vec2, vec3 } from 'three/tsl';
 import { type BufferAttribute, ClampToEdgeWrapping, DataTexture, LinearFilter, LinearMipmapLinearFilter, Mesh, MeshStandardNodeMaterial, type Node, NoColorSpace, PlaneGeometry, RedFormat, RepeatWrapping, RGBAFormat, type Texture, UnsignedByteType } from 'three/webgpu';
 import { MAP, TOWN } from '../config.ts';
-import { tileFbm } from '../core/noise.ts';
-import { DEPOSITS, forestCoverAt, heightAtM, lakeX, lakeZ, townX, townZ } from '../sim/terrain.ts';
+import { fbm2, tileFbm } from '../core/noise.ts';
+import { DEPOSITS, forestCoverAt, heightAtM, lakeX, lakeZ } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
 import { layerOf, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
 
@@ -47,7 +47,7 @@ const STEEP_FULL = 0.48;
  */
 const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>> = {
   // The drone photograph is of lush grass under a grey sky; a touch warmer for an afternoon sun.
-  pasture: [1.02, 1.0, 0.86],
+  pasture: [0.9, 1.04, 0.86],
   // The litter scan is near black under a strategy camera's exposure.
   forest_floor: [0.92, 0.9, 0.76],
   // Grey rock reads as snow from above unless it is darkened and greened by lichen.
@@ -56,21 +56,14 @@ const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>>
   dirt: [0.72, 0.7, 0.68],
 };
 
-function distanceToSegmentM(px: number, pz: number, ax: number, az: number, bx: number, bz: number): number {
-  const abx = bx - ax;
-  const abz = bz - az;
-  const t = Math.min(1, Math.max(0, ((px - ax) * abx + (pz - az) * abz) / (abx * abx + abz * abz)));
-  return Math.hypot(px - ax - abx * t, pz - az - abz * t);
-}
-
 /** 1 inside `radiusM` of a point, falling to 0 over `fadeM` beyond it. */
 function near(distanceM: number, radiusM: number, fadeM: number): number {
   return 1 - Math.min(1, Math.max(0, (distanceM - radiusM) / fadeM));
 }
 
-/** 0…1: ground that was trodden before anyone built: the old road between the two keeps and the lakes' muddy banks. */
+/** 0…1: ground that was trodden before anyone built: the lakes' muddy banks. Roads are the players' own. */
 function earthAt(x: number, z: number): number {
-  let earth = near(distanceToSegmentM(x, z, townX(0), townZ(0), townX(1), townZ(1)), 1.6, 2.2);
+  let earth = 0;
   for (const side of [0, 1] as const satisfies readonly Side[]) {
     // The bank and the bed of the lake.
     earth = Math.max(earth, near(Math.hypot(x - lakeX(side), z - lakeZ(side)), TOWN.lakeRadiusM * 0.95, 3));
@@ -81,7 +74,11 @@ function earthAt(x: number, z: number): number {
 /** 0…1: bare rock: the outcrops of stone and ore, and slopes too steep to hold turf. */
 function rockAt(x: number, z: number): number {
   let rock = 0;
-  for (const d of DEPOSITS) rock = Math.max(rock, near(Math.hypot(x - d.x, z - d.z), TOWN.depositRadiusM * 0.9, 5));
+  for (const d of DEPOSITS) {
+    // A ragged edge: the rock breaks through the turf in tongues and islands, not as a painted disc.
+    const ragged = 0.55 + 0.6 * (fbm2(x / 6 + d.x, z / 6 - d.z, 3, MAP.terrainSeed + 41) * 0.5 + 0.5);
+    rock = Math.max(rock, near(Math.hypot(x - d.x, z - d.z) / ragged, TOWN.depositRadiusM * 0.7, 3));
+  }
   const slope = Math.hypot(heightAtM(x + 2, z) - heightAtM(x - 2, z), heightAtM(x, z + 2) - heightAtM(x, z - 2)) / 4;
   return Math.max(rock, Math.min(1, Math.max(0, (slope - STEEP_FROM) / (STEEP_FULL - STEEP_FROM))));
 }

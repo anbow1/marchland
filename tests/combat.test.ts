@@ -202,7 +202,8 @@ describe('archery', () => {
 
   it('a keep shoots at enemies under its walls', () => {
     const world = emptyWorld();
-    const raiders = spawnRegiment(world, PLAYER, 'militia', 95, -95, 0);
+    // 42 m from the enemy keep, inside its archers' reach.
+    const raiders = spawnRegiment(world, PLAYER, 'militia', townX(COMPUTER) - 30, townZ(COMPUTER) + 30, 0);
     run(world, 40);
     expect(raiders.aliveMen).toBeLessThan(12);
   });

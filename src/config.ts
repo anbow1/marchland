@@ -13,10 +13,10 @@ export const SIM = {
 
 export const MAP = {
   /** Playable square, centred on the origin. */
-  sizeM: 400,
-  halfM: 200,
+  sizeM: 560,
+  halfM: 280,
   /** Town centres sit on the diagonal, this far from the origin on each axis. */
-  townOffsetM: 125,
+  townOffsetM: 195,
   /** Ground is level inside this radius of a keep, then blends into the hills. */
   townFlatRadiusM: 26,
   townBlendRadiusM: 85,
@@ -40,6 +40,8 @@ export const TOWN = {
   maxBuildings: 48,
   /** A side builds within this distance of its own keep, and no nearer than this to the enemy's. */
   territoryRadiusM: 180,
+  /** Farms and vineyards may go this far: the farmers walk further out to open land. Woodcutters, quarries and mines may go anywhere. */
+  fieldTerritoryRadiusM: 260,
   enemyKeepClearM: 90,
   /** Free ground kept between two buildings' footprints. */
   buildingGapM: 1.5,
@@ -134,6 +136,28 @@ export const ROADS = {
   maxWaypoints: 96,
 } as const;
 
+/** Walls are drawn like roads, a cell at a time, and stop everyone; the enemy's men batter them down. */
+export const WALLS = {
+  /** Stone for each 2 m of wall. */
+  stonePerCell: 3,
+  /** Blows a cell takes before it falls. */
+  hp: 260,
+  /** Share of a soldier's blow (and of an engine's stone) that a wall takes. */
+  meleeFactor: 0.6,
+  /** A stone damages wall cells this far from where it lands, besides any it hits. */
+  siegeRadiusM: 2.5,
+} as const;
+
+/** A watchtower's garrison: archers or crossbowmen of one kind, shooting from the top. */
+export const TOWER = {
+  maxGarrison: 4,
+  /** Height they shoot from, and the reach it adds. */
+  topM: 9,
+  rangeBonusM: 12,
+  /** A regiment sent to the tower goes in once its middle is this close to the door. */
+  enterRadiusM: 14,
+} as const;
+
 export const FIELDS = {
   /** Strips of land a farm works at levels 1…3: the farmland grows with the farm. */
   stripsPerLevel: [2, 4, 6] as readonly number[],
@@ -225,6 +249,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   fletcher: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, recipe: { inputs: { wood: 1 }, outputs: { bow: 1 }, cycleSeconds: 8 } },
   stable: { cost: { gold: 100, wood: 40, stone: 10 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grain: 3 }, outputs: { horse: 1 }, cycleSeconds: 25 } },
   barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, recipe: null },
+  // A stone tower for up to TOWER.maxGarrison archers or crossbowmen, who shoot further from its top.
+  tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
 };
 
 /**
@@ -496,8 +522,8 @@ export const AI = {
 
 export const CAMERA = {
   minDistanceM: 25,
-  /** Far enough to see the whole 400 m map at once on a wide screen. */
-  maxDistanceM: 860,
+  /** Far enough to see the whole 560 m map at once on a wide screen. */
+  maxDistanceM: 1180,
   startDistanceM: 110,
   /** Pitch below the horizon: flatter up close to see the ranks, nearly straight down from afar to read the map. */
   pitchNearRad: 0.68,

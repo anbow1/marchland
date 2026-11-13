@@ -93,6 +93,14 @@ interface Strings {
   rearmed: string;
   rearmingState: string;
   atKeep: string;
+  wall: string;
+  wallAbout: string;
+  hintWallStart: string;
+  hintWallEnd: string;
+  garrison: string;
+  ungarrison: string;
+  garrisoned: string;
+  wallBroken: string;
 }
 
 const pl: Strings = {
@@ -118,6 +126,7 @@ const pl: Strings = {
     armourer: { name: 'Płatnerz', about: 'Kolczugi dla mieczników, halabardników i rycerstwa.' },
     fletcher: { name: 'Łuczarz', about: 'Łuki i kusze z drewna.' },
     stable: { name: 'Stajnia', about: 'Hoduje konie; karmi je zbożem.' },
+    tower: { name: 'Wieża strażnicza', about: 'Kamienna wieża na najwyżej 4 łuczników albo kuszników: strzelają z góry dalej niż z ziemi. Zaznacz strzelców i kliknij wieżę prawym przyciskiem. Można ją postawić wszędzie, np. przy dalekiej kopalni.' },
     barracks: { name: 'Koszary', about: 'Wezwani mieszkańcy biorą tu ekwipunek i stają w szyku. Wyższy poziom to lepsze oddziały.' },
   },
   units: {
@@ -156,6 +165,8 @@ const pl: Strings = {
     notAtBarracks: 'Oddział musi stać przy własnych koszarach.',
     inCombat: 'Oddział walczy: przezbrojenie po walce.',
     rearming: 'Oddział jest właśnie przezbrajany.',
+    cannotGarrison: 'Wieżę obsadzają tylko łucznicy albo kusznicy, jednego rodzaju naraz.',
+    towerFull: 'Wieża ma już pełną załogę.',
     defenceOnly: 'Milicja broni tylko miasta i okolic. Przezbrój ją przy koszarach, żeby ruszyła dalej.',
     gameOver: 'Gra skończona.',
   },
@@ -198,7 +209,7 @@ const pl: Strings = {
   maxLevel: 'Najwyższy poziom',
   needsBarracksLevel: 'koszary poz.',
   hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
-  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przeciągnij: ustaw front. Na wroga: atak.',
+  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Ctrl + przeciągnięcie prawym: front. Na wroga: atak.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
   fed: 'Miasto znów ma co jeść.',
   routed: 'Nasz oddział ucieka!',
@@ -213,10 +224,10 @@ const pl: Strings = {
   helpTitle: 'Sterowanie',
   help: [
     'WASD / strzałki / krawędź ekranu: przesuwanie mapy',
-    'Kółko myszy: zoom (do widoku całej mapy) · Q / E albo przeciągnięcie środkowym przyciskiem: obrót mapy',
+    'Kółko myszy: zoom (do widoku całej mapy) · środkowy przycisk: przesuwanie mapy · prawy przycisk przeciągnięty albo Q / E: obrót',
     'Budowa: wybierz budynek, R obraca, lewy przycisk stawia, prawy anuluje · G: droga',
     'Lewy przycisk: zaznacz · przeciągnij: ramka · Shift: dodaj',
-    'Prawy przycisk: marsz / atak · dwa kliknięcia: bieg · przeciągnij: front',
+    'Prawy przycisk (klik): marsz / atak · dwa kliknięcia: bieg · Ctrl + przeciągnięcie prawym: front',
     'H: stój · Ctrl+A: całe wojsko · Esc: odznacz / pauza · F3: pomiar',
     'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
   ],
@@ -247,6 +258,14 @@ const pl: Strings = {
   rearmed: 'Oddział przezbrojony',
   rearmingState: 'przezbraja się',
   atKeep: 'w zamku, bez koszar',
+  wall: 'Mur',
+  wallAbout: 'Kamienny mur rysowany od punktu do punktu. Zatrzymuje wszystkich; wróg go rozbija, machiny szybciej. Zostaw przerwę na bramę.',
+  hintWallStart: 'Mur: wskaż początek. Prawy przycisk / Esc: koniec.',
+  hintWallEnd: 'Mur: wskaż koniec odcinka.',
+  garrison: 'Załoga',
+  ungarrison: 'Wyprowadź załogę',
+  garrisoned: 'Strzelcy weszli do wieży',
+  wallBroken: 'Mur przebity!',
 };
 
 const en: Strings = {
@@ -272,6 +291,7 @@ const en: Strings = {
     armourer: { name: 'Armourer', about: 'Mail for swordsmen, halberdiers and knights.' },
     fletcher: { name: 'Fletcher', about: 'Bows and crossbows from wood.' },
     stable: { name: 'Stable', about: 'Breeds horses on grain.' },
+    tower: { name: 'Watchtower', about: 'A stone tower for up to 4 archers or crossbowmen, who shoot further from its top. Select shooters and right-click the tower. It can stand anywhere, by a far mine for one.' },
     barracks: { name: 'Barracks', about: 'Townspeople called up take their equipment here and form up. A higher level trains better regiments.' },
   },
   units: {
@@ -310,6 +330,8 @@ const en: Strings = {
     notAtBarracks: 'The regiment must stand by its own barracks.',
     inCombat: 'The regiment is fighting: re-arm it after the fight.',
     rearming: 'The regiment is being re-armed.',
+    cannotGarrison: 'Only archers or crossbowmen man a tower, one kind at a time.',
+    towerFull: 'The tower is fully manned.',
     defenceOnly: 'Militia only defends the town and its land. Re-arm it at the barracks to take it further.',
     gameOver: 'The game is over.',
   },
@@ -352,7 +374,7 @@ const en: Strings = {
   maxLevel: 'Highest level',
   needsBarracksLevel: 'barracks lvl',
   hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
-  hintArmy: 'Right button: march. Double click: run. Drag: set the front. On an enemy: attack.',
+  hintArmy: 'Right click: march. Double click: run. Ctrl + right drag: set the front. On an enemy: attack.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
   fed: 'The town has food again.',
   routed: 'Our regiment is running!',
@@ -367,10 +389,10 @@ const en: Strings = {
   helpTitle: 'Controls',
   help: [
     'WASD / arrows / screen edge: move the map',
-    'Mouse wheel: zoom (out to the whole map) · Q / E or a drag with the middle button: turn the map',
+    'Mouse wheel: zoom (out to the whole map) · middle button: move the map · right drag or Q / E: turn',
     'Building: pick a building, R turns it, left button places, right button cancels · G: road',
     'Left button: select · drag: box · Shift: add',
-    'Right button: march / attack · double click: run · drag: set the front',
+    'Right click: march / attack · double click: run · Ctrl + right drag: set the front',
     'H: halt · Ctrl+A: whole army · Esc: deselect / pause · F3: measurements',
     'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
   ],
@@ -401,6 +423,14 @@ const en: Strings = {
   rearmed: 'Regiment re-armed',
   rearmingState: 're-arming',
   atKeep: 'at the keep, no barracks needed',
+  wall: 'Wall',
+  wallAbout: 'A stone wall drawn from point to point. It stops everyone; the enemy batters it down, engines faster. Leave a gap for a gate.',
+  hintWallStart: 'Wall: point at the start. Right button / Esc: done.',
+  hintWallEnd: 'Wall: point at the end of the stretch.',
+  garrison: 'Garrison',
+  ungarrison: 'Bring the garrison out',
+  garrisoned: 'Shooters have manned the tower',
+  wallBroken: 'The wall is breached!',
 };
 
 function pickLang(): Lang {

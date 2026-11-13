@@ -1,7 +1,7 @@
-import { ARMY, COMBAT, FATIGUE, FOOD, MORALE, TOWN } from '../config.ts';
+import { ARMY, COMBAT, FATIGUE, FOOD, MORALE, TOWN, WALLS } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
 import { assignSlots, facingToward, forwardX, forwardZ, isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
-import { stampBuilding } from './nav.ts';
+import { damageWall, stampBuilding } from './nav.ts';
 import { returnHome } from './people.ts';
 import { townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
@@ -47,6 +47,8 @@ export function damageBuilding(world: World, side: Side, plot: number, damage: n
   if (!b) return;
   b.hp -= damage;
   if (b.hp <= 0) {
+    // A tower's garrison falls with it.
+    if (b.garrison > 0) town.underArms = Math.max(0, town.underArms - b.garrison);
     town.plots[plot] = null;
     stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, false);
     world.events.push('destroyed', b.x, b.z, side);
@@ -123,6 +125,14 @@ export function stepMelee(world: World): void {
       if (t && t.alive) {
         const reach = r.def.reachM + t.regiment.def.bodyRadiusM;
         if ((t.x - s.x) ** 2 + (t.z - s.z) ** 2 <= reach * reach) strike(world, s, t);
+        continue;
+      }
+      // Up against the enemy's wall: batter it.
+      if (s.wallCell >= 0) {
+        s.sinceAttackS = 0;
+        s.attackCooldownS = r.def.attackIntervalS * world.rng.range(0.85, 1.15);
+        if (damageWall(world.nav, s.wallCell, r.def.damage * WALLS.meleeFactor)) world.events.push('wallBroken', s.x, s.z, r.side);
+        else world.events.push('meleeHit', s.x, s.z, r.side);
         continue;
       }
       if (!sieging) continue;

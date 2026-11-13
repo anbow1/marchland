@@ -62,6 +62,7 @@ export const BUILDING_KINDS = [
   'fletcher',
   'stable',
   'barracks',
+  'tower',
 ] as const;
 export type BuildingKind = (typeof BUILDING_KINDS)[number];
 
@@ -95,6 +96,8 @@ export type CommandResult =
   | 'inCombat'
   | 'rearming'
   | 'defenceOnly'
+  | 'cannotGarrison'
+  | 'towerFull'
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
@@ -122,4 +125,5 @@ export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
   fletcher: 'none',
   stable: 'none',
   barracks: 'none',
+  tower: 'none',
 };

@@ -1,4 +1,4 @@
-import { nearBuilt } from './nav.ts';
+import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt } from './nav.ts';
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
 import { clampToMap, isForest, isWater, lakeX, lakeZ, townX, townZ } from './terrain.ts';
@@ -364,6 +364,16 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
   }
   s.x += s.vx * dtSeconds;
   s.z += s.vz * dtSeconds;
+  // A wall stops him where he stands; an enemy's wall he batters (combat.ts).
+  s.wallCell = -1;
+  const wall = wallCellAt(world.nav, s.x, s.z);
+  if (wall >= 0) {
+    s.x -= s.vx * dtSeconds;
+    s.z -= s.vz * dtSeconds;
+    s.vx = 0;
+    s.vz = 0;
+    if (world.nav.wallSide[wall] !== r.side) s.wallCell = wall;
+  }
   const speedNow = hypot2(s.vx, s.vz);
   s.strideM += speedNow * dtSeconds;
 
@@ -399,6 +409,15 @@ export function stepSoldiers(world: World, dtSeconds: number): void {
       if (!s.alive) continue;
       avoidBuildings(world, s, dtSeconds);
       avoidWater(s);
+      // Pushed into a wall by the press of his comrades: out to the nearest open cell.
+      const wall = wallCellAt(world.nav, s.x, s.z);
+      if (wall >= 0) {
+        const free = freeCellBeside(world.nav, wall, r.centreX, r.centreZ);
+        if (free >= 0) {
+          s.x = cellX(free);
+          s.z = cellZ(free);
+        }
+      }
       s.x = Math.min(limit, Math.max(-limit, s.x));
       s.z = Math.min(limit, Math.max(-limit, s.z));
     }

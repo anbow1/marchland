@@ -179,6 +179,18 @@
   "file": "tannery_3.glb",
   "triangles": 1644
  },
+ "tower:1": {
+  "file": "tower_1.glb",
+  "triangles": 1932
+ },
+ "tower:2": {
+  "file": "tower_2.glb",
+  "triangles": 1976
+ },
+ "tower:3": {
+  "file": "tower_3.glb",
+  "triangles": 1976
+ },
  "vineyard:1": {
   "file": "vineyard_1.glb",
   "triangles": 1764

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, PEOPLE, REARM, ROADS, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from '../src/sim/commands.ts';
+import { ARMY, FIELDS, FOOD, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
-import { findPath, isRoad } from '../src/sim/nav.ts';
+import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
 import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
@@ -401,4 +401,75 @@ describe('the home guard', () => {
       expect(Math.hypot(r.centreX - townX(COMPUTER), r.centreZ - townZ(COMPUTER))).toBeLessThanOrEqual(ARMY.homeGuardRadiusM + 5);
     }
   }, 60_000);
+});
+
+describe('walls and watchtowers', () => {
+  it('a wall costs stone, stops people and soldiers, and the enemy batters it down', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const x = townX(PLAYER) + 40;
+    const z0 = townZ(PLAYER) - 50;
+    const z1 = townZ(PLAYER) + 10;
+    const stone = town.stock.stone;
+    const cost = wallCost(world, x, z0, x, z1);
+    expect(cost).toBeGreaterThan(0);
+    expect(cmdBuildWall(world, PLAYER, x, z0, x, z1)).toBe('ok');
+    expect(town.stock.stone).toBe(stone - cost);
+    expect(wallCellAt(world.nav, x, townZ(PLAYER) - 20)).toBeGreaterThanOrEqual(0);
+    // A way across goes round the end of the wall.
+    const path = new Float32Array(ROADS.maxWaypoints * 2);
+    const n = findPath(world.nav, x - 10, townZ(PLAYER) - 20, x + 10, townZ(PLAYER) - 20, path);
+    let furthest = 0;
+    for (let i = 0; i < n; i++) furthest = Math.max(furthest, Math.abs((path[i * 2 + 1] as number) - (townZ(PLAYER) - 20)));
+    expect(furthest).toBeGreaterThan(25);
+    // Enemy swordsmen marching through it are stopped, batter it, and break through.
+    const enemy = spawnRegiment(world, COMPUTER, 'swordsmen', x + 15, townZ(PLAYER) - 20, -Math.PI / 2);
+    expect(cmdMove(world, enemy.id, x - 25, townZ(PLAYER) - 20, null, false)).toBe('ok');
+    run(world, 4);
+    for (const s of enemy.soldiers) if (s.alive) expect(s.x).toBeGreaterThan(x - 1.5);
+    const broke = runUntil(world, 240, () => enemy.centreX < x - 5);
+    expect(broke).toBeLessThan(240);
+  });
+
+  it('a watchtower takes up to four archers, shoots from its top, and lets them out again', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const tx = townX(PLAYER) + 60;
+    const tz = townZ(PLAYER) - 60;
+    expect(cmdBuild(world, PLAYER, 'tower', tx, tz, 0)).toBe('ok');
+    const plot = town.plots.findIndex((b) => b !== null && b.kind === 'tower');
+    runUntil(world, 300, () => finished(world, plot));
+    const tower = town.plots[plot];
+    if (!tower) throw new Error('no tower');
+    const militia = spawnRegiment(world, PLAYER, 'militia', tx, tz + 20, 0);
+    expect(cmdGarrison(world, militia.id, plot)).toBe('cannotGarrison');
+    const archers = spawnRegiment(world, PLAYER, 'archers', tx, tz + 25, 0);
+    expect(cmdGarrison(world, archers.id, plot)).toBe('ok');
+    runUntil(world, 120, () => tower.garrison > 0);
+    expect(tower.garrison).toBe(TOWER.maxGarrison);
+    expect(archers.aliveMen).toBe(UNITS.archers.men - TOWER.maxGarrison);
+    expect(menAlive(world, PLAYER)).toBe(UNITS.militia.men + UNITS.archers.men);
+    // Raiders come within its reach and are shot down.
+    // (Pikemen: militia this far from its own keep would turn home, being a home guard.)
+    const raiders = spawnRegiment(world, COMPUTER, 'pikemen', tx, tz - UNITS.archers.missileRangeM - 5, 0);
+    run(world, 60);
+    expect(raiders.aliveMen).toBeLessThan(UNITS.pikemen.men);
+    expect(cmdUngarrison(world, PLAYER, plot)).toBe('ok');
+    expect(tower.garrison).toBe(0);
+    const out = world.regiments[world.regiments.length - 1];
+    expect(out?.kind).toBe('archers');
+    expect(out?.aliveMen).toBe(TOWER.maxGarrison);
+  });
+
+  it('woodcutters, quarries, mines and towers may stand anywhere; farms further than the town', () => {
+    const world = rich(quietWorld());
+    // Far beyond the town's own land, but not by the enemy keep.
+    const fx = townX(PLAYER) + 200;
+    const fz = townZ(PLAYER) - 40;
+    expect(checkSite(world, PLAYER, 'house', fx, fz, 0).result).toBe('tooFar');
+    expect(checkSite(world, PLAYER, 'tower', fx, fz, 0).result).not.toBe('tooFar');
+    expect(checkSite(world, PLAYER, 'woodcutter', fx, fz, 0).result).not.toBe('tooFar');
+    expect(checkSite(world, PLAYER, 'farm', townX(PLAYER) + 200, townZ(PLAYER), Math.PI / 2).result).not.toBe('tooFar');
+    expect(TOWN.fieldTerritoryRadiusM).toBeGreaterThan(TOWN.territoryRadiusM);
+  });
 });

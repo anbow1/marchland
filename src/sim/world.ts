@@ -1,4 +1,5 @@
-import { AI_TUNING, ARMY, MAP, PEOPLE, TOWN, UNITS } from '../config.ts';
+import { doorOfX, doorOfZ } from './placement.ts';
+import { AI_TUNING, ARMY, MAP, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, stepAi } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
@@ -98,7 +99,35 @@ export function findRegiment(world: World, id: number): Regiment | null {
 export function menAlive(world: World, side: Side): number {
   let men = 0;
   for (const r of world.regiments) if (r.side === side) men += r.aliveMen;
+  // Men in the towers are soldiers too: they eat and count against the army's limit.
+  for (const b of world.towns[side].plots) if (b) men += b.garrison;
   return men;
+}
+
+/** Regiments marching to man a tower go in when they reach its door: up to its free places, the rest stay out. */
+function stepGarrisoning(world: World): void {
+  for (const r of world.regiments) {
+    if (r.garrisonPlot < 0 || r.aliveMen === 0) continue;
+    const b = world.towns[r.side].plots[r.garrisonPlot];
+    if (!b || b.kind !== 'tower' || (b.garrisonKind !== null && b.garrisonKind !== r.kind) || b.garrison >= TOWER.maxGarrison) {
+      r.garrisonPlot = -1;
+      continue;
+    }
+    if (hypot2(r.centreX - doorOfX(b), r.centreZ - doorOfZ(b)) > TOWER.enterRadiusM) continue;
+    let places = TOWER.maxGarrison - b.garrison;
+    for (const s of r.soldiers) {
+      if (places === 0) break;
+      if (!s.alive) continue;
+      s.alive = false;
+      s.deadS = 999;
+      r.aliveMen -= 1;
+      b.garrison += 1;
+      places -= 1;
+    }
+    b.garrisonKind = r.kind;
+    r.garrisonPlot = -1;
+    world.events.push('garrisoned', b.x, b.z, r.side);
+  }
 }
 
 /** Puts a new regiment on the field. Tests and the sandbox call this directly; the game goes through recruiting. */
@@ -128,7 +157,8 @@ function stepRearming(world: World, dtSeconds: number): void {
 /** A home guard that has chased an enemy out of the town's land stops there and comes back. */
 function leashHomeGuards(world: World): void {
   for (const r of world.regiments) {
-    if (!r.def.defenceOnly || r.aliveMen === 0 || r.state !== 'formed') continue;
+    // Only one that is on the move (a chase, a march): a guard standing where it was put stays there.
+    if (!r.def.defenceOnly || r.aliveMen === 0 || r.state !== 'formed' || r.order === 'hold') continue;
     if (inHomeLand(r.side, r.centreX, r.centreZ)) continue;
     const back = ARMY.homeGuardRadiusM - 10;
     const dx = r.centreX - townX(r.side);
@@ -156,7 +186,6 @@ function fieldTrained(world: World, town: Town): void {
 export function stepWorld(world: World, dtSeconds: number): void {
   if (world.winner !== -1) return;
   world.timeS += dtSeconds;
-  world.stepCount += 1;
   if (world.ai) stepAi(world, world.ai, dtSeconds);
   stepPeople(world, dtSeconds);
   for (const town of world.towns) {
@@ -171,6 +200,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
     }
   }
   stepRearming(world, dtSeconds);
+  stepGarrisoning(world);
   // Once a second is enough to turn back a guard that has run too far.
   if (world.stepCount % 60 === 0) leashHomeGuards(world);
   stepAnchors(world, dtSeconds);

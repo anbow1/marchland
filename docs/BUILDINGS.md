@@ -27,7 +27,9 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | 18 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
 | 19 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
 | 20 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
-| 21 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
+| 21 | **Watchtower** | 40 gold, 15 timber, 60 stone | any level ground | — | 1 | 900 |
+| 22 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
+| 23 | **Wall** | 15 stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; 260 blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | 260 per 2 m |
 
 What each is for:
 
@@ -51,11 +53,14 @@ What each is for:
 - **Fletcher** — Makes bows and crossbows from timber.
 - **Stable** — Raises war horses on grain.
 - **Barracks** — Townspeople called up walk here, take their equipment and form a regiment. Its level decides which units can be trained.
+- **Watchtower** — A stone tower for up to 4 archers or crossbowmen of one kind, who shoot from its top further than from the ground. It may stand anywhere: by the town, an outlying mine or a village.
 - **Road** — drawn from point to point; carriers, workers and builders take it whenever it shortens the walk.
+- **Wall** — drawn from point to point like a road; it blocks people and soldiers of both sides, so leave a gap where your own must pass.
 
 Rules common to all buildings:
 
-- **Free placement.** A building goes anywhere within 180 m of its side's keep (and no nearer
+- **Free placement.** A building goes anywhere within 180 m of its side's keep (farms and vineyards
+  260 m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than 90 m to the enemy's) where the ground under it rises no more than 2.2 m, is not
   water, and is 1.5 m clear of other buildings and of farm strips. A side may have 48 buildings.
 - **Three levels.** Level 3 is the top. A level costs ×1 / ×1.5 / ×2.5 of the base price and works
@@ -129,9 +134,9 @@ roads serve all of them.
 ### Army and defence (Wojsko i obrona)
 
 - **Barracks** — regiments (see UNITS.md). *Model from Blender.*
+- **Watchtower** — —. *Model from Blender.*
 - Siege Workshop — *planned (§4)*
-- Watchtower — *planned (§4)*
-- Palisade and Gate — *planned (§4)*
+- Gate (a wall that opens for its own side) — *planned (§4)*
 - Keep, levels 2 and 3 — *planned (§4)*
 
 ## 3. Production chains
@@ -155,9 +160,8 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 
 | Priority | Building | Why it is needed |
 |---|---|---|
+| A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
 | A | **Storehouse** | A second place to store goods: carriers bring and fetch from the nearest one, so a village far from the keep stops costing long walks. |
-| A | **Watchtower** | Archers on a tower: protects an outlying village or a quarry from raids. |
-| A | **Palisade** and **Gate** | Walls drawn like roads; soldiers must break a section or the gate. Gives siege engines their purpose. |
 | A | **Siege Workshop** | Builds ballistae and trebuchets instead of the barracks (timber, weapons, stone), so engines are a separate investment. |
 | B | **Sawmill** | Logs → planks: higher levels of buildings and engines ask for planks, so timber gets a second tier. |
 | B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |

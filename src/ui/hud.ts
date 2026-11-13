@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, MAX_LEVEL, PEOPLE, REARM, ROADS, UNITS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
 import { canRearm, rearmCost } from '../sim/commands.ts';
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
@@ -17,6 +17,9 @@ export interface HudActions {
   /** Takes up a building to place on the map, or the road tool. */
   pickBuilding(kind: BuildingKind): void;
   pickRoad(): void;
+  pickWall(): void;
+  /** Brings a tower's garrison out. */
+  ungarrison(plot: number): void;
   /** Turns the map: −1 left, +1 right. */
   rotateCamera(direction: number): void;
   upgrade(plot: number): void;
@@ -236,6 +239,12 @@ export class Hud {
       case 'road':
         this.actions.pickRoad();
         break;
+      case 'wall':
+        this.actions.pickWall();
+        break;
+      case 'ungarrison':
+        this.actions.ungarrison(this.plotInPanel);
+        break;
       case 'tab':
         this.tab = arg === 'army' ? 'army' : 'build';
         break;
@@ -330,6 +339,8 @@ export class Hud {
     }
     const perTen = (ROADS.stonePerCell * 10) / ROADS.cellM;
     html += `<button class="option${tool === 'road' ? ' on' : ''}" data-act="road" data-tip="${T.road}: ${T.roadAbout}"><span class="name">${T.road}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${perTen.toFixed(1)} / 10 m</span></span></button>`;
+    const wallTen = (WALLS.stonePerCell * 10) / ROADS.cellM;
+    html += `<button class="option${tool === 'wall' ? ' on' : ''}" data-act="wall" data-tip="${T.wall}: ${T.wallAbout}"><span class="name">${T.wall}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${wallTen.toFixed(0)} / 10 m</span></span></button>`;
     return `${html}</div>`;
   }
 
@@ -357,6 +368,11 @@ export class Hud {
       const hasInputs = recipe !== null && RESOURCE_IDS.some((id) => (recipe.inputs[id] ?? 0) > 0);
       html += `<div class="status">${hasInputs ? `${T.stores}: ${this.stockText(b.inp)} · ` : ''}${T.yard}: ${this.stockText(b.out)}</div>`;
     }
+    if (b.kind === 'tower') {
+      const kind = b.garrisonKind ? ` (${T.units[b.garrisonKind].name})` : '';
+      html += `<div class="status">${T.garrison}: ${b.garrison}/${TOWER.maxGarrison}${kind}</div>`;
+      if (b.garrison > 0) html += `<div class="row"><button class="option" data-act="ungarrison" data-tip="${T.ungarrison}"><span class="name">${T.ungarrison}</span></button></div>`;
+    }
     if (b.kind === 'farm') {
       const worked = Math.min(FIELDS.stripsPerLevel[b.level - 1] as number, b.strips.length);
       html += `<div class="status">${T.fields}: ${worked}/${b.strips.length}</div>`;
@@ -368,7 +384,7 @@ export class Hud {
     } else {
       html += `<span class="label">${T.maxLevel}</span>`;
     }
-    if (b.kind !== 'house' && b.kind !== 'barracks') html += `<button class="option" data-act="pause" data-tip="${T.pause}"><span class="name">${b.paused ? T.unpause : T.pause}</span></button>`;
+    if (b.kind !== 'house' && b.kind !== 'barracks' && b.kind !== 'tower') html += `<button class="option" data-act="pause" data-tip="${T.pause}"><span class="name">${b.paused ? T.unpause : T.pause}</span></button>`;
     html += `<button class="option" data-act="demolish" data-tip="${T.demolish}"><span class="name">${T.demolish}</span></button></div>`;
     if (b.kind === 'barracks') html += this.recruitHtml(world, town);
     return html;

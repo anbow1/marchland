@@ -1,7 +1,8 @@
+import { townX, townZ } from './sim/terrain.ts';
 import { Game } from './app/game.ts';
 import { WorldView } from './app/worldView.ts';
 import { SIM } from './config.ts';
-import { cmdAttackRegiment, cmdBuild, cmdBuildRoad } from './sim/commands.ts';
+import { cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildWall } from './sim/commands.ts';
 import { doorX, doorZ, KEEP } from './sim/people.ts';
 import { planSite } from './sim/sitePlanner.ts';
 import { BUILDING_KINDS, COMPUTER, type Difficulty, PLAYER, UNIT_KINDS } from './sim/types.ts';
@@ -56,7 +57,7 @@ function prepareScene(game: Game, scene: string): void {
       town.stock.stone = 5000;
       town.stock.bread = 5000;
       // One of everything (two farms and three houses), where the computer's planner would put it, with roads to the keep.
-      for (const kind of [...BUILDING_KINDS, 'farm', 'house', 'house'] as const) {
+      for (const kind of [...BUILDING_KINDS, 'farm', 'house', 'house', 'tower'] as const) {
         const site = planSite(world, side, kind);
         if (!site) continue;
         const x = site.x;
@@ -65,6 +66,12 @@ function prepareScene(game: Game, scene: string): void {
         const b = town.plots.find((other) => other !== null && other.x === x && other.z === z);
         if (b) cmdBuildRoad(world, side, doorX(town, town.plots.indexOf(b)), doorZ(town, town.plots.indexOf(b)), doorX(town, KEEP), doorZ(town, KEEP));
       }
+      // A stretch of wall across the approach from the enemy, with a gap for a gate.
+      const t = side === PLAYER ? 1 : -1;
+      const wx = townX(side) + t * 62;
+      const wz = townZ(side) - t * 62;
+      cmdBuildWall(world, side, wx - 30 * t, wz - 30 * t, wx - 4 * t, wz - 4 * t);
+      cmdBuildWall(world, side, wx + 4 * t, wz + 4 * t, wx + 30 * t, wz + 30 * t);
       // Built at once: the scene is for looking at, not for waiting.
       for (const b of town.plots) {
         if (!b) continue;

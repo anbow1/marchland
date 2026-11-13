@@ -2,9 +2,10 @@ import { CAMERA } from '../config.ts';
 import { type Action, ActionState } from './bindings.ts';
 import type { RtsCamera } from './rtsCamera.ts';
 
-// Pointer and keyboard on the map. Mouse: left selects (drag for a box), right
-// orders (drag to set the front, twice for a run), a drag with the middle
-// button turns the map, the wheel zooms to the cursor. Touch: one finger drags
+// Pointer and keyboard on the map. Mouse: left selects (drag for a box); a
+// right click orders (twice for a run), a right drag turns the map, Ctrl and a
+// right drag sets a regiment's front; a middle drag moves the map; the wheel
+// zooms to the cursor. Touch: one finger drags
 // the map, two pinch and twist, a tap selects or orders. What the gestures mean is the game's business (`ControlTarget`).
 
 export interface ControlTarget {
@@ -139,8 +140,8 @@ export class Controls {
       return;
     }
     if (!p.dragging) return;
-    if (p.touch) this.dragMap(prevX, prevY, p.x, p.y);
-    else if (p.button === 1) this.camera.rotate((p.x - prevX) * CAMERA.rotateDragRadPerPx);
+    if (p.touch || p.button === 1) this.dragMap(prevX, prevY, p.x, p.y);
+    else if (p.button === 2 && !this.actions.isCtrlHeld()) this.camera.rotate((p.x - prevX) * CAMERA.rotateDragRadPerPx);
     else if (p.button === 0) this.target.showBox(p.startX, p.startY, p.x, p.y, true);
   };
 
@@ -166,6 +167,8 @@ export class Controls {
       this.lastOrderMs = now;
       this.lastOrderX = p.startX;
       this.lastOrderY = p.startY;
+      // A plain drag turned the map: no order. Ctrl and a drag sets the front of the line.
+      if (p.dragging && !this.actions.isCtrlHeld()) return;
       if (p.dragging && this.target.ground(p.x, p.y, this.a)) this.target.order(p.startX, p.startY, double, this.a.x, this.a.z);
       else this.target.order(p.startX, p.startY, double, null, null);
     }

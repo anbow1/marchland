@@ -5,6 +5,31 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Wieża i mur, większa mapa, żywsze kolory
+
+- **Wieża strażnicza** (40 zł, 15 drewna, 60 kamienia): do 4 łuczników albo kuszników
+  jednego rodzaju; strzelają z 9 m, zasięg broni + 12 m; liczą się do limitu i
+  jedzenia armii; padają z wieżą. **Mur**: 3 kamienie za 2 m, 260 ciosów na
+  odcinek, zatrzymuje ludzi i żołnierzy obu stron; wrogowie, którzy na niego
+  wejdą, rozbijają go; kamienie z machin też.
+- **Zasięgi budowy**: drwal, kamieniołom, kopalnia, wieża — cała mapa (poza
+  okolicą wrogiego zamku); zagroda i winnica 260 m; reszta 180 m. Drogi i mury
+  można kłaść wszędzie poza okolicą wrogiego zamku.
+- **Mapa** 400 → 560 m, zamki 353 → 550 m od siebie; dawna droga między zamkami
+  usunięta. Komputer zdobywa zamek bezczynnego gracza ok. 39.–41. minuty — za
+  późno wobec planu (25–35); do skrócenia (mniejsza pierwsza fala, zagony).
+- **Kolory**: mapowanie tonów ACES → Khronos PBR Neutral (nie odbarwia),
+  nasycenie ×1,35 i kontrast ×1,14 przed krzywą, słabsze światło nieba
+  (30 → 24 tys. lx) dla wyraźniejszych cieni, rzadsza mgła; wychodnie skał z
+  postrzępionym brzegiem zamiast okręgów.
+- **Mysz**: środkowy przycisk przesuwa mapę, prawy przeciągnięty obraca, prawy
+  klik — rozkaz; Ctrl + przeciągnięcie prawym — front oddziału.
+- **Koszt animacji i efektów na klatkę** (przeglądarka): ludzie 0,07 ms, wojsko
+  0,02 ms, miasto 0,04 ms, dym 0,15 ms przy 24 kominach (do ~1,4 ms przy
+  maksymalnych 220), mury 0. Po zmianie na mapie: przerysowanie dróg i pól
+  7,5 ms, wycinka drzew 5,3 ms (większa mapa) — najwyżej 2 razy na sekundę.
+- Testy 60/60.
+
 ## 2026-11-13 · Wszystkie budynki z Blendera, dym
 
 - Dziewięć nowych modeli: kamieniołom, zagroda, rybak, chlewnia, masarnia,

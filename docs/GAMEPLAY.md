@@ -41,6 +41,17 @@ drzewka technologii, mikrotransakcji, krwi.
   widoczną na zewnątrz (drwal rąbie przy pieńku, skrzydła młyna kręcą się, gdy
   miele). Modele z Blendera: `BLENDER.md`, lista z gałęziami: `BUILDINGS.md` §2.
 
+- **Obrona**: **wieża strażnicza** (kamień) na najwyżej 4 łuczników albo
+  kuszników jednego rodzaju — strzelają z góry o 12 m dalej; zaznacz strzelców
+  i kliknij wieżę prawym przyciskiem. **Mur** rysowany jak droga, 3 kamienie za
+  2 m: zatrzymuje wszystkich, wróg go rozbija (machiny szybciej); przerwa w
+  murze to brama (prawdziwa brama w planie).
+- **Zasięgi**: drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy
+  (nie przy wrogim zamku); zagrody i winnice do 260 m od zamku; reszta 180 m.
+- **Mapa 560 m**, zamki 550 m od siebie, bez drogi między nimi.
+- **Sterowanie myszą**: środkowy przycisk przesuwa mapę, prawy przeciągnięty
+  obraca, prawy klik to rozkaz, Ctrl + przeciągnięcie prawym ustawia front.
+
 Wcześniej tego dnia: działki zniknęły. Budynki stawia się
 dowolnie w promieniu własnych ziem, z obrotem; ludzie chodzą po drogach, które
 gracz rysuje. Szczegóły i liczby: `ECONOMY.md` §6 i `BUILDINGS.md`.
@@ -238,6 +249,7 @@ w `BLENDER.md`.
 
 | # | Kamień | Zakres | Kto | Kryterium |
 |---|---|---|---|---|
+| M1c | **Wieża i mur** ✔ | wieża z załogą strzelców, mur rysowany i rozbijany, dym, wszystkie budynki z Blendera | silny model | testy w `tests/economy.test.ts` („walls and watchtowers”) |
 | M1b | **Fachy, wino, straż domowa** ✔ | młyn, huta, winnica z rzędami winorośli, winiarnia, wino w chatach; milicja z zamku; przezbrojenie; drwal rąbie w obejściu; 10 budynków z Blendera rozpoznawalnych z daleka | silny model | zrobione 2026-11-13: testy młyna, huty, wina, milicji i przezbrojenia w `tests/economy.test.ts` |
 | M1 | **Żywe miasto** ✔ | ludność, role, tragarze, składy budynków, budowa z dostawą, głód per chata, ucieczka przed wrogiem, pola, drwale i rybacy w terenie, dowolne stawianie, drogi i szukanie drogi | silny model | zrobione 2026-11-13: testy w `tests/economy.test.ts` (miejsce budowy, dostawa materiałów, żniwa, piekarnia, drwal i rybak, chata i głód, drogi, werbunek z ludności); komputer wygrywa z bezczynnym graczem w 30 min; komputer–komputer: pierwsze starcia ok. 20. minuty, bez zwycięzcy w 40 min |
 | M2 | **Bitwa v2** | szyki, szerokość frontu, postawy, cofanie, weterani, kapitan, uzupełnienia, żołd, wzniesienia, aktywna pauza z kolejką | silny model (symulacja), rutyna (HUD) | macierz pojedynków spełnia miary z §6; test na każdy szyk i postawę |

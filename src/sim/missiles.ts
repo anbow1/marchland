@@ -1,4 +1,5 @@
-import { MISSILE, MORALE, TOWN } from '../config.ts';
+import { damageWall, wallCellAt } from './nav.ts';
+import { MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
 import { isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
@@ -48,7 +49,10 @@ interface Shot {
 }
 
 function shotOf(r: Regiment): Shot {
-  const d = r.def;
+  return shotOfDef(r.def);
+}
+
+function shotOfDef(d: UnitDef): Shot {
   const look = d.missileSplashM > 0 ? 3 : d.engine ? 2 : d.missilePierce > 0 ? 1 : 0;
   return { speedMs: d.missileSpeedMs, highArc: d.missileHighArc, damage: d.missileDamage, pierce: d.missilePierce, splashM: d.missileSplashM, siegeDamage: d.missileSiegeDamage, look };
 }
@@ -133,7 +137,22 @@ function splash(world: World, a: Arrow, x: number, z: number): void {
     }
     if (hurt) r.morale -= MORALE.stoneShock;
   }
+  // A stone also breaks the walls round where it lands.
+  breakWalls(world, a, x, z);
   world.events.push('stoneFall', x, z, a.side);
+}
+
+function breakWalls(world: World, a: Arrow, x: number, z: number): void {
+  if (a.siegeDamage <= 0) return;
+  const r = Math.max(a.splashM, WALLS.siegeRadiusM);
+  for (let dz = -r; dz <= r; dz += 1) {
+    for (let dx = -r; dx <= r; dx += 1) {
+      if (dx * dx + dz * dz > r * r) continue;
+      const cell = wallCellAt(world.nav, x + dx, z + dz);
+      if (cell < 0 || world.nav.wallSide[cell] === a.side) continue;
+      if (damageWall(world.nav, cell, a.siegeDamage * WALLS.meleeFactor)) world.events.push('wallBroken', x + dx, z + dz, a.side);
+    }
+  }
 }
 
 function land(world: World, a: Arrow): void {
@@ -255,6 +274,49 @@ function stepArchers(world: World, r: Regiment, dtSeconds: number): void {
   if (target && target.aliveMen > 0) shootAtRegiment(world, r, target);
 }
 
+/** The nearest living enemy soldier of `side` within `rangeM` of a point, and its distance squared. */
+function nearestEnemy(world: World, side: Side, x: number, z: number, rangeM: number): Soldier | null {
+  let victim: Soldier | null = null;
+  let bestD2 = rangeM * rangeM;
+  for (const r of world.regiments) {
+    if (r.side !== enemyOf(side) || r.aliveMen === 0) continue;
+    const reach = rangeM + r.radiusM;
+    if ((r.centreX - x) ** 2 + (r.centreZ - z) ** 2 > reach * reach) continue;
+    for (const s of r.soldiers) {
+      if (!s.alive) continue;
+      const d2 = (s.x - x) ** 2 + (s.z - z) ** 2;
+      if (d2 < bestD2) {
+        victim = s;
+        bestD2 = d2;
+      }
+    }
+  }
+  return victim;
+}
+
+/** Each watchtower's garrison shoots from the top, one man after another, further than from the ground. */
+function stepTowers(world: World, dtSeconds: number): void {
+  for (const town of world.towns) {
+    for (const b of town.plots) {
+      if (!b || b.kind !== 'tower' || b.garrison === 0 || b.garrisonKind === null || b.constructionLeftS > 0) continue;
+      b.shotS -= dtSeconds;
+      if (b.shotS > 0) continue;
+      const def = UNITS[b.garrisonKind];
+      const victim = nearestEnemy(world, town.side, b.x, b.z, def.missileRangeM + TOWER.rangeBonusM);
+      if (!victim) {
+        b.shotS = 0.3;
+        continue;
+      }
+      const shot = shotOfDef(def);
+      const flightS = hypot2(victim.x - b.x, victim.z - b.z) / shot.speedMs;
+      const tx = victim.x + victim.vx * flightS + world.rng.gauss() * 0.8;
+      const tz = victim.z + victim.vz * flightS + world.rng.gauss() * 0.8;
+      launch(world, town.side, shot, b.x, heightAtM(b.x, b.z) + TOWER.topM, b.z, tx, heightAtM(tx, tz) + MISSILE.chestHeightM, tz, town.side, AT_SOLDIERS);
+      b.shotS = def.reloadS / b.garrison;
+    }
+  }
+}
+
 /** The keep's garrison shoots at the nearest enemy in range. */
 function stepKeep(world: World, side: Side, dtSeconds: number): void {
   if (world.towns[side].keepHp <= 0) return;
@@ -296,6 +358,7 @@ export function stepMissiles(world: World, dtSeconds: number): void {
   }
   stepKeep(world, 0, dtSeconds);
   stepKeep(world, 1, dtSeconds);
+  stepTowers(world, dtSeconds);
   for (const a of world.arrows) {
     if (!a.active) continue;
     a.ageS += dtSeconds;

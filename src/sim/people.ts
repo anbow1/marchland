@@ -185,7 +185,7 @@ function release(p: Person): void {
 
 /** True for buildings that need someone working in them. */
 function needsWorker(b: Building): boolean {
-  return b.kind !== 'house' && b.kind !== 'barracks' && isBuilt(b) && !b.paused;
+  return b.kind !== 'house' && b.kind !== 'barracks' && b.kind !== 'tower' && isBuilt(b) && !b.paused;
 }
 
 const staffed = new Uint8Array(TOWN.maxBuildings);

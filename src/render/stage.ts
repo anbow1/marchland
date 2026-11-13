@@ -2,8 +2,8 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { sharpen } from 'three/addons/tsl/display/SharpenNode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
-import { mrt, output, pass, velocity } from 'three/tsl';
-import { ACESFilmicToneMapping, HalfFloatType, PerspectiveCamera, RenderPipeline, Scene, SRGBColorSpace, WebGPURenderer } from 'three/webgpu';
+import { dot, max, mix, mrt, output, pass, pow, vec3, vec4, velocity } from 'three/tsl';
+import { HalfFloatType, NeutralToneMapping, type Node, PerspectiveCamera, RenderPipeline, Scene, SRGBColorSpace, WebGPURenderer } from 'three/webgpu';
 import { CAMERA } from '../config.ts';
 import { FrameGovernor, PassTimer } from './perf.ts';
 import { installWebGpuCompat } from './webgpuCompat.ts';
@@ -36,6 +36,23 @@ const GOVERNOR_STEPS: readonly GovernorStep[] = [{ scale: 1 }, { scale: 0.87 }, 
 const CAMERA_NEAR_M = 1;
 const CAMERA_FAR_M = 6000;
 
+/**
+ * A grade before the tone curve: the scans are photographed under grey skies and read dull (grass,
+ * plaster and tiles drift towards one beige), so colour is pushed back out from grey and the mid-tones are given a
+ * little more contrast round middle grey. Linear HDR in, linear HDR out.
+ */
+const GRADE_SATURATION = 1.35;
+const GRADE_CONTRAST = 1.14;
+const MIDDLE_GREY = 0.18;
+
+function grade(c: Node<'vec4'>): Node<'vec4'> {
+  const rgb = max(c.rgb, vec3(0));
+  const luma = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
+  const saturated = max(mix(vec3(luma), rgb, GRADE_SATURATION), vec3(0));
+  const contrasted = pow(saturated.div(MIDDLE_GREY), vec3(GRADE_CONTRAST)).mul(MIDDLE_GREY);
+  return vec4(contrasted, c.a);
+}
+
 export class Stage {
   readonly renderer: WebGPURenderer;
   readonly scene = new Scene();
@@ -53,7 +70,8 @@ export class Stage {
     this.renderer = new WebGPURenderer({ canvas, antialias: false, powerPreference: 'high-performance', trackTimestamp: true });
     this.renderer.inspector = this.passTimer;
     this.renderer.outputColorSpace = SRGBColorSpace;
-    this.renderer.toneMapping = ACESFilmicToneMapping;
+    // Khronos PBR Neutral: keeps hue and saturation through the curve, where ACES greyed the scans.
+    this.renderer.toneMapping = NeutralToneMapping;
     this.renderer.shadowMap.enabled = true;
     this.camera = new PerspectiveCamera(CAMERA.fovDeg, 16 / 9, CAMERA_NEAR_M, CAMERA_FAR_M);
     this.scene.add(this.camera);
@@ -94,9 +112,9 @@ export class Stage {
       const aa = traa(colour, depth, motion, this.camera);
       // Sun on helmets and blades is the only thing bright enough to bloom.
       const lit = aa.add(bloom(aa, 0.04, 0.3, 0));
-      pipeline.outputNode = sharpen(lit, 0.3);
+      pipeline.outputNode = grade(sharpen(lit, 0.3));
     } else {
-      pipeline.outputNode = fxaa(colour);
+      pipeline.outputNode = grade(fxaa(colour) as unknown as Node<'vec4'>);
     }
     this.pipeline?.dispose();
     this.pipeline = pipeline;

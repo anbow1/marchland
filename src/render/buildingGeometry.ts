@@ -105,6 +105,10 @@ const BUILDERS: Record<BuildingKind, Build> = {
     b.box(0, 4.0, 0, 3.0, 3.8, 3.4, P.BOARDS);
     b.roof(0, 7.8, 0, 3.0, 3.4, 1.4, 0, 0.2, 0.15, P.SHINGLE, P.TIMBER);
   },
+  tower: (b) => {
+    b.box(0, 0, 0, 4.2, 8.2, 4.2, P.STONE);
+    b.box(0, 8.2, 0, 5.2, 0.4, 5.2, P.ASHLAR);
+  },
   vineyard: (b) => {
     b.box(-1.5, 0, -1.5, 4.0, 2.4, 3.4, P.PLASTER);
     b.roof(-1.5, 2.4, -1.5, 4.0, 3.4, 1.8, 0, 0.3, 0.15, P.TILE, P.TIMBER);

@@ -28,6 +28,8 @@ export interface Soldier {
   deadS: number;
   /** Distance walked, for the step animation. */
   strideM: number;
+  /** An enemy wall cell he has walked into this step and will batter; -1 none. */
+  wallCell: number;
 }
 
 export type OrderKind = 'hold' | 'move' | 'attackRegiment' | 'attackBuilding';
@@ -89,6 +91,8 @@ export interface Regiment {
   /** The kind it is being re-armed as, and the seconds left; null when it is not. */
   rearmTo: UnitKind | null;
   rearmLeftS: number;
+  /** The tower (its place in the town's list) it is marching to man; -1 none. */
+  garrisonPlot: number;
 }
 
 export function forwardX(facingRad: number): number {
@@ -197,6 +201,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     routCount: 0,
     rearmTo: null,
     rearmLeftS: 0,
+    garrisonPlot: -1,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({
@@ -215,6 +220,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
       searchS: (i % 5) * 0.04,
       deadS: 0,
       strideM: i * 0.37,
+      wallCell: -1,
     });
   }
   for (const s of r.soldiers) {

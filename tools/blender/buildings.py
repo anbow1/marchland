@@ -705,3 +705,46 @@ BUILDERS.update({
     "stable": stable,
     "barracks": barracks,
 })
+
+
+def tower(k, level):
+    # A square stone watchtower: battered base, three storeys, a fighting top with battlements under a
+    # light roof on posts (the archers shoot from between the merlons), the side's banner.
+    base = 4.2
+    k.box(0, 0, -0.4, base + 0.8, base + 0.8, 1.2, RUBBLE, bevel=0.05)
+    k.box(0, 0, 0.8, base, base, 7.4, RUBBLE, bevel=0.04)
+    for z in (3.2, 5.8):
+        k.box(0, 0, z, base + 0.12, base + 0.12, 0.18, ASHLAR, bevel=0.02)
+    for dx in (-1, 1):
+        for dy in (-1, 1):
+            k.box(dx * (base / 2 - 0.2), dy * (base / 2 - 0.2), 0.8, 0.5, 0.5, 7.4, ASHLAR, bevel=0.03)
+    door(k, 0, -base / 2, 0.8, w=1.0, h=1.9)
+    k.box(0, -base / 2 - 0.9, 0, 1.4, 1.6, 0.8, RUBBLE, bevel=0.04)
+    for z in (3.8, 6.3):
+        for x in (-0.9, 0.9):
+            k.box(x, -base / 2 - 0.02, z, 0.18, 0.08, 0.7, SOOT)
+    # The fighting top: a floor overhanging the walls, battlements round it.
+    top = 8.2
+    k.box(0, 0, top, base + 1.0, base + 1.0, 0.35, ASHLAR, bevel=0.03)
+    edge = (base + 1.0) / 2
+    for i in range(5):
+        t = -edge + 0.35 + i * ((2 * edge - 0.7) / 4)
+        for x, y in ((t, -edge + 0.2), (t, edge - 0.2), (-edge + 0.2, t), (edge - 0.2, t)):
+            k.box(x, y, top + 0.35, 0.55, 0.55, 0.85, ASHLAR, bevel=0.03)
+    # A light roof on four posts over the top.
+    for dx in (-1, 1):
+        for dy in (-1, 1):
+            k.box(dx * (edge - 0.3), dy * (edge - 0.3), top + 0.35, 0.18, 0.18, 2.2, BEAM)
+    k.box(0, 0, top + 2.5, 0.01, 0.01, 0.01, BEAM)
+    m = k.mark()
+    roof(k, 2 * edge, 2 * edge, top + 2.55, 40, 0.3, 0.3, 0.16, SHINGLES, hip=edge - 0.2)
+    k.move_since(m, Matrix.Identity(4))
+    k.box(0, 0, top + 2.55 + edge * 0.84, 0.08, 0.08, 1.6, BEAM)
+    k.slab([(0.05, 0, top + 4.6 + edge * 0.84), (1.3, 0, top + 4.4 + edge * 0.84), (1.3, 0, top + 3.7 + edge * 0.84), (0.05, 0, top + 3.9 + edge * 0.84)], 0.03, TEAM)
+    if level >= 2:
+        # Hoardings: a timber gallery on the front.
+        k.box(0, -edge - 0.4, top - 0.9, 2 * edge, 0.8, 0.9, BOARDS, bevel=0.02)
+    return {}
+
+
+BUILDERS["tower"] = tower

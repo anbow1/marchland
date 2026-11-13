@@ -16,6 +16,23 @@ export interface SiteCheck {
   site: Site;
 }
 
+/**
+ * How far from its keep a building of this kind may stand. The trades that go where the land is (wood,
+ * stone, ore) may go anywhere; farms and vineyards further than the town's own buildings.
+ */
+export function reachOf(kind: BuildingKind): number {
+  const need = SITE_NEED[kind];
+  // A watchtower guards whatever needs guarding: an outlying mine as well as the town.
+  if (need === 'forest' || need === 'stone' || need === 'ore' || kind === 'tower') return Number.POSITIVE_INFINITY;
+  if (need === 'fields') return TOWN.fieldTerritoryRadiusM;
+  return TOWN.territoryRadiusM;
+}
+
+/** True where a side may lay a road: anywhere on the map but close to the enemy's keep. */
+export function mayLayRoadAt(side: Side, x: number, z: number): boolean {
+  return hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) >= TOWN.enemyKeepClearM && Math.abs(x) < MAP.halfM && Math.abs(z) < MAP.halfM;
+}
+
 /** Looks outward from a point for the nearest place where `test` holds, within `reachM`; writes it to `out`. */
 function findNearby(x: number, z: number, reachM: number, test: (px: number, pz: number) => boolean, out: { x: number; z: number }): boolean {
   for (let r = TOWN.buildingRadiusM; r <= reachM; r += 2) {
@@ -55,7 +72,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const site: Site = { x, z, yawRad, spotX: x, spotZ: z, strips: [] };
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
-  if (hypot2(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return fail('tooFar');
+  if (hypot2(x - townX(side), z - townZ(side)) > reachOf(kind)) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
   if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isWater(x + dx, z + dz)) return fail('blocked');
