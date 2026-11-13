@@ -99,6 +99,16 @@ const BUILDERS: Record<BuildingKind, Build> = {
     P.barrel(b, 1.6, -1.3, 0.85);
     if (level >= 3) P.crate(b, 0.6, -2.4);
   },
+  // Simple stand-ins for the kinds that have a model from Blender (public/buildings), used until it loads.
+  windmill: (b) => {
+    b.box(0, 0, 0, 0.7, 4.0, 0.7, P.TIMBER);
+    b.box(0, 4.0, 0, 3.0, 3.8, 3.4, P.BOARDS);
+    b.roof(0, 7.8, 0, 3.0, 3.4, 1.4, 0, 0.2, 0.15, P.SHINGLE, P.TIMBER);
+  },
+  smelter: (b) => {
+    b.cylinder(-1.3, 0, 0.8, 1.75, 1.05, 4.6, 12, P.STONE);
+    b.box(1.8, 0, 1.0, 3.6, 2.4, 3.2, P.BOARDS);
+  },
   bakery: (b, level) => {
     P.house(b, { cx: -1.0, cz: -1.4, sx: 6.4, sz: 4.6, wallH: 2.8, wall: P.PLASTER, roof: P.TILE, pitch: 1.3, frame: true });
     // The oven: a stone dome with a tall flue.

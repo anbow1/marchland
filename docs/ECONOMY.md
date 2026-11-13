@@ -64,7 +64,7 @@ i drogi są decyzją gracza, a nie ozdobą.
   zagroda uprawia 2 / 4 / 6 pasów na poziomach 1–3. Pasy leżą za zagrodą, w stronę przeciwną
   do drzwi, i nic nie można na nich postawić — rolnictwo zużywa teren, więc zagrody buduje się
   jako wieś na otwartej przestrzeni, a rzemiosło przy zamku.
-- **Drwal** musi stać do 26 m od lasu: kurs to 8 s rąbania i 4 drewna.
+- **Drwal** musi stać do 26 m od lasu: kurs to 8 s rąbania i 6 drewna.
 - **Rybak** musi stać do 16 m od jeziora: kurs to 10 s łowienia i 3 ryby.
 - **Kamieniołom i kopalnia** muszą stać do 15 m od wychodni kamienia albo rudy. Każda strona
   ma po jednej za miastem; druga, bogatsza, leży na flance bliżej środka mapy.
@@ -90,5 +90,5 @@ i drogi są decyzją gracza, a nie ozdobą.
 ## 8. Start partii
 
 Każda strona zaczyna z zamkiem, 8 ludźmi i zapasem: 340 złoto, 90 drewno, 40 kamień, 40 chleb.
-Sensowna kolejność: drwal → zagroda → chata → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
-chlewnia, kopalnia, koszary → garbarnia, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz.
+Sensowna kolejność: drwal → zagroda → chata → młyn → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
+chlewnia, kopalnia, koszary → garbarnia, huta, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz.

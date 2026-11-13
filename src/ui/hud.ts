@@ -45,8 +45,8 @@ export type Project = (x: number, y: number, z: number, out: { x: number; y: num
 
 const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
   ['gold', 'wood', 'stone'],
-  ['grain', 'bread', 'fish', 'meat', 'sausage'],
-  ['hide', 'leatherArmor', 'ironOre', 'weapon', 'mailArmor', 'bow', 'horse'],
+  ['grain', 'flour', 'bread', 'fish', 'meat', 'sausage'],
+  ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
 
 /** A swatch per resource (sRGB), to tell the chips apart at a glance. */
@@ -55,6 +55,7 @@ const RESOURCE_CSS: Record<ResourceId, string> = {
   wood: '#8a643c',
   stone: '#9a9690',
   grain: '#c9a94a',
+  flour: '#e8e0cc',
   bread: '#d9a25e',
   fish: '#8fa3b0',
   meat: '#b0564a',
@@ -62,6 +63,7 @@ const RESOURCE_CSS: Record<ResourceId, string> = {
   hide: '#b08d62',
   leatherArmor: '#7a5232',
   ironOre: '#6f6a78',
+  iron: '#5a6068',
   weapon: '#c3c7cc',
   mailArmor: '#9aa3ad',
   bow: '#7d8a3c',

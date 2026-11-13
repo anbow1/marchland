@@ -1,0 +1,98 @@
+{
+ "armourer:1": {
+  "file": "armourer_1.glb",
+  "triangles": 4690
+ },
+ "armourer:2": {
+  "file": "armourer_2.glb",
+  "triangles": 4858
+ },
+ "armourer:3": {
+  "file": "armourer_3.glb",
+  "triangles": 4858
+ },
+ "bakery:1": {
+  "file": "bakery_1.glb",
+  "triangles": 8220
+ },
+ "bakery:2": {
+  "file": "bakery_2.glb",
+  "triangles": 8828
+ },
+ "bakery:3": {
+  "file": "bakery_3.glb",
+  "triangles": 8916
+ },
+ "house:1": {
+  "file": "house_1.glb",
+  "triangles": 4936
+ },
+ "house:2": {
+  "file": "house_2.glb",
+  "triangles": 5368
+ },
+ "house:3": {
+  "file": "house_3.glb",
+  "triangles": 8124
+ },
+ "ironMine:1": {
+  "file": "ironMine_1.glb",
+  "triangles": 2628
+ },
+ "ironMine:2": {
+  "file": "ironMine_2.glb",
+  "triangles": 2788
+ },
+ "ironMine:3": {
+  "file": "ironMine_3.glb",
+  "triangles": 2788
+ },
+ "smelter:1": {
+  "file": "smelter_1.glb",
+  "triangles": 2132
+ },
+ "smelter:2": {
+  "file": "smelter_2.glb",
+  "triangles": 2168
+ },
+ "smelter:3": {
+  "file": "smelter_3.glb",
+  "triangles": 2168
+ },
+ "smithy:1": {
+  "file": "smithy_1.glb",
+  "triangles": 2566
+ },
+ "smithy:2": {
+  "file": "smithy_2.glb",
+  "triangles": 2566
+ },
+ "smithy:3": {
+  "file": "smithy_3.glb",
+  "triangles": 2566
+ },
+ "windmill:1": {
+  "file": "windmill_1.glb",
+  "triangles": 4788
+ },
+ "windmill:2": {
+  "file": "windmill_2.glb",
+  "triangles": 4876
+ },
+ "windmill:3": {
+  "file": "windmill_3.glb",
+  "triangles": 4964
+ },
+ "woodcutter:1": {
+  "file": "woodcutter_1.glb",
+  "triangles": 2900
+ },
+ "woodcutter:2": {
+  "file": "woodcutter_2.glb",
+  "triangles": 3140
+ },
+ "woodcutter:3": {
+  "file": "woodcutter_3.glb",
+  "triangles": 3392
+ }
+}

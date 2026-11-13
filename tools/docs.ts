@@ -16,6 +16,7 @@ const GOOD_EN: Record<ResourceId, string> = {
   wood: 'timber',
   stone: 'stone',
   grain: 'grain',
+  flour: 'flour',
   bread: 'bread',
   fish: 'fish',
   meat: 'meat',
@@ -23,6 +24,7 @@ const GOOD_EN: Record<ResourceId, string> = {
   hide: 'hides',
   leatherArmor: 'leather armour',
   ironOre: 'iron ore',
+  iron: 'iron',
   weapon: 'weapons',
   mailArmor: 'mail',
   bow: 'bows',
@@ -34,6 +36,7 @@ const GOOD_PL: Record<ResourceId, string> = {
   wood: 'drewno',
   stone: 'kamień',
   grain: 'zboże',
+  flour: 'mąka',
   bread: 'chleb',
   fish: 'ryby',
   meat: 'mięso',
@@ -41,6 +44,7 @@ const GOOD_PL: Record<ResourceId, string> = {
   hide: 'skóry',
   leatherArmor: 'zbroja skórzana',
   ironOre: 'ruda żelaza',
+  iron: 'żelazo',
   weapon: 'broń',
   mailArmor: 'kolczuga',
   bow: 'łuk',
@@ -49,17 +53,19 @@ const GOOD_PL: Record<ResourceId, string> = {
 
 const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   house: { name: 'House', role: 'Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.' },
-  woodcutter: { name: "Woodcutter's Lodge", role: 'The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines.' },
+  woodcutter: { name: "Woodcutter's Lodge", role: 'The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines. An open shed of stacked logs, fresh trunks by the track, a chopping block and a sawhorse in the yard.' },
   quarry: { name: 'Quarry', role: 'Cuts building stone from an outcrop: stone for workshops, the barracks and roads.' },
   farm: { name: 'Farm', role: 'The farmer breaks, sows and reaps strips of land behind the farm. The farmland grows with the farm level, so farms want open ground: build them as a village.' },
   fisher: { name: "Fisher's Hut", role: 'The fisher works the shore of the lake: food that needs no mill or oven.' },
-  bakery: { name: 'Bakery', role: 'Bakes grain into bread, the staple ration of town and army.' },
+  windmill: { name: 'Windmill', role: 'A post mill: grinds grain into flour. The tallest thing in a village; its sails turn while it works.' },
+  bakery: { name: 'Bakery', role: 'Bakes flour into bread, the staple ration of town and army. A domed oven by the house and a pretzel over the door.' },
   pigFarm: { name: 'Pig Farm', role: 'Fattens pigs on grain: meat for the butcher, hides for the tanner.' },
   butcher: { name: 'Butcher', role: 'Turns meat into sausages; a sausage feeds two.' },
   tannery: { name: 'Tannery', role: 'Turns hides into leather armour for the lower tiers of the army.' },
-  ironMine: { name: 'Iron Mine', role: 'Digs iron ore from an ore outcrop.' },
-  smithy: { name: 'Smithy', role: 'Forges weapons from ore, burning timber.' },
-  armourer: { name: 'Armourer', role: 'Makes mail from ore for swordsmen, halberdiers and knights.' },
+  ironMine: { name: 'Iron Mine', role: 'Digs iron ore from an ore outcrop. A timbered adit in a knoll of rock, rails, an ore tub and the ore heap.' },
+  smelter: { name: 'Smelter', role: 'A bloomery: smelts iron ore into iron, burning timber as charcoal. A squat stone furnace, bellows, smoking charcoal and heaps of slag.' },
+  smithy: { name: 'Smithy', role: 'Forges weapons from iron, burning timber. Open to the street: the glowing hearth and the anvil are seen from afar.' },
+  armourer: { name: 'Armourer', role: 'Makes mail from iron for swordsmen, halberdiers and knights. Armour stands, a rack of polearms and shields in the town\'s colour outside.' },
   fletcher: { name: 'Fletcher', role: 'Makes bows and crossbows from timber.' },
   stable: { name: 'Stable', role: 'Raises war horses on grain.' },
   barracks: { name: 'Barracks', role: 'Townspeople called up walk here, take their equipment and form a regiment. Its level decides which units can be trained.' },
@@ -138,15 +144,15 @@ Rules common to all buildings:
 ## 2. Production chains
 
 \`\`\`
-Farm ──grain──► Bakery ──bread──► houses, keep, army
+Farm ──grain──► Windmill ──flour──► Bakery ──bread──► houses, keep, army
      ├─grain──► Pig Farm ──meat──► Butcher ──sausages──► houses, keep, army
      │                   └─hides─► Tannery ──leather armour──► pikemen, archers, crossbowmen, light cavalry
      └─grain──► Stable ──horses──► light and heavy cavalry
 Fisher's Hut ──fish──► houses, keep, army
 Woodcutter's Lodge ──timber──► buildings, Smithy, Fletcher, militia shields, siege engines
 Quarry ──stone──► buildings, roads, trebuchet
-Iron Mine ──ore──► Smithy (+ timber) ──weapons──► every armed regiment, ballista
-               └─► Armourer ──mail──► swordsmen, halberdiers, heavy cavalry
+Iron Mine ──ore──► Smelter (+ timber) ──iron──► Smithy (+ timber) ──weapons──► every armed regiment, ballista
+                                         └─► Armourer ──mail──► swordsmen, halberdiers, heavy cavalry
 Fletcher ──bows──► archers, crossbowmen
 \`\`\`
 
@@ -160,7 +166,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | A | **Watchtower** | Archers on a tower: protects an outlying village or a quarry from raids. |
 | A | **Palisade** and **Gate** | Walls drawn like roads; soldiers must break a section or the gate. Gives siege engines their purpose. |
 | A | **Siege Workshop** | Builds ballistae and trebuchets instead of the barracks (timber, weapons, stone), so engines are a separate investment. |
-| B | **Windmill** | Grain → flour; the bakery then takes flour. One more step in the bread chain and a landmark for the village. |
 | B | **Sawmill** | Logs → planks: higher levels of buildings and engines ask for planks, so timber gets a second tier. |
 | B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |
 | B | **Hunter's Lodge** | Meat and hides from the forest before the town can afford pigs. |
@@ -168,7 +173,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | C | **Tavern** | Uses sausages (later ale): fed and merry houses grow faster and pay more tax. |
 | C | **Brewery** | Grain → ale for the tavern and for the army's morale on campaign. |
 | C | **Chapel** | Raises the morale soldiers start with; a place people gather after a lost battle. |
-| C | **Smelter** | Ore + charcoal → iron bars; smithy and armourer then take bars. Only if the weapon chain proves too short. |
 | C | **Well** | Puts out fires once buildings can burn; cosmetic until then. |
 | C | **Keep, levels 2 and 3** | Stone tower, then castle: more household, stronger garrison, wider land to build on. |
 `;
@@ -268,8 +272,8 @@ i drogi są decyzją gracza, a nie ozdobą.
 ## 8. Start partii
 
 Każda strona zaczyna z zamkiem, ${PEOPLE.keepResidents} ludźmi i zapasem: ${cost(TOWN.startingStock, GOOD_PL)}.
-Sensowna kolejność: drwal → zagroda → chata → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
-chlewnia, kopalnia, koszary → garbarnia, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz.
+Sensowna kolejność: drwal → zagroda → chata → młyn → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
+chlewnia, kopalnia, koszary → garbarnia, huta, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz.
 `;
 }
 
@@ -352,8 +356,8 @@ ${special.join('\n')}
 ## 6. Łańcuchy ekwipunku
 
 - zbroja skórzana ← garbarnia ← skóry ← chlewnia ← zboże
-- broń ← kuźnia ← ruda + drewno
-- kolczuga ← płatnerz ← ruda
+- broń ← kuźnia ← żelazo + drewno ← huta ← ruda + drewno
+- kolczuga ← płatnerz ← żelazo ← huta ← ruda + drewno
 - łuk ← łuczarz ← drewno
 - koń ← stajnia ← zboże
 `;

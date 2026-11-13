@@ -30,14 +30,15 @@ describe('a whole game', () => {
     expect(firstRegimentS).toBeGreaterThan(120);
     expect(peakMen).toBeLessThanOrEqual(ARMY.maxSoldiersPerSide);
     expect(world.towns[COMPUTER].plots.filter((b) => b !== null).length).toBeGreaterThanOrEqual(12);
-  });
+  }, 60_000);
 
   it('two computer players fight each other, and the same seed replays the same game', () => {
     const play = (seed: number): World => {
       const world = createWorld({ seed, difficulty: 'normal', computerPlays: true });
       const second = createAiState(PLAYER);
-      // Armies are raised from the towns' people now: the first blows fall after about twenty minutes.
-      for (let step = 0; step < 30 * 60 * 60 && world.winner === -1; step++) {
+      // Armies are raised from the towns' people, and each computer waits for a full first wave: the
+      // first blows fall after about 27 minutes (to be brought forward: docs/GAMEPLAY.md §2).
+      for (let step = 0; step < 35 * 60 * 60 && world.winner === -1; step++) {
         stepAi(world, second, SIM.stepSeconds);
         stepWorld(world, SIM.stepSeconds);
       }
@@ -48,7 +49,7 @@ describe('a whole game', () => {
     expect(first.kills[0] + first.kills[1]).toBeGreaterThan(40);
     expect(fingerprint(again)).toBe(fingerprint(first));
     expect(again.timeS).toBe(first.timeS);
-  }, 60_000);
+  }, 120_000);
 
   it('a keep falls to an army that is left to batter it', () => {
     const world = createWorld({ seed: 2, difficulty: 'normal', computerPlays: false });

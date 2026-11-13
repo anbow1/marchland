@@ -146,7 +146,7 @@ export const FIELDS = {
 
 /** Trades whose worker goes out to the land and comes back with a load: seconds on the spot and what a trip brings. */
 export const GATHER = {
-  woodcutter: { seconds: 8, amount: 4, reachM: 16 },
+  woodcutter: { seconds: 8, amount: 6, reachM: 16 },
   fisher: { seconds: 10, amount: 3, reachM: 9 },
 } as const;
 
@@ -179,13 +179,17 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   fisher: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: null },
   quarry: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 300, recipe: { inputs: {}, outputs: { stone: 1 }, cycleSeconds: 6 } },
   farm: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: null },
-  bakery: { cost: { gold: 50, wood: 15, stone: 5 }, buildSeconds: 12, hp: 300, recipe: { inputs: { grain: 1 }, outputs: { bread: 1 }, cycleSeconds: 5 } },
+  // Grain is ground to flour at the mill before the baker can use it.
+  windmill: { cost: { gold: 70, wood: 30 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grain: 2 }, outputs: { flour: 2 }, cycleSeconds: 6 } },
+  bakery: { cost: { gold: 50, wood: 15, stone: 5 }, buildSeconds: 12, hp: 300, recipe: { inputs: { flour: 1 }, outputs: { bread: 1 }, cycleSeconds: 5 } },
   pigFarm: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, recipe: { inputs: { grain: 1 }, outputs: { meat: 2, hide: 1 }, cycleSeconds: 12 } },
   butcher: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { meat: 1 }, outputs: { sausage: 1 }, cycleSeconds: 5 } },
   tannery: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { hide: 1 }, outputs: { leatherArmor: 1 }, cycleSeconds: 8 } },
   ironMine: { cost: { gold: 80, wood: 25 }, buildSeconds: 14, hp: 300, recipe: { inputs: {}, outputs: { ironOre: 1 }, cycleSeconds: 6 } },
-  smithy: { cost: { gold: 80, wood: 20, stone: 20 }, buildSeconds: 14, hp: 350, recipe: { inputs: { ironOre: 1, wood: 1 }, outputs: { weapon: 1 }, cycleSeconds: 7 } },
-  armourer: { cost: { gold: 120, wood: 20, stone: 40 }, buildSeconds: 16, hp: 350, recipe: { inputs: { ironOre: 2 }, outputs: { mailArmor: 1 }, cycleSeconds: 12 } },
+  // Ore is smelted to iron in a bloomery, burning timber (as charcoal) to do it.
+  smelter: { cost: { gold: 90, wood: 20, stone: 30 }, buildSeconds: 14, hp: 350, recipe: { inputs: { ironOre: 2, wood: 1 }, outputs: { iron: 2 }, cycleSeconds: 9 } },
+  smithy: { cost: { gold: 80, wood: 20, stone: 20 }, buildSeconds: 14, hp: 350, recipe: { inputs: { iron: 1, wood: 1 }, outputs: { weapon: 1 }, cycleSeconds: 7 } },
+  armourer: { cost: { gold: 120, wood: 20, stone: 40 }, buildSeconds: 16, hp: 350, recipe: { inputs: { iron: 2 }, outputs: { mailArmor: 1 }, cycleSeconds: 12 } },
   fletcher: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, recipe: { inputs: { wood: 1 }, outputs: { bow: 1 }, cycleSeconds: 8 } },
   stable: { cost: { gold: 100, wood: 40, stone: 10 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grain: 3 }, outputs: { horse: 1 }, cycleSeconds: 25 } },
   barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, recipe: null },
@@ -421,6 +425,8 @@ export const AI = {
   retreatLossShare: 0.7,
   /** Gold kept back before spending on upgrades. */
   upgradeReserveGold: 220,
+  /** Stone the computer keeps for buildings: roads are laid only with what is left over. */
+  roadStoneReserve: 30,
   /** Free hands the computer keeps at home for every building it has, on top of the town's minimum. */
   freeHandsPerBuilding: 0.45,
 } as const;

@@ -66,7 +66,7 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 ## 6. Łańcuchy ekwipunku
 
 - zbroja skórzana ← garbarnia ← skóry ← chlewnia ← zboże
-- broń ← kuźnia ← ruda + drewno
-- kolczuga ← płatnerz ← ruda
+- broń ← kuźnia ← żelazo + drewno ← huta ← ruda + drewno
+- kolczuga ← płatnerz ← żelazo ← huta ← ruda + drewno
 - łuk ← łuczarz ← drewno
 - koń ← stajnia ← zboże

@@ -1,5 +1,5 @@
 import { AI, AI_TUNING, TOWN } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMoveGroup, cmdRecruit, cmdUpgrade } from './commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMoveGroup, cmdRecruit, cmdUpgrade, roadCost } from './commands.ts';
 import { canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
@@ -44,10 +44,11 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'woodcutter',
   'farm',
   'house',
+  'quarry',
+  'windmill',
   'bakery',
   'woodcutter',
   'house',
-  'quarry',
   'fisher',
   'farm',
   'house',
@@ -55,6 +56,8 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'ironMine',
   'barracks',
   'tannery',
+  'smelter',
+  'woodcutter',
   'smithy',
   'house',
   'butcher',
@@ -75,13 +78,13 @@ const BUILD_ORDER: readonly BuildingKind[] = [
 const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'ballista', 'heavyCavalry', 'archers', 'trebuchet', 'swordsmen'];
 
 /** Upgrades in the order they pay back for an army. */
-const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'bakery', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'armourer', 'stable', 'fletcher', 'butcher', 'woodcutter', 'fisher', 'quarry'];
+const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'windmill', 'bakery', 'smelter', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'armourer', 'stable', 'fletcher', 'butcher', 'woodcutter', 'fisher', 'quarry'];
 
 /** Staging point: this far short of the enemy keep, on the line from home. */
 const STAGE_DISTANCE_M = 115;
 
 /** Index in BUILD_ORDER after which the barracks is worth its second level (the weapon chain stands). */
-const BARRACKS_UPGRADE_AFTER = 15;
+const BARRACKS_UPGRADE_AFTER = 17;
 
 /** Builds on the ground the planner picks and lays a road from its door to the keep; true when it was built. */
 function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 'noGround' | 'notYet' {
@@ -89,7 +92,10 @@ function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 
   if (!site) return 'noGround';
   if (cmdBuild(world, ai.side, kind, site.x, site.z, site.yawRad) !== 'ok') return 'notYet';
   const town = world.towns[ai.side];
-  // The road is a convenience: if there is no stone for it, the building stands without.
+  // The road is a convenience: it is laid only with stone to spare, or the next building would wait for it.
+  const fromX = site.x + Math.sin(site.yawRad) * (TOWN.buildingRadiusM + 1);
+  const fromZ = site.z + Math.cos(site.yawRad) * (TOWN.buildingRadiusM + 1);
+  if (town.stock.stone - roadCost(world, fromX, fromZ, doorX(town, KEEP), doorZ(town, KEEP)) < AI.roadStoneReserve) return 'built';
   cmdBuildRoad(world, ai.side, site.x + Math.sin(site.yawRad) * (TOWN.buildingRadiusM + 1), site.z + Math.cos(site.yawRad) * (TOWN.buildingRadiusM + 1), doorX(town, KEEP), doorZ(town, KEEP));
   return 'built';
 }

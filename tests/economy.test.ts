@@ -112,20 +112,35 @@ describe('a living town', () => {
     expect(farm.strips.some((s) => s.state !== 'wild')).toBe(true);
   });
 
-  it('a bakery bakes only the grain carriers bring it', () => {
+  it('a bakery bakes only the flour carriers bring it', () => {
     const world = rich(quietWorld());
     const town = world.towns[PLAYER];
     town.stock.bread = 0;
-    town.stock.grain = 0;
+    town.stock.flour = 0;
     const plot = build(world, 'bakery');
     runUntil(world, 240, () => finished(world, plot));
     run(world, 30);
     const bakery = town.plots[plot];
     if (!bakery) throw new Error('no bakery');
     expect(bakery.out.bread + town.stock.bread).toBe(0);
-    town.stock.grain = 30;
+    town.stock.flour = 30;
     run(world, 120);
-    expect(bakery.out.bread + town.stock.bread + bakery.inp.grain).toBeGreaterThan(5);
+    expect(bakery.out.bread + town.stock.bread + bakery.inp.flour).toBeGreaterThan(5);
+  });
+
+  it('a mill grinds grain to flour, and a smelter makes iron from ore and timber', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const mill = build(world, 'windmill');
+    const smelter = build(world, 'smelter');
+    runUntil(world, 300, () => finished(world, mill) && finished(world, smelter));
+    town.stock.grain = 30;
+    town.stock.ironOre = 30;
+    run(world, 150);
+    const flour = town.stock.flour + (town.plots[mill]?.out.flour ?? 0);
+    const iron = town.stock.iron + (town.plots[smelter]?.out.iron ?? 0);
+    expect(flour).toBeGreaterThan(4);
+    expect(iron).toBeGreaterThan(4);
   });
 
   it('woodcutters and fishers go out to the land and come back with loads', () => {

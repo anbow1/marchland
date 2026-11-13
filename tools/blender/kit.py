@@ -26,6 +26,8 @@ class Kit:
         self.bm = bmesh.new()
         self.materials: list[str] = []
         self.rng = random.Random(seed)
+        # Points the game puts smoke on (chimneys, furnaces, charcoal), in the model's own space.
+        self.smoke: list[tuple[float, float, float]] = []
 
     def _mat(self, name: str) -> int:
         if name not in self.materials:
@@ -114,10 +116,25 @@ class Kit:
             # The bevel's new faces take the material of the faces they were cut from.
             bmesh.ops.bevel(self.bm, geom=edges, offset=bevel, segments=1, affect="EDGES", profile=0.5)
 
+    def mark(self) -> int:
+        """The number of vertices so far: build something, then move everything made since with move_since."""
+        self.bm.verts.ensure_lookup_table()
+        return len(self.bm.verts)
+
+    def move_since(self, mark: int, m) -> None:
+        self.bm.verts.ensure_lookup_table()
+        bmesh.ops.transform(self.bm, matrix=m, verts=self.bm.verts[mark:])
+
     def place(self, verts, m):
         bmesh.ops.transform(self.bm, matrix=m, verts=verts)
 
     # ---- output -------------------------------------------------------------
+
+    def split_off(self) -> "Kit":
+        """A fresh kit for a separate moving part (a mill's sails); shares the random numbers."""
+        part = Kit(0)
+        part.rng = self.rng
+        return part
 
     def to_object(self, name: str):
         bmesh.ops.recalc_face_normals(self.bm, faces=self.bm.faces)
@@ -135,4 +152,4 @@ class Kit:
 
 
 def export_glb(path: str) -> None:
-    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True, export_materials="EXPORT", export_normals=True, export_texcoords=False)
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True, export_materials="EXPORT", export_normals=True, export_texcoords=False, export_extras=False)

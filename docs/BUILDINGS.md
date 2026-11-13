@@ -9,37 +9,41 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 |---|---|---|---|---|---|---|
 | 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Lose it and the game is lost | — | 1800 |
 | 2 | **House** | 40 gold, 10 timber | any level ground | 6 / 10 / 14 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
-| 3 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 4 timber a trip (8 s of felling + the walk) | 1 | 250 |
+| 3 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 6 timber a trip (8 s of felling + the walk) | 1 | 250 |
 | 4 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
 | 5 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 7 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
 | 6 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
-| 7 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 grain → 1 bread every 5 s | 1 | 300 |
-| 8 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
-| 9 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
-| 10 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
-| 11 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
-| 12 | **Smithy** | 80 gold, 20 timber, 20 stone | any level ground | 1 timber, 1 iron ore → 1 weapons every 7 s | 1 | 350 |
-| 13 | **Armourer** | 120 gold, 20 timber, 40 stone | any level ground | 2 iron ore → 1 mail every 12 s | 1 | 350 |
-| 14 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
-| 15 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
-| 16 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
-| 17 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
+| 7 | **Windmill** | 70 gold, 30 timber | any level ground | 2 grain → 2 flour every 6 s | 1 | 300 |
+| 8 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
+| 9 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
+| 10 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
+| 11 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
+| 12 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
+| 13 | **Smelter** | 90 gold, 20 timber, 30 stone | any level ground | 1 timber, 2 iron ore → 2 iron every 9 s | 1 | 350 |
+| 14 | **Smithy** | 80 gold, 20 timber, 20 stone | any level ground | 1 timber, 1 iron → 1 weapons every 7 s | 1 | 350 |
+| 15 | **Armourer** | 120 gold, 20 timber, 40 stone | any level ground | 2 iron → 1 mail every 12 s | 1 | 350 |
+| 16 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
+| 17 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
+| 18 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
+| 19 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
 
 What each is for:
 
 - **Keep** — the heart of the town: storehouse, first household, last defence.
 - **House** — Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.
-- **Woodcutter's Lodge** — The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines.
+- **Woodcutter's Lodge** — The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines. An open shed of stacked logs, fresh trunks by the track, a chopping block and a sawhorse in the yard.
 - **Quarry** — Cuts building stone from an outcrop: stone for workshops, the barracks and roads.
 - **Farm** — The farmer breaks, sows and reaps strips of land behind the farm. The farmland grows with the farm level, so farms want open ground: build them as a village.
 - **Fisher's Hut** — The fisher works the shore of the lake: food that needs no mill or oven.
-- **Bakery** — Bakes grain into bread, the staple ration of town and army.
+- **Windmill** — A post mill: grinds grain into flour. The tallest thing in a village; its sails turn while it works.
+- **Bakery** — Bakes flour into bread, the staple ration of town and army. A domed oven by the house and a pretzel over the door.
 - **Pig Farm** — Fattens pigs on grain: meat for the butcher, hides for the tanner.
 - **Butcher** — Turns meat into sausages; a sausage feeds two.
 - **Tannery** — Turns hides into leather armour for the lower tiers of the army.
-- **Iron Mine** — Digs iron ore from an ore outcrop.
-- **Smithy** — Forges weapons from ore, burning timber.
-- **Armourer** — Makes mail from ore for swordsmen, halberdiers and knights.
+- **Iron Mine** — Digs iron ore from an ore outcrop. A timbered adit in a knoll of rock, rails, an ore tub and the ore heap.
+- **Smelter** — A bloomery: smelts iron ore into iron, burning timber as charcoal. A squat stone furnace, bellows, smoking charcoal and heaps of slag.
+- **Smithy** — Forges weapons from iron, burning timber. Open to the street: the glowing hearth and the anvil are seen from afar.
+- **Armourer** — Makes mail from iron for swordsmen, halberdiers and knights. Armour stands, a rack of polearms and shields in the town's colour outside.
 - **Fletcher** — Makes bows and crossbows from timber.
 - **Stable** — Raises war horses on grain.
 - **Barracks** — Townspeople called up walk here, take their equipment and form a regiment. Its level decides which units can be trained.
@@ -62,15 +66,15 @@ Rules common to all buildings:
 ## 2. Production chains
 
 ```
-Farm ──grain──► Bakery ──bread──► houses, keep, army
+Farm ──grain──► Windmill ──flour──► Bakery ──bread──► houses, keep, army
      ├─grain──► Pig Farm ──meat──► Butcher ──sausages──► houses, keep, army
      │                   └─hides─► Tannery ──leather armour──► pikemen, archers, crossbowmen, light cavalry
      └─grain──► Stable ──horses──► light and heavy cavalry
 Fisher's Hut ──fish──► houses, keep, army
 Woodcutter's Lodge ──timber──► buildings, Smithy, Fletcher, militia shields, siege engines
 Quarry ──stone──► buildings, roads, trebuchet
-Iron Mine ──ore──► Smithy (+ timber) ──weapons──► every armed regiment, ballista
-               └─► Armourer ──mail──► swordsmen, halberdiers, heavy cavalry
+Iron Mine ──ore──► Smelter (+ timber) ──iron──► Smithy (+ timber) ──weapons──► every armed regiment, ballista
+                                         └─► Armourer ──mail──► swordsmen, halberdiers, heavy cavalry
 Fletcher ──bows──► archers, crossbowmen
 ```
 
@@ -84,7 +88,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | A | **Watchtower** | Archers on a tower: protects an outlying village or a quarry from raids. |
 | A | **Palisade** and **Gate** | Walls drawn like roads; soldiers must break a section or the gate. Gives siege engines their purpose. |
 | A | **Siege Workshop** | Builds ballistae and trebuchets instead of the barracks (timber, weapons, stone), so engines are a separate investment. |
-| B | **Windmill** | Grain → flour; the bakery then takes flour. One more step in the bread chain and a landmark for the village. |
 | B | **Sawmill** | Logs → planks: higher levels of buildings and engines ask for planks, so timber gets a second tier. |
 | B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |
 | B | **Hunter's Lodge** | Meat and hides from the forest before the town can afford pigs. |
@@ -92,6 +95,5 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | C | **Tavern** | Uses sausages (later ale): fed and merry houses grow faster and pay more tax. |
 | C | **Brewery** | Grain → ale for the tavern and for the army's morale on campaign. |
 | C | **Chapel** | Raises the morale soldiers start with; a place people gather after a lost battle. |
-| C | **Smelter** | Ore + charcoal → iron bars; smithy and armourer then take bars. Only if the weapon chain proves too short. |
 | C | **Well** | Puts out fires once buildings can burn; cosmetic until then. |
 | C | **Keep, levels 2 and 3** | Stone tower, then castle: more household, stronger garrison, wider land to build on. |
