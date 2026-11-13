@@ -1,4 +1,4 @@
-import { FIELDS, GATHER, LEVEL_SPEED, PEOPLE } from '../config.ts';
+import { FIELDS, GATHER, LEVEL_SPEED, PEOPLE, VINES } from '../config.ts';
 import { type Building, isBuilt, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
 import { NOWHERE } from './types.ts';
@@ -32,14 +32,21 @@ function paceOf(town: Town, b: Building, p: Person): number {
   return (LEVEL_SPEED[b.level - 1] as number) * workRateOf(town, p) * town.productionFactor;
 }
 
+/**
+ * The farmer and the vintner. A farm's strips go wild → bare → growing → ripe → bare: broken once, then
+ * sown and reaped every season. A vineyard's go wild → growing → ripe → growing: planted once, then only
+ * picked, the vines bearing again by themselves.
+ */
 function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
+  const vines = b.kind === 'vineyard';
+  const crop = vines ? 'grapes' : 'grain';
   if (p.phase === AT_HOME) {
     // As many strips as its level works, and no more than the land behind it gave.
     const worked = Math.min(FIELDS.stripsPerLevel[b.level - 1] as number, b.strips.length);
     // Reap what is ripe, then sow bare land, then break new ground.
     let pick = -1;
     for (const want of ['ripe', 'bare', 'wild'] as const) {
-      if (want === 'ripe' && b.out.grain >= PEOPLE.outputCap) continue;
+      if (want === 'ripe' && b.out[crop] >= PEOPLE.outputCap) continue;
       for (let i = 0; i < worked && pick < 0; i++) if ((b.strips[i] as Building['strips'][number]).state === want) pick = i;
       if (pick >= 0) break;
     }
@@ -55,7 +62,8 @@ function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: numb
   if (p.phase === GOING_OUT) {
     p.act = 'walk';
     if (!walkTo(world, p, strip.x, strip.z, dtSeconds)) return;
-    p.timerS = strip.state === 'ripe' ? FIELDS.harvestSeconds : strip.state === 'bare' ? FIELDS.sowSeconds : FIELDS.establishSeconds;
+    if (vines) p.timerS = strip.state === 'ripe' ? VINES.harvestSeconds : VINES.plantSeconds;
+    else p.timerS = strip.state === 'ripe' ? FIELDS.harvestSeconds : strip.state === 'bare' ? FIELDS.sowSeconds : FIELDS.establishSeconds;
     p.phase = WORKING;
     return;
   }
@@ -64,10 +72,15 @@ function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: numb
     p.timerS -= dtSeconds * paceOf(town, b, p);
     if (p.timerS > 0) return;
     if (strip.state === 'ripe') {
-      strip.state = 'bare';
+      // The vines stay and start on next year's grapes; a field lies bare until it is sown again.
+      strip.state = vines ? 'growing' : 'bare';
       strip.growth = 0;
-      p.load = 'grain';
+      p.load = crop;
       p.phase = COMING_BACK;
+    } else if (vines) {
+      strip.state = 'growing';
+      strip.growth = 0;
+      p.phase = AT_HOME;
     } else {
       if (strip.state === 'bare') {
         strip.state = 'growing';
@@ -79,10 +92,10 @@ function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: numb
     }
     return;
   }
-  // Coming back with the sheaves.
+  // Coming back with the sheaves (or the baskets of grapes).
   p.act = 'walk';
   if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
-  b.out.grain += FIELDS.grainPerHarvest;
+  b.out[crop] += vines ? VINES.grapesPerHarvest : FIELDS.grainPerHarvest;
   p.load = null;
   p.phase = AT_HOME;
 }
@@ -155,7 +168,7 @@ export function stepWorker(world: World, town: Town, p: Person, dtSeconds: numbe
     p.act = walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds) ? 'stand' : 'walk';
     return;
   }
-  if (b.kind === 'farm') {
+  if (b.kind === 'farm' || b.kind === 'vineyard') {
     b.workRate += workRateOf(town, p);
     stepFarmer(world, town, b, p, plot, dtSeconds);
     return;

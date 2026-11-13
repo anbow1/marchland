@@ -42,7 +42,7 @@ function planVillage(world: World, side: Side, kind: BuildingKind): boolean {
   const vz = townZ(side) + t * (FORWARD_Z * VILLAGE_FORWARD_M + SIDE_Z * VILLAGE_SIDE_M);
   // Farms on the far side of the street, doors to the street, fields running away behind them; pens and
   // stables on the near side, facing them.
-  const far = kind === 'farm';
+  const far = kind === 'farm' || kind === 'vineyard';
   const across = far ? 0 : -15;
   const yaw = Math.atan2(t * SIDE_X * (far ? -1 : 1), t * SIDE_Z * (far ? -1 : 1));
   for (let k = 0; k < 7; k++) {
@@ -127,7 +127,7 @@ export function planSite(world: World, side: Side, kind: BuildingKind): Plan | n
   if (need === 'forest') found = planForest(world, side, kind);
   else if (need === 'water') found = planLake(world, side, kind);
   else if (need === 'stone' || need === 'ore') found = planDeposit(world, side, kind, need);
-  else if (kind === 'farm' || kind === 'pigFarm' || kind === 'stable') found = planVillage(world, side, kind) || planTown(world, side, kind);
+  else if (kind === 'farm' || kind === 'vineyard' || kind === 'pigFarm' || kind === 'stable') found = planVillage(world, side, kind) || planTown(world, side, kind);
   else found = planTown(world, side, kind);
   return found ? plan : null;
 }

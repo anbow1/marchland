@@ -26,6 +26,8 @@ class Kit:
         self.bm = bmesh.new()
         self.materials: list[str] = []
         self.rng = random.Random(seed)
+        # Marks handed out so far (see mark()); 0 means "not yet stamped".
+        self.counter = 1
         # Points the game puts smoke on (chimneys, furnaces, charcoal), in the model's own space.
         self.smoke: list[tuple[float, float, float]] = []
 
@@ -114,16 +116,29 @@ class Kit:
         if bevel > 0:
             edges = list({e for v in verts for e in v.link_edges})
             # The bevel's new faces take the material of the faces they were cut from.
-            bmesh.ops.bevel(self.bm, geom=edges, offset=bevel, segments=1, affect="EDGES", profile=0.5)
+            bmesh.ops.bevel(self.bm, geom=edges, offset=bevel, segments=1, affect="EDGES", profile=0.5, clamp_overlap=True)
 
     def mark(self) -> int:
-        """The number of vertices so far: build something, then move everything made since with move_since."""
-        self.bm.verts.ensure_lookup_table()
-        return len(self.bm.verts)
+        """Starts a group: build something, then move everything made since with move_since.
+
+        Vertices are stamped with the mark that was current when they were made, not counted by index:
+        a bevel deletes and re-creates vertices, which would shift any index. A vertex made after the
+        latest mark has no stamp (0) until the next mark stamps it; marks may nest."""
+        layer = self._serial()
+        token = self.counter
+        self.counter += 1
+        for v in self.bm.verts:
+            if v[layer] == 0:
+                v[layer] = token
+        return token
 
     def move_since(self, mark: int, m) -> None:
-        self.bm.verts.ensure_lookup_table()
-        bmesh.ops.transform(self.bm, matrix=m, verts=self.bm.verts[mark:])
+        layer = self._serial()
+        verts = [v for v in self.bm.verts if v[layer] == 0 or v[layer] > mark]
+        bmesh.ops.transform(self.bm, matrix=m, verts=verts)
+
+    def _serial(self):
+        return self.bm.verts.layers.int.get("serial") or self.bm.verts.layers.int.new("serial")
 
     def place(self, verts, m):
         bmesh.ops.transform(self.bm, matrix=m, verts=verts)

@@ -85,6 +85,8 @@ const GOOD_HEX: Record<ResourceId, number> = {
   stone: 0x9a9690,
   grain: 0xd0b050,
   flour: 0xe8e0cc,
+  grapes: 0x5a2a4a,
+  wine: 0x7a1e2a,
   bread: 0xc98f4e,
   fish: 0x8fa3b0,
   meat: 0xa5483c,

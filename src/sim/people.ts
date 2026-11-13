@@ -1,4 +1,4 @@
-import { PEOPLE, ROADS, TOWN } from '../config.ts';
+import { PEOPLE, ROADS, TOWN, UNITS, WINE } from '../config.ts';
 import { type Building, housingCapacity, isBuilt, type Town } from './economy.ts';
 import { cancelErrand, stepCarrier } from './errands.ts';
 import { findPath, speedFactorAt } from './nav.ts';
@@ -271,6 +271,8 @@ function stepRecruit(world: World, town: Town, p: Person, dtSeconds: number): vo
     }
   }
   const waiting = town.recruitQueue.find((o) => o.arrived < o.needPeople);
+  // Militia is armed at the keep's gate when there is no barracks to go to.
+  if (plot === NOWHERE && waiting && UNITS[waiting.kind].barracksLevel === 0) plot = KEEP;
   if (plot === NOWHERE || !waiting) {
     // The barracks fell, or the order is gone: he goes back to his work.
     release(p);
@@ -338,7 +340,7 @@ function grow(world: World, town: Town, living: number, dtSeconds: number): void
     const b = town.plots[plot];
     if (!b || b.kind !== 'house' || !isBuilt(b) || b.starving || b.residents >= (PEOPLE.houseResidents[b.level - 1] as number)) continue;
     b.growS += dtSeconds;
-    if (b.growS < PEOPLE.growSeconds) continue;
+    if (b.growS < PEOPLE.growSeconds * (b.hasWine ? WINE.growFactor : 1)) continue;
     b.growS = 0;
     spawnPerson(world, side, doorX(town, plot), doorZ(town, plot), plot);
     return;

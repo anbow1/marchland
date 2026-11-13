@@ -1,4 +1,4 @@
-import { BUILDINGS, FOOD, PEOPLE } from '../config.ts';
+import { BUILDINGS, FOOD, PEOPLE, WINE } from '../config.ts';
 import { type Building, isBuilt, outputFull, rationsIn, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo } from './people.ts';
 import { KEEP, NOWHERE } from './types.ts';
@@ -15,7 +15,7 @@ const FOODS: readonly ResourceId[] = ['bread', 'fish', 'sausage'];
 const FOOD_RATIONS: Record<string, number> = { bread: FOOD.breadRations, fish: FOOD.fishRations, sausage: FOOD.sausageRations };
 
 /** How pressing each kind of errand is; distance to the pick-up (in metres) is taken off. */
-const URGENCY = { site: 4000, hungryHouse: 5000, food: 3000, input: 2000, clear: 1000, clearScarce: 2600 } as const;
+const URGENCY = { site: 4000, hungryHouse: 5000, food: 3000, wine: 2200, input: 2000, clear: 1000, clearScarce: 2600 } as const;
 /** The keep is short of a good when it holds fewer than this: fetching it from the yards comes before feeding workshops. */
 const SCARCE_BELOW = 12;
 
@@ -98,6 +98,12 @@ function findErrand(town: Town, p: Person): boolean {
       continue;
     }
     if (b.kind === 'house') {
+      // Wine, when there is any to spare: after bread, before workshops' inputs.
+      const wineWanted = WINE.houseTarget - b.inp.wine - b.incoming.wine;
+      if (wineWanted >= 1) {
+        const src = findSource(town, p, 'wine', b.x, b.z, plot);
+        if (src !== NOWHERE) offer(town, p, URGENCY.wine, 'food', 'wine', Math.min(PEOPLE.carryCapacity, wineWanted, available(town, src, 'wine')), src, plot);
+      }
       let have = rationsIn(b.inp);
       for (const food of FOODS) have += b.incoming[food] * (FOOD_RATIONS[food] as number);
       if (have >= PEOPLE.houseFoodTarget) continue;

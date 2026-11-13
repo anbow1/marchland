@@ -86,6 +86,9 @@ export interface Regiment {
   lagM: number;
   /** Times it has broken and run. */
   routCount: number;
+  /** The kind it is being re-armed as, and the seconds left; null when it is not. */
+  rearmTo: UnitKind | null;
+  rearmLeftS: number;
 }
 
 export function forwardX(facingRad: number): number {
@@ -192,6 +195,8 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     fatigue: 0,
     lagM: 0,
     routCount: 0,
+    rearmTo: null,
+    rearmLeftS: 0,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({

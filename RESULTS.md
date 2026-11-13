@@ -5,6 +5,27 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Budynki z Blendera, młyn, huta, wino, milicja z zamku, przezbrojenie
+
+- **10 budynków z Blendera** w 3 poziomach (`tools/blender/`, `public/buildings/`),
+  1,8–9 tys. trójkątów każdy, bez własnych tekstur (skany gry). Gra wczytuje je
+  przy starcie; skrzydła młyna kręcą się, gdy miele. Pozostałe budynki mają
+  jeszcze kształty z kodu. Podgląd na stronie `gallery.html`.
+- **Gospodarka**: młyn (zboże → mąka → piekarnia), huta (ruda + drewno →
+  żelazo → kuźnia, płatnerz), winnica (krzewy sadzone raz, zbiór co sezon,
+  rzędy winorośli zajmują teren) i winiarnia (winogrona → wino → chaty: podatek
+  ×1,8, przyrost szybszy). Drwal przynosi 6 drewna i rąbie je przy pieńku.
+- **Wojsko**: milicja werbowana w zamku bez koszar (włócznia i tarcza z drewna);
+  przezbrojenie przy koszarach za brakujący ekwipunek, 20 s.
+- **Liczby** (`npm run timeline`, komputer sam, ziarno 7): pierwszy regiment
+  ok. 14. minuty; komputer zdobywa zamek bezczynnego gracza w 18. minucie,
+  bo wcześnie wystawia milicję z zamku — za szybko jak na plan (pierwsza
+  poważna bitwa ok. 15. minuty, partia 25–35 minut). **Do strojenia**:
+  milicja jako obrona, nie jako szybki atak (próg pierwszej fali, cena).
+- Testy 55/55; dokumenty wygenerowane od nowa.
+- Poprawiony błąd zestawu części: grupowanie wierzchołków po indeksie psuło
+  się po fazowaniu krawędzi i odrzucało części budynku o kilka metrów.
+
 ## 2026-11-13 · Porównanie stylów na nowym podłożu — wybrany styl realistyczny (D)
 
 Ta sama strona `compare.html`, teraz na łące ze zdjęcia lotniczego, z drogą,

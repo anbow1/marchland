@@ -89,12 +89,16 @@ interface Strings {
   turnRight: string;
   work: Record<WorkState, string>;
   recruits: string;
+  rearm: string;
+  rearmed: string;
+  rearmingState: string;
+  atKeep: string;
 }
 
 const pl: Strings = {
   title: 'Marchland',
   subtitle: 'Średniowieczna strategia: miasto, szyki, bitwa',
-  resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
+  resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
   buildings: {
     house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
     woodcutter: { name: 'Drwal', about: 'Drewno na budowę, do kuźni i dla łuczarza. Musi stać przy lesie.' },
@@ -103,6 +107,8 @@ const pl: Strings = {
     fisher: { name: 'Rybak', about: 'Łowi ryby w jeziorze. Ryba to jedna racja. Musi stać nad wodą.' },
     windmill: { name: 'Młyn', about: 'Wiatrak miele zboże na mąkę dla piekarni. Skrzydła kręcą się, gdy pracuje.' },
     bakery: { name: 'Piekarnia', about: 'Piecze chleb z mąki. Bochenek to jedna racja.' },
+    vineyard: { name: 'Winnica', about: 'Winiarz sadzi krzewy w rzędach za domem: raz posadzone rodzą winogrona co sezon. Zajmuje teren jak pola zagrody.' },
+    winery: { name: 'Winiarnia', about: 'Tłoczy wino z winogron. Chata z winem płaci wyższy podatek i szybciej się zaludnia.' },
     pigFarm: { name: 'Chlewnia', about: 'Trzoda zjada zboże, daje mięso i skóry.' },
     butcher: { name: 'Masarnia', about: 'Robi kiełbasy z mięsa. Kiełbasa to dwie racje.' },
     tannery: { name: 'Garbarnia', about: 'Szyje ze skór zbroje dla pikinierów, strzelców i lekkiej jazdy.' },
@@ -115,7 +121,7 @@ const pl: Strings = {
     barracks: { name: 'Koszary', about: 'Wezwani mieszkańcy biorą tu ekwipunek i stają w szyku. Wyższy poziom to lepsze oddziały.' },
   },
   units: {
-    militia: { name: 'Milicja', about: 'Mieszczanie z tarczą i włócznią. Tani, pod tarczą trzymają się nieźle, szybko uciekają.' },
+    militia: { name: 'Milicja', about: 'Mieszczanie z włócznią i drewnianą tarczą, bez zbroi. Werbowani w zamku, zanim staną koszary; później do przezbrojenia.' },
     pikemen: { name: 'Pikinierzy', about: 'Las pik. Stojąc w szyku, zatrzymują szarżę jazdy; bez tarcz giną od strzał.' },
     archers: { name: 'Łucznicy', about: 'Strzelają na 80 m. W zwarciu giną.' },
     swordsmen: { name: 'Miecznicy', about: 'Miecz, tarcza i kolczuga: wygrywają prostą walkę piechoty.' },
@@ -146,6 +152,10 @@ const pl: Strings = {
     queueFull: 'Kolejka werbunku jest pełna.',
     noSuchRegiment: 'Nie ma takiego oddziału.',
     routing: 'Ten oddział ucieka i nie słucha rozkazów.',
+    cannotRearm: 'Tego oddziału nie da się tak przezbroić.',
+    notAtBarracks: 'Oddział musi stać przy własnych koszarach.',
+    inCombat: 'Oddział walczy: przezbrojenie po walce.',
+    rearming: 'Oddział jest właśnie przezbrajany.',
     gameOver: 'Gra skończona.',
   },
   difficulty: { easy: 'Łatwy', normal: 'Normalny', hard: 'Trudny' },
@@ -232,12 +242,16 @@ const pl: Strings = {
   turnRight: 'Obróć mapę w prawo (E)',
   work: { working: 'Pracuje', building: 'Budowa', paused: 'Wstrzymany', noWorker: 'Brak pracownika', noInput: 'Czeka na surowiec', yardFull: 'Podwórze pełne — czeka na tragarzy', waiting: 'Czeka' },
   recruits: 'rekrutów w drodze',
+  rearm: 'Przezbrój',
+  rearmed: 'Oddział przezbrojony',
+  rearmingState: 'przezbraja się',
+  atKeep: 'w zamku, bez koszar',
 };
 
 const en: Strings = {
   title: 'Marchland',
   subtitle: 'Medieval strategy: a town, formations, a battle',
-  resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', flour: 'Flour', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
+  resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
   buildings: {
     house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
     woodcutter: { name: 'Woodcutter', about: 'Wood for building, for the smithy and the fletcher. Must stand by the forest.' },
@@ -246,6 +260,8 @@ const en: Strings = {
     fisher: { name: 'Fisher', about: 'Catches fish in the lake. A fish is one ration. Must stand by the water.' },
     windmill: { name: 'Windmill', about: 'Grinds grain into flour for the bakery. Its sails turn while it works.' },
     bakery: { name: 'Bakery', about: 'Bakes bread from flour. A loaf is one ration.' },
+    vineyard: { name: 'Vineyard', about: 'The vintner plants rows of vines behind the house: once planted they bear grapes every season. Takes up land like a farm\'s fields.' },
+    winery: { name: 'Winery', about: 'Presses grapes into wine. A house with wine pays more tax and fills faster.' },
     pigFarm: { name: 'Pig farm', about: 'Pigs eat grain and give meat and hides.' },
     butcher: { name: 'Butcher', about: 'Makes sausages from meat. A sausage is two rations.' },
     tannery: { name: 'Tannery', about: 'Turns hides into armour for pikemen, shooters and light cavalry.' },
@@ -258,7 +274,7 @@ const en: Strings = {
     barracks: { name: 'Barracks', about: 'Townspeople called up take their equipment here and form up. A higher level trains better regiments.' },
   },
   units: {
-    militia: { name: 'Militia', about: 'Townsmen with shield and spear. Cheap, steady behind the shield, quick to run.' },
+    militia: { name: 'Militia', about: 'Townsmen with a spear and a wooden shield, no armour. Raised at the keep before there is a barracks; re-arm them later.' },
     pikemen: { name: 'Pikemen', about: 'A hedge of pikes. Standing in formation they stop a cavalry charge; with no shields they die to arrows.' },
     archers: { name: 'Archers', about: 'Shoot to 80 m. Die in melee.' },
     swordsmen: { name: 'Swordsmen', about: 'Sword, shield and mail: they win a straight fight on foot.' },
@@ -289,6 +305,10 @@ const en: Strings = {
     queueFull: 'The recruiting queue is full.',
     noSuchRegiment: 'No such regiment.',
     routing: 'That regiment is running and takes no orders.',
+    cannotRearm: 'That regiment cannot be re-armed so.',
+    notAtBarracks: 'The regiment must stand by its own barracks.',
+    inCombat: 'The regiment is fighting: re-arm it after the fight.',
+    rearming: 'The regiment is being re-armed.',
     gameOver: 'The game is over.',
   },
   difficulty: { easy: 'Easy', normal: 'Normal', hard: 'Hard' },
@@ -375,6 +395,10 @@ const en: Strings = {
   turnRight: 'Turn the map right (E)',
   work: { working: 'Working', building: 'Building', paused: 'Paused', noWorker: 'No worker', noInput: 'Waiting for input', yardFull: 'Yard full — waiting for carriers', waiting: 'Waiting' },
   recruits: 'recruits on their way',
+  rearm: 'Re-arm',
+  rearmed: 'Regiment re-armed',
+  rearmingState: 're-arming',
+  atKeep: 'at the keep, no barracks needed',
 };
 
 function pickLang(): Lang {

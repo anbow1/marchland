@@ -19,7 +19,7 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 
 | Jednostka | Koszary | Ludzi | Cena regimentu | Życie | Atak / obrona | Pancerz | Obrażenia | Morale | Marsz / bieg (m/s) |
 |---|---|---|---|---|---|---|---|---|---|
-| **Milicja z tarczami** | 1 | 12 | 30 zł + 12 drewno | 24 | 4 / 5 | 0 % | 4 | 45 | 1.4 / 3.1 |
+| **Milicja z tarczami** | 0 | 12 | 30 zł + 12 drewno | 24 | 4 / 5 | 0 % | 4 | 45 | 1.4 / 3.1 |
 | **Pikinierzy** | 1 | 12 | 50 zł + 12 zbroja skórzana, 12 broń | 30 | 6 / 7 | 20 % | 5 | 60 | 1.4 / 2.9 |
 | **Łucznicy** | 1 | 12 | 50 zł + 12 zbroja skórzana, 12 łuk | 24 | 3 / 3 | 20 % | 3 | 50 | 1.4 / 3.1 |
 | **Miecznicy** | 2 | 12 | 90 zł + 12 broń, 12 kolczuga | 36 | 9 / 9 | 40 % | 7 | 75 | 1.4 / 2.7 |
@@ -43,7 +43,7 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 
 ## 4. Do czego służą
 
-- **Milicja z tarczami** — Tania zapora: trzyma linię za tarczą, szybko ucieka. Do obrony miasta i wiązania wroga. *(25 % szans zatrzymania pocisku)*
+- **Milicja z tarczami** — Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia. *(25 % szans zatrzymania pocisku)*
 - **Pikinierzy** — Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców. *(+8 do ataku przeciw jeździe; zasięg broni 3 m)*
 - **Łucznicy** — Daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.
 - **Miecznicy** — Miecz, tarcza, kolczuga: wygrywają zwykłą walkę pieszą i znoszą ostrzał. *(35 % szans zatrzymania pocisku)*
@@ -54,7 +54,24 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 - **Balisty** — Dwie machiny: daleki bełt, który ignoruje pancerz. Bezradne, gdy wróg dojdzie. *(70 % szans zatrzymania pocisku)*
 - **Trebusz** — Jedna machina: kamienie rozbijają szyk i burzą mury oraz zamek. *(80 % szans zatrzymania pocisku)*
 
-## 5. Kto kogo bije
+## 5. Przezbrojenie
+
+Oddział stojący do 40 m od własnych koszar (poza walką) można przezbroić: zostaje ten sam
+oddział — ci sami ludzie, ich rany (jako część życia), zmęczenie i morale (jako część pełnego) — a płaci się
+tylko za to, czego jeszcze nie mają: ekwipunek nowego rodzaju minus ten, który już noszą, za każdego żywego,
+oraz różnicę w złocie, jeśli nowy rodzaj jest droższy. Wydawanie broni trwa 20 s; oddział stoi.
+Wymagany poziom koszar jak przy werbunku.
+
+- **Milicja z tarczami** → Pikinierzy, Łucznicy, Miecznicy, Halabardnicy, Kusznicy
+- **Pikinierzy** → Halabardnicy, Miecznicy
+- **Łucznicy** → Kusznicy
+- **Miecznicy** → Halabardnicy
+- **Halabardnicy** → Miecznicy
+- **Lekka jazda** → Ciężka jazda
+
+Konni zostają konnymi, machin się nie przezbraja.
+
+## 6. Kto kogo bije
 
 - **Piki i halabardy** zatrzymują **jazdę**; jazda nie szarżuje na nie od czoła.
 - **Jazda** rozjeżdża **strzelców** i **machiny** oraz dobija uciekających.
@@ -63,7 +80,7 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 - **Trebusz** rozbija zwarty szyk i mury; **balista** zdejmuje pojedynczych ciężkozbrojnych z daleka.
 - Atak z **flanki** i od **tyłu** trafia łatwiej i łamie morale szybciej niż jakakolwiek przewaga punktów.
 
-## 6. Łańcuchy ekwipunku
+## 7. Łańcuchy ekwipunku
 
 - zbroja skórzana ← garbarnia ← skóry ← chlewnia ← zboże
 - broń ← kuźnia ← żelazo + drewno ← huta ← ruda + drewno

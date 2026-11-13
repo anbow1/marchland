@@ -1,6 +1,6 @@
 import { AI, CAMERA, FIELDS, MAP, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdDemolish, cmdHalt, cmdMoveGroup, cmdRecruit, cmdTogglePaused, cmdUpgrade, roadCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdDemolish, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUpgrade, roadCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
 import { cellX, cellZ, roadCells } from '../sim/nav.ts';
@@ -81,6 +81,7 @@ export class Game implements ControlTarget {
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),
+      rearm: (id, kind) => this.report(cmdRearm(this.world, id, kind)),
       halt: () => this.haltSelected(),
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
@@ -165,6 +166,12 @@ export class Game implements ControlTarget {
         if (mine) {
           this.sound.play('build');
           this.hud.toast(T.built, 'good');
+        }
+        break;
+      case 'rearmed':
+        if (mine) {
+          this.sound.play('build');
+          this.hud.toast(T.rearmed, 'good');
         }
         break;
       case 'recruited':

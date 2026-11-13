@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS } from '../config.ts';
+import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
 
 // A town's economy. The keep is the storehouse (`stock`); every building has
@@ -66,8 +66,11 @@ export interface Building {
   rationDebt: number;
   starving: boolean;
   growS: number;
-  /** Farms: the land behind the farm, nearest strip first. */
+  /** Farms and vineyards: the land behind the building, nearest strip first. */
   strips: FieldStrip[];
+  /** Houses: wine owed, and whether there is wine in the house now. */
+  wineDebt: number;
+  hasWine: boolean;
 }
 
 export interface RecruitOrder {
@@ -186,6 +189,8 @@ export function startBuilding(town: Town, kind: BuildingKind, site: Site): numbe
     starving: false,
     growS: 0,
     strips,
+    wineDebt: 0,
+    hasWine: false,
   };
   orderWork(town, b, 1, BUILDINGS[kind].buildSeconds);
   town.plots[plot] = b;
@@ -362,7 +367,16 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
 function keepHouse(town: Town, b: Building, dtSeconds: number): void {
   b.rationDebt += ((b.residents * PEOPLE.rationsPerMinute) / 60) * dtSeconds;
   [b.rationDebt, b.starving] = eat(b.inp, b.rationDebt, b.starving);
-  if (!b.starving) addGold(town, b.residents * PEOPLE.taxGoldPerSecond * dtSeconds);
+  // Wine, while the house has any: drunk slowly, and the household pays more.
+  b.hasWine = b.inp.wine > 0;
+  if (b.hasWine) {
+    b.wineDebt += ((b.residents * WINE.perResidentPerMinute) / 60) * dtSeconds;
+    while (b.wineDebt >= 1 && b.inp.wine > 0) {
+      b.inp.wine -= 1;
+      b.wineDebt -= 1;
+    }
+  }
+  if (!b.starving) addGold(town, b.residents * PEOPLE.taxGoldPerSecond * (b.hasWine ? WINE.taxFactor : 1) * dtSeconds);
 }
 
 /** Builders raise a building only as far as the timber and stone on site allow. */
@@ -397,12 +411,13 @@ export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): vo
     // Corn grows whether or not anyone is watching.
     for (const strip of b.strips) {
       if (strip.state !== 'growing') continue;
-      strip.growth += (dtSeconds / FIELDS.growSeconds) * town.productionFactor;
+      strip.growth += (dtSeconds / (b.kind === 'vineyard' ? VINES.growSeconds : FIELDS.growSeconds)) * town.productionFactor;
       if (strip.growth >= 1) strip.state = 'ripe';
     }
   }
   const first = town.recruitQueue[0];
-  if (first && first.arrived >= first.needPeople && barracksLevel(town) > 0) {
+  // Militia is armed at the keep; everything else needs a barracks standing.
+  if (first && first.arrived >= first.needPeople && (barracksLevel(town) > 0 || UNITS[first.kind].barracksLevel === 0)) {
     first.leftS -= dtSeconds;
     if (first.leftS <= 0) {
       town.recruitQueue.shift();

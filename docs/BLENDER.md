@@ -29,6 +29,18 @@ Skąd modele:
   (33 tys. trójkątów) może zostać, dom z winiarnią (673 tys.) trzeba
   uprościć poniżej limitu.
 
+**Zrobione (2026-11-13)** skryptami `tools/blender/` (`build.py` buduje wszystko do
+`public/buildings/` z indeksem `index.json`; podgląd: `gallery.html`): chata,
+drwal, piekarnia, młyn (skrzydła jako osobna, obracana część), huta, kuźnia,
+płatnerz, kopalnia, winnica, winiarnia — po 3 poziomy, 1,8–9 tys. trójkątów.
+Każdy budynek specjalistyczny ma znak rozpoznawczy widoczny z daleka: stos kłód
+i pieniek drwala, kopuła pieca i precel piekarni, skrzydła młyna, kamienny
+piec, miechy i hałdy żużla huty, otwarte palenisko i kowadło kuźni, stojaki
+zbroi i tarcze w barwach strony u płatnerza, sztolnia z torami i wózkiem
+kopalni, prasa i pergola winnicy, beczki i wiecha winiarni. Zostały do zrobienia:
+kamieniołom, zagroda, rybak, chlewnia, masarnia, garbarnia, łuczarz, stajnia,
+koszary, zamek.
+
 Budżet budynku na poziom: do **12 tys. trójkątów** (koszary i zamek do 25
 tys.), do **3 materiałów** (ściany, dach, drewno i drobiazgi), tekstury z
 istniejących skanów gry, bez własnych map większych niż 1024 px.

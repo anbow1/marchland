@@ -1,4 +1,4 @@
-import { AI_TUNING, ARMY, MAP, PEOPLE, TOWN } from '../config.ts';
+import { AI_TUNING, ARMY, MAP, PEOPLE, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, stepAi } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
@@ -106,6 +106,23 @@ export function spawnRegiment(world: World, side: Side, kind: UnitKind, x: numbe
   return r;
 }
 
+/** Regiments being re-armed: when the time is up they become the new kind, wounds and morale kept as shares. */
+function stepRearming(world: World, dtSeconds: number): void {
+  for (const r of world.regiments) {
+    if (r.rearmTo === null || r.aliveMen === 0) continue;
+    r.rearmLeftS -= dtSeconds;
+    if (r.rearmLeftS > 0) continue;
+    const from = r.def;
+    const to = UNITS[r.rearmTo];
+    for (const s of r.soldiers) if (s.alive) s.hp = (s.hp / from.hp) * to.hp;
+    r.morale = (r.morale / from.morale) * to.morale;
+    r.kind = r.rearmTo;
+    r.def = to;
+    r.rearmTo = null;
+    world.events.push('rearmed', r.centreX, r.centreZ, r.side);
+  }
+}
+
 function fieldTrained(world: World, town: Town): void {
   while (town.trained.length > 0) {
     const kind = town.trained.shift() as UnitKind;
@@ -137,6 +154,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
       if (b) world.events.push('built', b.x, b.z, town.side);
     }
   }
+  stepRearming(world, dtSeconds);
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);
   stepMelee(world);

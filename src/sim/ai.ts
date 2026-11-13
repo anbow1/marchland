@@ -69,6 +69,8 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'house',
   'stable',
   'armourer',
+  'vineyard',
+  'winery',
   'house',
   'fisher',
   'farm',

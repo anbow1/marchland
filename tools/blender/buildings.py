@@ -162,9 +162,9 @@ def windmill(k, level):
     door(k, 0, 1.5, z0=bz, face=1, w=0.8, h=1.7, step=False)
     # The windshaft's hub on the front gable.
     hub = (0.0, -2.0, bz + 2.9)
-    k.cylinder(0, 0, 0, 0.3, 0.3, 0.7, 10, BEAM)
-    v = k.bm.verts[-20:]
-    k.bm.verts.ensure_lookup_table()
+    # The windshaft's stub through the gable.
+    v = k.cylinder(0, 0, -0.35, 0.28, 0.28, 0.7, 10, BEAM)
+    k.place(v, Matrix.Translation(hub) @ Matrix.Rotation(math.pi / 2, 4, "X"))
     for i in range(3 + level):
         sack(k, 2.2 + (i % 2) * 0.55, -2.3 - (i // 2) * 0.45)
     # The sails: a separate part the game turns about the windshaft (local Y).
@@ -183,7 +183,6 @@ def windmill(k, level):
         s.slab([(0.1, 0.06, 1.5), (1.4, 0.06, 1.5), (1.4, 0.06, length - 0.1), (0.1, 0.06, length - 0.1)], 0.02, CLOTH)
         s.move_since(m, Matrix.Rotation(a, 4, "Y"))
     s.cylinder(0, 0, -0.45, 0.45, 0.45, 0.9, 10, BEAM)
-    v = s.bm.verts[-20:] if False else None
     return {"sails": (s, hub)}
 
 
@@ -244,9 +243,9 @@ def smithy(k, level):
     # Anvil at the front, a quench tub, a grindstone; horseshoes and tools on the back wall.
     anvil(k, 0.2, -0.7, 0.3)
     barrel(k, 1.3, 0.2, 0.8)
-    k.cylinder(2.3, -3.0, 0.15, 0.5, 0.5, 0.16, 12, STONE_DARK)
-    v = k.bm.verts[-24:]
-    k.bm.verts.ensure_lookup_table()
+    # The grindstone, standing on edge in its frame.
+    v = k.cylinder(0, 0, -0.08, 0.5, 0.5, 0.16, 12, STONE_DARK)
+    k.place(v, Matrix.Translation((2.3, -3.0, 0.65)) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
     for dx in (-0.12, 0.12):
         k.box(2.3 + dx, -3.0, 0, 0.08, 0.6, 0.75, BOARDS)
     for i in range(6):
@@ -320,8 +319,7 @@ def iron_mine(k, level):
     k.box(0, -2.9, 0.25, 0.95, 1.2, 0.6, BOARDS, bevel=0.03)
     for dx in (-0.48, 0.48):
         for dy in (-0.4, 0.4):
-            k.cylinder(0, 0, 0, 0.15, 0.15, 0.06, 8, IRON)
-            v = list(k.bm.verts)[-16:]
+            v = k.cylinder(0, 0, 0, 0.15, 0.15, 0.06, 8, IRON)
             k.place(v, Matrix.Translation((dx, -2.9 + dy, 0.18)) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
     for i in range(6):
         k.box(k.jitter(0.3), -2.9 + k.jitter(0.4), 0.8, 0.28, 0.25, 0.2, ORE, turn=k.jitter(3), bevel=0.04)
@@ -339,8 +337,7 @@ def iron_mine(k, level):
         # A headframe and windlass over a shaft on top of the knoll.
         for dx, dy in ((-0.8, -0.6), (0.8, -0.6), (0, 0.8)):
             k.beam((1.2 + dx, 2.2 + dy, 2.4), (1.2, 2.2, 4.8), 0.16, 0.16, BEAM)
-        k.cylinder(0, 0, 0, 0.25, 0.25, 1.2, 8, BEAM)
-        v = list(k.bm.verts)[-16:]
+        v = k.cylinder(0, 0, 0, 0.25, 0.25, 1.2, 8, BEAM)
         k.place(v, Matrix.Translation((0.6, 2.2, 4.4)) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
     return {}
 
@@ -355,3 +352,79 @@ BUILDERS = {
     "armourer": armourer,
     "ironMine": iron_mine,
 }
+
+
+GRAPES = "grapes#4a2240"
+WINE = "wine#5a1420"
+
+
+def vineyard(k, level):
+    # The vintner's press-house: a whitewashed stone cottage under red tiles, a pergola of vines at the
+    # door, baskets of grapes, a hand press in the yard. The vines themselves grow on the strips behind
+    # (drawn by the game, which knows how far each has grown).
+    sx, sy = 5.0, 4.0
+    footing(k, sx, sy, 0.35)
+    k.box(0, 0, 0.35, sx, sy, 2.5, PLASTER)
+    door(k, -0.8, -sy / 2, 0.35, w=1.0)
+    window(k, 1.3, -sy / 2, 1.2, w=0.7, h=0.7)
+    ridge = roof(k, sx, sy, 2.85, 34, 0.5, 0.3, 0.18, TILES)
+    gables(k, sx, sy, 2.85, ridge, PLASTER, framed=False)
+    # A pergola over the door with a vine climbing it.
+    for x in (-2.2, 0.6):
+        k.box(x, -sy / 2 - 2.2, 0, 0.14, 0.14, 2.4, BEAM)
+    for i in range(6):
+        k.box(-0.8, -sy / 2 - 0.1 - i * 0.42, 2.35, 3.2, 0.08, 0.08, BEAM)
+    k.box(-0.8, -sy / 2 - 1.15, 2.45, 3.0, 2.2, 0.25, "leaves#9ab868", bevel=0.08)
+    for i in range(6):
+        k.box(-2.0 + i * 0.5 + k.jitter(0.1), -sy / 2 - 0.6 - k.jitter(0.8), 2.1, 0.16, 0.16, 0.3, GRAPES, bevel=0.05)
+    # The press: a wooden tub under a great screw beam.
+    px, py = 2.6, -3.4
+    k.cylinder(px, py, 0, 0.75, 0.7, 0.7, 12, BOARDS)
+    k.cylinder(px, py, 0.62, 0.62, 0.62, 0.05, 12, WINE)
+    for dx in (-0.85, 0.85):
+        k.box(px + dx, py, 0, 0.18, 0.18, 2.0, BEAM)
+    k.box(px, py, 1.95, 2.0, 0.24, 0.24, BEAM, bevel=0.02)
+    k.cylinder(px, py, 0.8, 0.09, 0.09, 1.15, 8, BEAM)
+    # Baskets of grapes.
+    for i in range(3 + level):
+        bx, by = -3.0 + (i % 3) * 0.6, -3.4 - (i // 3) * 0.6
+        k.cylinder(bx, by, 0, 0.26, 0.3, 0.35, 8, "straw#c9b678")
+        k.cylinder(bx, by, 0.35, 0.27, 0.12, 0.12, 8, GRAPES)
+    barrel(k, 2.9, 1.2, 0.9)
+    return {}
+
+
+def winery(k, level):
+    # A stone cellar-house, half sunk in the ground, its barrel store open to the yard.
+    sx, sy = 6.6, 4.8
+    footing(k, sx, sy, 0.3, ASHLAR)
+    k.box(0, 0, 0.3, sx, sy, 3.0, RUBBLE)
+    door(k, -1.6, -sy / 2, 0.3, w=1.4, h=2.2)
+    for x in (0.6, 2.2):
+        window(k, x, -sy / 2, 1.3, w=0.5, h=0.6, shutters=False)
+    ridge = roof(k, sx, sy, 3.3, 36, 0.5, 0.35, 0.2, TILES)
+    gables(k, sx, sy, 3.3, ridge, RUBBLE, framed=False)
+    chimney(k, -sx / 2 + 1.0, 0.8, 0.3, ridge + 0.6, w=0.7)
+    # The barrel store: a lean-to on the +X end with great casks on their sides.
+    lean_to(k, sx / 2, sx / 2 + 3.2, sy / 2, -sy / 2, 2.4, 3.0, TILES)
+    for i in range(2 + (1 if level >= 2 else 0)):
+        m = k.mark()
+        k.cylinder(0, 0, -0.75, 0.62, 0.62, 1.5, 12, BOARDS, bevel=0.02)
+        for z in (-0.6, 0.0, 0.6):
+            k.cylinder(0, 0, z - 0.03, 0.645, 0.645, 0.06, 12, IRON)
+        k.move_since(m, Matrix.Translation((sx / 2 + 1.6, -1.4 + i * 1.4, 0.65)) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
+    # Casks and a cart of grapes by the door; a bush hung out: the old sign of a wine shop.
+    for i in range(4):
+        barrel(k, -3.0 + (i % 2) * 0.65, -sy / 2 - 0.5 - (i // 2) * 0.6, 0.9)
+    k.box(0.2, -sy / 2 - 0.5, 2.6, 0.06, 1.0, 0.06, IRON)
+    k.box(0.2, -sy / 2 - 1.0, 2.1, 0.5, 0.5, 0.5, "leaves#7a9a50", bevel=0.15)
+    k.box(1.8, -sy / 2 - 1.6, 0.4, 1.4, 2.0, 0.5, BOARDS, bevel=0.03)
+    k.box(1.8, -sy / 2 - 1.6, 0.9, 1.2, 1.8, 0.25, GRAPES, bevel=0.08)
+    for dy in (-0.8, 0.8):
+        v = k.cylinder(0, 0, -0.06, 0.4, 0.4, 0.12, 10, BOARDS)
+        k.place(v, Matrix.Translation((1.8 + 0.75, -sy / 2 - 1.6 + dy, 0.4)) @ Matrix.Rotation(math.pi / 2, 4, "Y"))
+    return {}
+
+
+BUILDERS["vineyard"] = vineyard
+BUILDERS["winery"] = winery

@@ -1,4 +1,5 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, MAX_LEVEL, PEOPLE, ROADS, UNITS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, MAX_LEVEL, PEOPLE, REARM, ROADS, UNITS } from '../config.ts';
+import { canRearm, rearmCost } from '../sim/commands.ts';
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { isEngaged, type Regiment } from '../sim/regiment.ts';
@@ -22,6 +23,7 @@ export interface HudActions {
   demolish(plot: number): void;
   togglePaused(plot: number): void;
   recruit(kind: UnitKind): void;
+  rearm(regimentId: number, kind: UnitKind): void;
   halt(): void;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
@@ -45,7 +47,7 @@ export type Project = (x: number, y: number, z: number, out: { x: number; y: num
 
 const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
   ['gold', 'wood', 'stone'],
-  ['grain', 'flour', 'bread', 'fish', 'meat', 'sausage'],
+  ['grain', 'flour', 'bread', 'fish', 'meat', 'sausage', 'grapes', 'wine'],
   ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
 
@@ -56,6 +58,8 @@ const RESOURCE_CSS: Record<ResourceId, string> = {
   stone: '#9a9690',
   grain: '#c9a94a',
   flour: '#e8e0cc',
+  grapes: '#6a3a5a',
+  wine: '#8a2232',
   bread: '#d9a25e',
   fish: '#8fa3b0',
   meat: '#b0564a',
@@ -247,6 +251,11 @@ export class Hud {
       case 'recruit':
         this.actions.recruit(arg as UnitKind);
         break;
+      case 'rearm': {
+        const [id, kind] = arg.split(':');
+        this.actions.rearm(Number(id), kind as UnitKind);
+        break;
+      }
       case 'halt':
         this.actions.halt();
         break;
@@ -286,8 +295,8 @@ export class Hud {
   }
 
   private recruitHtml(world: World, town: Town): string {
+    // With no barracks the keep still arms militia.
     const level = barracksLevel(town);
-    if (level === 0) return '';
     const men = menAlive(world, PLAYER);
     const free = freePeople(world, PLAYER);
     let html = `<div class="row wrap"><span class="label">${T.recruit}</span>`;
@@ -297,7 +306,7 @@ export class Hud {
       const full = men + def.men > ARMY.maxSoldiersPerSide;
       const hands = free >= peopleFor(kind) + PEOPLE.minFreeAfterCallUp;
       const off = locked || full || !hands || !canAffordUnit(town.stock, kind) ? ' off' : '';
-      const need = locked ? ` (${T.needsBarracksLevel} ${def.barracksLevel})` : '';
+      const need = locked ? ` (${T.needsBarracksLevel} ${def.barracksLevel})` : def.barracksLevel === 0 ? ` (${T.atKeep})` : '';
       html += `<button class="option${off}" data-act="recruit" data-arg="${kind}" data-tip="${T.units[kind].name}: ${T.units[kind].about}${need}"><span class="glyph">${UNIT_GLYPH[kind]}</span><span class="name">${T.units[kind].name}</span><span class="costs">${locked ? need : unitCostHtml(town, kind)}</span></button>`;
     }
     html += '</div>';
@@ -367,11 +376,33 @@ export class Hud {
 
   private stateText(r: Regiment): string {
     if (r.state === 'routing') return T.state.routing;
+    if (r.rearmTo !== null) return `${T.rearmingState} → ${T.units[r.rearmTo].name} (${Math.ceil(r.rearmLeftS)} s)`;
     if (isEngaged(r)) return T.state.fighting;
     if (r.order === 'move') return T.state.move;
     if (r.order === 'attackRegiment') return T.state.attack;
     if (r.order === 'attackBuilding') return T.state.siege;
     return T.state.hold;
+  }
+
+  /** Re-arm buttons for one selected regiment: what it may become, and what that costs. */
+  private rearmHtml(world: World, r: Regiment): string {
+    const targets = REARM.paths[r.kind];
+    if (r.side !== PLAYER || targets.length === 0 || r.rearmTo !== null) return '';
+    const town = world.towns[PLAYER];
+    let html = `<div class="row wrap"><span class="label">${T.rearm}</span>`;
+    for (const to of targets) {
+      const able = canRearm(world, r.id, to);
+      const cost = rearmCost(r, to);
+      let costs = '';
+      for (const id of RESOURCE_IDS) {
+        const amount = cost[id] ?? 0;
+        if (amount === 0) continue;
+        costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i style="background:${RESOURCE_CSS[id]}"></i>${amount}</span>`;
+      }
+      const why = able === 'ok' ? '' : ` — ${T.results[able]}`;
+      html += `<button class="option${able === 'ok' ? '' : ' off'}" data-act="rearm" data-arg="${r.id}:${to}" data-tip="${T.rearm}: ${T.units[to].name}. ${T.units[to].about}${why}"><span class="glyph">${UNIT_GLYPH[to]}</span><span class="name">${T.units[to].name}</span><span class="costs">${costs || '—'}</span></button>`;
+    }
+    return `${html}</div>`;
   }
 
   private armyHtml(world: World, selected: ReadonlySet<number>): string {
@@ -381,12 +412,17 @@ export class Hud {
       const morale = Math.max(0, Math.round((r.morale / r.def.morale) * 100));
       html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about}"><span class="glyph">${UNIT_GLYPH[r.kind]}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${r.initialMen} ${T.men} · ${this.stateText(r)}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
     }
-    return `${html}</div>`;
+    html += '</div>';
+    // One regiment chosen: what it may be re-armed as.
+    if (selected.size === 1) {
+      const only = world.regiments.find((r) => selected.has(r.id) && r.aliveMen > 0);
+      if (only) html += this.rearmHtml(world, only);
+    }
+    return html;
   }
 
   /** Nothing selected: the building list, or (on its tab, once there is a barracks) the recruiting list. */
   private idleHtml(world: World, town: Town, tool: string): string {
-    if (barracksLevel(town) === 0) return this.buildHtml(town, tool);
     const tabs = `<div class="row tabs"><button class="tab${this.tab === 'build' ? ' on' : ''}" data-act="tab" data-arg="build">${T.build}</button><button class="tab${this.tab === 'army' ? ' on' : ''}" data-act="tab" data-arg="army">${T.recruit}</button></div>`;
     return tabs + (this.tab === 'build' ? this.buildHtml(town, tool) : this.recruitHtml(world, town));
   }

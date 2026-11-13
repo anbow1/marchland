@@ -9,7 +9,7 @@
 //
 // tests/docs.test.ts fails while a document on disk is not what this produces.
 import { existsSync } from 'node:fs';
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS } from '../src/config.ts';
+import { ARMY, BUILDINGS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../src/config.ts';
 import { BUILDING_KINDS, type BuildingKind, type Cost, RESOURCE_IDS, type ResourceId, SITE_NEED, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 
 const GOOD_EN: Record<ResourceId, string> = {
@@ -18,6 +18,8 @@ const GOOD_EN: Record<ResourceId, string> = {
   stone: 'stone',
   grain: 'grain',
   flour: 'flour',
+  grapes: 'grapes',
+  wine: 'wine',
   bread: 'bread',
   fish: 'fish',
   meat: 'meat',
@@ -38,6 +40,8 @@ const GOOD_PL: Record<ResourceId, string> = {
   stone: 'kamień',
   grain: 'zboże',
   flour: 'mąka',
+  grapes: 'winogrona',
+  wine: 'wino',
   bread: 'chleb',
   fish: 'ryby',
   meat: 'mięso',
@@ -61,6 +65,8 @@ const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   windmill: { name: 'Windmill', role: 'A post mill: grinds grain into flour. The tallest thing in a village; its sails turn while it works.' },
   bakery: { name: 'Bakery', role: 'Bakes flour into bread, the staple ration of town and army. A domed oven by the house and a pretzel over the door.' },
   pigFarm: { name: 'Pig Farm', role: 'Fattens pigs on grain: meat for the butcher, hides for the tanner.' },
+  vineyard: { name: 'Vineyard', role: "A vintner's press-house with rows of vines behind it. The vines are planted once and bear every season without new sowing; they take up land like a farm's fields." },
+  winery: { name: 'Winery', role: 'Presses grapes into wine in a stone cellar of barrels. Wine is carried to the houses: a household with wine pays more tax and grows faster.' },
   butcher: { name: 'Butcher', role: 'Turns meat into sausages; a sausage feeds two.' },
   tannery: { name: 'Tannery', role: 'Turns hides into leather armour for the lower tiers of the army.' },
   ironMine: { name: 'Iron Mine', role: 'Digs iron ore from an ore outcrop. A timbered adit in a knoll of rock, rails, an ore tub and the ore heap.' },
@@ -96,6 +102,7 @@ function makes(kind: BuildingKind): string {
   if (kind === 'barracks') return 'regiments (see UNITS.md)';
   if (kind === 'woodcutter') return `${GATHER.woodcutter.amount} timber a trip (${GATHER.woodcutter.seconds} s of felling + the walk)`;
   if (kind === 'fisher') return `${GATHER.fisher.amount} fish a trip (${GATHER.fisher.seconds} s at the water + the walk)`;
+  if (kind === 'vineyard') return `${VINES.grapesPerHarvest} grapes a vintage from each strip of vines, every ${VINES.growSeconds} s once planted (${VINES.plantSeconds} s to plant a strip); ${FIELDS.stripsPerLevel.join(' / ')} strips (levels 1–${MAX_LEVEL})`;
   if (kind === 'farm') return `${FIELDS.grainPerHarvest} grain a harvest from each strip; ${FIELDS.stripsPerLevel.join(' / ')} strips (levels 1–${MAX_LEVEL}), ${FIELDS.growSeconds} s to ripen`;
   if (!recipe) return '—';
   const inputs = cost(recipe.inputs, GOOD_EN);
@@ -109,6 +116,7 @@ const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKin
   { name: 'Grain and bread', pl: 'Zboże i chleb', kinds: ['farm', 'windmill', 'bakery'], planned: ['Brewery'] },
   { name: 'Meat, sausage and hides', pl: 'Mięso, kiełbasy i skóry', kinds: ['pigFarm', 'butcher'], planned: ["Hunter's Lodge"] },
   { name: 'Fish', pl: 'Ryby', kinds: ['fisher'], planned: [] },
+  { name: 'Wine', pl: 'Wino', kinds: ['vineyard', 'winery'], planned: [] },
   { name: 'Iron, weapons and mail', pl: 'Żelazo, broń i kolczugi', kinds: ['ironMine', 'smelter', 'smithy', 'armourer'], planned: [] },
   { name: 'Leather armour and bows', pl: 'Zbroje skórzane i łuki', kinds: ['tannery', 'fletcher'], planned: [] },
   { name: 'Horses', pl: 'Konie', kinds: ['stable'], planned: [] },
@@ -284,7 +292,17 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Rachunek dla orientacji: 30 mieszkańców zjada ${rationsTown(30)} racji/min, 60 — ${rationsTown(60)};
   armia ${ARMY.maxSoldiersPerSide} ludzi — ${fixed(ARMY.maxSoldiersPerSide * FOOD.soldierRationsPerMinute)} racji/min.
 
-## 5. Pola, las, jezioro, skała
+## 5. Wino
+
+- **Winnica**: winiarz sadzi krzewy na pasie ziemi (${VINES.plantSeconds} s, raz). Potem pas sam rodzi co ${VINES.growSeconds} s,
+  bez ponownego siewu; zbiór trwa ${VINES.harvestSeconds} s i daje ${VINES.grapesPerHarvest} winogron. Rzędy winorośli zajmują
+  teren za winnicą tak jak pola zagrody (${FIELDS.stripsPerLevel.join(' / ')} pasów na poziomach 1–${MAX_LEVEL}).
+- **Winiarnia** tłoczy wino z winogron. Tragarze niosą wino do chat (do ${WINE.houseTarget} beczułek), gdy mają
+  zapas — po chlebie, przed surowcami warsztatów.
+- Chata z winem: mieszkaniec wypija ${WINE.perResidentPerMinute} wina na minutę; podatek ×${WINE.taxFactor},
+  nowi mieszkańcy przychodzą w ${Math.round(WINE.growFactor * 100)} % zwykłego czasu. Wino nie jest jedzeniem.
+
+## 6. Pola, las, jezioro, skała
 
 - **Pole**: rolnik karczuje pas ziemi (${FIELDS.establishSeconds} s, raz), sieje (${FIELDS.sowSeconds} s), zboże rośnie ${FIELDS.growSeconds} s,
   potem żniwa (${FIELDS.harvestSeconds} s) i ${FIELDS.grainPerHarvest} zboża wraca do zagrody. Pas ma ${FIELDS.stripLengthM} × ${FIELDS.stripWidthM} m;
@@ -296,7 +314,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 - **Kamieniołom i kopalnia** muszą stać do ${TOWN.depositReachM} m od wychodni kamienia albo rudy. Każda strona
   ma po jednej za miastem; druga, bogatsza, leży na flance bliżej środka mapy.
 
-## 6. Stawianie budynków i drogi
+## 7. Stawianie budynków i drogi
 
 - Budynek stawia się **w dowolnym miejscu** w promieniu ${TOWN.territoryRadiusM} m od własnego zamku (i nie bliżej niż
   ${TOWN.enemyKeepClearM} m od wrogiego): teren pod nim może się wznosić najwyżej o ${TOWN.maxFootprintRiseM} m, nie może to być woda,
@@ -308,22 +326,24 @@ i drogi są decyzją gracza, a nie ozdobą.
   w wiosce z polami za plecami, drwala przy najbliższej ścianie lasu, rybaka nad jeziorem,
   kamieniołom i kopalnię przy skale; od każdych drzwi kładzie drogę do bramy zamku.
 
-## 7. Poziomy budynków
+## 8. Poziomy budynków
 
 - Poziom kosztuje ×${LEVEL_COST.join(' / ×')} ceny podstawowej i daje ×${LEVEL_SPEED.join(' / ×')} tempa pracy.
 - Rozbudowa to ${UPGRADE_SECONDS} sekund pracy budowniczych po dostarczeniu materiałów; budynek w tym czasie stoi.
 - Rozbiórka zwraca ${Math.round(DEMOLISH_REFUND * 100)} % ceny podstawowej.
 
-## 8. Start partii
+## 9. Start partii
 
 Każda strona zaczyna z zamkiem, ${PEOPLE.keepResidents} ludźmi i zapasem: ${cost(TOWN.startingStock, GOOD_PL)}.
-Sensowna kolejność: drwal → zagroda → chata → młyn → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
-chlewnia, kopalnia, koszary → garbarnia, huta, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz.
+Na początek miasto może wystawić milicję w zamku (włócznia i tarcza z drewna, bez zbroi), zanim
+staną koszary. Sensowna kolejność: drwal → zagroda → chata → młyn → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
+chlewnia, kopalnia, koszary → garbarnia, huta, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz →
+winnica, winiarnia.
 `;
 }
 
 const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
-  militia: { name: 'Milicja z tarczami', use: 'Tania zapora: trzyma linię za tarczą, szybko ucieka. Do obrony miasta i wiązania wroga.' },
+  militia: { name: 'Milicja z tarczami', use: 'Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia.' },
   pikemen: { name: 'Pikinierzy', use: 'Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców.' },
   archers: { name: 'Łucznicy', use: 'Daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.' },
   swordsmen: { name: 'Miecznicy', use: 'Miecz, tarcza, kolczuga: wygrywają zwykłą walkę pieszą i znoszą ostrzał.' },
@@ -389,7 +409,19 @@ Zamek strzela sam: zasięg ${TOWN.keepRangeM} m, strzała co ${TOWN.keepShotInte
 
 ${special.join('\n')}
 
-## 5. Kto kogo bije
+## 5. Przezbrojenie
+
+Oddział stojący do ${REARM.radiusM} m od własnych koszar (poza walką) można przezbroić: zostaje ten sam
+oddział — ci sami ludzie, ich rany (jako część życia), zmęczenie i morale (jako część pełnego) — a płaci się
+tylko za to, czego jeszcze nie mają: ekwipunek nowego rodzaju minus ten, który już noszą, za każdego żywego,
+oraz różnicę w złocie, jeśli nowy rodzaj jest droższy. Wydawanie broni trwa ${REARM.seconds} s; oddział stoi.
+Wymagany poziom koszar jak przy werbunku.
+
+${UNIT_KINDS.filter((k) => REARM.paths[k].length > 0).map((k) => `- **${UNIT_PL[k].name}** → ${REARM.paths[k].map((t) => UNIT_PL[t].name).join(', ')}`).join('\n')}
+
+Konni zostają konnymi, machin się nie przezbraja.
+
+## 6. Kto kogo bije
 
 - **Piki i halabardy** zatrzymują **jazdę**; jazda nie szarżuje na nie od czoła.
 - **Jazda** rozjeżdża **strzelców** i **machiny** oraz dobija uciekających.
@@ -398,7 +430,7 @@ ${special.join('\n')}
 - **Trebusz** rozbija zwarty szyk i mury; **balista** zdejmuje pojedynczych ciężkozbrojnych z daleka.
 - Atak z **flanki** i od **tyłu** trafia łatwiej i łamie morale szybciej niż jakakolwiek przewaga punktów.
 
-## 6. Łańcuchy ekwipunku
+## 7. Łańcuchy ekwipunku
 
 - zbroja skórzana ← garbarnia ← skóry ← chlewnia ← zboże
 - broń ← kuźnia ← żelazo + drewno ← huta ← ruda + drewno

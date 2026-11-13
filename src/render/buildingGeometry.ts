@@ -105,6 +105,15 @@ const BUILDERS: Record<BuildingKind, Build> = {
     b.box(0, 4.0, 0, 3.0, 3.8, 3.4, P.BOARDS);
     b.roof(0, 7.8, 0, 3.0, 3.4, 1.4, 0, 0.2, 0.15, P.SHINGLE, P.TIMBER);
   },
+  vineyard: (b) => {
+    b.box(-1.5, 0, -1.5, 4.0, 2.4, 3.4, P.PLASTER);
+    b.roof(-1.5, 2.4, -1.5, 4.0, 3.4, 1.8, 0, 0.3, 0.15, P.TILE, P.TIMBER);
+  },
+  winery: (b) => {
+    b.box(0, 0, -1.0, 6.0, 3.0, 4.4, P.STONE);
+    b.roof(0, 3.0, -1.0, 6.0, 4.4, 2.2, 0, 0.4, 0.18, P.TILE, P.TIMBER);
+    P.barrel(b, 2.4, 2.0, 1.3);
+  },
   smelter: (b) => {
     b.cylinder(-1.3, 0, 0.8, 1.75, 1.05, 4.6, 12, P.STONE);
     b.box(1.8, 0, 1.0, 3.6, 2.4, 3.2, P.BOARDS);

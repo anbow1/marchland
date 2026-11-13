@@ -144,6 +144,27 @@ export const FIELDS = {
   grainPerHarvest: 7,
 } as const;
 
+/** Vines: planted once, then they bear every season with no new sowing; slower than corn. */
+export const VINES = {
+  /** Breaking the ground and planting the vines of one strip, at level 1. */
+  plantSeconds: 30,
+  /** From planting, or from the last vintage, to ripe grapes. */
+  growSeconds: 110,
+  harvestSeconds: 14,
+  grapesPerHarvest: 6,
+} as const;
+
+/** Wine is a luxury: carried to the houses, drunk there, and a house with wine pays more and grows faster. */
+export const WINE = {
+  /** Wine one resident drinks a minute while the house has any. */
+  perResidentPerMinute: 0.05,
+  /** Wine a house likes to keep in its cellar. */
+  houseTarget: 3,
+  /** Tax multiplier, and the share of the usual time a newcomer takes, in a house with wine. */
+  taxFactor: 1.8,
+  growFactor: 0.6,
+} as const;
+
 /** Trades whose worker goes out to the land and comes back with a load: seconds on the spot and what a trip brings. */
 export const GATHER = {
   /** The woodcutter also splits each load at the chopping block in his yard (`splitSeconds`, at `blockX/Z` in the lodge's own space, door towards +Z). */
@@ -184,6 +205,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   windmill: { cost: { gold: 70, wood: 30 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grain: 2 }, outputs: { flour: 2 }, cycleSeconds: 6 } },
   bakery: { cost: { gold: 50, wood: 15, stone: 5 }, buildSeconds: 12, hp: 300, recipe: { inputs: { flour: 1 }, outputs: { bread: 1 }, cycleSeconds: 5 } },
   pigFarm: { cost: { gold: 60, wood: 20 }, buildSeconds: 12, hp: 250, recipe: { inputs: { grain: 1 }, outputs: { meat: 2, hide: 1 }, cycleSeconds: 12 } },
+  // Vines on strips behind the press-house, like a farm's fields: the vintner plants them once and then only picks.
+  vineyard: { cost: { gold: 70, wood: 20 }, buildSeconds: 12, hp: 250, recipe: null },
+  winery: { cost: { gold: 90, wood: 20, stone: 20 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grapes: 3 }, outputs: { wine: 2 }, cycleSeconds: 12 } },
   butcher: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { meat: 1 }, outputs: { sausage: 1 }, cycleSeconds: 5 } },
   tannery: { cost: { gold: 60, wood: 15, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { hide: 1 }, outputs: { leatherArmor: 1 }, cycleSeconds: 8 } },
   ironMine: { cost: { gold: 80, wood: 25 }, buildSeconds: 14, hp: 300, recipe: { inputs: {}, outputs: { ironOre: 1 }, cycleSeconds: 6 } },
@@ -195,6 +219,30 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   stable: { cost: { gold: 100, wood: 40, stone: 10 }, buildSeconds: 14, hp: 300, recipe: { inputs: { grain: 3 }, outputs: { horse: 1 }, cycleSeconds: 25 } },
   barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, recipe: null },
 };
+
+/**
+ * Re-arming a regiment that stands by its barracks (or, for what the keep can make, by the keep): it keeps
+ * its men, their fatigue and their record, and is paid for only in what it lacks — the target's equipment
+ * less what it already carries, for every man alive, and the difference in gold if the target costs more.
+ */
+export const REARM = {
+  /** How near a finished barracks (or the keep) the regiment must stand. */
+  radiusM: 40,
+  seconds: 20,
+  /** What each kind may become. Mounted stay mounted; engines are not re-armed. */
+  paths: {
+    militia: ['pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen'],
+    pikemen: ['halberdiers', 'swordsmen'],
+    archers: ['crossbowmen'],
+    swordsmen: ['halberdiers'],
+    halberdiers: ['swordsmen'],
+    crossbowmen: [],
+    lightCavalry: ['heavyCavalry'],
+    heavyCavalry: [],
+    ballista: [],
+    trebuchet: [],
+  } as Record<UnitKind, readonly UnitKind[]>,
+} as const;
 
 export const FOOD = {
   /** One soldier eats this many rations a minute (tuned: 100 men need about two bakeries). */
@@ -277,7 +325,8 @@ const ENGINE = { cavalry: false, engine: true, attack: 0, defence: 0, armour: 0,
 
 export const UNITS: Record<UnitKind, UnitDef> = {
   // Townsmen with a shield and a spear: cheap, steady enough behind the shield, quick to run.
-  militia: { ...FOOT, barracksLevel: 1, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
+  // A spear and a wooden shield made at the keep (one timber a man), no armour: raised before there is a barracks.
+  militia: { ...FOOT, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
   // A hedge of pikes: the answer to horsemen, open to arrows.
   pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, bounty: 2 },
   archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 9, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },

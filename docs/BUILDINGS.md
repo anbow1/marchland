@@ -17,15 +17,17 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | 8 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
 | 9 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
 | 10 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
-| 11 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
-| 12 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
-| 13 | **Smelter** | 90 gold, 20 timber, 30 stone | any level ground | 1 timber, 2 iron ore → 2 iron every 9 s | 1 | 350 |
-| 14 | **Smithy** | 80 gold, 20 timber, 20 stone | any level ground | 1 timber, 1 iron → 1 weapons every 7 s | 1 | 350 |
-| 15 | **Armourer** | 120 gold, 20 timber, 40 stone | any level ground | 2 iron → 1 mail every 12 s | 1 | 350 |
-| 16 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
-| 17 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
-| 18 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
-| 19 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
+| 11 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 6 grapes a vintage from each strip of vines, every 110 s once planted (30 s to plant a strip); 2 / 4 / 6 strips (levels 1–3) | 1 | 250 |
+| 12 | **Winery** | 90 gold, 20 timber, 20 stone | any level ground | 3 grapes → 2 wine every 12 s | 1 | 300 |
+| 13 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
+| 14 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
+| 15 | **Smelter** | 90 gold, 20 timber, 30 stone | any level ground | 1 timber, 2 iron ore → 2 iron every 9 s | 1 | 350 |
+| 16 | **Smithy** | 80 gold, 20 timber, 20 stone | any level ground | 1 timber, 1 iron → 1 weapons every 7 s | 1 | 350 |
+| 17 | **Armourer** | 120 gold, 20 timber, 40 stone | any level ground | 2 iron → 1 mail every 12 s | 1 | 350 |
+| 18 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
+| 19 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
+| 20 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
+| 21 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
 
 What each is for:
 
@@ -39,6 +41,8 @@ What each is for:
 - **Bakery** — Bakes flour into bread, the staple ration of town and army. A domed oven by the house and a pretzel over the door.
 - **Pig Farm** — Fattens pigs on grain: meat for the butcher, hides for the tanner.
 - **Butcher** — Turns meat into sausages; a sausage feeds two.
+- **Vineyard** — A vintner's press-house with rows of vines behind it. The vines are planted once and bear every season without new sowing; they take up land like a farm's fields.
+- **Winery** — Presses grapes into wine in a stone cellar of barrels. Wine is carried to the houses: a household with wine pays more tax and grows faster.
 - **Tannery** — Turns hides into leather armour for the lower tiers of the army.
 - **Iron Mine** — Digs iron ore from an ore outcrop. A timbered adit in a knoll of rock, rails, an ore tub and the ore heap.
 - **Smelter** — A bloomery: smelts iron ore into iron, burning timber as charcoal. A squat stone furnace, bellows, smoking charcoal and heaps of slag.
@@ -100,6 +104,11 @@ roads serve all of them.
 ### Fish (Ryby)
 
 - **Fisher's Hut** — 3 fish a trip (10 s at the water + the walk). *Shapes from code; model to come.*
+
+### Wine (Wino)
+
+- **Vineyard** — 6 grapes a vintage from each strip of vines, every 110 s once planted (30 s to plant a strip); 2 / 4 / 6 strips (levels 1–3). *Model from Blender.*
+- **Winery** — 3 grapes → 2 wine. *Model from Blender.*
 
 ### Iron, weapons and mail (Żelazo, broń i kolczugi)
 

@@ -23,7 +23,23 @@ flanka, a nie liczba kliknięć.
 Czego gra **nie** ma mieć: mgły wojny (mapa jest mała i ma być czytelna),
 drzewka technologii, mikrotransakcji, krwi.
 
-**Zmiana z 2026-11-13** (prośba gracza): działki zniknęły. Budynki stawia się
+**Zmiany z 2026-11-13** (prośby gracza):
+
+- **Łańcuchy dłuższe o jeden krok**: zboże mieli **młyn** na mąkę dla piekarni;
+  rudę wytapia **huta** (z drewnem) na żelazo dla kuźni i płatnerza.
+- **Wino**: **winnica** sadzi krzewy raz i zbiera winogrona co sezon, rzędy
+  winorośli zajmują teren jak pola; **winiarnia** tłoczy wino; chata z winem
+  płaci więcej i szybciej się zaludnia.
+- **Milicja jako jednostka startowa**: włócznia i drewniana tarcza (1 drewno na
+  człowieka), bez zbroi, werbowana w zamku, zanim staną koszary.
+- **Przezbrojenie**: oddział przy własnych koszarach zmienia rodzaj (np.
+  milicja → pikinierzy), zachowując ludzi; płaci tylko za brakujący
+  ekwipunek. Szczegóły: `UNITS.md` §5.
+- **Budynki rozpoznawalne po wyglądzie**: każdy fach ma swoją sylwetkę i pracę
+  widoczną na zewnątrz (drwal rąbie przy pieńku, skrzydła młyna kręcą się, gdy
+  miele). Modele z Blendera: `BLENDER.md`, lista z gałęziami: `BUILDINGS.md` §2.
+
+Wcześniej tego dnia: działki zniknęły. Budynki stawia się
 dowolnie w promieniu własnych ziem, z obrotem; ludzie chodzą po drogach, które
 gracz rysuje. Szczegóły i liczby: `ECONOMY.md` §6 i `BUILDINGS.md`.
 
@@ -220,6 +236,7 @@ w `BLENDER.md`.
 
 | # | Kamień | Zakres | Kto | Kryterium |
 |---|---|---|---|---|
+| M1b | **Fachy i wino** ✔ | młyn, huta, winnica z rzędami winorośli, winiarnia, wino w chatach; milicja z zamku; przezbrojenie; drwal rąbie w obejściu; 10 budynków z Blendera rozpoznawalnych z daleka | silny model | zrobione 2026-11-13: testy młyna, huty, wina, milicji i przezbrojenia w `tests/economy.test.ts` |
 | M1 | **Żywe miasto** ✔ | ludność, role, tragarze, składy budynków, budowa z dostawą, głód per chata, ucieczka przed wrogiem, pola, drwale i rybacy w terenie, dowolne stawianie, drogi i szukanie drogi | silny model | zrobione 2026-11-13: testy w `tests/economy.test.ts` (miejsce budowy, dostawa materiałów, żniwa, piekarnia, drwal i rybak, chata i głód, drogi, werbunek z ludności); komputer wygrywa z bezczynnym graczem w 30 min; komputer–komputer: pierwsze starcia ok. 20. minuty, bez zwycięzcy w 40 min |
 | M2 | **Bitwa v2** | szyki, szerokość frontu, postawy, cofanie, weterani, kapitan, uzupełnienia, żołd, wzniesienia, aktywna pauza z kolejką | silny model (symulacja), rutyna (HUD) | macierz pojedynków spełnia miary z §6; test na każdy szyk i postawę |
 | M3 | **Mapa ma znaczenie** | rodzaje działek, działki za miastem, punkty do zajęcia, poziomy zamku, trzy układy mapy, rzeka i brody | silny model (generator, zasady), rutyna (panele) | komputer–komputer kończy partię w 25–40 min na każdym układzie; zagon na pole zatrzymuje jego produkcję |

@@ -57,7 +57,17 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Rachunek dla orientacji: 30 mieszkańców zjada 9 racji/min, 60 — 18;
   armia 100 ludzi — 25 racji/min.
 
-## 5. Pola, las, jezioro, skała
+## 5. Wino
+
+- **Winnica**: winiarz sadzi krzewy na pasie ziemi (30 s, raz). Potem pas sam rodzi co 110 s,
+  bez ponownego siewu; zbiór trwa 14 s i daje 6 winogron. Rzędy winorośli zajmują
+  teren za winnicą tak jak pola zagrody (2 / 4 / 6 pasów na poziomach 1–3).
+- **Winiarnia** tłoczy wino z winogron. Tragarze niosą wino do chat (do 3 beczułek), gdy mają
+  zapas — po chlebie, przed surowcami warsztatów.
+- Chata z winem: mieszkaniec wypija 0.05 wina na minutę; podatek ×1.8,
+  nowi mieszkańcy przychodzą w 60 % zwykłego czasu. Wino nie jest jedzeniem.
+
+## 6. Pola, las, jezioro, skała
 
 - **Pole**: rolnik karczuje pas ziemi (14 s, raz), sieje (9 s), zboże rośnie 60 s,
   potem żniwa (11 s) i 7 zboża wraca do zagrody. Pas ma 12 × 6 m;
@@ -69,7 +79,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 - **Kamieniołom i kopalnia** muszą stać do 15 m od wychodni kamienia albo rudy. Każda strona
   ma po jednej za miastem; druga, bogatsza, leży na flance bliżej środka mapy.
 
-## 6. Stawianie budynków i drogi
+## 7. Stawianie budynków i drogi
 
 - Budynek stawia się **w dowolnym miejscu** w promieniu 180 m od własnego zamku (i nie bliżej niż
   90 m od wrogiego): teren pod nim może się wznosić najwyżej o 2.2 m, nie może to być woda,
@@ -81,14 +91,16 @@ i drogi są decyzją gracza, a nie ozdobą.
   w wiosce z polami za plecami, drwala przy najbliższej ścianie lasu, rybaka nad jeziorem,
   kamieniołom i kopalnię przy skale; od każdych drzwi kładzie drogę do bramy zamku.
 
-## 7. Poziomy budynków
+## 8. Poziomy budynków
 
 - Poziom kosztuje ×1 / ×1.5 / ×2.5 ceny podstawowej i daje ×1 / ×1.6 / ×2.3 tempa pracy.
 - Rozbudowa to 15 sekund pracy budowniczych po dostarczeniu materiałów; budynek w tym czasie stoi.
 - Rozbiórka zwraca 50 % ceny podstawowej.
 
-## 8. Start partii
+## 9. Start partii
 
 Każda strona zaczyna z zamkiem, 8 ludźmi i zapasem: 340 złoto, 90 drewno, 40 kamień, 40 chleb.
-Sensowna kolejność: drwal → zagroda → chata → młyn → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
-chlewnia, kopalnia, koszary → garbarnia, huta, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz.
+Na początek miasto może wystawić milicję w zamku (włócznia i tarcza z drewna, bez zbroi), zanim
+staną koszary. Sensowna kolejność: drwal → zagroda → chata → młyn → piekarnia → drugi drwal → chaty, kamieniołom, rybak →
+chlewnia, kopalnia, koszary → garbarnia, huta, kuźnia → rzeźnik, łuczarz → stajnia, płatnerz →
+winnica, winiarnia.

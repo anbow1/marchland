@@ -71,6 +71,18 @@
   "file": "smithy_3.glb",
   "triangles": 2566
  },
+ "vineyard:1": {
+  "file": "vineyard_1.glb",
+  "triangles": 1764
+ },
+ "vineyard:2": {
+  "file": "vineyard_2.glb",
+  "triangles": 1820
+ },
+ "vineyard:3": {
+  "file": "vineyard_3.glb",
+  "triangles": 1876
+ },
  "windmill:1": {
   "file": "windmill_1.glb",
   "triangles": 4788
@@ -82,6 +94,18 @@
  "windmill:3": {
   "file": "windmill_3.glb",
   "triangles": 4964
+ },
+ "winery:1": {
+  "file": "winery_1.glb",
+  "triangles": 2740
+ },
+ "winery:2": {
+  "file": "winery_2.glb",
+  "triangles": 3012
+ },
+ "winery:3": {
+  "file": "winery_3.glb",
+  "triangles": 3012
  },
  "woodcutter:1": {
   "file": "woodcutter_1.glb",

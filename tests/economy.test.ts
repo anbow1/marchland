@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FIELDS, FOOD, PEOPLE, ROADS, TOWN, UNITS } from '../src/config.ts';
-import { cmdBuild, cmdBuildRoad, cmdRecruit, cmdUpgrade, roadCost } from '../src/sim/commands.ts';
+import { FIELDS, FOOD, PEOPLE, REARM, ROADS, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdBuild, cmdBuildRoad, cmdMove, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from '../src/sim/commands.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
@@ -8,7 +8,7 @@ import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
 import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
 import { type BuildingKind, COMPUTER, PLAYER } from '../src/sim/types.ts';
-import { createWorld, menAlive, type World } from '../src/sim/world.ts';
+import { createWorld, menAlive, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
 
 function quietWorld(): World {
@@ -247,7 +247,7 @@ describe('recruiting', () => {
   it('a regiment is made of townspeople who walk to the barracks', () => {
     const world = rich(quietWorld());
     const town = world.towns[PLAYER];
-    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('needsBarracks');
+    expect(cmdRecruit(world, PLAYER, 'pikemen')).toBe('needsBarracks');
     const plot = build(world, 'barracks');
     runUntil(world, 300, () => finished(world, plot));
     expect(barracksLevel(town)).toBe(1);
@@ -290,4 +290,85 @@ describe('balance', () => {
     expect(firstArmyS).toBeLessThan(17 * 60);
     expect(world.people.filter((p) => p.alive && p.side === COMPUTER).length).toBeGreaterThanOrEqual(12);
   }, 60_000);
+});
+
+describe('militia and re-arming', () => {
+  it('militia is raised at the keep with spears and shields of timber, before there is a barracks', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    expect(UNITS.militia.barracksLevel).toBe(0);
+    expect(UNITS.militia.equipment).toEqual({ wood: 1 });
+    for (let i = 0; i < 3; i++) build(world, 'house');
+    runUntil(world, 900, () => freePeople(world, PLAYER) >= UNITS.militia.men + PEOPLE.minFreeAfterCallUp);
+    const wood = town.stock.wood;
+    expect(cmdRecruit(world, PLAYER, 'militia')).toBe('ok');
+    expect(town.stock.wood).toBe(wood - UNITS.militia.men);
+    runUntil(world, 300, () => world.regiments.length > 0);
+    expect(world.regiments[0]?.kind).toBe('militia');
+  });
+
+  it('a regiment by its barracks is re-armed: same men, paid only for what they lack', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const plot = build(world, 'barracks');
+    runUntil(world, 300, () => finished(world, plot));
+    const barracks = town.plots[plot];
+    if (!barracks) throw new Error('no barracks');
+    const r = spawnRegiment(world, PLAYER, 'pikemen', barracks.x + 60, barracks.z, 0);
+    r.soldiers.forEach((s, i) => {
+      if (i < 3) s.hp = UNITS.pikemen.hp / 2;
+    });
+    town.stock.weapon = 0;
+    town.stock.mailArmor = 20;
+    // Swordsmen need a barracks of level 2; pikemen cannot become archers at all.
+    expect(cmdRearm(world, r.id, 'swordsmen')).toBe('needsBarracks');
+    expect(cmdRearm(world, r.id, 'archers')).toBe('cannotRearm');
+    expect(cmdUpgrade(world, PLAYER, plot)).toBe('ok');
+    runUntil(world, 300, () => finished(world, plot));
+    // Too far from the barracks, then near enough.
+    expect(cmdRearm(world, r.id, 'swordsmen')).toBe('notAtBarracks');
+    expect(cmdMove(world, r.id, barracks.x + 15, barracks.z, 0, false)).toBe('ok');
+    runUntil(world, 120, () => Math.hypot(r.centreX - barracks.x, r.centreZ - barracks.z) < REARM.radiusM - 5 && r.order === 'hold');
+    // Pikemen keep their weapons: swordsmen need only mail (and the difference in gold).
+    const cost = rearmCost(r, 'swordsmen');
+    expect(cost.weapon).toBeUndefined();
+    expect(cost.mailArmor).toBe(r.aliveMen);
+    expect(cost.gold).toBe(UNITS.swordsmen.goldCost - UNITS.pikemen.goldCost);
+    const men = r.aliveMen;
+    expect(cmdRearm(world, r.id, 'swordsmen')).toBe('ok');
+    expect(town.stock.mailArmor).toBe(20 - men);
+    expect(cmdMove(world, r.id, 0, 0, 0, false)).toBe('rearming');
+    run(world, REARM.seconds + 1);
+    expect(r.kind).toBe('swordsmen');
+    expect(r.aliveMen).toBe(men);
+    const wounded = r.soldiers.filter((s) => s.alive && s.hp < UNITS.swordsmen.hp * 0.6).length;
+    expect(wounded).toBe(3);
+  });
+});
+
+describe('wine', () => {
+  it('vines are planted once and bear grapes every season; the winery makes wine; a house with wine pays more', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const plot = build(world, 'vineyard');
+    const vineyard = town.plots[plot];
+    if (!vineyard) throw new Error('no vineyard');
+    expect(vineyard.strips.length).toBeGreaterThanOrEqual(FIELDS.stripsPerLevel[0] as number);
+    runUntil(world, 900, () => (town.plots[plot]?.out.grapes ?? 0) + town.stock.grapes >= VINES.grapesPerHarvest * 2);
+    expect(vineyard.out.grapes + town.stock.grapes).toBeGreaterThanOrEqual(VINES.grapesPerHarvest * 2);
+    // Harvested vines go straight back to growing: never 'bare', never sown again.
+    expect(vineyard.strips.every((s) => s.state !== 'bare')).toBe(true);
+
+    const winery = build(world, 'winery');
+    const house = build(world, 'house');
+    runUntil(world, 300, () => finished(world, winery) && finished(world, house));
+    town.stock.grapes += 30;
+    runUntil(world, 600, () => (town.plots[house]?.inp.wine ?? 0) > 0);
+    const h = town.plots[house];
+    if (!h) throw new Error('no house');
+    expect(h.inp.wine).toBeGreaterThan(0);
+    run(world, 1);
+    expect(h.hasWine).toBe(true);
+    expect(WINE.taxFactor).toBeGreaterThan(1);
+  });
 });

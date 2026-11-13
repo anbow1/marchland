@@ -1,12 +1,12 @@
-import { ROADS, TOWN, PEOPLE } from '../config.ts';
-import { canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
+import { PEOPLE, REARM, ROADS, TOWN, UNITS } from '../config.ts';
+import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
 import { layRoad, roadCells, stampBuilding } from './nav.ts';
 import { checkSite } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { frontageM, isArcher, type Regiment } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
-import type { BuildingKind, CommandResult, Side, UnitKind } from './types.ts';
+import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, type World } from './world.ts';
 
 // Everything a player can do, human or computer. The HUD and the computer
@@ -77,7 +77,62 @@ function commandable(world: World, regimentId: number): Regiment | CommandResult
   const r = findRegiment(world, regimentId);
   if (!r || r.aliveMen === 0) return 'noSuchRegiment';
   if (r.state === 'routing') return 'routing';
+  if (r.rearmTo !== null) return 'rearming';
   return r;
+}
+
+/** What re-arming a regiment as `to` costs now: gold, and the equipment its living men do not already carry. */
+export function rearmCost(r: Regiment, to: UnitKind): Cost {
+  const from = r.def;
+  const target = UNITS[to];
+  const cost: Cost = {};
+  const gold = Math.max(0, Math.round(((target.goldCost - from.goldCost) * r.aliveMen) / target.men));
+  if (gold > 0) cost.gold = gold;
+  for (const id of RESOURCE_IDS) {
+    const need = Math.max(0, (target.equipment[id] ?? 0) - (from.equipment[id] ?? 0)) * r.aliveMen;
+    if (need > 0) cost[id] = need;
+  }
+  return cost;
+}
+
+/** True when the regiment stands within reach of one of its side's barracks. */
+function atBarracks(world: World, r: Regiment): boolean {
+  for (const b of world.towns[r.side].plots) {
+    if (!b || b.kind !== 'barracks' || (b.level === 1 && b.constructionLeftS > 0)) continue;
+    if (Math.hypot(r.centreX - b.x, r.centreZ - b.z) <= REARM.radiusM) return true;
+  }
+  return false;
+}
+
+/** Why a regiment cannot be re-armed as `to` now; 'ok' if it can. */
+export function canRearm(world: World, regimentId: number, to: UnitKind): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (!REARM.paths[r.kind].includes(to)) return 'cannotRearm';
+  if (r.sinceMeleeS < 5) return 'inCombat';
+  const town = world.towns[r.side];
+  if (barracksLevel(town) < UNITS[to].barracksLevel) return 'needsBarracks';
+  if (!atBarracks(world, r)) return 'notAtBarracks';
+  const cost = rearmCost(r, to);
+  for (const id of RESOURCE_IDS) if (town.stock[id] < (cost[id] ?? 0)) return 'cannotAfford';
+  return 'ok';
+}
+
+/**
+ * Re-arms a regiment standing by its barracks: it keeps its men, their wounds (as a share), fatigue and
+ * record, and stands for REARM.seconds while new arms are handed out.
+ */
+export function cmdRearm(world: World, regimentId: number, to: UnitKind): CommandResult {
+  const able = canRearm(world, regimentId, to);
+  if (able !== 'ok') return able;
+  const r = findRegiment(world, regimentId) as Regiment;
+  const town = world.towns[r.side];
+  const cost = rearmCost(r, to);
+  for (const id of RESOURCE_IDS) town.stock[id] -= cost[id] ?? 0;
+  holdHere(r);
+  r.rearmTo = to;
+  r.rearmLeftS = REARM.seconds;
+  return 'ok';
 }
 
 /** March (or run) to a point. `facingRad` null keeps the direction of travel as the final facing. */

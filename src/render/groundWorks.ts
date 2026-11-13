@@ -114,7 +114,8 @@ export class GroundWorks {
         for (let i = 0; i < worked; i++) {
           const s = b.strips[i] as (typeof b.strips)[number];
           if (s.state === 'wild') continue;
-          const corn = s.state === 'ripe' ? 1 : s.state === 'growing' ? 0.15 + 0.7 * s.growth : 0;
+          // Corn on a farm's strips; a vineyard's are bare earth between the rows (the vines are drawn as models).
+          const corn = b.kind === 'vineyard' ? 0 : s.state === 'ripe' ? 1 : s.state === 'growing' ? 0.15 + 0.7 * s.growth : 0;
           this.strip(s.x, s.z, b.yawRad, FIELDS.stripLengthM, FIELDS.stripWidthM, corn);
         }
         // The yard, and the worn ground at the door.

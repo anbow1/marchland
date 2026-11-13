@@ -23,6 +23,8 @@ export const RESOURCE_IDS = [
   'stone',
   'grain',
   'flour',
+  'grapes',
+  'wine',
   'bread',
   'fish',
   'meat',
@@ -50,6 +52,8 @@ export const BUILDING_KINDS = [
   'bakery',
   'pigFarm',
   'butcher',
+  'vineyard',
+  'winery',
   'tannery',
   'ironMine',
   'smelter',
@@ -86,6 +90,10 @@ export type CommandResult =
   | 'queueFull'
   | 'noSuchRegiment'
   | 'routing'
+  | 'cannotRearm'
+  | 'notAtBarracks'
+  | 'inCombat'
+  | 'rearming'
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
@@ -103,6 +111,8 @@ export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
   bakery: 'none',
   pigFarm: 'none',
   butcher: 'none',
+  vineyard: 'fields',
+  winery: 'none',
   tannery: 'none',
   ironMine: 'ore',
   smelter: 'none',
