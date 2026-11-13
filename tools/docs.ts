@@ -8,6 +8,7 @@
 //   npm run docs        rewrite them after any change to the rules (tools/write-docs.ts)
 //
 // tests/docs.test.ts fails while a document on disk is not what this produces.
+import { existsSync } from 'node:fs';
 import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS } from '../src/config.ts';
 import { BUILDING_KINDS, type BuildingKind, type Cost, RESOURCE_IDS, type ResourceId, SITE_NEED, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 
@@ -101,6 +102,44 @@ function makes(kind: BuildingKind): string {
   return `${inputs === '—' ? '' : `${inputs} → `}${cost(recipe.outputs, GOOD_EN)} every ${recipe.cycleSeconds} s`;
 }
 
+/** The branches of the economy, in the order a town grows into them; every kind in exactly one (checked below). */
+const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKind[]; planned: readonly string[] }[] = [
+  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house'], planned: ['Storehouse', 'Market', 'Well', 'Tavern', 'Chapel'] },
+  { name: 'Building materials', pl: 'Budulec', kinds: ['woodcutter', 'quarry'], planned: ['Sawmill', "Forester's Hut"] },
+  { name: 'Grain and bread', pl: 'Zboże i chleb', kinds: ['farm', 'windmill', 'bakery'], planned: ['Brewery'] },
+  { name: 'Meat, sausage and hides', pl: 'Mięso, kiełbasy i skóry', kinds: ['pigFarm', 'butcher'], planned: ["Hunter's Lodge"] },
+  { name: 'Fish', pl: 'Ryby', kinds: ['fisher'], planned: [] },
+  { name: 'Iron, weapons and mail', pl: 'Żelazo, broń i kolczugi', kinds: ['ironMine', 'smelter', 'smithy', 'armourer'], planned: [] },
+  { name: 'Leather armour and bows', pl: 'Zbroje skórzane i łuki', kinds: ['tannery', 'fletcher'], planned: [] },
+  { name: 'Horses', pl: 'Konie', kinds: ['stable'], planned: [] },
+  { name: 'Army and defence', pl: 'Wojsko i obrona', kinds: ['barracks'], planned: ['Siege Workshop', 'Watchtower', 'Palisade and Gate', 'Keep, levels 2 and 3'] },
+];
+
+for (const kind of BUILDING_KINDS) {
+  const homes = BRANCHES.filter((b) => b.kinds.includes(kind)).length;
+  if (homes !== 1) throw new Error(`building '${kind}' is in ${homes} branches of tools/docs.ts; it must be in exactly one`);
+}
+
+/** True when a model from Blender exists for the kind (public/buildings, tools/blender/build.py). */
+function hasModel(kind: BuildingKind): boolean {
+  return existsSync(new URL(`../public/buildings/${kind}_1.glb`, import.meta.url));
+}
+
+function branchesSection(): string {
+  const out: string[] = [];
+  for (const branch of BRANCHES) {
+    out.push(`### ${branch.name} (${branch.pl})`, '');
+    for (const kind of branch.kinds) {
+      const recipe = BUILDINGS[kind].recipe;
+      const io = recipe && kind !== 'house' ? `${cost(recipe.inputs, GOOD_EN) === '—' ? '' : `${cost(recipe.inputs, GOOD_EN)} → `}${cost(recipe.outputs, GOOD_EN)}` : makes(kind);
+      out.push(`- **${BUILDING_EN[kind].name}** — ${io}. *${hasModel(kind) ? 'Model from Blender.' : 'Shapes from code; model to come.'}*`);
+    }
+    for (const name of branch.planned) out.push(`- ${name} — *planned (§4)*`);
+    out.push('');
+  }
+  return out.join('\n');
+}
+
 export function buildingsDoc(): string {
   const rows = BUILDING_KINDS.map((kind, i) => {
     const def = BUILDINGS[kind];
@@ -141,7 +180,13 @@ Rules common to all buildings:
   work stops until carriers clear them (they come once ${PEOPLE.clearOutputAt} lie there).
 - **Demolition** returns ${Math.round(DEMOLISH_REFUND * 100)} % of the base price and whatever lay in the yard.
 
-## 2. Production chains
+## 2. By branch
+
+Every building in the branch of the economy it serves, with what it turns into what. The keep and
+roads serve all of them.
+
+${branchesSection()}
+## 3. Production chains
 
 \`\`\`
 Farm ──grain──► Windmill ──flour──► Bakery ──bread──► houses, keep, army
@@ -156,7 +201,7 @@ Iron Mine ──ore──► Smelter (+ timber) ──iron──► Smithy (+ ti
 Fletcher ──bows──► archers, crossbowmen
 \`\`\`
 
-## 3. Still needed for the full game
+## 4. Still needed for the full game
 
 Not built yet; listed in the order they are worth adding. Names are final, numbers are not.
 

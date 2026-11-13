@@ -63,7 +63,69 @@ Rules common to all buildings:
   work stops until carriers clear them (they come once 4 lie there).
 - **Demolition** returns 50 % of the base price and whatever lay in the yard.
 
-## 2. Production chains
+## 2. By branch
+
+Every building in the branch of the economy it serves, with what it turns into what. The keep and
+roads serve all of them.
+
+### Living and the town (Mieszkanie i miasto)
+
+- **House** — 6 / 10 / 14 residents (levels 1–3); tax 1.2 gold a minute from each fed resident. *Model from Blender.*
+- Storehouse — *planned (§4)*
+- Market — *planned (§4)*
+- Well — *planned (§4)*
+- Tavern — *planned (§4)*
+- Chapel — *planned (§4)*
+
+### Building materials (Budulec)
+
+- **Woodcutter's Lodge** — 6 timber a trip (8 s of felling + the walk). *Model from Blender.*
+- **Quarry** — 1 stone. *Shapes from code; model to come.*
+- Sawmill — *planned (§4)*
+- Forester's Hut — *planned (§4)*
+
+### Grain and bread (Zboże i chleb)
+
+- **Farm** — 7 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Shapes from code; model to come.*
+- **Windmill** — 2 grain → 2 flour. *Model from Blender.*
+- **Bakery** — 1 flour → 1 bread. *Model from Blender.*
+- Brewery — *planned (§4)*
+
+### Meat, sausage and hides (Mięso, kiełbasy i skóry)
+
+- **Pig Farm** — 1 grain → 2 meat, 1 hides. *Shapes from code; model to come.*
+- **Butcher** — 1 meat → 1 sausages. *Shapes from code; model to come.*
+- Hunter's Lodge — *planned (§4)*
+
+### Fish (Ryby)
+
+- **Fisher's Hut** — 3 fish a trip (10 s at the water + the walk). *Shapes from code; model to come.*
+
+### Iron, weapons and mail (Żelazo, broń i kolczugi)
+
+- **Iron Mine** — 1 iron ore. *Model from Blender.*
+- **Smelter** — 1 timber, 2 iron ore → 2 iron. *Model from Blender.*
+- **Smithy** — 1 timber, 1 iron → 1 weapons. *Model from Blender.*
+- **Armourer** — 2 iron → 1 mail. *Model from Blender.*
+
+### Leather armour and bows (Zbroje skórzane i łuki)
+
+- **Tannery** — 1 hides → 1 leather armour. *Shapes from code; model to come.*
+- **Fletcher** — 1 timber → 1 bows. *Shapes from code; model to come.*
+
+### Horses (Konie)
+
+- **Stable** — 3 grain → 1 horses. *Shapes from code; model to come.*
+
+### Army and defence (Wojsko i obrona)
+
+- **Barracks** — regiments (see UNITS.md). *Shapes from code; model to come.*
+- Siege Workshop — *planned (§4)*
+- Watchtower — *planned (§4)*
+- Palisade and Gate — *planned (§4)*
+- Keep, levels 2 and 3 — *planned (§4)*
+
+## 3. Production chains
 
 ```
 Farm ──grain──► Windmill ──flour──► Bakery ──bread──► houses, keep, army
@@ -78,7 +140,7 @@ Iron Mine ──ore──► Smelter (+ timber) ──iron──► Smithy (+ ti
 Fletcher ──bows──► archers, crossbowmen
 ```
 
-## 3. Still needed for the full game
+## 4. Still needed for the full game
 
 Not built yet; listed in the order they are worth adding. Names are final, numbers are not.
 
