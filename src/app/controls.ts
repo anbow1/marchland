@@ -3,9 +3,9 @@ import { type Action, ActionState } from './bindings.ts';
 import type { RtsCamera } from './rtsCamera.ts';
 
 // Pointer and keyboard on the map. Mouse: left selects (drag for a box), right
-// orders (drag to set the front, twice for a run), middle drags the map, the
-// wheel zooms to the cursor. Touch: one finger drags the map, two pinch, a tap
-// selects or orders. What the gestures mean is the game's business (`ControlTarget`).
+// orders (drag to set the front, twice for a run), a drag with the middle
+// button turns the map, the wheel zooms to the cursor. Touch: one finger drags
+// the map, two pinch and twist, a tap selects or orders. What the gestures mean is the game's business (`ControlTarget`).
 
 export interface ControlTarget {
   /** Ground point under a screen point; false when there is none. */
@@ -45,6 +45,7 @@ export class Controls {
   private lastOrderY = 0;
   private lastTapMs = 0;
   private pinchPx = 0;
+  private twistRad = 0;
   private mouseX = -1;
   private mouseY = -1;
   private mouseInside = false;
@@ -78,8 +79,24 @@ export class Controls {
     const touch = e.pointerType === 'touch';
     if (touch) this.edgeScroll = false;
     this.pointers.set(e.pointerId, { id: e.pointerId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, button: e.button, touch, dragging: false });
-    if (this.pointers.size === 2) this.pinchPx = this.pinchDistance();
+    if (this.pointers.size === 2) {
+      this.pinchPx = this.pinchDistance();
+      this.twistRad = this.pinchAngle();
+    }
   };
+
+  /** Where the mouse is over the page (CSS pixels), for whatever follows the cursor; false before it has moved or on touch. */
+  cursor(out: { x: number; y: number }): boolean {
+    if (!this.mouseInside || this.mouseX < 0) return false;
+    out.x = this.mouseX;
+    out.y = this.mouseY;
+    return true;
+  }
+
+  private pinchAngle(): number {
+    const [p, q] = [...this.pointers.values()] as [Pointer, Pointer];
+    return Math.atan2(q.y - p.y, q.x - p.x);
+  }
 
   private pinchDistance(): number {
     const [p, q] = [...this.pointers.values()] as [Pointer, Pointer];
@@ -111,11 +128,19 @@ export class Controls {
         this.camera.zoomAt(this.pinchPx / now, this.a.x, this.a.z);
       }
       this.pinchPx = now;
+      // Twist: the map turns with the fingers.
+      const angle = this.pinchAngle();
+      let turned = angle - this.twistRad;
+      if (turned > Math.PI) turned -= Math.PI * 2;
+      else if (turned < -Math.PI) turned += Math.PI * 2;
+      this.camera.rotate(turned);
+      this.twistRad = angle;
       for (const other of this.pointers.values()) other.dragging = true;
       return;
     }
     if (!p.dragging) return;
-    if (p.touch || p.button === 1) this.dragMap(prevX, prevY, p.x, p.y);
+    if (p.touch) this.dragMap(prevX, prevY, p.x, p.y);
+    else if (p.button === 1) this.camera.rotate((p.x - prevX) * CAMERA.rotateDragRadPerPx);
     else if (p.button === 0) this.target.showBox(p.startX, p.startY, p.x, p.y, true);
   };
 

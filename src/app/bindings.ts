@@ -2,7 +2,7 @@
 // game asks for actions, never for key codes. `BINDINGS` is the one place a
 // key is named; change it here (or load a player's own map into it) to rebind.
 
-export type Action = 'panLeft' | 'panRight' | 'panForward' | 'panBack' | 'rotateLeft' | 'rotateRight' | 'zoomIn' | 'zoomOut' | 'halt' | 'selectAll' | 'cancel' | 'debug' | 'add';
+export type Action = 'panLeft' | 'panRight' | 'panForward' | 'panBack' | 'rotateLeft' | 'rotateRight' | 'zoomIn' | 'zoomOut' | 'halt' | 'selectAll' | 'cancel' | 'debug' | 'add' | 'turnBuilding' | 'road';
 
 export const BINDINGS: Record<Action, readonly string[]> = {
   panLeft: ['KeyA', 'ArrowLeft'],
@@ -14,6 +14,8 @@ export const BINDINGS: Record<Action, readonly string[]> = {
   zoomIn: ['Equal', 'NumpadAdd'],
   zoomOut: ['Minus', 'NumpadSubtract'],
   halt: ['KeyH'],
+  turnBuilding: ['KeyR'],
+  road: ['KeyG'],
   selectAll: ['KeyA'],
   cancel: ['Escape'],
   debug: ['F3'],

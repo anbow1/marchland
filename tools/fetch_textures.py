@@ -5,6 +5,7 @@ size of one repeat in meta.json.
 
     python -I tools/fetch_textures.py            # 1024 px into src/assets/photo
     python -I tools/fetch_textures.py --size 512
+    python -I tools/fetch_textures.py --only rock    # one surface
 
 Needs Pillow. The downloads are public-domain files; nothing here needs a key.
 """
@@ -35,6 +36,7 @@ SURFACES = {
     "ashlar": "rustic_stone_wall",
     "bark": "bark_brown_02",
     "leaves": "aerial_grass_rock",
+    "rock": "rock_ground",
 }
 MAPS = {"color": ("diff", 84), "normal": ("nor_gl", 90), "orm": ("arm", 82)}
 BASE = "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k"
@@ -51,10 +53,13 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--size", type=int, default=1024, help="edge of the saved textures in pixels")
     parser.add_argument("--out", type=pathlib.Path, default=pathlib.Path(__file__).resolve().parent.parent / "src" / "assets" / "photo")
+    parser.add_argument("--only", nargs="*", default=None, help="fetch just these surfaces (folder names)")
     args = parser.parse_args()
     if args.size <= 0 or args.size & (args.size - 1):
         raise SystemExit(f"--size '{args.size}' must be a power of two")
     for folder, asset in SURFACES.items():
+        if args.only is not None and folder not in args.only:
+            continue
         target = args.out / folder
         target.mkdir(parents=True, exist_ok=True)
         for name, (suffix, quality) in MAPS.items():

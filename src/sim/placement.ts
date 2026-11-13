@@ -1,4 +1,4 @@
-import { FIELDS, GATHER, TOWN } from '../config.ts';
+import { FIELDS, GATHER, MAP, TOWN } from '../config.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
 import { depositNear, forestCoverAt, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
@@ -55,6 +55,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
   if (Math.hypot(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return fail('tooFar');
+  if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
   if (Math.hypot(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isWater(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');

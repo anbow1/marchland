@@ -1,12 +1,16 @@
 import { Vector3 } from 'three/webgpu';
 import { heightAtM } from '../sim/terrain.ts';
+import type { BuildingKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { ArmyView } from '../render/armyView.ts';
 import { buildForest } from '../render/forestView.ts';
 import { addHorizon } from '../render/horizonView.ts';
 import { shareStaticInstanceShaders } from '../render/instancing.ts';
 import { AFTERNOON, Lighting } from '../render/lighting.ts';
-import { Markers } from '../render/markers.ts';
+import { GroundWorks } from '../render/groundWorks.ts';
+import { buildLand } from '../render/landView.ts';
+import { type GroundTiles, Markers } from '../render/markers.ts';
+import { PeopleView } from '../render/peopleView.ts';
 import { type Quality, Stage } from '../render/stage.ts';
 import { loadSurfaces } from '../render/surfaces.ts';
 import { buildTerrain } from '../render/terrainView.ts';
@@ -17,6 +21,15 @@ import { pitchForDistance, type RtsCamera } from './rtsCamera.ts';
 // Everything drawn: builds the scene behind the loading screen, then each
 // frame reads the world and the camera and renders. Game logic never sees
 // three.js; this is the only place the two meet (rules §10).
+
+/** The building the player is about to place. */
+export interface Ghost {
+  kind: BuildingKind;
+  x: number;
+  z: number;
+  yawRad: number;
+  allowed: boolean;
+}
 
 /** Prints one stage of loading in the form the measuring scripts read. */
 function logStage(name: string, startMs: number): number {
@@ -31,6 +44,8 @@ export class WorldView {
   private town!: TownView;
   private army!: ArmyView;
   private markers!: Markers;
+  private people!: PeopleView;
+  private readonly works = new GroundWorks();
   private readonly offset = { x: 0, y: 0, z: 0 };
   private readonly ndc = new Vector3();
 
@@ -50,7 +65,8 @@ export class WorldView {
     this.lighting = new Lighting(this.stage.renderer, scene, AFTERNOON, quality);
     const surfaces = await loadSurfaces(quality, (share) => onProgress(0.15 + share * 0.25));
     t = logStage('textures', t);
-    scene.add(buildTerrain(surfaces));
+    scene.add(buildTerrain(surfaces, this.works.texture));
+    for (const part of buildLand(surfaces)) scene.add(part);
     addHorizon(scene);
     t = logStage('terrain', t);
     onProgress(0.45);
@@ -58,6 +74,8 @@ export class WorldView {
     t = logStage('forest', t);
     onProgress(0.55);
     this.town = new TownView(scene, surfaces);
+    this.town.warm();
+    this.people = new PeopleView(scene, surfaces);
     this.army = new ArmyView(scene);
     this.markers = new Markers(scene);
     shareStaticInstanceShaders(this.stage.renderer, scene);
@@ -77,8 +95,8 @@ export class WorldView {
     onProgress(1);
   }
 
-  /** Draws a frame of the world as it is now. */
-  render(world: World, camera: RtsCamera, selected: ReadonlySet<number>, selectedPlot: number): void {
+  /** Draws a frame of the world as it is now. `ghost` is the building being placed and `tiles` the road or fields being laid, if any. */
+  render(world: World, camera: RtsCamera, selected: ReadonlySet<number>, selectedPlot: number, ghost: Ghost | null, tiles: GroundTiles | null, frameSeconds: number): void {
     const pose = camera.shown;
     const targetY = heightAtM(pose.targetX, pose.targetZ);
     camera.offset(this.offset);
@@ -89,9 +107,12 @@ export class WorldView {
     // The view reaches further along the ground the flatter the camera looks.
     const reachM = (pose.distanceM * 0.75) / Math.sin(pitchForDistance(pose.distanceM));
     this.lighting.update(cam, pose.targetX, targetY, pose.targetZ, reachM);
+    this.works.update(world, frameSeconds);
     this.town.update(world);
+    this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
+    this.people.update(world);
     this.army.update(world);
-    this.markers.update(world, selected, selectedPlot, pose.yawRad);
+    this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);
     this.stage.render();
   }
 

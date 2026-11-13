@@ -427,15 +427,20 @@ export const AI = {
 
 export const CAMERA = {
   minDistanceM: 25,
-  maxDistanceM: 260,
+  /** Far enough to see the whole 400 m map at once on a wide screen. */
+  maxDistanceM: 760,
   startDistanceM: 110,
-  /** Pitch below the horizon: flatter up close to see the ranks, steeper from afar to read the map. */
+  /** Pitch below the horizon: flatter up close to see the ranks, nearly straight down from afar to read the map. */
   pitchNearRad: 0.68,
-  pitchFarRad: 1.08,
+  pitchFarRad: 1.36,
   fovDeg: 40,
   /** Pan speed as a share of the camera distance per second. */
   panSpeedPerDistance: 0.9,
   rotateSpeedRadS: 1.4,
+  /** Turn for each pixel the mouse is dragged with the middle button held. */
+  rotateDragRadPerPx: 0.006,
+  /** Turn of one press of the on-screen rotate buttons. */
+  rotateStepRad: Math.PI / 4,
   zoomStepFactor: 1.18,
   /** Time constant of the smoothing (s): tuned by hand, feels right at 60 fps. */
   smoothingS: 0.12,

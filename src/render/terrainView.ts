@@ -1,16 +1,18 @@
-import { cameraPosition, float, int, mix, normalWorld, positionWorld, smoothstep, texture, transformNormalToView, vec2, vec3 } from 'three/tsl';
-import { type BufferAttribute, ClampToEdgeWrapping, DataTexture, LinearFilter, LinearMipmapLinearFilter, Mesh, MeshStandardNodeMaterial, type Node, NoColorSpace, PlaneGeometry, RedFormat, RepeatWrapping, RGBAFormat, UnsignedByteType } from 'three/webgpu';
+import { cameraPosition, float, int, max, mix, normalWorld, positionWorld, smoothstep, texture, transformNormalToView, vec2, vec3 } from 'three/tsl';
+import { type BufferAttribute, ClampToEdgeWrapping, DataTexture, LinearFilter, LinearMipmapLinearFilter, Mesh, MeshStandardNodeMaterial, type Node, NoColorSpace, PlaneGeometry, RedFormat, RepeatWrapping, RGBAFormat, type Texture, UnsignedByteType } from 'three/webgpu';
 import { MAP, TOWN } from '../config.ts';
 import { tileFbm } from '../core/noise.ts';
-import { forestCoverAt, heightAtM, plotX, plotZ, townX, townZ } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, heightAtM, lakeX, lakeZ, townX, townZ } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
 import { layerOf, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
 
 // The ground: one mesh from the simulation's height function, reaching well
-// past the playable square so the horizon is land, not a void. Four scanned
-// surfaces (meadow, dry grass, trodden earth, forest floor) are laid by a
-// cover map drawn from what the rules know: where the forest is, where the
-// towns and the road are, which ground is high and dry. Each is sampled at its
+// past the playable square so the horizon is land, not a void. Six scanned
+// surfaces (meadow, dry grass, forest floor, bare rock, trodden earth,
+// ploughed soil) are laid by two maps. The cover map is drawn once from what
+// the rules know: where the forest is, which ground is high and dry, where
+// rock breaks through and where the lakes' banks are. The works map
+// (groundWorks.ts) changes as people build: roads, yards, fields and the corn. Each is sampled at its
 // real size up close and at a much larger one from afar, and toned by a slow
 // noise, so a hundred repeats across the screen do not read as a grid
 // (GUIDE §2b: flat ground, tiling).
@@ -24,6 +26,9 @@ const COVER_PX = 768;
 const FAR_SCALE = 6.3;
 const FAR_FROM_M = 70;
 const FAR_FULL_M = 230;
+/** Turf gives way to rock between these slopes (rise over run). */
+const STEEP_FROM = 0.2;
+const STEEP_FULL = 0.34;
 /**
  * The scans were taken on worn, late-season ground; high summer grass is greener. A tint per surface
  * (linear RGB multipliers, tuned by eye against the scans' own green patches), kept apart from the scans.
@@ -47,28 +52,22 @@ function near(distanceM: number, radiusM: number, fadeM: number): number {
   return 1 - Math.min(1, Math.max(0, (distanceM - radiusM) / fadeM));
 }
 
-/** 0…1: how much of the ground at a point is trodden earth: the road between the towns, the yards, the lanes to the keep. */
+/** 0…1: ground that was trodden before anyone built: the old road between the two keeps and the lakes' muddy banks. */
 function earthAt(x: number, z: number): number {
-  let earth = near(distanceToSegmentM(x, z, townX(0), townZ(0), townX(1), townZ(1)), 1.8, 2.2);
+  let earth = near(distanceToSegmentM(x, z, townX(0), townZ(0), townX(1), townZ(1)), 1.6, 2.2);
   for (const side of [0, 1] as const satisfies readonly Side[]) {
-    const tx = townX(side);
-    const tz = townZ(side);
-    const d = Math.hypot(x - tx, z - tz);
-    if (d > TOWN.outerRadiusM + 20) continue;
-    // The yard round the keep.
-    earth = Math.max(earth, near(d, 10, 2.5));
-    for (let plot = 0; plot < TOWN.plotCount; plot++) {
-      const px = plotX(side, plot);
-      const pz = plotZ(side, plot);
-      // Each plot's own yard, and a lane from it towards the keep (outer plots reach the inner ring).
-      earth = Math.max(earth, near(Math.hypot(x - px, z - pz), 4.2, 2.2));
-      const reach = plot < TOWN.innerPlots ? 1 : 0.45;
-      earth = Math.max(earth, 0.8 * near(distanceToSegmentM(x, z, px, pz, px + (tx - px) * reach, pz + (tz - pz) * reach), 0.5, 1.5));
-    }
-    // A lane round the inner ring ties the plots together.
-    earth = Math.max(earth, 0.8 * near(Math.abs(d - TOWN.innerRadiusM - 7), 0.6, 1.5));
+    // The bank and the bed of the lake.
+    earth = Math.max(earth, near(Math.hypot(x - lakeX(side), z - lakeZ(side)), TOWN.lakeRadiusM * 1.02, 4));
   }
   return earth;
+}
+
+/** 0…1: bare rock: the outcrops of stone and ore, and slopes too steep to hold turf. */
+function rockAt(x: number, z: number): number {
+  let rock = 0;
+  for (const d of DEPOSITS) rock = Math.max(rock, near(Math.hypot(x - d.x, z - d.z), TOWN.depositRadiusM * 0.9, 5));
+  const slope = Math.hypot(heightAtM(x + 2, z) - heightAtM(x - 2, z), heightAtM(x, z + 2) - heightAtM(x, z - 2)) / 4;
+  return Math.max(rock, Math.min(1, Math.max(0, (slope - STEEP_FROM) / (STEEP_FULL - STEEP_FROM))));
 }
 
 /** A tiling greyscale noise texture, built once in memory. */
@@ -91,7 +90,7 @@ function noiseTexture(sizePx: number): DataTexture {
   return tex;
 }
 
-/** What covers the ground, per texel: R = dryness, G = trodden earth, B = forest floor. */
+/** What covers the ground, per texel: R = dryness, G = trodden earth, B = forest floor, A = bare rock. */
 function coverTexture(extentM: number): DataTexture {
   const data = new Uint8Array(COVER_PX * COVER_PX * 4);
   for (let py = 0; py < COVER_PX; py++) {
@@ -104,7 +103,7 @@ function coverTexture(extentM: number): DataTexture {
       data[o] = Math.round(dryness * 255);
       data[o + 1] = Math.round(earthAt(x, z) * 255);
       data[o + 2] = Math.round(forestCoverAt(x, z) * 255);
-      data[o + 3] = 255;
+      data[o + 3] = Math.round(rockAt(x, z) * 255);
     }
   }
   const tex = new DataTexture(data, COVER_PX, COVER_PX, RGBAFormat, UnsignedByteType);
@@ -116,7 +115,8 @@ function coverTexture(extentM: number): DataTexture {
   return tex;
 }
 
-export function buildTerrain(lib: SurfaceLibrary): Mesh {
+/** `works` is the map of roads, yards and fields (groundWorks.ts): it covers the playable square. */
+export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const extentM = MAP.sizeM + 2 * TERRAIN_MARGIN_M;
   const cells = Math.round(extentM / CELL_M);
   const geometry = new PlaneGeometry(extentM, extentM, cells, cells).rotateX(-Math.PI / 2);
@@ -138,19 +138,29 @@ export function buildTerrain(lib: SurfaceLibrary): Mesh {
   const ragged = fine.mul(0.6).add(coarse.mul(0.4)).sub(0.5);
   const dry = smoothstep(0.5, 0.74, what.r.add(patch.sub(0.5).mul(0.7)).add(ragged.mul(0.6)));
   const forest = smoothstep(0.3, 0.6, what.b.add(ragged.mul(0.45)));
-  const earth = smoothstep(0.44, 0.56, what.g.add(ragged.mul(0.55)));
+  const made = texture(works, xz.div(MAP.sizeM).add(0.5));
+  const earth = smoothstep(0.44, 0.56, max(what.g, made.r).add(ragged.mul(0.55)));
+  const rock = smoothstep(0.38, 0.62, what.a.add(ragged.mul(0.7)));
+  const soil = smoothstep(0.4, 0.6, made.g.add(ragged.mul(0.2)));
   // v runs against z so the scans' normals keep their handedness on the ground (tangent +X, bitangent −Z).
   const ground = vec2(positionWorld.x, positionWorld.z.negate());
   const far = smoothstep(FAR_FROM_M, FAR_FULL_M, positionWorld.sub(cameraPosition).length()).mul(0.8);
   const uvOf = (id: SurfaceId, scale: number): Node<'vec2'> => ground.div(lib.sizeM[id] * scale);
-  /** One of the three maps of a surface, blended over the four ground surfaces. */
-  const blend = (sample: (id: SurfaceId) => Node<'vec3'>): Node<'vec3'> => mix(mix(mix(sample('meadow'), sample('dry_grass'), dry), sample('forest_floor'), forest), sample('dirt'), earth);
-  const colour = blend((id) => {
+  /** One of the three maps of a surface, blended over the ground surfaces: nature first, then what people made of it. */
+  const blend = (sample: (id: SurfaceId) => Node<'vec3'>): Node<'vec3'> => {
+    const wild = mix(mix(mix(sample('meadow'), sample('dry_grass'), dry), sample('forest_floor'), forest), sample('rock'), rock);
+    return mix(mix(wild, sample('dirt'), earth), sample('farm_soil'), soil);
+  };
+  const scanned = blend((id) => {
     const near = texture(lib.colour, uvOf(id, 1)).depth(int(layerOf(id))).rgb;
     const wide = texture(lib.colour, uvOf(id, FAR_SCALE).add(vec2(0.31, 0.67))).depth(int(layerOf(id))).rgb;
     const season = SEASON_TINT[id];
     return mix(near, wide, far).mul(season ? vec3(season[0], season[1], season[2]) : vec3(1));
   });
+  // Corn on the ploughed strips: green shoots that thicken and turn gold as they ripen.
+  const corn = made.b;
+  const cornColour = mix(vec3(0.1, 0.2, 0.035), vec3(0.5, 0.36, 0.09), smoothstep(0.62, 0.95, corn)).mul(float(0.7).add(fine.mul(0.6)));
+  const colour = mix(scanned, cornColour, smoothstep(0.1, 0.45, corn.add(ragged.mul(0.25))).mul(soil));
   // A slow drift of tone, so one meadow is not one green.
   const tone = float(0.62).add(smoothstep(0.3, 0.7, fine).mul(0.42)).add(coarse.mul(0.26)).add(patch.mul(0.2));
   material.colorNode = colour.mul(tone);

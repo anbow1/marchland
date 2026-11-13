@@ -1,7 +1,7 @@
-import { Color, DoubleSide, DynamicDrawUsage, InstancedMesh, Matrix4, MeshBasicNodeMaterial, MeshStandardNodeMaterial, Quaternion, RingGeometry, type Scene, Vector3 } from 'three/webgpu';
+import { Color, DoubleSide, DynamicDrawUsage, InstancedMesh, Matrix4, MeshBasicNodeMaterial, MeshStandardNodeMaterial, PlaneGeometry, Quaternion, RingGeometry, type Scene, Vector3 } from 'three/webgpu';
 import { TOWN } from '../config.ts';
 import { placeX, placeZ, type Regiment } from '../sim/regiment.ts';
-import { heightAtM, plotX, plotZ } from '../sim/terrain.ts';
+import { heightAtM, townX, townZ } from '../sim/terrain.ts';
 import { PLAYER } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
@@ -9,7 +9,8 @@ import { TEAM_HEX } from './palette.ts';
 
 // What the player reads the field by: a banner over every regiment, rings
 // under the men of selected regiments, ghost marks where they have been sent,
-// and outlines on the player's empty building plots.
+// a ring round the selected building, and the tiles of a road or a field the
+// player is about to lay.
 
 const MAX_BANNERS = 48;
 const MAX_RINGS = 260;
@@ -18,13 +19,24 @@ const LIFT_M = 0.12;
 
 const SELECT_COLOUR = new Color(0xf2e6a0);
 const GHOST_COLOUR = new Color(0x9fe08a);
-const PLOT_COLOUR = new Color(0xe8dcb0);
 const PLOT_SELECTED = new Color(0xffffff);
+const TILE_OK = new Color(0x9fe08a);
+const TILE_BAD = new Color(0xe0604a);
+const MAX_TILES = 400;
+
+/** Flat rectangles to draw on the ground this frame: the road being drawn, a farm's fields-to-be. */
+export interface GroundTiles {
+  /** x, z, length (across), width (deep), yaw: five numbers a tile. */
+  values: number[];
+  count: number;
+  allowed: boolean;
+}
 
 export class Markers {
   private readonly banners: InstancedMesh;
   private readonly rings: InstancedMesh;
   private readonly plots: InstancedMesh;
+  private readonly tiles: InstancedMesh;
   private readonly m = new Matrix4();
   private readonly p = new Vector3();
   private readonly q = new Quaternion();
@@ -46,9 +58,11 @@ export class Markers {
     const flat = new MeshBasicNodeMaterial({ name: 'marker', transparent: true, opacity: 0.85, depthWrite: false, side: DoubleSide, fog: false });
     this.rings = new InstancedMesh(new RingGeometry(0.42, 0.56, 14).rotateX(-Math.PI / 2), flat, MAX_RINGS);
     this.rings.name = 'selection rings';
-    this.plots = new InstancedMesh(new RingGeometry(TOWN.buildingRadiusM - 0.5, TOWN.buildingRadiusM, 28).rotateX(-Math.PI / 2), flat, TOWN.plotCount);
-    this.plots.name = 'plot outlines';
-    for (const mesh of [this.banners, this.rings, this.plots]) {
+    this.plots = new InstancedMesh(new RingGeometry(TOWN.buildingRadiusM + 0.4, TOWN.buildingRadiusM + 0.9, 36).rotateX(-Math.PI / 2), flat, 1);
+    this.plots.name = 'building ring';
+    this.tiles = new InstancedMesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new MeshBasicNodeMaterial({ name: 'tiles', transparent: true, opacity: 0.5, depthWrite: false, side: DoubleSide, fog: false }), MAX_TILES);
+    this.tiles.name = 'ground tiles';
+    for (const mesh of [this.banners, this.rings, this.plots, this.tiles]) {
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -58,6 +72,7 @@ export class Markers {
     }
     this.rings.renderOrder = 2;
     this.plots.renderOrder = 2;
+    this.tiles.renderOrder = 2;
   }
 
   private ring(i: number, x: number, z: number, scale: number, colour: Color): void {
@@ -68,8 +83,8 @@ export class Markers {
     this.rings.setColorAt(i, colour);
   }
 
-  /** `cameraYawRad` turns the flags to face the camera; `selected` holds regiment ids; `selectedPlot` is -1 for none. */
-  update(world: World, selected: ReadonlySet<number>, selectedPlot: number, cameraYawRad: number): void {
+  /** `cameraYawRad` turns the flags to face the camera; `selected` holds regiment ids; `selectedPlot` is -1 for the keep, -2 for none. */
+  update(world: World, selected: ReadonlySet<number>, selectedPlot: number, cameraYawRad: number, tiles: GroundTiles | null): void {
     let banners = 0;
     let rings = 0;
     for (const r of world.regiments) {
@@ -99,23 +114,42 @@ export class Markers {
     if (this.banners.instanceColor) this.banners.instanceColor.needsUpdate = true;
     if (this.rings.instanceColor) this.rings.instanceColor.needsUpdate = true;
 
-    // Outlines on the player's empty plots.
-    let plots = 0;
+    // A ring round the selected building (or the keep).
     const town = world.towns[PLAYER];
-    for (let plot = 0; plot < TOWN.plotCount; plot++) {
-      if (town.plots[plot] && plot !== selectedPlot) continue;
-      const x = plotX(PLAYER, plot);
-      const z = plotZ(PLAYER, plot);
-      this.p.set(x, heightAtM(x, z) + LIFT_M, z);
+    const b = selectedPlot >= 0 ? town.plots[selectedPlot] : null;
+    if (b || selectedPlot === -1) {
+      const x = b ? b.x : townX(PLAYER);
+      const z = b ? b.z : townZ(PLAYER);
+      const scale = b ? 1 : (TOWN.keepRadiusM + 1.5) / TOWN.buildingRadiusM;
+      this.p.set(x, heightAtM(x, z) + LIFT_M * 2, z);
       this.q.identity();
-      this.s.set(1, 1, 1);
-      this.plots.setMatrixAt(plots, this.m.compose(this.p, this.q, this.s));
-      this.plots.setColorAt(plots, plot === selectedPlot ? PLOT_SELECTED : PLOT_COLOUR);
-      plots++;
+      this.s.set(scale, 1, scale);
+      this.plots.setMatrixAt(0, this.m.compose(this.p, this.q, this.s));
+      this.plots.setColorAt(0, PLOT_SELECTED);
+      this.plots.count = 1;
+      this.plots.instanceMatrix.needsUpdate = true;
+      if (this.plots.instanceColor) this.plots.instanceColor.needsUpdate = true;
+    } else {
+      this.plots.count = 0;
     }
-    this.plots.count = plots;
-    this.plots.instanceMatrix.needsUpdate = true;
-    if (this.plots.instanceColor) this.plots.instanceColor.needsUpdate = true;
+
+    let shown = 0;
+    if (tiles) {
+      const colour = tiles.allowed ? TILE_OK : TILE_BAD;
+      for (let i = 0; i < tiles.count && shown < MAX_TILES; i++) {
+        const x = tiles.values[i * 5] as number;
+        const z = tiles.values[i * 5 + 1] as number;
+        this.p.set(x, heightAtM(x, z) + LIFT_M * 2.5, z);
+        this.q.setFromAxisAngle(this.up, tiles.values[i * 5 + 4] as number);
+        this.s.set(tiles.values[i * 5 + 2] as number, 1, tiles.values[i * 5 + 3] as number);
+        this.tiles.setMatrixAt(shown, this.m.compose(this.p, this.q, this.s));
+        this.tiles.setColorAt(shown, colour);
+        shown++;
+      }
+    }
+    this.tiles.count = shown;
+    this.tiles.instanceMatrix.needsUpdate = true;
+    if (this.tiles.instanceColor) this.tiles.instanceColor.needsUpdate = true;
   }
 
   /** Small marks where a selected regiment's men will stand once its move is done. */

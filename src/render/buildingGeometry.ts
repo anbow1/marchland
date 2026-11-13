@@ -77,6 +77,28 @@ const BUILDERS: Record<BuildingKind, Build> = {
     if (level >= 2) P.haystack(b, 0.9, -3.9, 1.0);
     P.cart(b, -0.6, -3.2, 1.2, level >= 2 ? P.CROP : 0);
   },
+  fisher: (b, level) => {
+    P.house(b, { cx: -2.2, cz: -2.4, sx: 4.8, sz: 3.8, wallH: 2.1, wall: P.BOARDS_DARK, roof: P.THATCH, hip: 0.8, pitch: 1.4 });
+    // Drying racks hung with the catch.
+    for (let rack = 0; rack < (level >= 2 ? 2 : 1); rack++) {
+      const z = 1.6 + rack * 1.8;
+      b.box(-3.4, 0, z, 0.12, 1.9, 0.12, P.TIMBER);
+      b.box(0.2, 0, z, 0.12, 1.9, 0.12, P.TIMBER);
+      b.box(-1.6, 1.85, z, 3.8, 0.1, 0.1, P.TIMBER);
+      for (let i = 0; i < 7; i++) b.box(-3.1 + i * 0.5, 1.25, z, 0.14, 0.6, 0.06, P.STONE_LIGHT);
+    }
+    // A boat hauled out and turned over, its oars against it.
+    b.box(3.0, 0, 0.6, 1.5, 0.5, 4.2, P.BOARDS);
+    b.roof(3.0, 0.5, 0.6, 1.5, 4.2, 0.45, 0.6, 0, 0.06, P.BOARDS_DARK, P.TIMBER);
+    b.strut([4.1, 0, -0.8], [3.5, 1.0, 1.6], 0.07, 0.07, P.BOARDS);
+    // A net spread to dry on stakes.
+    for (const x of [1.2, 3.6]) b.box(x, 0, 3.9, 0.1, 1.4, 0.1, P.TIMBER);
+    b.quad([1.2, 1.35, 3.9], [1.2, 0.3, 3.9], [3.6, 0.3, 3.9], [3.6, 1.35, 3.9], P.STRAW);
+    b.quad([3.6, 1.35, 3.9], [3.6, 0.3, 3.9], [1.2, 0.3, 3.9], [1.2, 1.35, 3.9], P.STRAW);
+    P.barrel(b, 0.9, -0.6);
+    P.barrel(b, 1.6, -1.3, 0.85);
+    if (level >= 3) P.crate(b, 0.6, -2.4);
+  },
   bakery: (b, level) => {
     P.house(b, { cx: -1.0, cz: -1.4, sx: 6.4, sz: 4.6, wallH: 2.8, wall: P.PLASTER, roof: P.TILE, pitch: 1.3, frame: true });
     // The oven: a stone dome with a tall flue.
