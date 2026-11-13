@@ -2,7 +2,7 @@ import { Color, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three/webgpu
 import { MAP } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { forestCoverAt, heightAtM } from '../sim/terrain.ts';
-import { markStaticInstances } from './instancing.ts';
+import { chunkedInstances } from './chunks.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import type { Quality } from './stage.ts';
 import { layerOf, surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
@@ -94,21 +94,11 @@ export function buildForest(quality: Quality, lib: SurfaceLibrary): InstancedMes
       (tints[species] as Color[]).push(new Color(shade, shade * rng.range(0.94, 1.06), shade * 0.95));
     }
   }
-  const meshes: InstancedMesh[] = [];
   const builders = [pineGeometry(paints), broadleafGeometry(paints)];
+  const meshes: InstancedMesh[] = [];
   for (let species = 0; species < 2; species++) {
-    const list = matrices[species] as Matrix4[];
-    const mesh = new InstancedMesh((builders[species] as MeshBuilder).build(), material, Math.max(1, list.length));
-    mesh.name = species === 0 ? 'pines' : 'broadleaves';
-    mesh.count = list.length;
-    for (let i = 0; i < list.length; i++) {
-      mesh.setMatrixAt(i, list[i] as Matrix4);
-      mesh.setColorAt(i, (tints[species] as Color[])[i] as Color);
-    }
-    mesh.castShadow = true;
-    mesh.receiveShadow = true;
-    mesh.computeBoundingSphere();
-    meshes.push(markStaticInstances(mesh));
+    const scatter = { matrices: matrices[species] as Matrix4[], colours: tints[species] as Color[] };
+    meshes.push(...chunkedInstances((builders[species] as MeshBuilder).build(), material, scatter, species === 0 ? 'pines' : 'broadleaves'));
   }
   return meshes;
 }

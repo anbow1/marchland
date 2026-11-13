@@ -94,6 +94,23 @@ export async function loadSurfaces(quality: Quality, onProgress: (share: number)
   };
 }
 
+/**
+ * Lets go of the CPU copies of the scans once the GPU has them: three keeps a texture's pixels in
+ * `image.data` for as long as the texture lives, which for the three arrays on High is about 226 MB of
+ * JavaScript heap doing nothing. Call after every surface has been drawn once (the warm-up frame). The
+ * arrays are never updated again; a lost GPU context would need a reload of the page.
+ */
+export function releaseCpuCopies(lib: SurfaceLibrary): number {
+  let freed = 0;
+  for (const texture of [lib.colour, lib.normal, lib.orm]) {
+    const image = texture.image as { data: Uint8Array | null };
+    if (!image.data) continue;
+    freed += image.data.byteLength;
+    image.data = null;
+  }
+  return freed;
+}
+
 /** A one-texel array texture of a single value per layer. */
 function flatArray(r: number, g: number, b: number): DataArrayTexture {
   const data = new Uint8Array(4 * SURFACES.length);

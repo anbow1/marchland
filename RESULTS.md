@@ -5,6 +5,52 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Wydajność: symulacja, pamięć, rysowanie
+
+Jak mierzone: symulacja w Node (bez GPU, liczby wiarygodne); strona w Chromium na
+programowym GPU (SwiftShader) — **liczniki dokładne, czasy rysowania nie**: ten
+kontener nie ma karty graficznej, a czekanie na nią dolicza się do odcinków po
+rysowaniu (licznik gry pokazywał np. „hud 13 ms”, a sam interfejs mierzony osobno
+to 0,09 ms).
+
+**Symulacja** (60 kroków na sekundę, budżet 2 ms na krok; partia komputer–komputer
+do 35. minuty, potem bitwa obok miast po 31 budynków i 64 mieszkańców):
+
+| | przed | po |
+|---|---|---|
+| bitwa, średnio / najgorszy krok | 0,45 / 9,0 ms | 0,28 / 1,4 ms |
+| kroki powyżej 2 ms w całej partii | 386 | 59 |
+| alokacje na 5 minut gry | 612 MB | 111 MB |
+| odśmiecania pamięci w partii | 344 | 91 |
+
+Przyczyny: `Math.hypot` alokuje przy każdym wywołaniu (55 % alokacji) — zastąpiony;
+jedzenie zwracało nową tablicę co krok dla każdego domu; żołnierze liczyli
+odległość do każdego budynku obu miast w każdym kroku (17 % czasu) — teraz test
+siatki zabudowy; szukanie drogi do celu w wodzie przeszukiwało całą mapę (8,4 ms)
+— cel przesuwany na najbliższe wolne pole, limit 12 000 pól na wyszukanie,
+budżet 8 000 pól na krok.
+
+**Przeglądarka** (High, 1280 × 720):
+
+| | przed | po |
+|---|---|---|
+| sterta JS | 292 MB | 91 MB |
+| widok miasta: trójkąty / wywołania | 864 k / 100 | 532 k / 179 |
+| cała mapa z góry: trójkąty / wywołania | ~1 M / ~100 | 974 k / 369 |
+| bitwa 182 żołnierzy z bliska | — | 558 k / 185 |
+
+Kopie skanów (226 MB) są zwalniane po pierwszej klatce, gdy karta je ma. Las,
+kamienie i krzaki są podzielone na kwadraty 150 m, więc niewidoczne kwadraty
+pomija i obraz, i cienie. Co klatkę: widoki miasta, ludzi, winorośli, armii,
+znaczników razem ok. 0,1 ms; interfejs 0,09 ms; przerysowanie dróg i pól
+3,6 ms, a wycinka drzew 2,7 ms tylko po zmianie na mapie (najwyżej 2 razy na
+sekundę).
+
+Wczytywanie: 83 potoki graficzne, 106 modułów shaderów; tekstury na karcie
+291 MB (High; na Low ¼ i bez map normalnych). **Do zrobienia**: tekstury KTX2
+(kamień milowy M6) — największa pozostała pozycja pamięci na telefonie; pomiar na
+prawdziwym telefonie i karcie graficznej.
+
 ## 2026-11-13 · Milicja tylko do obrony; strojenie po zmianie
 
 - **Milicja = straż domowa**: rozkazy tylko do 115 m od własnego zamku, bez ataku

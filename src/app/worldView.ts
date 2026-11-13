@@ -14,7 +14,7 @@ import { type GroundTiles, Markers } from '../render/markers.ts';
 import { PeopleView } from '../render/peopleView.ts';
 import { VinesView } from '../render/vinesView.ts';
 import { type Quality, Stage } from '../render/stage.ts';
-import { loadSurfaces } from '../render/surfaces.ts';
+import { loadSurfaces, releaseCpuCopies } from '../render/surfaces.ts';
 import { buildTerrain } from '../render/terrainView.ts';
 import { TownView } from '../render/townView.ts';
 import { warmAllPipelines } from '../render/warmup.ts';
@@ -100,6 +100,8 @@ export class WorldView {
     this.lighting.update(this.stage.camera, 0, 0, 0, 150);
     warmAllPipelines(scene, () => this.stage.render());
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    // Everything has been drawn once, so the GPU holds every scan: the CPU copies can go.
+    console.log(`[load] released ${(releaseCpuCopies(surfaces) / 1e6).toFixed(0)} MB of texture copies`);
     logStage('warm-up', t);
     console.log(`[load] total: ${((performance.now() - t0) / 1000).toFixed(2)} s`);
     onProgress(1);

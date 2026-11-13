@@ -5,7 +5,7 @@ import { fbm2, tileFbm } from '../core/noise.ts';
 import { Rng } from '../core/rng.ts';
 import { DEPOSITS, forestCoverAt, heightAtM, isWater, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
-import { markStaticInstances } from './instancing.ts';
+import { chunkedInstances } from './chunks.ts';
 import { MeshBuilder, type Paint, type Vec3 } from './meshBuilder.ts';
 import { layerOf, surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
@@ -82,7 +82,7 @@ function buildWater(): Mesh[] {
   return meshes;
 }
 
-function buildRocks(lib: SurfaceLibrary): InstancedMesh {
+function buildRocks(lib: SurfaceLibrary): InstancedMesh[] {
   const rng = new Rng(MAP.terrainSeed + 303);
   // A few shapes, turned and scaled per instance.
   const builder = new MeshBuilder(0, rockPaints(lib));
@@ -127,20 +127,11 @@ function buildRocks(lib: SurfaceLibrary): InstancedMesh {
       add(x, z, size, STONE_TINT);
     }
   }
-  const mesh = new InstancedMesh(builder.build(), surfaceMaterial(lib, 'rocks'), matrices.length);
-  mesh.name = 'rocks';
-  for (let i = 0; i < matrices.length; i++) {
-    mesh.setMatrixAt(i, matrices[i] as Matrix4);
-    mesh.setColorAt(i, tints[i] as Color);
-  }
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.computeBoundingSphere();
-  return markStaticInstances(mesh);
+  return chunkedInstances(builder.build(), surfaceMaterial(lib, 'rocks'), { matrices, colours: tints }, 'rocks');
 }
 
 /** A lump of leaves: the same shape as a boulder, taller and softer. */
-function buildBushes(lib: SurfaceLibrary): InstancedMesh {
+function buildBushes(lib: SurfaceLibrary): InstancedMesh[] {
   const rng = new Rng(MAP.terrainSeed + 404);
   const paints = new Map<number, Paint>([
     [ROCK, { layer: layerOf('leaves'), sizeM: lib.sizeM.leaves, tintHex: 0xb8d880 }],
@@ -179,17 +170,7 @@ function buildBushes(lib: SurfaceLibrary): InstancedMesh {
       tints.push(new Color(tone, tone * 1.04, tone * 0.92));
     }
   }
-  const mesh = new InstancedMesh(builder.build(), surfaceMaterial(lib, 'bushes'), Math.max(1, matrices.length));
-  mesh.name = 'bushes';
-  mesh.count = matrices.length;
-  for (let i = 0; i < matrices.length; i++) {
-    mesh.setMatrixAt(i, matrices[i] as Matrix4);
-    mesh.setColorAt(i, tints[i] as Color);
-  }
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
-  mesh.computeBoundingSphere();
-  return markStaticInstances(mesh);
+  return chunkedInstances(builder.build(), surfaceMaterial(lib, 'bushes'), { matrices, colours: tints }, 'bushes');
 }
 
 export interface Land {
@@ -203,5 +184,8 @@ export interface Land {
 export function buildLand(lib: SurfaceLibrary): Land {
   const rocks = buildRocks(lib);
   const bushes = buildBushes(lib);
-  return { parts: [...buildWater(), rocks, bushes], scattered: [{ mesh: rocks, reachM: 0.8 }, { mesh: bushes, reachM: 1.0 }] };
+  return {
+    parts: [...buildWater(), ...rocks, ...bushes],
+    scattered: [...rocks.map((mesh) => ({ mesh, reachM: 0.8 })), ...bushes.map((mesh) => ({ mesh, reachM: 1.0 }))],
+  };
 }
