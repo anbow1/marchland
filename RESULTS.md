@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Wszystkie budynki z Blendera, dym
+
+- Dziewięć nowych modeli: kamieniołom, zagroda, rybak, chlewnia, masarnia,
+  garbarnia, łuczarz, stajnia, koszary (1–5 tys. trójkątów). Razem 19 budynków
+  × 3 poziomy = 57 plików, 11 MB (bez kompresji). Lista znaków rozpoznawczych:
+  `docs/BLENDER.md`.
+- Dym z kominów chat z mieszkańcami, warsztatów przy pracy, pieca i mielerza
+  huty (do 220 źródeł × 7 kłębów, jeden obiekt instancjonowany).
+- Testy 57/57.
+
 ## 2026-11-13 · Wydajność: symulacja, pamięć, rysowanie
 
 Jak mierzone: symulacja w Node (bez GPU, liczby wiarygodne); strona w Chromium na

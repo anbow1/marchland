@@ -30,16 +30,37 @@ Skąd modele:
   uprościć poniżej limitu.
 
 **Zrobione (2026-11-13)** skryptami `tools/blender/` (`build.py` buduje wszystko do
-`public/buildings/` z indeksem `index.json`; podgląd: `gallery.html`): chata,
-drwal, piekarnia, młyn (skrzydła jako osobna, obracana część), huta, kuźnia,
-płatnerz, kopalnia, winnica, winiarnia — po 3 poziomy, 1,8–9 tys. trójkątów.
-Każdy budynek specjalistyczny ma znak rozpoznawczy widoczny z daleka: stos kłód
-i pieniek drwala, kopuła pieca i precel piekarni, skrzydła młyna, kamienny
-piec, miechy i hałdy żużla huty, otwarte palenisko i kowadło kuźni, stojaki
-zbroi i tarcze w barwach strony u płatnerza, sztolnia z torami i wózkiem
-kopalni, prasa i pergola winnicy, beczki i wiecha winiarni. Zostały do zrobienia:
-kamieniołom, zagroda, rybak, chlewnia, masarnia, garbarnia, łuczarz, stajnia,
-koszary, zamek.
+`public/buildings/` z indeksem `index.json`; podgląd: `gallery.html`): **wszystkie 19
+budynków gry** po 3 poziomy, 1–9 tys. trójkątów każdy. Każdy ma znak rozpoznawczy
+widoczny z daleka:
+
+| Budynek | Znak rozpoznawczy |
+|---|---|
+| chata | szachulec, strzecha (poz. 1) albo gont, komin z dymem |
+| drwal | otwarta szopa pełna kłód, pnie przy drodze, pieniek z siekierą, kozioł z piłą |
+| kamieniołom | schodkowa ściana skały, rzędy ciosów, żuraw, szopa kamieniarzy |
+| zagroda | dom pod strzechą, stodoła, stogi, wóz, studnia; pola za nią rysuje gra |
+| rybak | chata nad wodą, suszarnie z rybami, odwrócona łódź, sieć |
+| młyn | koźlak na palach; skrzydła kręcą się, gdy miele |
+| piekarnia | kopuła pieca z kominem, precel nad drzwiami, stragan z chlebem |
+| chlewnia | niski chlew, błotnisty wybieg ze świniami, koryto |
+| masarnia | wędzarnia z dymem, stojak z mięsem i kiełbasami, pieniek z tasakiem |
+| winnica | biały dom z prasą i pergolą; rzędy winorośli na polach rysuje gra |
+| winiarnia | kamienna piwnica, skład beczek, wiecha, wóz winogron |
+| garbarnia | kadzie z garbnikiem, rozpięte skóry na ramach, kora |
+| kopalnia | sztolnia w skale, tory, wózek z rudą, hałda |
+| huta | kamienny piec z żarem i dymem, miechy, mielerz, żużel |
+| kuźnia | otwarte palenisko z żarem, kowadło, szlifierka |
+| płatnerz | stojaki z kolczugami, stojak drzewc, tarcze w barwach strony |
+| łuczarz | stojak łuków, strzały w beczkach, drewno na łuki, tarcza strzelecka |
+| stajnia | boksy, wybieg z końmi, koryto, siano |
+| koszary | chorągiew strony, pale do ćwiczeń, stojak włóczni, tarcza strzelecka |
+
+Dym (gra): z chat z mieszkańcami, z warsztatów przy pracy, z pieca i mielerza huty —
+w punktach, które modele oznaczają pustymi obiektami `smoke_…`.
+
+Do zrobienia: **zamek** (dziś z kodu, `keepGeometry`), warianty (np. dwa wyglądy chaty
+na poziom), poziomy szczegółów dla widoku z daleka.
 
 Budżet budynku na poziom: do **12 tys. trójkątów** (koszary i zamek do 25
 tys.), do **3 materiałów** (ściany, dach, drewno i drobiazgi), tekstury z
