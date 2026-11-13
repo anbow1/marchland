@@ -18,6 +18,7 @@ import { createWorld, spawnRegiment } from '../sim/world.ts';
 import { Clearings } from '../render/clearings.ts';
 import { buildForest } from '../render/forestView.ts';
 import { buildLand } from '../render/landView.ts';
+import { surfaceGeometry } from '../render/surfaceModel.ts';
 
 // A page for one decision, not part of the game: the same buildings in three
 // makes — geometry from code, downloaded stylised models, downloaded realistic
@@ -134,6 +135,19 @@ for (const [kind, level, x, z, flat] of [['smithy', 1, COLUMNS[0], ROW_SMITHY, t
 
 const report: Record<string, { triangles: number; draws: number; sizeM: number[] }> = {};
 const loader = new GLTFLoader();
+// E: our own building, made in Blender from code (tools/blender/build.py) and drawn with the game's scans.
+{
+  const gltf = await loader.loadAsync('./buildings/house_1.glb');
+  const geometry = surfaceGeometry(gltf.scene, surfaces);
+  const mesh = new Mesh(geometry, codeMaterial);
+  mesh.position.set(COLUMNS[2], heightAtM(COLUMNS[2], ROW_HOUSE), ROW_HOUSE);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  stage.scene.add(mesh);
+  geometry.computeBoundingBox();
+  const box = geometry.boundingBox;
+  report['ownHouse'] = { triangles: geometry.getAttribute('position').count / 3, draws: 1, sizeM: box ? [box.max.x - box.min.x, box.max.y - box.min.y, box.max.z - box.min.z].map((v) => Math.round(v * 10) / 10) : [] };
+}
 const size = new Vector3();
 for (const [name, e] of Object.entries(EXHIBITS)) {
   const gltf = await loader.loadAsync(`./models/${e.url}`);

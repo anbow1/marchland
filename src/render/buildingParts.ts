@@ -74,6 +74,11 @@ const SURFACE_OF: readonly (readonly [hex: number, surface: SurfaceId, tintHex: 
  */
 const SIZE_OVERRIDE_M: Partial<Record<SurfaceId, number>> = { thatch: 2.4, shingles: 5 };
 
+/** How a scanned surface is laid on a building: its layer and metres per repeat, untinted. */
+export function surfacePaint(lib: SurfaceLibrary, surface: SurfaceId, tintHex = 0xffffff): Paint {
+  return { layer: layerOf(surface), sizeM: SIZE_OVERRIDE_M[surface] ?? lib.sizeM[surface], tintHex };
+}
+
 export function paintsFor(lib: SurfaceLibrary): Map<number, Paint> {
   const paints = new Map<number, Paint>();
   for (const [hex, surface, tintHex] of SURFACE_OF) paints.set(hex, { layer: layerOf(surface), sizeM: SIZE_OVERRIDE_M[surface] ?? lib.sizeM[surface], tintHex });
