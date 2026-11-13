@@ -276,17 +276,18 @@ describe('recruiting', () => {
 });
 
 describe('balance', () => {
-  it('the computer\'s town grows, stays fed and fields an army inside a quarter of an hour', () => {
+  // With flour and iron as steps of their own, the first regiment takes the field at 14–16 minutes.
+  it('the computer\'s town grows, stays fed and fields an army inside seventeen minutes', () => {
     const world = createWorld({ seed: 7, difficulty: 'normal', computerPlays: true });
     let firstArmyS = -1;
-    runUntil(world, 15 * 60, () => {
+    runUntil(world, 17 * 60, () => {
       if (firstArmyS < 0 && menAlive(world, COMPUTER) > 0) firstArmyS = world.timeS;
       return false;
     });
     const town = world.towns[COMPUTER];
     expect(town.plots.filter((b) => b !== null).length).toBeGreaterThanOrEqual(12);
     expect(firstArmyS).toBeGreaterThan(0);
-    expect(firstArmyS).toBeLessThan(15 * 60);
+    expect(firstArmyS).toBeLessThan(17 * 60);
     expect(world.people.filter((p) => p.alive && p.side === COMPUTER).length).toBeGreaterThanOrEqual(12);
   }, 60_000);
 });

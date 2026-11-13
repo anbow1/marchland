@@ -78,6 +78,7 @@ export class WorldView {
     t = logStage('forest', t);
     onProgress(0.55);
     this.town = new TownView(scene, surfaces);
+    const models = await this.town.loadModels(import.meta.env.BASE_URL);
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
     this.army = new ArmyView(scene);
@@ -85,7 +86,7 @@ export class WorldView {
     shareStaticInstanceShaders(this.stage.renderer, scene);
     for (const s of land.scattered) this.clearings.add(s.mesh, s.reachM);
     for (const mesh of trees) this.clearings.add(mesh, 2.4);
-    t = logStage('towns and armies', t);
+    t = logStage(`towns and armies (${models} building models)`, t);
     onProgress(0.7);
     await this.lighting.bakeProbe(this.stage.camera);
     t = logStage('sky probe', t);
@@ -115,7 +116,7 @@ export class WorldView {
     this.lighting.update(cam, pose.targetX, targetY, pose.targetZ, reachM);
     this.works.update(world, frameSeconds);
     this.clearings.update(world);
-    this.town.update(world);
+    this.town.update(world, frameSeconds);
     this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
     this.people.update(world);
     this.army.update(world);

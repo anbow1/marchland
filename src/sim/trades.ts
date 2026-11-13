@@ -16,6 +16,17 @@ const AT_HOME = 0;
 const GOING_OUT = 1;
 const WORKING = 2;
 const COMING_BACK = 3;
+/** The woodcutter, back with his load, splitting it at the block in his yard. */
+const SPLITTING = 4;
+
+/** A point in a building's own space (door towards +Z) on the map. */
+function yardX(b: Building, lx: number, lz: number): number {
+  return b.x + lx * Math.cos(b.yawRad) + lz * Math.sin(b.yawRad);
+}
+
+function yardZ(b: Building, lx: number, lz: number): number {
+  return b.z - lx * Math.sin(b.yawRad) + lz * Math.cos(b.yawRad);
+}
 
 function paceOf(town: Town, b: Building, p: Person): number {
   return (LEVEL_SPEED[b.level - 1] as number) * workRateOf(town, p) * town.productionFactor;
@@ -105,7 +116,30 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
     p.phase = COMING_BACK;
     return;
   }
+  if (p.phase === SPLITTING) {
+    // Logs to billets at the chopping block: seen from the street, the axe going up and down.
+    const block = GATHER.woodcutter;
+    if (!walkTo(world, p, yardX(b, block.blockX, block.blockZ), yardZ(b, block.blockX, block.blockZ + 0.9), dtSeconds)) {
+      p.act = 'walk';
+      return;
+    }
+    p.act = 'work';
+    p.headingRad = b.yawRad + Math.PI;
+    p.timerS -= dtSeconds * paceOf(town, b, p);
+    if (p.timerS > 0) return;
+    b.out[good] += trade.amount;
+    p.load = null;
+    p.phase = AT_HOME;
+    return;
+  }
   p.act = 'walk';
+  if (b.kind === 'woodcutter') {
+    // Back from the trees: the load goes to the block first.
+    if (!walkTo(world, p, yardX(b, GATHER.woodcutter.blockX, GATHER.woodcutter.blockZ + 0.9), yardZ(b, GATHER.woodcutter.blockX, GATHER.woodcutter.blockZ + 0.9), dtSeconds)) return;
+    p.timerS = GATHER.woodcutter.splitSeconds;
+    p.phase = SPLITTING;
+    return;
+  }
   if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   b.out[good] += trade.amount;
   p.load = null;

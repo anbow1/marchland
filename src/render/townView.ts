@@ -4,12 +4,17 @@ import type { Building } from '../sim/economy.ts';
 import { heightAtM, townX, townZ } from '../sim/terrain.ts';
 import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
+import { type SurfaceModel, surfaceModel } from './surfaceModel.ts';
 import { TEAM_HEX } from './palette.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // The two towns: a mesh for each place in a town's list of buildings and one
-// per keep, all with one material. A mesh takes the geometry, the place and
+// per keep, all with one material. A kind with a model from Blender
+// (public/buildings, made by tools/blender/build.py) is drawn with it, its
+// moving part (a mill's sails) turning while it works; the others with the
+// shapes from code in buildingGeometry.ts. A mesh takes the geometry, the place and
 // the facing of whatever stands in its slot; a building under construction
 // rises out of the ground. Geometries are made once per kind, level and side
 // and kept. The ghost is the building the player is about to place.
@@ -17,6 +22,8 @@ import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 /** A building being built shows at least this share of its height. */
 const MIN_BUILT_SHARE = 0.18;
 const GHOST_OK = new Color(0x8fe07a);
+/** A post mill's sails at work: about one turn every seven seconds. */
+const SAIL_TURN_RAD_S = 0.9;
 const GHOST_BAD = new Color(0xe0604a);
 
 export class TownView {
@@ -26,6 +33,10 @@ export class TownView {
   private readonly shown: string[][] = [[], []];
   private readonly keeps: Mesh[] = [];
   private readonly ghost: Mesh;
+  /** Models from Blender by kind, level and side; empty until loadModels() has run. */
+  private readonly models = new Map<string, SurfaceModel>();
+  /** The moving part of each slot's building, shown when its model has one. */
+  private readonly movers: Mesh[][] = [[], []];
   private readonly ghostMaterial: MeshBasicNodeMaterial;
 
   constructor(
@@ -53,6 +64,11 @@ export class TownView {
         mesh.visible = false;
         scene.add(mesh);
         (this.slots[side] as Mesh[]).push(mesh);
+        const mover = new Mesh(this.geometry('house', 1, side), this.material);
+        mover.castShadow = true;
+        mover.visible = false;
+        mesh.add(mover);
+        (this.movers[side] as Mesh[]).push(mover);
         (this.shown[side] as string[]).push('');
       }
     }
@@ -64,8 +80,38 @@ export class TownView {
     scene.add(this.ghost);
   }
 
+  /**
+   * Loads every model listed in `<base>buildings/index.json`. A model that fails to load leaves its
+   * kind on the shapes from code, with a warning: the game is playable without them.
+   */
+  async loadModels(base: string): Promise<number> {
+    const response = await fetch(`${base}buildings/index.json`);
+    if (!response.ok) {
+      console.warn(`[models] no index at ${base}buildings/index.json (${response.status}): buildings keep their shapes from code`);
+      return 0;
+    }
+    const index = (await response.json()) as Record<string, { file: string }>;
+    const loader = new GLTFLoader();
+    const jobs = Object.entries(index).map(async ([key, entry]) => {
+      const [kind, level] = key.split(':') as [BuildingKind, string];
+      if (!(BUILDING_KINDS as readonly string[]).includes(kind)) return;
+      try {
+        const gltf = await loader.loadAsync(`${base}buildings/${entry.file}`);
+        for (const side of [0, 1] as const satisfies readonly Side[]) this.models.set(`${kind}:${level}:${side}`, surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]));
+      } catch (error) {
+        console.warn(`[models] ${entry.file} did not load: ${String(error)}`);
+      }
+    });
+    await Promise.all(jobs);
+    // Shown buildings pick up their models at the next update.
+    for (const shown of this.shown) shown.fill('');
+    return this.models.size / 2;
+  }
+
   private geometry(kind: BuildingKind, level: number, side: Side): BufferGeometry {
     const key = `${kind}:${level}:${side}`;
+    const model = this.models.get(key);
+    if (model) return model.body;
     let g = this.cache.get(key);
     if (!g) {
       g = buildingGeometry(kind, level, TEAM_HEX[side], this.lib);
@@ -93,7 +139,7 @@ export class TownView {
     this.ghostMaterial.color.copy(allowed ? GHOST_OK : GHOST_BAD);
   }
 
-  update(world: World): void {
+  update(world: World, frameSeconds = 0): void {
     for (const town of world.towns) {
       const side = town.side;
       const keep = this.keeps[side] as Mesh;
@@ -107,13 +153,24 @@ export class TownView {
         if (key !== shown[slot]) {
           shown[slot] = key;
           mesh.visible = b !== null;
+          const mover = (this.movers[side] as Mesh[])[slot] as Mesh;
+          mover.visible = false;
           if (b) {
             mesh.geometry = this.geometry(b.kind, b.level, side);
             mesh.position.set(b.x, heightAtM(b.x, b.z), b.z);
             mesh.rotation.y = b.yawRad;
+            const part = this.models.get(`${b.kind}:${b.level}:${side}`)?.parts[0];
+            if (part) {
+              mover.geometry = part.geometry;
+              mover.position.copy(part.pivot);
+              mover.visible = true;
+            }
           }
         }
         if (b) {
+          // Sails turn while the mill grinds.
+          const mover = (this.movers[side] as Mesh[])[slot] as Mesh;
+          if (mover.visible && b.cycleStarted && b.workRate > 0 && b.constructionLeftS <= 0) mover.rotation.z += frameSeconds * SAIL_TURN_RAD_S * b.workRate;
           const built = b.constructionTotalS > 0 ? 1 - b.constructionLeftS / b.constructionTotalS : 1;
           mesh.scale.y = MIN_BUILT_SHARE + (1 - MIN_BUILT_SHARE) * built;
         }

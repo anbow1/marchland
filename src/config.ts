@@ -146,7 +146,8 @@ export const FIELDS = {
 
 /** Trades whose worker goes out to the land and comes back with a load: seconds on the spot and what a trip brings. */
 export const GATHER = {
-  woodcutter: { seconds: 8, amount: 6, reachM: 16 },
+  /** The woodcutter also splits each load at the chopping block in his yard (`splitSeconds`, at `blockX/Z` in the lodge's own space, door towards +Z). */
+  woodcutter: { seconds: 8, amount: 6, reachM: 16, splitSeconds: 6, blockX: -1.0, blockZ: 1.8 },
   fisher: { seconds: 10, amount: 3, reachM: 9 },
 } as const;
 

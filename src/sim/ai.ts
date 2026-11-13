@@ -54,6 +54,7 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'house',
   'pigFarm',
   'ironMine',
+  'house',
   'barracks',
   'tannery',
   'smelter',
@@ -84,7 +85,7 @@ const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'wi
 const STAGE_DISTANCE_M = 115;
 
 /** Index in BUILD_ORDER after which the barracks is worth its second level (the weapon chain stands). */
-const BARRACKS_UPGRADE_AFTER = 17;
+const BARRACKS_UPGRADE_AFTER = 18;
 
 /** Builds on the ground the planner picks and lays a road from its door to the keep; true when it was built. */
 function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 'noGround' | 'notYet' {
