@@ -1,6 +1,7 @@
 import { BUILDINGS, FOOD, PEOPLE } from '../config.ts';
 import { type Building, isBuilt, outputFull, rationsIn, type Town } from './economy.ts';
-import { doorX, doorZ, KEEP, NOWHERE, type Person, walkTo } from './people.ts';
+import { doorX, doorZ, type Person, walkTo } from './people.ts';
+import { KEEP, NOWHERE } from './types.ts';
 import { type ResourceId, RESOURCE_IDS } from './types.ts';
 import type { World } from './world.ts';
 

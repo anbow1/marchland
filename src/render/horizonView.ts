@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry, Mesh, MeshStandardNodeMaterial, PlaneGeometry, type Scene } from 'three/webgpu';
 import { fbm2 } from '../core/noise.ts';
-import { MAP } from '../config.ts';
+import { MAP, TOWN } from '../config.ts';
 
 // What lies beyond the map: wooded lowland out to a ring of hills, so a low
 // camera sees a horizon instead of the edge of the world. Flat colour only;
@@ -18,10 +18,10 @@ const WOODLAND = 0x2f3d26;
 
 export function addHorizon(scene: Scene): void {
   const material = new MeshStandardNodeMaterial({ name: 'horizon', color: WOODLAND, roughness: 1, metalness: 0 });
-  // The lowland: one big sheet just under the terrain mesh's edge.
+  // The lowland: one big sheet under the terrain mesh, below its deepest hollow so it never shows through.
   const lowland = new Mesh(new PlaneGeometry(2 * HILLS_TO_M, 2 * HILLS_TO_M).rotateX(-Math.PI / 2), material);
   lowland.name = 'lowland';
-  lowland.position.y = -1.5;
+  lowland.position.y = -(MAP.hillHeightM + MAP.foldHeightM + TOWN.lakeDepthM + 2);
   scene.add(lowland);
 
   // The hills: three rings of vertices (foot, crest, back), the crest raised by noise.

@@ -1,6 +1,6 @@
 import { FIELDS, GATHER, MAP, TOWN } from '../config.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
-import { depositNear, forestCoverAt, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
+import { depositNear, DEPOSITS, forestCoverAt, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
 
@@ -59,6 +59,8 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   if (Math.hypot(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isWater(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');
+  // Not on the crag itself: beside it.
+  for (const d of DEPOSITS) if (Math.hypot(x - d.x, z - d.z) < TOWN.depositRadiusM + 3) return fail('blocked');
   if (riseAcrossM(x, z, r) > TOWN.maxFootprintRiseM) return fail('tooSteep');
   const need = SITE_NEED[kind];
   // A woodcutter's hut stands at the edge of the wood, the others in the open.

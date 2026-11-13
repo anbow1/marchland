@@ -54,7 +54,14 @@ function centreOf(c: number): number {
 }
 
 export function isRoad(nav: Nav, x: number, z: number): boolean {
+  if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) return false;
   return nav.road[cellOf(z) * N + cellOf(x)] === 1;
+}
+
+/** True where a building or a keep stands. */
+export function isBuiltOn(nav: Nav, x: number, z: number): boolean {
+  if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) return false;
+  return nav.built[cellOf(z) * N + cellOf(x)] === 1;
 }
 
 /** Walking speed at a point, as a share of the pace on open ground. */

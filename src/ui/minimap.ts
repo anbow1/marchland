@@ -1,5 +1,6 @@
-import { MAP, TOWN } from '../config.ts';
-import { forestCoverAt, heightAtM, plotX, plotZ, townX, townZ } from '../sim/terrain.ts';
+import { MAP, ROADS, TOWN } from '../config.ts';
+import { cellX, cellZ } from '../sim/nav.ts';
+import { DEPOSITS, forestCoverAt, heightAtM, isWater, townX, townZ } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 
@@ -14,6 +15,8 @@ export class Minimap {
   private readonly ctx: CanvasRenderingContext2D;
   private readonly background: HTMLCanvasElement;
   private readonly px: number;
+  private readonly roads: HTMLCanvasElement;
+  private roadsVersion = -1;
 
   constructor(onJump: (x: number, z: number) => void) {
     const ratio = Math.min(2, window.devicePixelRatio || 1);
@@ -25,6 +28,8 @@ export class Minimap {
     if (!ctx) throw new Error('2D canvas is not available for the minimap');
     this.ctx = ctx;
     this.background = this.drawBackground();
+    this.roads = document.createElement('canvas');
+    this.roads.width = this.roads.height = this.px;
     const jump = (e: PointerEvent): void => {
       const rect = this.canvas.getBoundingClientRect();
       onJump(((e.clientX - rect.left) / rect.width - 0.5) * MAP.sizeM, ((e.clientY - rect.top) / rect.height - 0.5) * MAP.sizeM);
@@ -57,6 +62,13 @@ export class Minimap {
         const forest = forestCoverAt(wx, wz);
         const light = 0.85 + heightAtM(wx, wz) / (MAP.hillHeightM * 5);
         const o = (y * this.px + x) * 4;
+        if (isWater(wx, wz)) {
+          image.data[o] = 52;
+          image.data[o + 1] = 92;
+          image.data[o + 2] = 118;
+          image.data[o + 3] = 255;
+          continue;
+        }
         image.data[o] = (96 - forest * 52) * light;
         image.data[o + 1] = (118 - forest * 46) * light;
         image.data[o + 2] = (62 - forest * 26) * light;
@@ -64,11 +76,11 @@ export class Minimap {
       }
     }
     ctx.putImageData(image, 0, 0);
-    // Town yards.
-    for (const side of [0, 1] as const) {
-      ctx.fillStyle = 'rgba(150, 126, 92, 0.75)';
+    // Outcrops of stone (pale) and ore (rust).
+    for (const d of DEPOSITS) {
+      ctx.fillStyle = d.kind === 'stone' ? 'rgba(190, 186, 176, 0.9)' : 'rgba(150, 96, 70, 0.9)';
       ctx.beginPath();
-      ctx.arc(this.toPx(townX(side)), this.toPx(townZ(side)), ((TOWN.outerRadiusM + 8) / MAP.sizeM) * this.px, 0, Math.PI * 2);
+      ctx.arc(this.toPx(d.x), this.toPx(d.z), (TOWN.depositRadiusM / MAP.sizeM) * this.px, 0, Math.PI * 2);
       ctx.fill();
     }
     return canvas;
@@ -79,11 +91,22 @@ export class Minimap {
     const ctx = this.ctx;
     ctx.drawImage(this.background, 0, 0);
     const unit = this.px / SIZE_CSS_PX;
+    // Roads, redrawn only when one is laid.
+    if (world.nav.version !== this.roadsVersion) {
+      this.roadsVersion = world.nav.version;
+      const rctx = this.roads.getContext('2d') as CanvasRenderingContext2D;
+      rctx.clearRect(0, 0, this.px, this.px);
+      rctx.fillStyle = 'rgba(196, 170, 124, 0.95)';
+      const cellPx = Math.max(1, (ROADS.cellM / MAP.sizeM) * this.px);
+      const road = world.nav.road;
+      for (let i = 0; i < road.length; i++) if (road[i] === 1) rctx.fillRect(this.toPx(cellX(i)) - cellPx / 2, this.toPx(cellZ(i)) - cellPx / 2, cellPx, cellPx);
+    }
+    ctx.drawImage(this.roads, 0, 0);
     for (const town of world.towns) {
       ctx.fillStyle = TEAM_CSS[town.side];
-      for (let plot = 0; plot < town.plots.length; plot++) {
-        if (!town.plots[plot]) continue;
-        ctx.fillRect(this.toPx(plotX(town.side, plot)) - 1.5 * unit, this.toPx(plotZ(town.side, plot)) - 1.5 * unit, 3 * unit, 3 * unit);
+      for (const b of town.plots) {
+        if (!b) continue;
+        ctx.fillRect(this.toPx(b.x) - 1.5 * unit, this.toPx(b.z) - 1.5 * unit, 3 * unit, 3 * unit);
       }
       if (town.keepHp > 0) {
         ctx.fillRect(this.toPx(townX(town.side)) - 4 * unit, this.toPx(townZ(town.side)) - 4 * unit, 8 * unit, 8 * unit);

@@ -1,3 +1,4 @@
+import { GroundWorks } from '../render/groundWorks.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { Box3, type BufferGeometry, Color, Group, type Material, Mesh, type MeshStandardMaterial, type Object3D, Vector3 } from 'three/webgpu';
@@ -89,7 +90,7 @@ const stage = new Stage(canvas, { quality: 'high', maxPixelRatio: 1 });
 await stage.init();
 const lighting = new Lighting(stage.renderer, stage.scene, AFTERNOON, 'high');
 const surfaces = await loadSurfaces('high', () => {});
-stage.scene.add(buildTerrain(surfaces));
+stage.scene.add(buildTerrain(surfaces, new GroundWorks().texture));
 addHorizon(stage.scene);
 await lighting.bakeProbe(stage.camera);
 

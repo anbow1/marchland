@@ -428,7 +428,7 @@ export const AI = {
 export const CAMERA = {
   minDistanceM: 25,
   /** Far enough to see the whole 400 m map at once on a wide screen. */
-  maxDistanceM: 760,
+  maxDistanceM: 860,
   startDistanceM: 110,
   /** Pitch below the horizon: flatter up close to see the ranks, nearly straight down from afar to read the map. */
   pitchNearRad: 0.68,

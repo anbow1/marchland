@@ -52,7 +52,11 @@ export function exposureFor(ev100: number): number {
 const GROUND_ALBEDO: readonly [number, number, number] = [0.16, 0.18, 0.09];
 const SUN_DISTANCE_M = 400;
 
+/** The camera sees the preset's full haze up to this height above what it looks at; higher, proportionally less. */
+const HAZE_FULL_BELOW_M = 90;
+
 export class Lighting {
+  private readonly hazeShare = uniform(1);
   readonly sun = new DirectionalLight(0xffffff, 1);
   readonly sunDir = new Vector3();
   readonly exposure: number;
@@ -101,7 +105,8 @@ export class Lighting {
     scene.add(this.dome);
     // Haze takes distant ground towards the horizon's colour: the same sky function, so they meet.
     const distanceM = positionWorld.sub(cameraPosition).length();
-    const hazed = float(1).sub(distanceM.mul(-preset.hazePerM).exp());
+    // Looking down from high up, the eye is above most of the haze: it thins with the camera's height.
+    const hazed = float(1).sub(distanceM.mul(-preset.hazePerM).mul(this.hazeShare).exp());
     scene.fogNode = fog(this.horizon, hazed);
 
     // The probe: the same sky, and a ground disc lit by sun and sky (bounce light from below).
@@ -151,8 +156,9 @@ export class Lighting {
    */
   update(camera: PerspectiveCamera, focusX: number, focusY: number, focusZ: number, viewRadiusM: number): void {
     this.dome.position.copy(camera.position);
-    // Half-octave steps between 30 m and 260 m.
-    const radius = 2 ** (Math.ceil(Math.log2(Math.min(260, Math.max(30, viewRadiusM))) * 2) / 2);
+    this.hazeShare.value = Math.min(1, Math.max(0.12, HAZE_FULL_BELOW_M / Math.max(1, camera.position.y - focusY)));
+    // Half-octave steps between 30 m and 420 m (the whole map from the highest camera).
+    const radius = 2 ** (Math.ceil(Math.log2(Math.min(420, Math.max(30, viewRadiusM))) * 2) / 2);
     const cam = this.sun.shadow.camera;
     if (radius !== this.shadowRadiusM) {
       this.shadowRadiusM = radius;

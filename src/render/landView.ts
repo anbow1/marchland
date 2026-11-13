@@ -1,7 +1,7 @@
 import { float, mix, normalWorld, positionWorld, texture, time, transformNormalToView, vec2, vec3 } from 'three/tsl';
 import { CircleGeometry, Color, DataTexture, InstancedMesh, LinearFilter, LinearMipmapLinearFilter, Matrix4, Mesh, MeshStandardNodeMaterial, NoColorSpace, type Object3D, Quaternion, RedFormat, RepeatWrapping, UnsignedByteType, Vector3 } from 'three/webgpu';
 import { MAP, TOWN } from '../config.ts';
-import { tileFbm } from '../core/noise.ts';
+import { fbm2, tileFbm } from '../core/noise.ts';
 import { Rng } from '../core/rng.ts';
 import { DEPOSITS, forestCoverAt, heightAtM, isWater, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
@@ -139,7 +139,69 @@ function buildRocks(lib: SurfaceLibrary): InstancedMesh {
   return markStaticInstances(mesh);
 }
 
-/** Lakes and rocks, ready to add to the scene. */
-export function buildLand(lib: SurfaceLibrary): Object3D[] {
-  return [...buildWater(), buildRocks(lib)];
+/** A lump of leaves: the same shape as a boulder, taller and softer. */
+function buildBushes(lib: SurfaceLibrary): InstancedMesh {
+  const rng = new Rng(MAP.terrainSeed + 404);
+  const paints = new Map<number, Paint>([
+    [ROCK, { layer: layerOf('leaves'), sizeM: lib.sizeM.leaves, tintHex: 0xb8d880 }],
+  ]);
+  const builder = new MeshBuilder(0, paints);
+  boulder(builder, rng, 0, 0, 1.0, 1.5, 0.9);
+  boulder(builder, rng, 0.9, 0.4, 0.7, 1.0, 0.7);
+  boulder(builder, rng, -0.6, -0.7, 0.6, 0.8, 0.6);
+  const matrices: Matrix4[] = [];
+  const tints: Color[] = [];
+  const position = new Vector3();
+  const scale = new Vector3();
+  const turn = new Quaternion();
+  const up = new Vector3(0, 1, 0);
+  // Thickets: bushes gather where a slow noise is high, and thin out to nothing between.
+  const half = MAP.halfM + 100;
+  for (let gz = -half; gz < half; gz += 5) {
+    for (let gx = -half; gx < half; gx += 5) {
+      const x = gx + rng.range(0, 5);
+      const z = gz + rng.range(0, 5);
+      const roll = rng.next();
+      const size = rng.range(0.5, 1.25);
+      const yaw = rng.range(0, Math.PI * 2);
+      const shade = rng.next();
+      const thicket = fbm2(x / 40 + 3.1, z / 40 + 7.7, 3, MAP.terrainSeed + 21) * 0.5 + 0.5;
+      const cover = forestCoverAt(x, z);
+      // In the open: only in thickets. At the forest's edge: a fringe of undergrowth.
+      const chance = cover > 0.6 ? 0 : Math.max(0, (thicket - 0.56) * 2.2) + (cover > 0.12 ? 0.22 : 0);
+      if (roll > chance || isWater(x, z) || heightAtM(x, z) < WATER_LEVEL_M + 0.3) continue;
+      position.set(x, heightAtM(x, z), z);
+      scale.set(size, size * rng.range(0.7, 1.2), size);
+      turn.setFromAxisAngle(up, yaw);
+      matrices.push(new Matrix4().compose(position, turn, scale));
+      // Near white: the leaf scan and its tint give the green; this only varies it from bush to bush.
+      const tone = 0.8 + shade * 0.35;
+      tints.push(new Color(tone, tone * 1.04, tone * 0.92));
+    }
+  }
+  const mesh = new InstancedMesh(builder.build(), surfaceMaterial(lib, 'bushes'), Math.max(1, matrices.length));
+  mesh.name = 'bushes';
+  mesh.count = matrices.length;
+  for (let i = 0; i < matrices.length; i++) {
+    mesh.setMatrixAt(i, matrices[i] as Matrix4);
+    mesh.setColorAt(i, tints[i] as Color);
+  }
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.computeBoundingSphere();
+  return markStaticInstances(mesh);
+}
+
+export interface Land {
+  /** Everything to add to the scene. */
+  parts: Object3D[];
+  /** The scattered things a building site clears, with how far each reaches from its foot. */
+  scattered: { mesh: InstancedMesh; reachM: number }[];
+}
+
+/** Lakes, rocks and bushes. */
+export function buildLand(lib: SurfaceLibrary): Land {
+  const rocks = buildRocks(lib);
+  const bushes = buildBushes(lib);
+  return { parts: [...buildWater(), rocks, bushes], scattered: [{ mesh: rocks, reachM: 0.8 }, { mesh: bushes, reachM: 1.0 }] };
 }

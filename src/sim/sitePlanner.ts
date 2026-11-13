@@ -111,7 +111,7 @@ function planDeposit(world: World, side: Side, kind: BuildingKind, rock: 'stone'
     const base = Math.atan2(tx - d.x, tz - d.z);
     for (let k = 0; k < 9; k++) {
       const angle = base + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * 0.6;
-      const r = TOWN.depositRadiusM + TOWN.buildingRadiusM + 2;
+      const r = TOWN.depositRadiusM + TOWN.buildingRadiusM + 3;
       const x = d.x + Math.sin(angle) * r;
       const z = d.z + Math.cos(angle) * r;
       if (tryAt(world, side, kind, x, z, yawToKeep(side, x, z))) return true;

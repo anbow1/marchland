@@ -1,3 +1,4 @@
+import type { WorkState } from '../sim/economy.ts';
 import type { BuildingKind, CommandResult, Difficulty, ResourceId, UnitKind } from '../sim/types.ts';
 
 // Every word the player reads, in Polish and English. The language follows
@@ -44,7 +45,6 @@ interface Strings {
   men: string;
   morale: string;
   fatigue: string;
-  emptyPlot: string;
   underConstruction: string;
   working: string;
   waiting: string;
@@ -73,27 +73,44 @@ interface Strings {
   taxes: string;
   rations: string;
   trains: string;
+  road: string;
+  roadAbout: string;
+  people: string;
+  free: string;
+  residents: string;
+  stores: string;
+  yard: string;
+  fields: string;
+  hintBuild: string;
+  hintRoadStart: string;
+  hintRoadEnd: string;
+  roadCost: string;
+  turnLeft: string;
+  turnRight: string;
+  work: Record<WorkState, string>;
+  recruits: string;
 }
 
 const pl: Strings = {
   title: 'Marchland',
   subtitle: 'Średniowieczna strategia: miasto, szyki, bitwa',
-  resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', bread: 'Chleb', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
+  resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
   buildings: {
-    house: { name: 'Chata', about: 'Mieszkańcy płacą podatek w złocie, o ile miasto ma co jeść.' },
-    woodcutter: { name: 'Drwal', about: 'Drewno na budowę, do kuźni i dla łuczarza.' },
-    quarry: { name: 'Kamieniołom', about: 'Kamień na murowane budynki.' },
-    farm: { name: 'Pole', about: 'Zboże: na chleb, dla trzody i dla koni.' },
+    house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
+    woodcutter: { name: 'Drwal', about: 'Drewno na budowę, do kuźni i dla łuczarza. Musi stać przy lesie.' },
+    quarry: { name: 'Kamieniołom', about: 'Kamień na murowane budynki i drogi. Musi stać przy skale.' },
+    farm: { name: 'Zagroda', about: 'Rolnik orze, sieje i żnie pasy pola za zagrodą. Zboże: na chleb, dla trzody i dla koni. Potrzebuje wolnej ziemi za plecami.' },
+    fisher: { name: 'Rybak', about: 'Łowi ryby w jeziorze. Ryba to jedna racja. Musi stać nad wodą.' },
     bakery: { name: 'Piekarnia', about: 'Piecze chleb ze zboża. Bochenek to jedna racja.' },
     pigFarm: { name: 'Chlewnia', about: 'Trzoda zjada zboże, daje mięso i skóry.' },
     butcher: { name: 'Masarnia', about: 'Robi kiełbasy z mięsa. Kiełbasa to dwie racje.' },
     tannery: { name: 'Garbarnia', about: 'Szyje ze skór zbroje dla pikinierów, strzelców i lekkiej jazdy.' },
-    ironMine: { name: 'Kopalnia', about: 'Ruda żelaza dla kuźni i płatnerza.' },
+    ironMine: { name: 'Kopalnia', about: 'Ruda żelaza dla kuźni i płatnerza. Musi stać przy rudonośnej skale.' },
     smithy: { name: 'Kuźnia', about: 'Kuje broń z rudy, pali drewnem.' },
     armourer: { name: 'Płatnerz', about: 'Kolczugi dla mieczników, halabardników i rycerstwa.' },
     fletcher: { name: 'Łuczarz', about: 'Łuki i kusze z drewna.' },
     stable: { name: 'Stajnia', about: 'Hoduje konie; karmi je zbożem.' },
-    barracks: { name: 'Koszary', about: 'Szkolą wojsko. Wyższy poziom to lepsze oddziały.' },
+    barracks: { name: 'Koszary', about: 'Wezwani mieszkańcy biorą tu ekwipunek i stają w szyku. Wyższy poziom to lepsze oddziały.' },
   },
   units: {
     militia: { name: 'Milicja', about: 'Mieszczanie z tarczą i włócznią. Tani, pod tarczą trzymają się nieźle, szybko uciekają.' },
@@ -109,7 +126,16 @@ const pl: Strings = {
   },
   results: {
     cannotAfford: 'Za mało zasobów.',
-    plotTaken: 'Działka jest zajęta.',
+    tooFar: 'Za daleko od zamku.',
+    blocked: 'Miejsce jest zajęte albo zalane.',
+    tooSteep: 'Teren jest zbyt stromy.',
+    needsForest: 'Drwal musi stać przy lesie.',
+    needsWater: 'Rybak musi stać nad jeziorem.',
+    needsStone: 'Kamieniołom musi stać przy skale.',
+    needsOre: 'Kopalnia musi stać przy rudonośnej skale.',
+    needsLand: 'Za zagrodą brakuje wolnej ziemi na pola.',
+    townFull: 'Miasto ma już komplet budynków.',
+    noPeople: 'Brak wolnych ludzi: zbuduj chaty albo poczekaj na mieszkańców.',
     plotEmpty: 'Tu nic nie stoi.',
     maxLevel: 'To już najwyższy poziom.',
     underConstruction: 'Budowa jeszcze trwa.',
@@ -152,14 +178,13 @@ const pl: Strings = {
   men: 'ludzi',
   morale: 'Morale',
   fatigue: 'Zmęczenie',
-  emptyPlot: 'Wolna działka',
   underConstruction: 'Budowa',
   working: 'Pracuje',
   waiting: 'Czeka na surowiec',
   pausedBuilding: 'Wstrzymany',
   maxLevel: 'Najwyższy poziom',
   needsBarracksLevel: 'koszary poz.',
-  hintIdle: 'Kliknij działkę w mieście, żeby budować. Kliknij oddział, żeby wydać rozkaz.',
+  hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
   hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przeciągnij: ustaw front. Na wroga: atak.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
   fed: 'Miasto znów ma co jeść.',
@@ -175,11 +200,12 @@ const pl: Strings = {
   helpTitle: 'Sterowanie',
   help: [
     'WASD / strzałki / krawędź ekranu: przesuwanie mapy',
-    'Kółko myszy: zoom · Q / E: obrót · środkowy przycisk: przeciąganie mapy',
+    'Kółko myszy: zoom (do widoku całej mapy) · Q / E albo przeciągnięcie środkowym przyciskiem: obrót mapy',
+    'Budowa: wybierz budynek, R obraca, lewy przycisk stawia, prawy anuluje · G: droga',
     'Lewy przycisk: zaznacz · przeciągnij: ramka · Shift: dodaj',
     'Prawy przycisk: marsz / atak · dwa kliknięcia: bieg · przeciągnij: front',
     'H: stój · Ctrl+A: całe wojsko · Esc: odznacz / pauza · F3: pomiar',
-    'Dotyk: palec przesuwa, dwa palce przybliżają, stuknięcie zaznacza i rozkazuje',
+    'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
   ],
   menu: 'Menu',
   speed: 'Tempo',
@@ -188,27 +214,44 @@ const pl: Strings = {
   taxes: 'podatek',
   rations: 'racji/min',
   trains: 'Szkoli',
+  road: 'Droga (G)',
+  roadAbout: 'Ludzie chodzą drogą szybciej i sami ją wybierają. Kosztuje kamień.',
+  people: 'Ludzie',
+  free: 'wolni',
+  residents: 'mieszkańców',
+  stores: 'Skład',
+  yard: 'Podwórze',
+  fields: 'Pola',
+  hintBuild: 'Lewy przycisk: postaw · R: obróć · prawy przycisk / Esc: anuluj · Shift: stawiaj kolejne',
+  hintRoadStart: 'Droga: wskaż początek. Prawy przycisk / Esc: koniec.',
+  hintRoadEnd: 'Droga: wskaż koniec odcinka.',
+  roadCost: 'kamienia',
+  turnLeft: 'Obróć mapę w lewo (Q)',
+  turnRight: 'Obróć mapę w prawo (E)',
+  work: { working: 'Pracuje', building: 'Budowa', paused: 'Wstrzymany', noWorker: 'Brak pracownika', noInput: 'Czeka na surowiec', yardFull: 'Podwórze pełne — czeka na tragarzy', waiting: 'Czeka' },
+  recruits: 'rekrutów w drodze',
 };
 
 const en: Strings = {
   title: 'Marchland',
   subtitle: 'Medieval strategy: a town, formations, a battle',
-  resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', bread: 'Bread', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
+  resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
   buildings: {
-    house: { name: 'House', about: 'Townsfolk pay tax in gold, as long as the town has food.' },
-    woodcutter: { name: 'Woodcutter', about: 'Wood for building, for the smithy and the fletcher.' },
-    quarry: { name: 'Quarry', about: 'Stone for masonry buildings.' },
-    farm: { name: 'Field', about: 'Grain: for bread, for pigs and for horses.' },
+    house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
+    woodcutter: { name: 'Woodcutter', about: 'Wood for building, for the smithy and the fletcher. Must stand by the forest.' },
+    quarry: { name: 'Quarry', about: 'Stone for masonry buildings and roads. Must stand by a stone outcrop.' },
+    farm: { name: 'Farm', about: 'The farmer breaks, sows and reaps strips of land behind the farm. Grain: for bread, pigs and horses. Needs open land behind it.' },
+    fisher: { name: 'Fisher', about: 'Catches fish in the lake. A fish is one ration. Must stand by the water.' },
     bakery: { name: 'Bakery', about: 'Bakes bread from grain. A loaf is one ration.' },
     pigFarm: { name: 'Pig farm', about: 'Pigs eat grain and give meat and hides.' },
     butcher: { name: 'Butcher', about: 'Makes sausages from meat. A sausage is two rations.' },
     tannery: { name: 'Tannery', about: 'Turns hides into armour for pikemen, shooters and light cavalry.' },
-    ironMine: { name: 'Iron mine', about: 'Ore for the smithy and the armourer.' },
+    ironMine: { name: 'Iron mine', about: 'Ore for the smithy and the armourer. Must stand by an ore outcrop.' },
     smithy: { name: 'Smithy', about: 'Forges weapons from ore, burning wood.' },
     armourer: { name: 'Armourer', about: 'Mail for swordsmen, halberdiers and knights.' },
     fletcher: { name: 'Fletcher', about: 'Bows and crossbows from wood.' },
     stable: { name: 'Stable', about: 'Breeds horses on grain.' },
-    barracks: { name: 'Barracks', about: 'Trains soldiers. A higher level trains better ones.' },
+    barracks: { name: 'Barracks', about: 'Townspeople called up take their equipment here and form up. A higher level trains better regiments.' },
   },
   units: {
     militia: { name: 'Militia', about: 'Townsmen with shield and spear. Cheap, steady behind the shield, quick to run.' },
@@ -224,7 +267,16 @@ const en: Strings = {
   },
   results: {
     cannotAfford: 'Not enough resources.',
-    plotTaken: 'The plot is taken.',
+    tooFar: 'Too far from the keep.',
+    blocked: 'The place is taken or under water.',
+    tooSteep: 'The ground is too steep.',
+    needsForest: 'A woodcutter must stand by the forest.',
+    needsWater: 'A fisher must stand by the lake.',
+    needsStone: 'A quarry must stand by a stone outcrop.',
+    needsOre: 'A mine must stand by an ore outcrop.',
+    needsLand: 'No open land behind the farm for its fields.',
+    townFull: 'The town has all the buildings it may.',
+    noPeople: 'No free people: build houses or wait for newcomers.',
     plotEmpty: 'Nothing stands here.',
     maxLevel: 'Already at the highest level.',
     underConstruction: 'Still under construction.',
@@ -267,14 +319,13 @@ const en: Strings = {
   men: 'men',
   morale: 'Morale',
   fatigue: 'Fatigue',
-  emptyPlot: 'Empty plot',
   underConstruction: 'Building',
   working: 'Working',
   waiting: 'Waiting for input',
   pausedBuilding: 'Paused',
   maxLevel: 'Highest level',
   needsBarracksLevel: 'barracks lvl',
-  hintIdle: 'Click a plot in the town to build. Click a regiment to give orders.',
+  hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
   hintArmy: 'Right button: march. Double click: run. Drag: set the front. On an enemy: attack.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
   fed: 'The town has food again.',
@@ -290,11 +341,12 @@ const en: Strings = {
   helpTitle: 'Controls',
   help: [
     'WASD / arrows / screen edge: move the map',
-    'Mouse wheel: zoom · Q / E: turn · middle button: drag the map',
+    'Mouse wheel: zoom (out to the whole map) · Q / E or a drag with the middle button: turn the map',
+    'Building: pick a building, R turns it, left button places, right button cancels · G: road',
     'Left button: select · drag: box · Shift: add',
     'Right button: march / attack · double click: run · drag: set the front',
     'H: halt · Ctrl+A: whole army · Esc: deselect / pause · F3: measurements',
-    'Touch: one finger moves, two fingers zoom, a tap selects and orders',
+    'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
   ],
   menu: 'Menu',
   speed: 'Speed',
@@ -303,6 +355,22 @@ const en: Strings = {
   taxes: 'tax',
   rations: 'rations/min',
   trains: 'Trains',
+  road: 'Road (G)',
+  roadAbout: 'People walk faster on a road and take it by themselves. Costs stone.',
+  people: 'People',
+  free: 'free',
+  residents: 'residents',
+  stores: 'Stores',
+  yard: 'Yard',
+  fields: 'Fields',
+  hintBuild: 'Left button: place · R: turn · right button / Esc: cancel · Shift: place more',
+  hintRoadStart: 'Road: point at the start. Right button / Esc: done.',
+  hintRoadEnd: 'Road: point at the end of the stretch.',
+  roadCost: 'stone',
+  turnLeft: 'Turn the map left (Q)',
+  turnRight: 'Turn the map right (E)',
+  work: { working: 'Working', building: 'Building', paused: 'Paused', noWorker: 'No worker', noInput: 'Waiting for input', yardFull: 'Yard full — waiting for carriers', waiting: 'Waiting' },
+  recruits: 'recruits on their way',
 };
 
 function pickLang(): Lang {

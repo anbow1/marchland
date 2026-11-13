@@ -1,8 +1,9 @@
 import { Game } from './app/game.ts';
 import { WorldView } from './app/worldView.ts';
 import { SIM } from './config.ts';
-import { cmdAttackRegiment } from './sim/commands.ts';
-import { startBuilding } from './sim/economy.ts';
+import { cmdAttackRegiment, cmdBuild, cmdBuildRoad } from './sim/commands.ts';
+import { doorX, doorZ, KEEP } from './sim/people.ts';
+import { planSite } from './sim/sitePlanner.ts';
 import { BUILDING_KINDS, COMPUTER, type Difficulty, PLAYER, UNIT_KINDS } from './sim/types.ts';
 import { spawnRegiment, stepWorld } from './sim/world.ts';
 import type { Quality } from './render/stage.ts';
@@ -54,10 +55,28 @@ function prepareScene(game: Game, scene: string): void {
       town.stock.wood = 5000;
       town.stock.stone = 5000;
       town.stock.bread = 5000;
-      BUILDING_KINDS.forEach((kind, plot) => startBuilding(town, plot, kind));
+      // One of everything (two farms and three houses), where the computer's planner would put it, with roads to the keep.
+      for (const kind of [...BUILDING_KINDS, 'farm', 'house', 'house'] as const) {
+        const site = planSite(world, side, kind);
+        if (!site) continue;
+        const x = site.x;
+        const z = site.z;
+        if (cmdBuild(world, side, kind, x, z, site.yawRad) !== 'ok') continue;
+        const b = town.plots.find((other) => other !== null && other.x === x && other.z === z);
+        if (b) cmdBuildRoad(world, side, doorX(town, town.plots.indexOf(b)), doorZ(town, town.plots.indexOf(b)), doorX(town, KEEP), doorZ(town, KEEP));
+      }
+      // Built at once: the scene is for looking at, not for waiting.
+      for (const b of town.plots) {
+        if (!b) continue;
+        b.constructionLeftS = 0;
+        b.matWaiting.wood = 0;
+        b.matWaiting.stone = 0;
+        b.matDelivered = b.matTotal;
+      }
     }
     world.ai = null;
-    for (let i = 0; i < 20 * 60; i++) stepWorld(world, SIM.stepSeconds);
+    // Four minutes of town life: people move in, the fields are broken and sown.
+    for (let i = 0; i < 240 * 60; i++) stepWorld(world, SIM.stepSeconds);
   }
   if (scene === 'battle') {
     // A regiment of every kind a side (91 men each) meets in the middle of the field.

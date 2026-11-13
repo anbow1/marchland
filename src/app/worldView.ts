@@ -7,6 +7,7 @@ import { buildForest } from '../render/forestView.ts';
 import { addHorizon } from '../render/horizonView.ts';
 import { shareStaticInstanceShaders } from '../render/instancing.ts';
 import { AFTERNOON, Lighting } from '../render/lighting.ts';
+import { Clearings } from '../render/clearings.ts';
 import { GroundWorks } from '../render/groundWorks.ts';
 import { buildLand } from '../render/landView.ts';
 import { type GroundTiles, Markers } from '../render/markers.ts';
@@ -46,6 +47,7 @@ export class WorldView {
   private markers!: Markers;
   private people!: PeopleView;
   private readonly works = new GroundWorks();
+  private readonly clearings = new Clearings();
   private readonly offset = { x: 0, y: 0, z: 0 };
   private readonly ndc = new Vector3();
 
@@ -66,11 +68,13 @@ export class WorldView {
     const surfaces = await loadSurfaces(quality, (share) => onProgress(0.15 + share * 0.25));
     t = logStage('textures', t);
     scene.add(buildTerrain(surfaces, this.works.texture));
-    for (const part of buildLand(surfaces)) scene.add(part);
+    const land = buildLand(surfaces);
+    for (const part of land.parts) scene.add(part);
     addHorizon(scene);
     t = logStage('terrain', t);
     onProgress(0.45);
-    for (const mesh of buildForest(quality, surfaces)) scene.add(mesh);
+    const trees = buildForest(quality, surfaces);
+    for (const mesh of trees) scene.add(mesh);
     t = logStage('forest', t);
     onProgress(0.55);
     this.town = new TownView(scene, surfaces);
@@ -79,6 +83,8 @@ export class WorldView {
     this.army = new ArmyView(scene);
     this.markers = new Markers(scene);
     shareStaticInstanceShaders(this.stage.renderer, scene);
+    for (const s of land.scattered) this.clearings.add(s.mesh, s.reachM);
+    for (const mesh of trees) this.clearings.add(mesh, 2.4);
     t = logStage('towns and armies', t);
     onProgress(0.7);
     await this.lighting.bakeProbe(this.stage.camera);
@@ -108,6 +114,7 @@ export class WorldView {
     const reachM = (pose.distanceM * 0.75) / Math.sin(pitchForDistance(pose.distanceM));
     this.lighting.update(cam, pose.targetX, targetY, pose.targetZ, reachM);
     this.works.update(world, frameSeconds);
+    this.clearings.update(world);
     this.town.update(world);
     this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
     this.people.update(world);

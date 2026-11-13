@@ -1,6 +1,7 @@
 import { FIELDS, GATHER, LEVEL_SPEED, PEOPLE } from '../config.ts';
 import { type Building, isBuilt, type Town } from './economy.ts';
-import { doorX, doorZ, NOWHERE, type Person, walkTo, workRateOf } from './people.ts';
+import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
+import { NOWHERE } from './types.ts';
 import type { World } from './world.ts';
 
 // What workers and builders do. Most trades are worked at the bench: the

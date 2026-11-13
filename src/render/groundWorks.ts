@@ -106,7 +106,7 @@ export class GroundWorks {
     }
     for (const town of world.towns) {
       // The keep's yard.
-      this.disc(townX(town.side), townZ(town.side), TOWN.keepRadiusM + 5, 3, 0, 1);
+      this.disc(townX(town.side), townZ(town.side), TOWN.keepRadiusM + 4, 4, 0, 0.9);
       for (const b of town.plots) {
         if (!b) continue;
         // A farm's land: only the strips its level works, once they are broken.
@@ -118,7 +118,7 @@ export class GroundWorks {
           this.strip(s.x, s.z, b.yawRad, FIELDS.stripLengthM, FIELDS.stripWidthM, corn);
         }
         // The yard, and the worn ground at the door.
-        this.disc(b.x, b.z, TOWN.buildingRadiusM + 0.6, 2.2, 0, 0.9);
+        this.disc(b.x, b.z, TOWN.buildingRadiusM - 0.6, 3.5, 0, 0.8);
         this.disc(b.x + Math.sin(b.yawRad) * (TOWN.buildingRadiusM + 1), b.z + Math.cos(b.yawRad) * (TOWN.buildingRadiusM + 1), 2.2, 1.5, 0, 1);
       }
     }

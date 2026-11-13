@@ -1,10 +1,12 @@
-import { AI, MAP, TOWN } from '../config.ts';
+import { AI, CAMERA, FIELDS, MAP, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdDemolish, cmdHalt, cmdMoveGroup, cmdRecruit, cmdTogglePaused, cmdUpgrade } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdDemolish, cmdHalt, cmdMoveGroup, cmdRecruit, cmdTogglePaused, cmdUpgrade, roadCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
-import { heightAtM, plotX, plotZ, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
-import { type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
+import { cellX, cellZ, roadCells } from '../sim/nav.ts';
+import { checkSite, yawToKeep } from '../sim/placement.ts';
+import { heightAtM, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
+import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
 import { CpuTimer } from '../render/perf.ts';
 import { Hud } from '../ui/hud.ts';
@@ -14,7 +16,8 @@ import type { Action } from './bindings.ts';
 import { Controls, type ControlTarget } from './controls.ts';
 import { groundHit, type Ray } from './picking.ts';
 import { RtsCamera } from './rtsCamera.ts';
-import type { WorldView } from './worldView.ts';
+import type { GroundTiles } from '../render/markers.ts';
+import type { Ghost, WorldView } from './worldView.ts';
 
 // One game from first step to the fall of a keep: owns the world, the camera,
 // the selection and the loop; turns the player's gestures into the commands of
@@ -28,6 +31,9 @@ export interface GameOptions {
   edgeScroll: boolean;
 }
 
+/** What the player is placing on the map: a building (turned by `turns` eighths of a circle from facing the keep), or a road from a point. */
+type Tool = { kind: 'build'; building: BuildingKind; turns: number } | { kind: 'road'; fromX: number; fromZ: number; started: boolean };
+
 /** Least seconds between two "enemy at the town" warnings. */
 const WARNING_GAP_S = 45;
 
@@ -39,6 +45,12 @@ export class Game implements ControlTarget {
   private readonly controls: Controls;
   private readonly selected = new Set<number>();
   private selectedPlot = -1;
+  private tool: Tool | null = null;
+  private readonly ghost: Ghost = { kind: 'house', x: 0, z: 0, yawRad: 0, allowed: false };
+  private readonly tiles: GroundTiles = { values: [], count: 0, allowed: true };
+  private readonly cursor = { x: 0, y: 0 };
+  private readonly roadScratch: number[] = [];
+  private hint = '';
   private readonly ray: Ray = { ox: 0, oy: 0, oz: 0, dx: 0, dy: -1, dz: 0 };
   private readonly hit = { x: 0, z: 0 };
   private readonly screen = { x: 0, y: 0 };
@@ -62,7 +74,9 @@ export class Game implements ControlTarget {
     // Start over the player's town, looking towards the enemy (north-east).
     this.camera = new RtsCamera(townX(PLAYER) + 18, townZ(PLAYER) - 18, Math.PI / 4);
     this.hud = new Hud(hudRoot, {
-      build: (plot, kind) => this.report(cmdBuild(this.world, PLAYER, plot, kind)),
+      pickBuilding: (kind) => this.pickTool({ kind: 'build', building: kind, turns: 0 }),
+      pickRoad: () => this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false }),
+      rotateCamera: (direction) => this.camera.rotate(direction * CAMERA.rotateStepRad),
       upgrade: (plot) => this.report(cmdUpgrade(this.world, PLAYER, plot)),
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
@@ -194,10 +208,12 @@ export class Game implements ControlTarget {
     this.controls.update(frameSeconds);
     this.camera.update(frameSeconds);
     this.timer.begin();
-    this.view.render(this.world, this.camera, this.selected, this.selectedPlot);
+    const placing = this.updateTool();
+    this.view.render(this.world, this.camera, this.selected, this.selectedPlot >= 0 ? this.selectedPlot : -2, placing === 'ghost' ? this.ghost : null, placing === 'none' ? null : this.tiles, frameSeconds);
     this.timer.lap('draw');
     this.updateCorners();
-    this.hud.update(this.world, { regiments: this.selected, plot: this.selectedPlot }, (x, y, z, out) => this.view.project(x, y, z, out), heightAtM, this.corners, frameSeconds);
+    const tool = this.tool === null ? '' : this.tool.kind === 'road' ? 'road' : this.tool.building;
+    this.hud.update(this.world, { regiments: this.selected, plot: this.selectedPlot, tool }, (x, y, z, out) => this.view.project(x, y, z, out), heightAtM, this.corners, frameSeconds);
     this.timer.lap('hud');
     if (this.hud.debugVisible) this.hud.setDebugText(this.debugText());
     if (!this.loop.paused && this.world.winner === -1) this.view.stage.governor.update(frameSeconds);
@@ -235,6 +251,96 @@ export class Game implements ControlTarget {
     ].join('\n');
   }
 
+  // ---- placing buildings and roads -----------------------------------------
+
+  private setHint(text: string): void {
+    if (text === this.hint) return;
+    this.hint = text;
+    this.hud.setHint(text);
+  }
+
+  private pickTool(tool: Tool): void {
+    this.sound.unlock();
+    this.sound.play('click');
+    this.tool = tool;
+    this.selected.clear();
+    this.selectedPlot = -1;
+  }
+
+  /** Puts down the tool; a road in the middle of a stretch first lets go of its start. */
+  private dropTool(): void {
+    if (this.tool?.kind === 'road' && this.tool.started) this.tool.started = false;
+    else this.tool = null;
+    if (!this.tool) this.setHint(T.hintIdle);
+  }
+
+  private yawOf(tool: Tool & { kind: 'build' }, x: number, z: number): number {
+    return yawToKeep(PLAYER, x, z) + (tool.turns * Math.PI) / 4;
+  }
+
+  /** A click with a tool in hand: places the building, or sets the next point of the road. */
+  private useTool(x: number, z: number, keep: boolean): void {
+    const tool = this.tool;
+    if (!tool) return;
+    if (tool.kind === 'build') {
+      const result = cmdBuild(this.world, PLAYER, tool.building, x, z, this.yawOf(tool, x, z));
+      this.report(result);
+      if (result === 'ok' && !keep) this.dropTool();
+      return;
+    }
+    if (tool.started) {
+      const result = cmdBuildRoad(this.world, PLAYER, tool.fromX, tool.fromZ, x, z);
+      this.report(result);
+      if (result !== 'ok') return;
+    } else {
+      this.sound.play('click');
+    }
+    // The next stretch starts where this one ended.
+    tool.fromX = x;
+    tool.fromZ = z;
+    tool.started = true;
+  }
+
+  /** Once a frame: where the cursor would put the tool. Fills the ghost and the tiles; says which of them to draw. */
+  private updateTool(): 'none' | 'ghost' | 'tiles' {
+    const tool = this.tool;
+    if (!tool) return 'none';
+    const pointing = this.controls.cursor(this.cursor) && this.ground(this.cursor.x, this.cursor.y, this.hit);
+    this.tiles.count = 0;
+    this.tiles.values.length = 0;
+    if (tool.kind === 'build') {
+      if (!pointing) {
+        this.setHint(`${T.buildings[tool.building].name}: ${T.hintBuild}`);
+        return 'none';
+      }
+      const yaw = this.yawOf(tool, this.hit.x, this.hit.z);
+      const check = checkSite(this.world, PLAYER, tool.building, this.hit.x, this.hit.z, yaw);
+      this.ghost.kind = tool.building;
+      this.ghost.x = this.hit.x;
+      this.ghost.z = this.hit.z;
+      this.ghost.yawRad = yaw;
+      this.ghost.allowed = check.result === 'ok';
+      // A farm shows the fields it would take.
+      for (const strip of check.site.strips) this.tiles.values.push(strip.x, strip.z, FIELDS.stripLengthM, FIELDS.stripWidthM, yaw);
+      this.tiles.count = check.site.strips.length;
+      this.tiles.allowed = this.ghost.allowed;
+      this.setHint(check.result === 'ok' ? `${T.buildings[tool.building].name}: ${T.hintBuild}` : `${T.buildings[tool.building].name}: ${T.results[check.result]}`);
+      return 'ghost';
+    }
+    if (!tool.started || !pointing) {
+      this.setHint(tool.started ? T.hintRoadEnd : T.hintRoadStart);
+      return 'none';
+    }
+    const cells = roadCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch);
+    for (let i = 0; i < cells; i++) this.tiles.values.push(cellX(this.roadScratch[i] as number), cellZ(this.roadScratch[i] as number), ROADS.cellM, ROADS.cellM, 0);
+    this.tiles.count = cells;
+    const cost = roadCost(this.world, tool.fromX, tool.fromZ, this.hit.x, this.hit.z);
+    const inReach = Math.hypot(this.hit.x - townX(PLAYER), this.hit.z - townZ(PLAYER)) <= TOWN.territoryRadiusM;
+    this.tiles.allowed = inReach && this.world.towns[PLAYER].stock.stone >= cost;
+    this.setHint(`${T.hintRoadEnd} ${cost} ${T.roadCost}${inReach ? '' : ` — ${T.results.tooFar}`}`);
+    return 'tiles';
+  }
+
   // ---- ControlTarget -------------------------------------------------------
 
   ground(screenX: number, screenY: number, out: { x: number; z: number }): boolean {
@@ -266,8 +372,10 @@ export class Game implements ControlTarget {
   /** The plot of `side` at a ground point: its index, -1 for the keep, -2 for none. */
   private plotAt(x: number, z: number, side: Side): number {
     if (Math.hypot(x - townX(side), z - townZ(side)) < TOWN.keepRadiusM) return -1;
-    for (let plot = 0; plot < TOWN.plotCount; plot++) {
-      if (Math.hypot(x - plotX(side, plot), z - plotZ(side, plot)) < TOWN.buildingRadiusM) return plot;
+    const plots = this.world.towns[side].plots;
+    for (let plot = 0; plot < plots.length; plot++) {
+      const b = plots[plot];
+      if (b && Math.hypot(x - b.x, z - b.z) < TOWN.buildingRadiusM) return plot;
     }
     return -2;
   }
@@ -280,13 +388,17 @@ export class Game implements ControlTarget {
     }
     this.selected.add(id);
     this.selectedPlot = -1;
-    this.hud.setHint(T.hintArmy);
+    this.setHint(T.hintArmy);
     this.sound.play('click');
   }
 
   select(screenX: number, screenY: number, additive: boolean): void {
     this.sound.unlock();
     if (!this.ground(screenX, screenY, this.hit)) return;
+    if (this.tool) {
+      this.useTool(this.hit.x, this.hit.z, additive);
+      return;
+    }
     const r = this.regimentAt(this.hit.x, this.hit.z, PLAYER);
     if (r) {
       this.selectRegiment(r.id, additive);
@@ -297,7 +409,7 @@ export class Game implements ControlTarget {
     const plot = this.plotAt(this.hit.x, this.hit.z, PLAYER);
     this.selectedPlot = plot >= 0 ? plot : -1;
     if (plot >= 0) this.sound.play('click');
-    this.hud.setHint(T.hintIdle);
+    this.setHint(T.hintIdle);
   }
 
   boxSelect(x0: number, y0: number, x1: number, y1: number, additive: boolean): void {
@@ -313,7 +425,7 @@ export class Game implements ControlTarget {
     }
     if (this.selected.size > 0) {
       this.selectedPlot = -1;
-      this.hud.setHint(T.hintArmy);
+      this.setHint(T.hintArmy);
     }
   }
 
@@ -322,6 +434,11 @@ export class Game implements ControlTarget {
   }
 
   order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null): void {
+    // The right button puts down whatever is being placed.
+    if (this.tool) {
+      this.dropTool();
+      return;
+    }
     if (this.selected.size === 0 || !this.ground(screenX, screenY, this.hit)) return;
     const ids = [...this.selected];
     const x = this.hit.x;
@@ -362,6 +479,10 @@ export class Game implements ControlTarget {
   tap(screenX: number, screenY: number, double: boolean): void {
     this.sound.unlock();
     if (!this.ground(screenX, screenY, this.hit)) return;
+    if (this.tool) {
+      this.useTool(this.hit.x, this.hit.z, false);
+      return;
+    }
     const own = this.regimentAt(this.hit.x, this.hit.z, PLAYER);
     const ownPlot = this.plotAt(this.hit.x, this.hit.z, PLAYER);
     // With troops selected, a tap anywhere but on one's own troops or town is an order.
@@ -374,11 +495,15 @@ export class Game implements ControlTarget {
     if (action === 'halt') this.haltSelected();
     else if (action === 'selectAll') this.selectAll();
     else if (action === 'debug') this.hud.debugVisible = !this.hud.debugVisible;
+    else if (action === 'turnBuilding') {
+      if (this.tool?.kind === 'build') this.tool.turns = (this.tool.turns + 1) % 8;
+    } else if (action === 'road') this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false });
     else if (action === 'cancel') {
-      if (this.selected.size > 0 || this.selectedPlot >= 0) {
+      if (this.tool) this.dropTool();
+      else if (this.selected.size > 0 || this.selectedPlot >= 0) {
         this.selected.clear();
         this.selectedPlot = -1;
-        this.hud.setHint(T.hintIdle);
+        this.setHint(T.hintIdle);
       } else {
         this.onMenu?.();
       }
@@ -405,7 +530,7 @@ export class Game implements ControlTarget {
     for (const r of this.world.regiments) if (r.side === PLAYER && r.aliveMen > 0 && r.state === 'formed') this.selected.add(r.id);
     if (this.selected.size > 0) {
       this.selectedPlot = -1;
-      this.hud.setHint(T.hintArmy);
+      this.setHint(T.hintArmy);
     }
   }
 
@@ -439,7 +564,7 @@ export class Game implements ControlTarget {
         this.place(townX(COMPUTER), townZ(COMPUTER), 100, Math.PI / 4);
         break;
       case 'overview':
-        this.place(0, 0, 260, Math.PI / 4);
+        this.place(0, 0, CAMERA.maxDistanceM, Math.PI / 4);
         break;
       default:
         throw new Error(`unknown spot '${name}'; valid: town rally field close enemy overview`);

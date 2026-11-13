@@ -5,6 +5,14 @@ export type Side = 0 | 1;
 export const PLAYER: Side = 0;
 export const COMPUTER: Side = 1;
 
+/**
+ * "The keep" where a place in a town's list of buildings is expected, and "nowhere". Kept here, with
+ * no imports, because people.ts, errands.ts and trades.ts import one another and each needs these
+ * while it loads.
+ */
+export const KEEP = -1;
+export const NOWHERE = -2;
+
 export function enemyOf(side: Side): Side {
   return side === PLAYER ? COMPUTER : PLAYER;
 }

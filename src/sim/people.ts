@@ -5,7 +5,7 @@ import { findPath, speedFactorAt } from './nav.ts';
 import { doorOfX, doorOfZ } from './placement.ts';
 import { facingToEnemy, townX, townZ } from './terrain.ts';
 import { stepBuilder, stepWorker } from './trades.ts';
-import { type ResourceId, type Side } from './types.ts';
+import { KEEP, NOWHERE, type ResourceId, type Side } from './types.ts';
 import type { World } from './world.ts';
 
 // The townspeople. Each has one job at a time: a worker belongs to a building
@@ -21,9 +21,7 @@ export type Role = 'carrier' | 'worker' | 'builder' | 'recruit';
 export type Act = 'stand' | 'walk' | 'work' | 'build' | 'flee';
 export type Errand = 'none' | 'site' | 'input' | 'food' | 'clear';
 
-/** "The keep" where a plot index is expected, and "nowhere". */
-export const KEEP = -1;
-export const NOWHERE = -2;
+export { KEEP, NOWHERE };
 
 export interface Person {
   side: Side;
