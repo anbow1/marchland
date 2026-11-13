@@ -5,6 +5,7 @@ import { isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts'
 import { heightAtM, isForest, townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Missiles: arrows, crossbow bolts, ballista bolts and trebuchet stones. Each
 // is launched at the elevation that carries it to its aim point under gravity
@@ -86,7 +87,7 @@ export function arrowY(a: Arrow): number {
 function launch(world: World, side: Side, shot: Shot, x0: number, y0: number, z0: number, tx: number, ty: number, tz: number, buildingSide: Side, buildingPlot: number): boolean {
   const dx = tx - x0;
   const dz = tz - z0;
-  const distanceM = Math.hypot(dx, dz);
+  const distanceM = hypot2(dx, dz);
   if (distanceM < 0.5) return false;
   const elevation = launchElevationRad(distanceM, ty - y0, shot.speedMs, MISSILE.gravityMs2, shot.highArc);
   if (Number.isNaN(elevation)) return false;
@@ -125,7 +126,7 @@ function splash(world: World, a: Arrow, x: number, z: number): void {
     let hurt = false;
     for (const s of r.soldiers) {
       if (!s.alive) continue;
-      const d = Math.hypot(s.x - x, s.z - z);
+      const d = hypot2(s.x - x, s.z - z);
       if (d > a.splashM) continue;
       hurt = true;
       wound(world, s, a.damage * (1 - d / (a.splashM * 2)) * (1 - r.def.armour * (1 - a.pierce)), a.side, null);
@@ -156,7 +157,7 @@ function land(world: World, a: Arrow): void {
     for (const s of r.soldiers) {
       if (!s.alive) continue;
       // A bigger body (a horse, an engine) is a bigger target.
-      const d2 = Math.max(0, Math.hypot(s.x - x, s.z - z) - r.def.bodyRadiusM + 0.36) ** 2;
+      const d2 = Math.max(0, hypot2(s.x - x, s.z - z) - r.def.bodyRadiusM + 0.36) ** 2;
       if (d2 < bestD2) {
         victim = s;
         bestD2 = d2;
@@ -198,7 +199,7 @@ function shootAtRegiment(world: World, r: Regiment, target: Regiment): void {
       if (candidate.alive) victim = candidate;
     }
     if (!victim) continue;
-    const distanceM = Math.hypot(victim.x - s.x, victim.z - s.z);
+    const distanceM = hypot2(victim.x - s.x, victim.z - s.z);
     if (distanceM > r.def.missileRangeM * 1.05 || distanceM < r.def.missileMinRangeM) {
       s.attackCooldownS = 0.3;
       continue;
@@ -226,7 +227,7 @@ function shootAtBuilding(world: World, r: Regiment): void {
   const shot = shotOf(r);
   for (const s of r.soldiers) {
     if (!s.alive || s.target || s.attackCooldownS > 0) continue;
-    const distanceM = Math.hypot(bx - s.x, bz - s.z);
+    const distanceM = hypot2(bx - s.x, bz - s.z);
     if (distanceM > r.def.missileRangeM || distanceM < r.def.missileMinRangeM) continue;
     const y0 = heightAtM(s.x, s.z) + MISSILE.chestHeightM;
     if (launch(world, r.side, shot, s.x, y0, s.z, bx + world.rng.gauss(), heightAtM(bx, bz) + 3, bz + world.rng.gauss(), r.targetSide, r.targetPlot)) {

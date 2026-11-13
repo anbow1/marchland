@@ -3,6 +3,7 @@ import { type Building, canAffordBuilding, freePlot, type Site } from './economy
 import { depositNear, DEPOSITS, forestCoverAt, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Where a building may stand. Anywhere inside a side's reach, on ground that
 // is level enough, dry and free — and near what its trade lives on: trees for
@@ -34,11 +35,11 @@ function findNearby(x: number, z: number, reachM: number, test: (px: number, pz:
 /** True when a circle of radius `r` at (x, z) would touch a building or a keep of either side, or a farm's land. */
 function touchesAnything(world: World, x: number, z: number, r: number): boolean {
   for (const town of world.towns) {
-    if (Math.hypot(x - townX(town.side), z - townZ(town.side)) < TOWN.keepRadiusM + r + TOWN.buildingGapM + 2) return true;
+    if (hypot2(x - townX(town.side), z - townZ(town.side)) < TOWN.keepRadiusM + r + TOWN.buildingGapM + 2) return true;
     for (const b of town.plots) {
       if (!b) continue;
-      if (Math.hypot(x - b.x, z - b.z) < TOWN.buildingRadiusM + r + TOWN.buildingGapM) return true;
-      for (const strip of b.strips) if (Math.hypot(x - strip.x, z - strip.z) < FIELDS.stripWidthM / 2 + r) return true;
+      if (hypot2(x - b.x, z - b.z) < TOWN.buildingRadiusM + r + TOWN.buildingGapM) return true;
+      for (const strip of b.strips) if (hypot2(x - strip.x, z - strip.z) < FIELDS.stripWidthM / 2 + r) return true;
     }
   }
   return false;
@@ -54,13 +55,13 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const site: Site = { x, z, yawRad, spotX: x, spotZ: z, strips: [] };
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
-  if (Math.hypot(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return fail('tooFar');
+  if (hypot2(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
-  if (Math.hypot(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
+  if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isWater(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');
   // Not on the crag itself: beside it.
-  for (const d of DEPOSITS) if (Math.hypot(x - d.x, z - d.z) < TOWN.depositRadiusM + 3) return fail('blocked');
+  for (const d of DEPOSITS) if (hypot2(x - d.x, z - d.z) < TOWN.depositRadiusM + 3) return fail('blocked');
   if (riseAcrossM(x, z, r) > TOWN.maxFootprintRiseM) return fail('tooSteep');
   const need = SITE_NEED[kind];
   // A woodcutter's hut stands at the edge of the wood, the others in the open.
@@ -68,13 +69,13 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   if (need === 'forest') {
     if (!findNearby(x, z, TOWN.forestReachM, (px, pz) => forestCoverAt(px, pz) > 0.6, found)) return fail('needsForest');
     // A few steps into the trees from where they begin.
-    const d = Math.hypot(found.x - x, found.z - z) || 1;
+    const d = hypot2(found.x - x, found.z - z) || 1;
     site.spotX = found.x + ((found.x - x) / d) * (GATHER.woodcutter.reachM * 0.4);
     site.spotZ = found.z + ((found.z - z) / d) * (GATHER.woodcutter.reachM * 0.4);
   } else if (need === 'water') {
     if (!findNearby(x, z, TOWN.waterReachM, isWater, found)) return fail('needsWater');
     // He fishes from the bank: a step back from the first water found.
-    const d = Math.hypot(found.x - x, found.z - z) || 1;
+    const d = hypot2(found.x - x, found.z - z) || 1;
     site.spotX = found.x - ((found.x - x) / d) * 1.5;
     site.spotZ = found.z - ((found.z - z) / d) * 1.5;
   } else if (need === 'stone' || need === 'ore') {

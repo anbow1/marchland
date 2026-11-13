@@ -3,6 +3,7 @@ import { checkSite, yawToKeep } from './placement.ts';
 import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
 import { type BuildingKind, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Where the computer builds. A human picks ground with the cursor; the
 // computer needs a rule: houses and crafts in rings round its keep, farms
@@ -106,7 +107,7 @@ function planLake(world: World, side: Side, kind: BuildingKind): boolean {
 function planDeposit(world: World, side: Side, kind: BuildingKind, rock: 'stone' | 'ore'): boolean {
   const tx = townX(side);
   const tz = townZ(side);
-  const nearestFirst = DEPOSITS.filter((d) => d.kind === rock).sort((a, b) => Math.hypot(a.x - tx, a.z - tz) - Math.hypot(b.x - tx, b.z - tz));
+  const nearestFirst = DEPOSITS.filter((d) => d.kind === rock).sort((a, b) => hypot2(a.x - tx, a.z - tz) - hypot2(b.x - tx, b.z - tz));
   for (const d of nearestFirst) {
     const base = Math.atan2(tx - d.x, tz - d.z);
     for (let k = 0; k < 9; k++) {

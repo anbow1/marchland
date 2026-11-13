@@ -314,16 +314,27 @@ function eatOne(stock: Stock): number {
   return 0;
 }
 
-/** Runs down a ration debt against a store; returns [debt left, starving]. Hunger does not pile up as a debt to repay. */
-function eat(stock: Stock, debt: number, wasStarving: boolean): [number, boolean] {
-  let starving = wasStarving;
-  while (debt >= 1) {
+/** Anything that eats from a store: a house, or the keep's household and the army. */
+interface Eater {
+  rationDebt: number;
+  starving: boolean;
+}
+
+/**
+ * Runs down an eater's ration debt against a store; hunger does not pile up as a debt to repay. Works
+ * on the eater in place: it runs for every house every step, and a returned pair was garbage each time.
+ */
+function eat(stock: Stock, eater: Eater): void {
+  while (eater.rationDebt >= 1) {
     const meal = eatOne(stock);
-    if (meal === 0) return [1, true];
-    debt -= meal;
-    starving = false;
+    if (meal === 0) {
+      eater.rationDebt = 1;
+      eater.starving = true;
+      return;
+    }
+    eater.rationDebt -= meal;
+    eater.starving = false;
   }
-  return [debt, starving];
 }
 
 /** Rations per second the keep must find: its own household and the army. */
@@ -366,7 +377,7 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
 /** A house: its people eat from its larder and, fed, pay tax. */
 function keepHouse(town: Town, b: Building, dtSeconds: number): void {
   b.rationDebt += ((b.residents * PEOPLE.rationsPerMinute) / 60) * dtSeconds;
-  [b.rationDebt, b.starving] = eat(b.inp, b.rationDebt, b.starving);
+  eat(b.inp, b);
   // Wine, while the house has any: drunk slowly, and the household pays more.
   b.hasWine = b.inp.wine > 0;
   if (b.hasWine) {
@@ -396,7 +407,7 @@ function construct(town: Town, b: Building, plot: number, dtSeconds: number): vo
 /** One fixed step of a town. `soldiers` is the number of its men alive on the field. */
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
   town.rationDebt += keepRationDemandPerSecond(town, soldiers) * dtSeconds;
-  [town.rationDebt, town.starving] = eat(town.stock, town.rationDebt, town.starving);
+  eat(town.stock, town);
   addGold(town, TOWN.keepGoldPerSecond * dtSeconds);
   if (!town.starving) addGold(town, town.keepResidents * PEOPLE.taxGoldPerSecond * dtSeconds);
   for (let plot = 0; plot < town.plots.length; plot++) {

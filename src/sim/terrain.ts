@@ -1,6 +1,7 @@
 import { MAP, TOWN } from '../config.ts';
 import { fbm2 } from '../core/noise.ts';
 import type { Side } from './types.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // The map as functions of (x, z): height, forest, water, and the outcrops of
 // stone and ore. The renderer draws from the same functions, so what the
@@ -48,8 +49,8 @@ export function lakeZ(side: Side): number {
 
 /** Distance from the nearer lake's middle, in lake radii (below 1 = inside the bowl). */
 function lakeShare(x: number, z: number): number {
-  const d0 = Math.hypot(x - lakeX(0), z - lakeZ(0));
-  const d1 = Math.hypot(x - lakeX(1), z - lakeZ(1));
+  const d0 = hypot2(x - lakeX(0), z - lakeZ(0));
+  const d1 = hypot2(x - lakeX(1), z - lakeZ(1));
   return Math.min(d0, d1) / TOWN.lakeRadiusM;
 }
 
@@ -62,8 +63,8 @@ export function isWater(x: number, z: number): boolean {
 export const WATER_LEVEL_M = -0.45;
 
 function distanceToNearestTownM(x: number, z: number): number {
-  const d0 = Math.hypot(x - townX(0), z - townZ(0));
-  const d1 = Math.hypot(x - townX(1), z - townZ(1));
+  const d0 = hypot2(x - townX(0), z - townZ(0));
+  const d1 = hypot2(x - townX(1), z - townZ(1));
   return Math.min(d0, d1);
 }
 
@@ -140,7 +141,7 @@ export function depositNear(kind: Deposit['kind'], x: number, z: number, reachM:
   let bestD = reachM + TOWN.depositRadiusM;
   for (const d of DEPOSITS) {
     if (d.kind !== kind) continue;
-    const dist = Math.hypot(d.x - x, d.z - z);
+    const dist = hypot2(d.x - x, d.z - z);
     if (dist < bestD) {
       best = d;
       bestD = dist;
@@ -151,7 +152,7 @@ export function depositNear(kind: Deposit['kind'], x: number, z: number, reachM:
 
 function distanceToNearestDepositM(x: number, z: number): number {
   let best = Number.POSITIVE_INFINITY;
-  for (const d of DEPOSITS) best = Math.min(best, Math.hypot(d.x - x, d.z - z));
+  for (const d of DEPOSITS) best = Math.min(best, hypot2(d.x - x, d.z - z));
   return best;
 }
 

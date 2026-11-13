@@ -4,6 +4,7 @@ import { doorX, doorZ, type Person, walkTo } from './people.ts';
 import { KEEP, NOWHERE } from './types.ts';
 import { type ResourceId, RESOURCE_IDS } from './types.ts';
 import type { World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // What carriers do. A free carrier takes the most pressing errand near him:
 // timber and stone to a building site, food to a house whose larder is low,
@@ -43,12 +44,12 @@ function findSource(town: Town, p: Person, good: ResourceId, toX: number, toZ: n
     const kx = doorX(town, KEEP);
     const kz = doorZ(town, KEEP);
     best = KEEP;
-    bestM = Math.hypot(kx - p.x, kz - p.z) + Math.hypot(kx - toX, kz - toZ);
+    bestM = hypot2(kx - p.x, kz - p.z) + hypot2(kx - toX, kz - toZ);
   }
   for (let plot = 0; plot < town.plots.length; plot++) {
     const b = town.plots[plot];
     if (!b || plot === notPlot || b.out[good] <= 0) continue;
-    const m = Math.hypot(b.x - p.x, b.z - p.z) + Math.hypot(b.x - toX, b.z - toZ);
+    const m = hypot2(b.x - p.x, b.z - p.z) + hypot2(b.x - toX, b.z - toZ);
     if (m < bestM) {
       best = plot;
       bestM = m;
@@ -70,7 +71,7 @@ const choice: Choice = { score: 0, errand: 'none', good: 'wood', amount: 0, src:
 
 function offer(town: Town, p: Person, urgency: number, errand: Person['errand'], good: ResourceId, amount: number, src: number, dst: number): void {
   if (amount <= 0) return;
-  const d = Math.hypot(doorX(town, src) - p.x, doorZ(town, src) - p.z);
+  const d = hypot2(doorX(town, src) - p.x, doorZ(town, src) - p.z);
   const score = urgency - d;
   if (score <= choice.score) return;
   choice.score = score;

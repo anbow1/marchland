@@ -121,8 +121,15 @@ export const ROADS = {
   roadSpeedFactor: 1.4,
   openSpeedFactor: 1,
   forestSpeedFactor: 0.7,
-  /** Paths looked for in one step of the simulation at most: the rest wait a step. */
-  pathsPerStep: 6,
+  /**
+   * Cells the path finder may look at in one step of the simulation, all searches together: people who
+   * need a way after that wait a step (measured: a 160 m way looks at about 4 000 cells, 1.3 ms).
+   */
+  cellsPerStep: 8000,
+  /** One search gives up after this many cells and the walker goes straight: no single search costs more than about 3 ms. */
+  maxCellsPerSearch: 12000,
+  /** A goal in water or inside a building is moved to the nearest open cell within this many cells. */
+  goalSnapCells: 6,
   /** Way points a path may hold. */
   maxWaypoints: 96,
 } as const;

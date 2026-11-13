@@ -12,6 +12,7 @@ import { cmdMove, inHomeLand } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // The whole game state and its one fixed update order (rules §10):
 //
@@ -132,7 +133,7 @@ function leashHomeGuards(world: World): void {
     const back = ARMY.homeGuardRadiusM - 10;
     const dx = r.centreX - townX(r.side);
     const dz = r.centreZ - townZ(r.side);
-    const d = Math.hypot(dx, dz) || 1;
+    const d = hypot2(dx, dz) || 1;
     cmdMove(world, r.id, townX(r.side) + (dx / d) * back, townZ(r.side) + (dz / d) * back, null, false);
   }
 }

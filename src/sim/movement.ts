@@ -1,8 +1,10 @@
+import { nearBuilt } from './nav.ts';
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
 import { clampToMap, isForest, isWater, lakeX, lakeZ, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Movement: the regiment's anchor walks to its goal and turns; each soldier
 // steers to his place in the formation, or to the enemy he is fighting; bodies
@@ -149,7 +151,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       goalX = target.centreX;
       goalZ = target.centreZ;
       faceGoal = true;
-      const distanceM = Math.hypot(goalX - r.anchorX, goalZ - r.anchorZ);
+      const distanceM = hypot2(goalX - r.anchorX, goalZ - r.anchorZ);
       // Archers stop inside range and shoot; everyone else presses into the enemy's ranks.
       stopDistanceM = isArcher(r) && (!isEngaged(r) || r.def.engine) ? r.def.missileRangeM * 0.85 : target.radiusM * 0.4 + 1;
       run = distanceM < ARMY.runWithinM || target.state === 'routing';
@@ -174,7 +176,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
 
   const dx = goalX - r.anchorX;
   const dz = goalZ - r.anchorZ;
-  const distanceM = Math.hypot(dx, dz);
+  const distanceM = hypot2(dx, dz);
   let desiredFacing = goalFacing;
   let movedM = 0;
   const running = run && distanceM > stopDistanceM + 0.05;
@@ -241,7 +243,7 @@ function avoidWater(s: Soldier): void {
   for (const side of [0, 1] as const) {
     const dx = s.x - lakeX(side);
     const dz = s.z - lakeZ(side);
-    const d = Math.hypot(dx, dz);
+    const d = hypot2(dx, dz);
     if (d >= TOWN.lakeRadiusM || d < 1e-6) continue;
     s.x = lakeX(side) + (dx / d) * TOWN.lakeRadiusM * 0.94;
     s.z = lakeZ(side) + (dz / d) * TOWN.lakeRadiusM * 0.94;
@@ -252,6 +254,9 @@ const OUTLYING_PLOT_M = 160;
 
 /** Keeps a soldier out of the keeps and buildings, sliding him round them. */
 function avoidBuildings(world: World, s: Soldier, dtSeconds: number): void {
+  // Out in the open (most of the time, and all of a battle in the field) there is nothing to do: the map
+  // of built cells says so in nine reads, before any distances to the buildings of both towns.
+  if (!nearBuilt(world.nav, s.x, s.z)) return;
   for (const town of world.towns) {
     const tx = townX(town.side);
     const tz = townZ(town.side);
@@ -303,7 +308,7 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
   } else {
     const placeX = slotX(r, s.slot);
     const placeZ = slotZ(r, s.slot);
-    lagM = Math.hypot(placeX - s.x, placeZ - s.z);
+    lagM = hypot2(placeX - s.x, placeZ - s.z);
     s.searchS -= dtSeconds;
     // An engine's crew serves the engine: it never goes looking for a fight.
     if (s.searchS <= 0 && !def.engine) {
@@ -337,7 +342,7 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
 
   const dx = goalX - s.x;
   const dz = goalZ - s.z;
-  const d = Math.hypot(dx, dz);
+  const d = hypot2(dx, dz);
   let wantVx = 0;
   let wantVz = 0;
   if (d > stopM + 0.03) {
@@ -349,7 +354,7 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
   const accel = (def.cavalry ? ARMY.horseAccelMs2 : ARMY.footAccelMs2) * dtSeconds;
   const dvx = wantVx - s.vx;
   const dvz = wantVz - s.vz;
-  const dv = Math.hypot(dvx, dvz);
+  const dv = hypot2(dvx, dvz);
   if (dv <= accel || dv < 1e-9) {
     s.vx = wantVx;
     s.vz = wantVz;
@@ -359,7 +364,7 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
   }
   s.x += s.vx * dtSeconds;
   s.z += s.vz * dtSeconds;
-  const speedNow = Math.hypot(s.vx, s.vz);
+  const speedNow = hypot2(s.vx, s.vz);
   s.strideM += speedNow * dtSeconds;
 
   let wantHeading = r.facingRad;

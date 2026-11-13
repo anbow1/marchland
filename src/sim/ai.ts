@@ -7,6 +7,7 @@ import { isArcher, type Regiment } from './regiment.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { type BuildingKind, enemyOf, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, type World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // The computer player. It runs a town on the same economy and gives the same
 // commands as the human: a build order, a recruiting rota, and an army that
@@ -163,7 +164,7 @@ function recruit(world: World, ai: AiState): void {
 
 /** Lower is a better target for `r`. */
 function targetScore(r: Regiment, enemy: Regiment): number {
-  let score = Math.hypot(enemy.centreX - r.centreX, enemy.centreZ - r.centreZ);
+  let score = hypot2(enemy.centreX - r.centreX, enemy.centreZ - r.centreZ);
   if (r.def.cavalry) {
     if (isArcher(enemy)) score -= 40;
     if (enemy.def.bonusVsCavalry > 0) score += 35;
@@ -181,7 +182,7 @@ function bestTarget(world: World, r: Regiment, withinM: number): Regiment | null
   let bestScore = Number.POSITIVE_INFINITY;
   for (const enemy of world.regiments) {
     if (enemy.side === r.side || enemy.aliveMen === 0) continue;
-    if (Math.hypot(enemy.centreX - r.centreX, enemy.centreZ - r.centreZ) > withinM) continue;
+    if (hypot2(enemy.centreX - r.centreX, enemy.centreZ - r.centreZ) > withinM) continue;
     const score = targetScore(r, enemy);
     if (score < bestScore) {
       best = enemy;
@@ -206,7 +207,7 @@ function fight(world: World, army: readonly Regiment[], withinM: number, razeKee
 function enemyWithin(world: World, side: Side, x: number, z: number, radiusM: number): boolean {
   for (const r of world.regiments) {
     if (r.side === side || r.aliveMen === 0) continue;
-    if (Math.hypot(r.centreX - x, r.centreZ - z) < radiusM) return true;
+    if (hypot2(r.centreX - x, r.centreZ - z) < radiusM) return true;
   }
   return false;
 }
@@ -279,7 +280,7 @@ function command(world: World, ai: AiState): void {
     ai.waveStartMen = homeMen;
     const dx = townX(side) - townX(foe);
     const dz = townZ(side) - townZ(foe);
-    const d = Math.hypot(dx, dz);
+    const d = hypot2(dx, dz);
     cmdMoveGroup(world, ai.waveIds, townX(foe) + (dx / d) * STAGE_DISTANCE_M, townZ(foe) + (dz / d) * STAGE_DISTANCE_M, facingToEnemy(side), false);
     return;
   }

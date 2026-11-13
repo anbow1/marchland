@@ -8,6 +8,7 @@ import { frontageM, isArcher, type Regiment } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, type World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Everything a player can do, human or computer. The HUD and the computer
 // player both call these and nothing else, so the two play by the same rules.
@@ -33,7 +34,7 @@ export function roadCost(world: World, x0: number, z0: number, x1: number, z1: n
 export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x1: number, z1: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   const town = world.towns[side];
-  for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (Math.hypot(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return 'tooFar';
+  for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (hypot2(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return 'tooFar';
   const cells = roadCells(world.nav, x0, z0, x1, z1, roadScratch);
   const cost = Math.ceil(cells * ROADS.stonePerCell);
   if (town.stock.stone < cost) return 'cannotAfford';
@@ -83,7 +84,7 @@ function commandable(world: World, regimentId: number): Regiment | CommandResult
 
 /** True where a home guard may go: within ARMY.homeGuardRadiusM of its side's keep. */
 export function inHomeLand(side: Side, x: number, z: number): boolean {
-  return Math.hypot(x - townX(side), z - townZ(side)) <= ARMY.homeGuardRadiusM;
+  return hypot2(x - townX(side), z - townZ(side)) <= ARMY.homeGuardRadiusM;
 }
 
 /** What re-arming a regiment as `to` costs now: gold, and the equipment its living men do not already carry. */
@@ -104,7 +105,7 @@ export function rearmCost(r: Regiment, to: UnitKind): Cost {
 function atBarracks(world: World, r: Regiment): boolean {
   for (const b of world.towns[r.side].plots) {
     if (!b || b.kind !== 'barracks' || (b.level === 1 && b.constructionLeftS > 0)) continue;
-    if (Math.hypot(r.centreX - b.x, r.centreZ - b.z) <= REARM.radiusM) return true;
+    if (hypot2(r.centreX - b.x, r.centreZ - b.z) <= REARM.radiusM) return true;
   }
   return false;
 }

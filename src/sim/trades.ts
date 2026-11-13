@@ -3,6 +3,7 @@ import { type Building, isBuilt, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
 import { NOWHERE } from './types.ts';
 import type { World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // What workers and builders do. Most trades are worked at the bench: the
 // worker stands in his building and the economy's clock runs while he is
@@ -210,7 +211,7 @@ export function stepBuilder(world: World, town: Town, p: Person, dtSeconds: numb
       let hands = 0;
       for (const other of world.people) if (other.alive && other.side === p.side && other.role === 'builder' && other.work === plot) hands++;
       if (hands >= PEOPLE.maxBuildersPerSite) continue;
-      const score = Math.hypot(site.x - p.x, site.z - p.z) + (canBuildNow(site) ? 0 : 500);
+      const score = hypot2(site.x - p.x, site.z - p.z) + (canBuildNow(site) ? 0 : 500);
       if (score < bestScore) {
         bestScore = score;
         p.work = plot;

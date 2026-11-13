@@ -1,5 +1,6 @@
 import { MAP, ROADS } from '../config.ts';
 import { isForest, isWater } from './terrain.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Where people can walk and how fast. The map is a grid of two-metre cells;
 // each is open ground, forest, road, or blocked (water, a building). People
@@ -34,12 +35,12 @@ export interface Nav {
   built: Uint8Array;
   /** Goes up whenever roads or buildings change: paths and the view's ground refresh on it. */
   version: number;
-  /** Paths still allowed this step. */
+  /** Cells the path finder may still look at this step. */
   budget: number;
 }
 
 export function createNav(): Nav {
-  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), version: 0, budget: ROADS.pathsPerStep };
+  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
 }
 
 export const NAV_CELLS_PER_SIDE = N;
@@ -64,6 +65,22 @@ export function isBuiltOn(nav: Nav, x: number, z: number): boolean {
   return nav.built[cellOf(z) * N + cellOf(x)] === 1;
 }
 
+/** True when the cell at a point or any of its eight neighbours is built on: a cheap test before any wall maths. */
+export function nearBuilt(nav: Nav, x: number, z: number): boolean {
+  if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) return false;
+  const cx = cellOf(x);
+  const cz = cellOf(z);
+  for (let dz = -1; dz <= 1; dz++) {
+    const row = cz + dz;
+    if (row < 0 || row >= N) continue;
+    for (let dx = -1; dx <= 1; dx++) {
+      const col = cx + dx;
+      if (col >= 0 && col < N && nav.built[row * N + col] === 1) return true;
+    }
+  }
+  return false;
+}
+
 /** Walking speed at a point, as a share of the pace on open ground. */
 export function speedFactorAt(nav: Nav, x: number, z: number): number {
   const i = cellOf(z) * N + cellOf(x);
@@ -78,7 +95,7 @@ export function stampBuilding(nav: Nav, x: number, z: number, radiusM: number, b
   const cz0 = cellOf(z);
   for (let cz = Math.max(0, cz0 - r); cz <= Math.min(N - 1, cz0 + r); cz++) {
     for (let cx = Math.max(0, cx0 - r); cx <= Math.min(N - 1, cx0 + r); cx++) {
-      if (Math.hypot(centreOf(cx) - x, centreOf(cz) - z) > radiusM) continue;
+      if (hypot2(centreOf(cx) - x, centreOf(cz) - z) > radiusM) continue;
       nav.built[cz * N + cx] = built ? 1 : 0;
       if (built) nav.road[cz * N + cx] = 0;
     }
@@ -89,7 +106,7 @@ export function stampBuilding(nav: Nav, x: number, z: number, radiusM: number, b
 /** Cells a straight road from one point to another would cover that are not road yet and can be: not water, not built on. */
 export function roadCells(nav: Nav, x0: number, z0: number, x1: number, z1: number, out: number[]): number {
   out.length = 0;
-  const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / (ROADS.cellM * 0.5)));
+  const steps = Math.max(1, Math.ceil(hypot2(x1 - x0, z1 - z0) / (ROADS.cellM * 0.5)));
   let last = -1;
   for (let s = 0; s <= steps; s++) {
     const t = s / steps;
@@ -152,6 +169,33 @@ function heapPop(): number {
   return top;
 }
 
+/** The cell itself if it is open, else the nearest open cell within ROADS.goalSnapCells, else the cell itself. */
+function nearestOpen(nav: Nav, cell: number): number {
+  if (passable(nav, cell)) return cell;
+  const cx = cell % N;
+  const cz = (cell / N) | 0;
+  for (let r = 1; r <= ROADS.goalSnapCells; r++) {
+    let best = -1;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (let dz = -r; dz <= r; dz++) {
+      for (let dx = -r; dx <= r; dx++) {
+        if (Math.max(Math.abs(dx), Math.abs(dz)) !== r) continue;
+        const nx = cx + dx;
+        const nz = cz + dz;
+        if (nx < 0 || nz < 0 || nx >= N || nz >= N) continue;
+        const i = nz * N + nx;
+        const d = dx * dx + dz * dz;
+        if (d < bestD && passable(nav, i)) {
+          best = i;
+          bestD = d;
+        }
+      }
+    }
+    if (best >= 0) return best;
+  }
+  return cell;
+}
+
 function passable(nav: Nav, i: number): boolean {
   return nav.built[i] === 0 && WATER[i] === 0;
 }
@@ -171,7 +215,10 @@ const DZ = [0, 0, 1, -1, 1, -1, 1, -1];
  */
 export function findPath(nav: Nav, sx: number, sz: number, tx: number, tz: number, out: Float32Array): number {
   const start = cellOf(sz) * N + cellOf(sx);
-  const goal = cellOf(tz) * N + cellOf(tx);
+  // A goal in the water or inside a building cannot be reached by any way: search for the nearest open
+  // cell instead and walk the last stretch straight (a fisher's spot on the bank, a door in a wall).
+  // Without this the search looked at the whole map, 8 ms, before giving up.
+  const goal = nearestOpen(nav, cellOf(tz) * N + cellOf(tx));
   const maxPoints = out.length / 2;
   if (start === goal) {
     out[0] = tx;
@@ -187,7 +234,9 @@ export function findPath(nav: Nav, sx: number, sz: number, tx: number, tz: numbe
   cameFrom[start] = -1;
   heapPush(start, 0);
   let found = false;
+  let looked = 0;
   while (heapSize > 0) {
+    if (++looked > ROADS.maxCellsPerSearch) break;
     const cell = heapPop();
     if (cell === goal) {
       found = true;
@@ -219,6 +268,7 @@ export function findPath(nav: Nav, sx: number, sz: number, tx: number, tz: numbe
       heapPush(next, g + (Math.max(ax, az) + (Math.SQRT2 - 1) * Math.min(ax, az)) * COST_ROAD);
     }
   }
+  nav.budget -= looked;
   if (!found) return 0;
   // Walk back from the goal, keeping only the cells where the way turns.
   let count = 0;

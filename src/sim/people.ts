@@ -7,6 +7,7 @@ import { facingToEnemy, townX, townZ } from './terrain.ts';
 import { stepBuilder, stepWorker } from './trades.ts';
 import { KEEP, NOWHERE, type ResourceId, type Side } from './types.ts';
 import type { World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // The townspeople. Each has one job at a time: a worker belongs to a building
 // and makes it work by being there; a carrier takes goods where they are
@@ -122,16 +123,15 @@ export function spawnPerson(world: World, side: Side, x: number, z: number, home
  * there. `pace` multiplies his walking speed (2 when running from danger).
  */
 export function walkTo(world: World, p: Person, tx: number, tz: number, dtSeconds: number, pace = 1): boolean {
-  if (Math.hypot(tx - p.x, tz - p.z) <= PEOPLE.arriveM) {
+  if (hypot2(tx - p.x, tz - p.z) <= PEOPLE.arriveM) {
     p.speedMs = 0;
     p.pathLen = 0;
     return true;
   }
   const nav = world.nav;
   if (p.pathLen === 0 || Math.abs(p.goalX - tx) > 0.5 || Math.abs(p.goalZ - tz) > 0.5 || p.navVersion !== nav.version) {
-    // Only so many paths are looked for in a step: the rest stand a moment.
+    // Only so many cells are searched in a step: whoever comes after that stands a moment.
     if (nav.budget <= 0) return false;
-    nav.budget -= 1;
     p.pathLen = findPath(nav, p.x, p.z, tx, tz, p.path);
     if (p.pathLen === 0) {
       // Walled in (a building went up round him): straight there rather than stuck for ever.
@@ -151,7 +151,7 @@ export function walkTo(world: World, p: Person, tx: number, tz: number, dtSecond
     const wz = p.path[p.pathAt * 2 + 1] as number;
     const dx = wx - p.x;
     const dz = wz - p.z;
-    const d = Math.hypot(dx, dz);
+    const d = hypot2(dx, dz);
     if (d <= left) {
       p.x = wx;
       p.z = wz;
@@ -347,8 +347,10 @@ function grow(world: World, town: Town, living: number, dtSeconds: number): void
   }
 }
 
+const livingScratch: [number, number] = [0, 0];
+
 export function stepPeople(world: World, dtSeconds: number): void {
-  world.nav.budget = ROADS.pathsPerStep;
+  world.nav.budget = ROADS.cellsPerStep;
   for (const town of world.towns) {
     for (const b of town.plots) {
       if (!b) continue;
@@ -363,7 +365,10 @@ export function stepPeople(world: World, dtSeconds: number): void {
     world.rolesS = 1;
     for (const town of world.towns) assignRoles(world, town);
   }
-  const living: [number, number] = [0, 0];
+  // Reused: a new pair every step was garbage.
+  const living = livingScratch;
+  living[0] = 0;
+  living[1] = 0;
   for (const p of world.people) {
     if (!p.alive) continue;
     const town = world.towns[p.side];

@@ -6,6 +6,7 @@ import { returnHome } from './people.ts';
 import { townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
 import type { World } from './world.ts';
+import { hypot2 } from '../core/hypot.ts';
 
 // Melee, damage and morale. A blow lands by chance from attack against
 // defence, helped by striking from the side or from behind, by a charge and by
@@ -63,7 +64,7 @@ function strike(world: World, s: Soldier, t: Soldier): void {
   // Where the blow comes from, relative to the way the target's regiment faces.
   const dx = s.x - t.x;
   const dz = s.z - t.z;
-  const d = Math.max(Math.hypot(dx, dz), 1e-6);
+  const d = Math.max(hypot2(dx, dz), 1e-6);
   const cos = (dx * forwardX(b.facingRad) + dz * forwardZ(b.facingRad)) / d;
   const frontal = cos >= COMBAT.frontCos;
   let directionBonus = 0;
@@ -211,7 +212,7 @@ export function stepMorale(world: World, dtSeconds: number): void {
     const safe = !enemyNear(world, r, MORALE.safeFromEnemyM);
     if (safe) r.morale = Math.min(topMorale, r.morale + MORALE.routRecoverPerSecond * dtSeconds);
     if (r.shattered) {
-      const homeM = Math.hypot(r.centreX - townX(r.side), r.centreZ - townZ(r.side));
+      const homeM = hypot2(r.centreX - townX(r.side), r.centreZ - townZ(r.side));
       if (homeM < TOWN.refugeRadiusM + 25) disband(world, r);
     } else if (safe && r.morale >= MORALE.rallyAt) {
       rally(world, r);
