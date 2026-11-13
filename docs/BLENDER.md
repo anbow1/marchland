@@ -7,6 +7,32 @@ poziomy szczegółów, kompresja, podpięcie do gry) robi kod po stronie gry.
 
 Kolejność = wpływ na obraz. Jeśli czasu jest mało, zrób **A1–A3** i **B1–B2**.
 
+## Decyzja o stylu (2026-11-13)
+
+**Styl realistyczny, wariant D** z porównania w `results/2026-11-13/style/`:
+szachulec z wypełnieniem z tynku, kamienna podmurówka, strome dachy z gontu,
+dachówki albo strzechy z grubością i okapem, prawdziwe okna z okiennicami,
+kominy, drobiazgi przy ścianach (beczki, skrzynie, drabiny, narzędzia). Kolor
+i faktura z fotograficznych skanów (Poly Haven, CC0), tak jak podłoże.
+Styl rysunkowy (C) i płaskie kolory (A) odpadają.
+
+Skąd modele:
+
+- **Budujemy sami** w Blenderze skryptem (`tools/blender/`, bpy działa w
+  kontenerze bez okna): jeden zestaw części (ściany szachulcowe, podmurówki,
+  dachy, okna, drzwi, kominy) składany w każdy z 15 budynków i 3 poziomy, z
+  tymi samymi skanami. Tak cały zestaw jest spójny, czego nie da mieszanie
+  modeli różnych autorów.
+- **Drobiazgi** z Poly Haven (CC0): beczki, skrzynie, wiadra, drabiny, ławy,
+  stoły — wiarygodne i lekkie.
+- **Gotowe modele z Sketchfab** (CC BY) tylko jako wyjątki i wzór; kuźnia D
+  (33 tys. trójkątów) może zostać, dom z winiarnią (673 tys.) trzeba
+  uprościć poniżej limitu.
+
+Budżet budynku na poziom: do **12 tys. trójkątów** (koszary i zamek do 25
+tys.), do **3 materiałów** (ściany, dach, drewno i drobiazgi), tekstury z
+istniejących skanów gry, bez własnych map większych niż 1024 px.
+
 ## 0. Zasady wspólne
 
 - **Blender 4.2 lub nowszy.** Eksport: *File → Export → glTF 2.0 (.glb)*,

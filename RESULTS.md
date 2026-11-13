@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Porównanie stylów na nowym podłożu — wybrany styl realistyczny (D)
+
+Ta sama strona `compare.html`, teraz na łące ze zdjęcia lotniczego, z drogą,
+kamieniami, krzakami i drzewami. Plansze: `results/2026-11-13/style/porownanie-kuznie.jpg`
+i `porownanie-domy.jpg`. Liczby modeli bez zmian: kuźnia rysunkowa 14 tys.
+trójkątów (2 wywołania), kuźnia realistyczna 33 tys. (23), dom z winiarnią
+673 tys. (27). Gracz wybrał styl **D**; zasady i budżety w `docs/BLENDER.md`
+(„Decyzja o stylu”).
+
 ## 2026-11-13 · Żywe miasto: dowolne stawianie, drogi, ludzie, teren bez powtórzeń
 
 Co się zmieniło (szczegóły: `docs/ECONOMY.md`, `docs/BUILDINGS.md`, `docs/GAMEPLAY.md` §5, §9):
