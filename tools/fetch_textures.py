@@ -37,6 +37,8 @@ SURFACES = {
     "bark": "bark_brown_02",
     "leaves": "aerial_grass_rock",
     "rock": "rock_ground",
+    # A drone photograph of grassland, 90 m across: the large-scale colour of the meadows.
+    "pasture": "rocky_terrain_02",
 }
 MAPS = {"color": ("diff", 84), "normal": ("nor_gl", 90), "orm": ("arm", 82)}
 BASE = "https://dl.polyhaven.org/file/ph-assets/Textures/jpg/1k"

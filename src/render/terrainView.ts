@@ -30,18 +30,28 @@ const FAR_FULL_M = 230;
 const VERY_FAR_FROM_M = 300;
 const VERY_FAR_FULL_M = 560;
 const FLAT_MIP = 7;
+/** The fine scans fade from full strength to a fifth between these distances. */
+const DETAIL_NEAR_M = 45;
+const DETAIL_FAR_M = 260;
+/** Grass dried out on high ground, as a multiplier of the green. */
+const DRY_TINT = [1.16, 1.05, 0.7] as const;
+/** The odd angle (about 37°) the second reading of every texture is turned by. */
+const TURN_SIN = Math.sin(0.65);
+const TURN_COS = Math.cos(0.65);
 /** Turf gives way to rock between these slopes (rise over run). */
-const STEEP_FROM = 0.2;
-const STEEP_FULL = 0.34;
+const STEEP_FROM = 0.3;
+const STEEP_FULL = 0.48;
 /**
  * The scans were taken on worn, late-season ground; high summer grass is greener. A tint per surface
  * (linear RGB multipliers, tuned by eye against the scans' own green patches), kept apart from the scans.
  */
 const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>> = {
-  meadow: [0.5, 0.86, 0.4],
-  dry_grass: [1.0, 1.02, 0.58],
+  // The drone photograph is of lush grass under a grey sky; a touch warmer for an afternoon sun.
+  pasture: [1.02, 1.0, 0.86],
   // The litter scan is near black under a strategy camera's exposure.
-  forest_floor: [1.5, 1.45, 1.2],
+  forest_floor: [0.92, 0.9, 0.76],
+  // Grey rock reads as snow from above unless it is darkened and greened by lichen.
+  rock: [0.62, 0.64, 0.56],
   // Trodden earth in a wet country is grey-brown, not the scan's ochre.
   dirt: [0.72, 0.7, 0.68],
 };
@@ -135,10 +145,20 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const cover = coverTexture(extentM);
   const material = new MeshStandardNodeMaterial({ name: 'terrain', metalness: 0 });
   const xz = vec2(positionWorld.x, positionWorld.z);
+  // The noise texture repeats; one read of it would lay a grid over the land at its period. Each use
+  // reads it twice, the second time turned by an odd angle and scaled by the golden ratio, so the two
+  // repeats never line up and the sum has no period a player can see.
+  const turned = vec2(xz.x.mul(TURN_COS).sub(xz.y.mul(TURN_SIN)), xz.x.mul(TURN_SIN).add(xz.y.mul(TURN_COS)));
+  const noiseAt = (sizeM: number, ox: number, oy: number): Node<'float'> => {
+    const a = texture(noise, xz.div(sizeM).add(vec2(ox, oy))).r;
+    const b = texture(noise, turned.div(sizeM * 1.618).add(vec2(oy, ox))).r;
+    // The mean of two keeps the middle but loses contrast: stretch it back.
+    return a.add(b).sub(1).mul(1.35).add(0.5).clamp(0, 1);
+  };
   // Features of about 2.5 m (tufts and worn patches) and 9 m (drifts of colour across a meadow).
-  const fine = texture(noise, xz.div(19)).r;
-  const coarse = texture(noise, xz.div(71).add(vec2(0.37, 0.11))).r;
-  const patch = texture(noise, xz.div(233).add(vec2(0.71, 0.53))).r;
+  const fine = noiseAt(19, 0, 0);
+  const coarse = noiseAt(71, 0.37, 0.11);
+  const patch = noiseAt(233, 0.71, 0.53);
   const what = texture(cover, xz.div(extentM).add(0.5));
   // Ragged edges: the noise decides where exactly one surface gives way to the next.
   const ragged = fine.mul(0.6).add(coarse.mul(0.4)).sub(0.5);
@@ -154,6 +174,23 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const far = smoothstep(FAR_FROM_M, FAR_FULL_M, positionWorld.sub(cameraPosition).length()).mul(0.8);
   const veryFar = smoothstep(VERY_FAR_FROM_M, VERY_FAR_FULL_M, positionWorld.sub(cameraPosition).length());
   const uvOf = (id: SurfaceId, scale: number): Node<'vec2'> => ground.div(lib.sizeM[id] * scale);
+  const groundTurned = vec2(turned.x, turned.y.negate());
+  /** Where each of a scan's two readings shows: soft patches a few metres across, never a straight seam. */
+  const which = smoothstep(0.3, 0.7, noiseAt(7.3, 0.19, 0.83));
+  /**
+   * A scan's colour without its repeat: read twice (as laid, and turned, scaled and shifted), the two
+   * mixed by `which`, and the mix pushed back out from the scan's average so the blend does not wash the
+   * detail flat where the two meet (a cheap form of histogram-preserving blending).
+   */
+  const untiled = (id: SurfaceId, scale: number, shift: number): Node<'vec3'> => {
+    const layer = int(layerOf(id));
+    const a = texture(lib.colour, uvOf(id, scale).add(vec2(shift, shift * 0.6))).depth(layer).rgb;
+    const b = texture(lib.colour, groundTurned.div(lib.sizeM[id] * scale * 1.27).add(vec2(0.43 + shift, 0.29))).depth(layer).rgb;
+    const mean = texture(lib.colour, uvOf(id, scale)).depth(layer).level(float(FLAT_MIP)).rgb;
+    const w = which;
+    const spread = w.mul(w).add(float(1).sub(w).mul(float(1).sub(w))).sqrt();
+    return mix(a, b, w).sub(mean).div(spread).add(mean);
+  };
   /** One of the three maps of a surface, blended over the ground surfaces: nature first, then what people made of it. */
   const blend = (sample: (id: SurfaceId) => Node<'vec3'>, wildTint: Node<'vec3'> | null = null): Node<'vec3'> => {
     const grass = mix(sample('meadow'), sample('dry_grass'), dry);
@@ -163,13 +200,35 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   };
   // No meadow is one green: lush dark patches in the hollows of the noise, sere yellow ones on its crests,
   // and a scatter of flowering weeds a few metres across.
-  const lush = smoothstep(0.42, 0.66, texture(noise, xz.div(57).add(vec2(0.13, 0.81))).r);
-  const sere = smoothstep(0.52, 0.76, texture(noise, xz.div(33).add(vec2(0.63, 0.27))).r);
-  const weeds = smoothstep(0.66, 0.78, texture(noise, xz.div(6.5).add(vec2(0.41, 0.07))).r).mul(smoothstep(0.45, 0.6, coarse));
-  const grassTint = mix(mix(vec3(1), vec3(0.6, 0.86, 0.5), lush.mul(0.85)), vec3(1.3, 1.16, 0.66), sere.mul(float(1).sub(lush)).mul(0.6)).mul(mix(vec3(1), vec3(1.25, 1.2, 0.8), weeds.mul(0.5)));
+  const lush = smoothstep(0.42, 0.66, noiseAt(57, 0.13, 0.81));
+  const sere = smoothstep(0.52, 0.76, noiseAt(33, 0.63, 0.27));
+  const weeds = smoothstep(0.66, 0.78, noiseAt(6.5, 0.41, 0.07)).mul(smoothstep(0.45, 0.6, coarse));
+  const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.45)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.4)));
+  const distanceM = positionWorld.sub(cameraPosition).length();
+  /** How much the fine scans still add on top of the aerial photograph: all of it near, a little far away. */
+  const detailShare = float(1).sub(smoothstep(DETAIL_NEAR_M, DETAIL_FAR_M, distanceM)).mul(0.7).add(0.2);
+  const luminance = vec3(0.2126, 0.7152, 0.0722);
+  /** A fine scan as a ratio round 1 (the scan over its own average): blades and clumps, not a colour of its own. */
+  const detailOf = (id: SurfaceId): Node<'vec3'> => {
+    const near = untiled(id, 1, 0);
+    const mean = texture(lib.colour, uvOf(id, 1)).depth(int(layerOf(id))).level(float(FLAT_MIP)).rgb;
+    const bright = near.dot(luminance).div(max(mean.dot(luminance), float(0.02)));
+    const tinted = near.div(max(mean, vec3(0.02)));
+    return mix(vec3(bright), tinted, 0.25).clamp(0.35, 1.9);
+  };
+  // The grassland's colour comes from a photograph taken from a drone, 90 m across and read twice like
+  // every scan: its own clumps, worn patches and greens. The ground scans only add the fine grain.
+  const pastureTint = SEASON_TINT.pasture ?? [1, 1, 1];
+  const pastureRaw = untiled('pasture', 1, 0.17);
+  // A little of the photograph's contrast taken back: its bare spots are glaring under a strong sun.
+  const pastureMean = texture(lib.colour, uvOf('pasture', 1)).depth(int(layerOf('pasture'))).level(float(FLAT_MIP)).rgb;
+  const pasture = mix(pastureMean, pastureRaw, 0.78).mul(vec3(pastureTint[0], pastureTint[1], pastureTint[2]));
   const scanned = blend((id) => {
-    const near = texture(lib.colour, uvOf(id, 1)).depth(int(layerOf(id))).rgb;
-    const wide = texture(lib.colour, uvOf(id, FAR_SCALE).add(vec2(0.31, 0.67))).depth(int(layerOf(id))).rgb;
+    if (id === 'meadow') return pasture.mul(mix(vec3(1), detailOf('meadow'), detailShare));
+    // Dry grass on the crests: the same land gone straw-coloured, with the dry scan's grain.
+    if (id === 'dry_grass') return pasture.mul(vec3(DRY_TINT[0], DRY_TINT[1], DRY_TINT[2])).mul(mix(vec3(1), detailOf('dry_grass'), detailShare));
+    const near = untiled(id, 1, 0);
+    const wide = untiled(id, FAR_SCALE, 0.31);
     const season = SEASON_TINT[id];
     // From very far a repeat is a few pixels and reads as a grid of dots: there, the scan's average colour.
     const flat = texture(lib.colour, uvOf(id, FAR_SCALE)).depth(int(layerOf(id))).level(float(FLAT_MIP)).rgb;
@@ -180,7 +239,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const cornColour = mix(vec3(0.1, 0.2, 0.035), vec3(0.5, 0.36, 0.09), smoothstep(0.62, 0.95, corn)).mul(float(0.7).add(fine.mul(0.6)));
   const colour = mix(scanned, cornColour, smoothstep(0.1, 0.45, corn.add(ragged.mul(0.25))).mul(soil));
   // A slow drift of tone, so one meadow is not one green.
-  const tone = float(0.62).add(smoothstep(0.3, 0.7, fine).mul(0.42)).add(coarse.mul(0.26)).add(patch.mul(0.2));
+  const tone = float(0.8).add(smoothstep(0.3, 0.7, fine).mul(0.2)).add(coarse.mul(0.12)).add(patch.mul(0.1));
   material.colorNode = colour.mul(tone);
   if (lib.detailed) {
     const bump = blend((id) => texture(lib.normal, uvOf(id, 1)).depth(int(layerOf(id))).rgb).mul(2).sub(1);

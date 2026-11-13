@@ -7,7 +7,7 @@ import type { Quality } from './stage.ts';
 // so a shader samples three textures however many surfaces it shows
 // (GUIDE §7: more than 16 textures in a shader does not compile on phones).
 
-export const SURFACES = ['meadow', 'dry_grass', 'dirt', 'mud', 'forest_floor', 'farm_soil', 'plaster', 'beam', 'boards', 'thatch', 'shingles', 'tiles', 'rubble', 'ashlar', 'bark', 'leaves', 'rock'] as const;
+export const SURFACES = ['meadow', 'dry_grass', 'dirt', 'mud', 'forest_floor', 'farm_soil', 'plaster', 'beam', 'boards', 'thatch', 'shingles', 'tiles', 'rubble', 'ashlar', 'bark', 'leaves', 'rock', 'pasture'] as const;
 export type SurfaceId = (typeof SURFACES)[number];
 
 export interface SurfaceLibrary {
