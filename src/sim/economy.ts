@@ -1,6 +1,5 @@
 import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS } from '../config.ts';
-import { plotKind } from './terrain.ts';
-import { type BuildingKind, BUILDS_ON, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
+import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
 
 // A town's economy. The keep is the storehouse (`stock`); every building has
 // its own small stores: inputs that carriers fill, outputs that pile up in its
@@ -16,12 +15,33 @@ export interface FieldStrip {
   state: StripState;
   /** 0…1 while growing. */
   growth: number;
+  /** Middle of the strip. */
+  x: number;
+  z: number;
+}
+
+/** Where a building stands and what it reaches: worked out when the ground is chosen (placement.ts). */
+export interface Site {
+  x: number;
+  z: number;
+  /** The way its door looks: 0 along +Z, π/2 along +X. */
+  yawRad: number;
+  /** Where its worker goes out to: the trees, the water's edge; the building itself for the rest. */
+  spotX: number;
+  spotZ: number;
+  /** Middles of the strips of land behind a farm, nearest first; empty for other buildings. */
+  strips: { x: number; z: number }[];
 }
 
 export interface Building {
   kind: BuildingKind;
   level: number;
   hp: number;
+  x: number;
+  z: number;
+  yawRad: number;
+  spotX: number;
+  spotZ: number;
   /** Builder-seconds of work left; above zero while being built or upgraded. */
   constructionLeftS: number;
   constructionTotalS: number;
@@ -62,6 +82,7 @@ export interface Town {
   side: Side;
   /** What lies in the keep. */
   stock: Stock;
+  /** The town's buildings; a building keeps its place in the list for as long as it stands (null = free). */
   plots: (Building | null)[];
   keepHp: number;
   /** Rations owed by the keep's household and the army; one is eaten whenever this reaches 1. */
@@ -92,7 +113,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   const stock = emptyStock();
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
-  for (let i = 0; i < TOWN.plotCount; i++) plots.push(null);
+  for (let i = 0; i < TOWN.maxBuildings; i++) plots.push(null);
   return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0 };
 }
 
@@ -127,21 +148,26 @@ function plotIndexOk(town: Town, plot: number): void {
   if (!Number.isInteger(plot) || plot < 0 || plot >= town.plots.length) throw new Error(`plot '${plot}' is not in 0…${town.plots.length - 1}`);
 }
 
-export function canStandOn(kind: BuildingKind, plot: number): boolean {
-  return BUILDS_ON[kind].includes(plotKind(plot));
+/** First free place in the town's list of buildings; -1 when the town has all it may. */
+export function freePlot(town: Town): number {
+  return town.plots.indexOf(null);
 }
 
-export function startBuilding(town: Town, plot: number, kind: BuildingKind): CommandResult {
-  plotIndexOk(town, plot);
-  if (town.plots[plot] !== null) return 'plotTaken';
-  if (!canStandOn(kind, plot)) return 'wrongPlot';
-  if (!canAffordBuilding(town.stock, kind, 1)) return 'cannotAfford';
-  const strips: FieldStrip[] = [];
-  if (kind === 'farm') for (let i = 0; i < FIELDS.maxStrips; i++) strips.push({ state: 'wild', growth: 0 });
+/** Starts a building on ground already checked (placement.ts); returns its place in the town's list. */
+export function startBuilding(town: Town, kind: BuildingKind, site: Site): number {
+  const plot = freePlot(town);
+  if (plot < 0) throw new Error(`side ${town.side} already has ${town.plots.length} buildings; check freePlot() before building`);
+  if (!canAffordBuilding(town.stock, kind, 1)) throw new Error(`side ${town.side} cannot afford a ${kind}; check canAffordBuilding() before building`);
+  const strips: FieldStrip[] = site.strips.map((s) => ({ state: 'wild', growth: 0, x: s.x, z: s.z }));
   const b: Building = {
     kind,
     level: 1,
     hp: buildingMaxHp(kind, 1),
+    x: site.x,
+    z: site.z,
+    yawRad: site.yawRad,
+    spotX: site.spotX,
+    spotZ: site.spotZ,
     constructionLeftS: 0,
     constructionTotalS: 0,
     matWaiting: { wood: 0, stone: 0 },
@@ -163,7 +189,7 @@ export function startBuilding(town: Town, plot: number, kind: BuildingKind): Com
   };
   orderWork(town, b, 1, BUILDINGS[kind].buildSeconds);
   town.plots[plot] = b;
-  return 'ok';
+  return plot;
 }
 
 export function startUpgrade(town: Town, plot: number): CommandResult {

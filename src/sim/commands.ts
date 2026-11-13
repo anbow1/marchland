@@ -1,17 +1,45 @@
+import { ROADS, TOWN, PEOPLE } from '../config.ts';
 import { canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
+import { layRoad, roadCells, stampBuilding } from './nav.ts';
+import { checkSite } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { frontageM, isArcher, type Regiment } from './regiment.ts';
-import { clampToMap } from './terrain.ts';
+import { clampToMap, townX, townZ } from './terrain.ts';
 import type { BuildingKind, CommandResult, Side, UnitKind } from './types.ts';
 import { findRegiment, menAlive, type World } from './world.ts';
 
 // Everything a player can do, human or computer. The HUD and the computer
 // player both call these and nothing else, so the two play by the same rules.
 
-export function cmdBuild(world: World, side: Side, plot: number, kind: BuildingKind): CommandResult {
+/** Builds on free ground: `yawRad` is the way the door looks. Returns why not, or 'ok'. */
+export function cmdBuild(world: World, side: Side, kind: BuildingKind, x: number, z: number, yawRad: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
-  return startBuilding(world.towns[side], plot, kind);
+  const check = checkSite(world, side, kind, x, z, yawRad);
+  if (check.result !== 'ok') return check.result;
+  startBuilding(world.towns[side], kind, check.site);
+  stampBuilding(world.nav, x, z, TOWN.buildingRadiusM, true);
+  return 'ok';
+}
+
+const roadScratch: number[] = [];
+
+/** Stone a road from one point to another would cost now (cells that are already road cost nothing). */
+export function roadCost(world: World, x0: number, z0: number, x1: number, z1: number): number {
+  return Math.ceil(roadCells(world.nav, x0, z0, x1, z1, roadScratch) * ROADS.stonePerCell);
+}
+
+/** Lays a straight road between two points inside a side's reach, paid for in stone. */
+export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x1: number, z1: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const town = world.towns[side];
+  for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (Math.hypot(x - townX(side), z - townZ(side)) > TOWN.territoryRadiusM) return 'tooFar';
+  const cells = roadCells(world.nav, x0, z0, x1, z1, roadScratch);
+  const cost = Math.ceil(cells * ROADS.stonePerCell);
+  if (town.stock.stone < cost) return 'cannotAfford';
+  town.stock.stone -= cost;
+  layRoad(world.nav, roadScratch);
+  return 'ok';
 }
 
 export function cmdUpgrade(world: World, side: Side, plot: number): CommandResult {
@@ -21,7 +49,10 @@ export function cmdUpgrade(world: World, side: Side, plot: number): CommandResul
 
 export function cmdDemolish(world: World, side: Side, plot: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
-  return demolish(world.towns[side], plot);
+  const b = world.towns[side].plots[plot];
+  const result = demolish(world.towns[side], plot);
+  if (result === 'ok' && b) stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, false);
+  return result;
 }
 
 export function cmdTogglePaused(world: World, side: Side, plot: number): CommandResult {
@@ -35,7 +66,7 @@ export function cmdRecruit(world: World, side: Side, kind: UnitKind): CommandRes
   const town = world.towns[side];
   const able = canRecruit(town, kind, menAlive(world, side));
   if (able !== 'ok') return able;
-  if (freePeople(world, side) < peopleFor(kind)) return 'noPeople';
+  if (freePeople(world, side) < peopleFor(kind) + PEOPLE.minFreeAfterCallUp) return 'noPeople';
   const result = startRecruit(town, kind, menAlive(world, side));
   if (result === 'ok') callUp(world, side, peopleFor(kind));
   return result;

@@ -1,6 +1,6 @@
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, isWater, lakeX, lakeZ, plotX, plotZ, townX, townZ } from './terrain.ts';
+import { clampToMap, isForest, isWater, lakeX, lakeZ, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 
@@ -102,12 +102,13 @@ export function holdHere(r: Regiment): void {
   r.run = false;
 }
 
-export function buildingX(side: Side, plot: number): number {
-  return plot < 0 ? townX(side) : plotX(side, plot);
+/** Where a building of a side stands; plot -1 is the keep. A building that is gone answers with the keep. */
+export function buildingX(world: World, side: Side, plot: number): number {
+  return (plot >= 0 ? world.towns[side].plots[plot]?.x : undefined) ?? townX(side);
 }
 
-export function buildingZ(side: Side, plot: number): number {
-  return plot < 0 ? townZ(side) : plotZ(side, plot);
+export function buildingZ(world: World, side: Side, plot: number): number {
+  return (plot >= 0 ? world.towns[side].plots[plot]?.z : undefined) ?? townZ(side);
 }
 
 export function buildingRadiusM(plot: number): number {
@@ -160,8 +161,8 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       goalZ = r.destZ;
       goalFacing = r.destFacingRad;
     } else {
-      goalX = buildingX(r.targetSide, r.targetPlot);
-      goalZ = buildingZ(r.targetSide, r.targetPlot);
+      goalX = buildingX(world, r.targetSide, r.targetPlot);
+      goalZ = buildingZ(world, r.targetSide, r.targetPlot);
       faceGoal = true;
       stopDistanceM = isArcher(r) ? r.def.missileRangeM * 0.8 : buildingRadiusM(r.targetPlot) + 1.5;
     }
@@ -259,8 +260,8 @@ function avoidBuildings(world: World, s: Soldier, dtSeconds: number): void {
     for (let plot = -1; plot < town.plots.length; plot++) {
       if (plot >= 0 && !town.plots[plot]) continue;
       if (plot < 0 && town.keepHp <= 0) continue;
-      const bx = buildingX(town.side, plot);
-      const bz = buildingZ(town.side, plot);
+      const bx = buildingX(world, town.side, plot);
+      const bz = buildingZ(world, town.side, plot);
       // Walls are a little inside the click radius, so attackers can stand against them.
       const radius = buildingRadiusM(plot) - 0.8;
       const dx = s.x - bx;
@@ -297,7 +298,7 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
     goalX = townX(r.side);
     goalZ = townZ(r.side);
     // Gather outside the walls rather than in the keep.
-    stopM = TOWN.outerRadiusM + 12;
+    stopM = TOWN.refugeRadiusM;
     maxSpeed = def.runSpeedMs * 1.1;
   } else {
     const placeX = slotX(r, s.slot);
@@ -323,8 +324,8 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
       maxSpeed = Math.max(catchUp, def.runSpeedMs * 0.8);
     } else if (r.order === 'attackBuilding' && !isArcher(r) && buildingStands(world, r.targetSide, r.targetPlot) && r.speedMs < 0.1) {
       // The formation has arrived: every man closes on the wall.
-      goalX = buildingX(r.targetSide, r.targetPlot);
-      goalZ = buildingZ(r.targetSide, r.targetPlot);
+      goalX = buildingX(world, r.targetSide, r.targetPlot);
+      goalZ = buildingZ(world, r.targetSide, r.targetPlot);
       stopM = buildingRadiusM(r.targetPlot) + def.reachM * 0.5;
       maxSpeed = def.walkSpeedMs * 1.5;
     } else {

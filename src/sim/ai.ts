@@ -1,6 +1,8 @@
-import { AI, AI_TUNING } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdMoveGroup, cmdRecruit, cmdUpgrade } from './commands.ts';
-import { canAffordBuilding, canStandOn, type Town } from './economy.ts';
+import { AI, AI_TUNING, TOWN } from '../config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMoveGroup, cmdRecruit, cmdUpgrade } from './commands.ts';
+import { canAffordBuilding, peopleFor } from './economy.ts';
+import { doorX, doorZ, freePeople, KEEP } from './people.ts';
+import { planSite } from './sitePlanner.ts';
 import { isArcher, type Regiment } from './regiment.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { type BuildingKind, enemyOf, type Side, type UnitKind } from './types.ts';
@@ -36,13 +38,14 @@ export function createAiState(side: Side): AiState {
 
 /**
  * Timber, food and houses first (people are what everything else needs), then the armour and weapon
- * chains, then the luxuries. Each goes on the first free plot of the right ground.
+ * chains, then the luxuries. Each goes where the site planner finds ground for it.
  */
 const BUILD_ORDER: readonly BuildingKind[] = [
   'woodcutter',
   'farm',
   'house',
   'bakery',
+  'woodcutter',
   'house',
   'quarry',
   'fisher',
@@ -54,23 +57,20 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'tannery',
   'smithy',
   'house',
-  'woodcutter',
   'butcher',
   'fletcher',
+  'woodcutter',
   'house',
   'farm',
+  'house',
   'stable',
   'armourer',
   'house',
   'fisher',
+  'farm',
+  'house',
   'house',
 ];
-
-/** First free plot a building of this kind may stand on; -1 if there is none. */
-function freePlotFor(town: Town, kind: BuildingKind): number {
-  for (let plot = 0; plot < town.plots.length; plot++) if (town.plots[plot] === null && canStandOn(kind, plot)) return plot;
-  return -1;
-}
 
 const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'ballista', 'heavyCavalry', 'archers', 'trebuchet', 'swordsmen'];
 
@@ -81,7 +81,18 @@ const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'ba
 const STAGE_DISTANCE_M = 115;
 
 /** Index in BUILD_ORDER after which the barracks is worth its second level (the weapon chain stands). */
-const BARRACKS_UPGRADE_AFTER = 13;
+const BARRACKS_UPGRADE_AFTER = 15;
+
+/** Builds on the ground the planner picks and lays a road from its door to the keep; true when it was built. */
+function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 'noGround' | 'notYet' {
+  const site = planSite(world, ai.side, kind);
+  if (!site) return 'noGround';
+  if (cmdBuild(world, ai.side, kind, site.x, site.z, site.yawRad) !== 'ok') return 'notYet';
+  const town = world.towns[ai.side];
+  // The road is a convenience: if there is no stone for it, the building stands without.
+  cmdBuildRoad(world, ai.side, site.x + Math.sin(site.yawRad) * (TOWN.buildingRadiusM + 1), site.z + Math.cos(site.yawRad) * (TOWN.buildingRadiusM + 1), doorX(town, KEEP), doorZ(town, KEEP));
+  return 'built';
+}
 
 function runTown(world: World, ai: AiState): void {
   const town = world.towns[ai.side];
@@ -91,9 +102,8 @@ function runTown(world: World, ai: AiState): void {
   }
   const next = BUILD_ORDER[ai.buildIndex];
   if (next !== undefined) {
-    const plot = freePlotFor(town, next);
-    // No ground left for it: on to the next.
-    if (plot < 0 || cmdBuild(world, ai.side, plot, next) === 'ok') ai.buildIndex += 1;
+    // Built, or no ground left for it: on to the next. Not affordable yet: wait.
+    if (buildPlanned(world, ai, next) !== 'notYet') ai.buildIndex += 1;
     return;
   }
   // The order is built (or was, before a raid): rebuild what was razed, then improve.
@@ -102,11 +112,7 @@ function runTown(world: World, ai: AiState): void {
     let want = 0;
     for (const b of town.plots) if (b && b.kind === kind) have++;
     for (const k of BUILD_ORDER) if (k === kind) want++;
-    const plot = have < want ? freePlotFor(town, kind) : -1;
-    if (plot >= 0) {
-      cmdBuild(world, ai.side, plot, kind);
-      return;
-    }
+    if (have < want && buildPlanned(world, ai, kind) !== 'noGround') return;
   }
   if (town.stock.gold < AI.upgradeReserveGold) return;
   for (const kind of UPGRADE_ORDER) {
@@ -121,8 +127,13 @@ function runTown(world: World, ai: AiState): void {
 }
 
 function recruit(world: World, ai: AiState): void {
+  // Men are not called up while the town would be left without hands to carry for its workshops.
+  let buildings = 0;
+  for (const b of world.towns[ai.side].plots) if (b) buildings++;
+  const handsToKeep = buildings * AI.freeHandsPerBuilding;
   for (let k = 0; k < RECRUIT_ROTA.length; k++) {
     const kind = RECRUIT_ROTA[(ai.recruitIndex + k) % RECRUIT_ROTA.length] as UnitKind;
+    if (freePeople(world, ai.side) - peopleFor(kind) < handsToKeep) continue;
     if (cmdRecruit(world, ai.side, kind) === 'ok') {
       ai.recruitIndex = (ai.recruitIndex + k + 1) % RECRUIT_ROTA.length;
       ai.sinceRecruitS = 0;

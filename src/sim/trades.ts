@@ -1,7 +1,6 @@
 import { FIELDS, GATHER, LEVEL_SPEED, PEOPLE } from '../config.ts';
 import { type Building, isBuilt, type Town } from './economy.ts';
 import { doorX, doorZ, NOWHERE, type Person, walkTo, workRateOf } from './people.ts';
-import { spotX, spotZ, stripX, stripZ } from './terrain.ts';
 import type { World } from './world.ts';
 
 // What workers and builders do. Most trades are worked at the bench: the
@@ -21,10 +20,10 @@ function paceOf(town: Town, b: Building, p: Person): number {
   return (LEVEL_SPEED[b.level - 1] as number) * workRateOf(town, p) * town.productionFactor;
 }
 
-function stepFarmer(town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
-  const side = p.side;
+function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
   if (p.phase === AT_HOME) {
-    const worked = FIELDS.stripsPerLevel[b.level - 1] as number;
+    // As many strips as its level works, and no more than the land behind it gave.
+    const worked = Math.min(FIELDS.stripsPerLevel[b.level - 1] as number, b.strips.length);
     // Reap what is ripe, then sow bare land, then break new ground.
     let pick = -1;
     for (const want of ['ripe', 'bare', 'wild'] as const) {
@@ -34,7 +33,7 @@ function stepFarmer(town: Town, b: Building, p: Person, plot: number, dtSeconds:
     }
     if (pick < 0) {
       // Everything is sown and growing: wait at the farm.
-      p.act = walkTo(p, doorX(side, plot), doorZ(side, plot), dtSeconds) ? 'stand' : 'walk';
+      p.act = walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds) ? 'stand' : 'walk';
       return;
     }
     p.strip = pick;
@@ -43,7 +42,7 @@ function stepFarmer(town: Town, b: Building, p: Person, plot: number, dtSeconds:
   const strip = b.strips[p.strip] as Building['strips'][number];
   if (p.phase === GOING_OUT) {
     p.act = 'walk';
-    if (!walkTo(p, stripX(side, plot, p.strip), stripZ(side, plot, p.strip), dtSeconds)) return;
+    if (!walkTo(world, p, strip.x, strip.z, dtSeconds)) return;
     p.timerS = strip.state === 'ripe' ? FIELDS.harvestSeconds : strip.state === 'bare' ? FIELDS.sowSeconds : FIELDS.establishSeconds;
     p.phase = WORKING;
     return;
@@ -70,18 +69,17 @@ function stepFarmer(town: Town, b: Building, p: Person, plot: number, dtSeconds:
   }
   // Coming back with the sheaves.
   p.act = 'walk';
-  if (!walkTo(p, doorX(side, plot), doorZ(side, plot), dtSeconds)) return;
+  if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   b.out.grain += FIELDS.grainPerHarvest;
   p.load = null;
   p.phase = AT_HOME;
 }
 
-function stepGatherer(town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
-  const side = p.side;
+function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
   const trade = b.kind === 'woodcutter' ? GATHER.woodcutter : GATHER.fisher;
   const good = b.kind === 'woodcutter' ? 'wood' : 'fish';
   if (p.phase === AT_HOME) {
-    if (!walkTo(p, doorX(side, plot), doorZ(side, plot), dtSeconds)) {
+    if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) {
       p.act = 'walk';
       return;
     }
@@ -93,7 +91,7 @@ function stepGatherer(town: Town, b: Building, p: Person, plot: number, dtSecond
   }
   if (p.phase === GOING_OUT) {
     p.act = 'walk';
-    if (!walkTo(p, spotX(side, plot), spotZ(side, plot), dtSeconds)) return;
+    if (!walkTo(world, p, b.spotX, b.spotZ, dtSeconds)) return;
     p.timerS = trade.seconds;
     p.phase = WORKING;
     return;
@@ -107,32 +105,32 @@ function stepGatherer(town: Town, b: Building, p: Person, plot: number, dtSecond
     return;
   }
   p.act = 'walk';
-  if (!walkTo(p, doorX(side, plot), doorZ(side, plot), dtSeconds)) return;
+  if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   b.out[good] += trade.amount;
   p.load = null;
   p.phase = AT_HOME;
 }
 
-export function stepWorker(_world: World, town: Town, p: Person, dtSeconds: number): void {
+export function stepWorker(world: World, town: Town, p: Person, dtSeconds: number): void {
   const plot = p.work;
   const b = plot >= 0 ? town.plots[plot] : null;
   if (!b) return;
   if (!isBuilt(b)) {
     // His building is being upgraded: he waits outside.
-    p.act = walkTo(p, doorX(p.side, plot), doorZ(p.side, plot), dtSeconds) ? 'stand' : 'walk';
+    p.act = walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds) ? 'stand' : 'walk';
     return;
   }
   if (b.kind === 'farm') {
     b.workRate += workRateOf(town, p);
-    stepFarmer(town, b, p, plot, dtSeconds);
+    stepFarmer(world, town, b, p, plot, dtSeconds);
     return;
   }
   if (b.kind === 'woodcutter' || b.kind === 'fisher') {
     b.workRate += workRateOf(town, p);
-    stepGatherer(town, b, p, plot, dtSeconds);
+    stepGatherer(world, town, b, p, plot, dtSeconds);
     return;
   }
-  if (!walkTo(p, doorX(p.side, plot), doorZ(p.side, plot), dtSeconds)) {
+  if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) {
     p.act = 'walk';
     return;
   }
@@ -164,7 +162,7 @@ export function stepBuilder(world: World, town: Town, p: Person, dtSeconds: numb
       let hands = 0;
       for (const other of world.people) if (other.alive && other.side === p.side && other.role === 'builder' && other.work === plot) hands++;
       if (hands >= PEOPLE.maxBuildersPerSite) continue;
-      const score = Math.hypot(doorX(p.side, plot) - p.x, doorZ(p.side, plot) - p.z) + (canBuildNow(site) ? 0 : 500);
+      const score = Math.hypot(site.x - p.x, site.z - p.z) + (canBuildNow(site) ? 0 : 500);
       if (score < bestScore) {
         bestScore = score;
         p.work = plot;
@@ -176,7 +174,7 @@ export function stepBuilder(world: World, town: Town, p: Person, dtSeconds: numb
       return;
     }
   }
-  if (!walkTo(p, doorX(p.side, p.work), doorZ(p.side, p.work), dtSeconds)) {
+  if (!walkTo(world, p, doorX(town, p.work), doorZ(town, p.work), dtSeconds)) {
     p.act = 'walk';
     return;
   }

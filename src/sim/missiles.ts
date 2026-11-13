@@ -221,8 +221,8 @@ function shootAtRegiment(world: World, r: Regiment, target: Regiment): void {
 }
 
 function shootAtBuilding(world: World, r: Regiment): void {
-  const bx = buildingX(r.targetSide, r.targetPlot);
-  const bz = buildingZ(r.targetSide, r.targetPlot);
+  const bx = buildingX(world, r.targetSide, r.targetPlot);
+  const bz = buildingZ(world, r.targetSide, r.targetPlot);
   const shot = shotOf(r);
   for (const s of r.soldiers) {
     if (!s.alive || s.target || s.attackCooldownS > 0) continue;

@@ -1,7 +1,9 @@
-import { PEOPLE, TOWN } from '../config.ts';
+import { PEOPLE, ROADS, TOWN } from '../config.ts';
 import { type Building, housingCapacity, isBuilt, type Town } from './economy.ts';
 import { cancelErrand, stepCarrier } from './errands.ts';
-import { facingToEnemy, isWater, lakeX, lakeZ, plotX, plotZ, townX, townZ } from './terrain.ts';
+import { findPath, speedFactorAt } from './nav.ts';
+import { doorOfX, doorOfZ } from './placement.ts';
+import { facingToEnemy, townX, townZ } from './terrain.ts';
 import { stepBuilder, stepWorker } from './trades.ts';
 import { type ResourceId, type Side } from './types.ts';
 import type { World } from './world.ts';
@@ -56,21 +58,26 @@ export interface Person {
   /** Clocks to his next look round for enemies and his next think about what to do. */
   lookS: number;
   thinkS: number;
+  /** The way he is walking: way points as x, z pairs, how many, which is next, where it leads, and the map's version it was found on. */
+  path: Float32Array;
+  pathLen: number;
+  pathAt: number;
+  goalX: number;
+  goalZ: number;
+  navVersion: number;
 }
 
-/** Where people come and go at the keep: before its gate, towards the enemy. */
-export function doorX(side: Side, plot: number): number {
-  if (plot === KEEP) return townX(side) + Math.sin(facingToEnemy(side)) * (TOWN.keepRadiusM + 2.5);
-  const px = plotX(side, plot);
-  const d = Math.hypot(townX(side) - px, townZ(side) - plotZ(side, plot));
-  return px + ((townX(side) - px) / d) * (TOWN.buildingRadiusM + 0.8);
+/** Where people come and go: before the keep's gate (towards the enemy), or outside a building's door. A building that is gone sends them to the keep. */
+export function doorX(town: Town, plot: number): number {
+  const b = plot >= 0 ? town.plots[plot] : null;
+  if (b) return doorOfX(b);
+  return townX(town.side) + Math.sin(facingToEnemy(town.side)) * (TOWN.keepRadiusM + 2.5);
 }
 
-export function doorZ(side: Side, plot: number): number {
-  if (plot === KEEP) return townZ(side) + Math.cos(facingToEnemy(side)) * (TOWN.keepRadiusM + 2.5);
-  const pz = plotZ(side, plot);
-  const d = Math.hypot(townX(side) - plotX(side, plot), townZ(side) - pz);
-  return pz + ((townZ(side) - pz) / d) * (TOWN.buildingRadiusM + 0.8);
+export function doorZ(town: Town, plot: number): number {
+  const b = plot >= 0 ? town.plots[plot] : null;
+  if (b) return doorOfZ(b);
+  return townZ(town.side) + Math.cos(facingToEnemy(town.side)) * (TOWN.keepRadiusM + 2.5);
 }
 
 export function spawnPerson(world: World, side: Side, x: number, z: number, home: number): Person {
@@ -101,34 +108,66 @@ export function spawnPerson(world: World, side: Side, x: number, z: number, home
     calmS: 0,
     lookS: world.rng.range(0, 0.5),
     thinkS: world.rng.range(0, 0.7),
+    path: new Float32Array(ROADS.maxWaypoints * 2),
+    pathLen: 0,
+    pathAt: 0,
+    goalX: x,
+    goalZ: z,
+    navVersion: -1,
   };
   world.people.push(p);
   return p;
 }
 
-/** Walks a person towards a point; true once he is there. Lakes are walked round. */
-export function walkTo(p: Person, tx: number, tz: number, dtSeconds: number, speedMs: number = PEOPLE.walkSpeedMs): boolean {
-  const dx = tx - p.x;
-  const dz = tz - p.z;
-  const d = Math.hypot(dx, dz);
-  if (d <= PEOPLE.arriveM) {
+/**
+ * Walks a person towards a point along the quickest way (roads where there are any); true once he is
+ * there. `pace` multiplies his walking speed (2 when running from danger).
+ */
+export function walkTo(world: World, p: Person, tx: number, tz: number, dtSeconds: number, pace = 1): boolean {
+  if (Math.hypot(tx - p.x, tz - p.z) <= PEOPLE.arriveM) {
     p.speedMs = 0;
+    p.pathLen = 0;
     return true;
   }
-  const step = Math.min(d, speedMs * dtSeconds);
-  p.x += (dx / d) * step;
-  p.z += (dz / d) * step;
-  p.headingRad = Math.atan2(dx, dz);
-  p.strideM += step;
-  p.speedMs = speedMs;
-  if (isWater(p.x, p.z)) {
-    // Back to the bank: the step's inward part is lost, the rest carries him along the shore.
-    const lx = lakeX(p.side);
-    const lz = lakeZ(p.side);
-    const r = Math.hypot(p.x - lx, p.z - lz) || 1;
-    p.x = lx + ((p.x - lx) / r) * TOWN.lakeRadiusM * 0.94;
-    p.z = lz + ((p.z - lz) / r) * TOWN.lakeRadiusM * 0.94;
+  const nav = world.nav;
+  if (p.pathLen === 0 || Math.abs(p.goalX - tx) > 0.5 || Math.abs(p.goalZ - tz) > 0.5 || p.navVersion !== nav.version) {
+    // Only so many paths are looked for in a step: the rest stand a moment.
+    if (nav.budget <= 0) return false;
+    nav.budget -= 1;
+    p.pathLen = findPath(nav, p.x, p.z, tx, tz, p.path);
+    if (p.pathLen === 0) {
+      // Walled in (a building went up round him): straight there rather than stuck for ever.
+      p.path[0] = tx;
+      p.path[1] = tz;
+      p.pathLen = 1;
+    }
+    p.pathAt = 0;
+    p.goalX = tx;
+    p.goalZ = tz;
+    p.navVersion = nav.version;
   }
+  const speedMs = PEOPLE.walkSpeedMs * pace * speedFactorAt(nav, p.x, p.z);
+  let left = speedMs * dtSeconds;
+  while (left > 0 && p.pathAt < p.pathLen) {
+    const wx = p.path[p.pathAt * 2] as number;
+    const wz = p.path[p.pathAt * 2 + 1] as number;
+    const dx = wx - p.x;
+    const dz = wz - p.z;
+    const d = Math.hypot(dx, dz);
+    if (d <= left) {
+      p.x = wx;
+      p.z = wz;
+      left -= d;
+      p.pathAt += 1;
+      continue;
+    }
+    p.x += (dx / d) * left;
+    p.z += (dz / d) * left;
+    p.headingRad = Math.atan2(dx, dz);
+    left = 0;
+  }
+  p.strideM += speedMs * dtSeconds;
+  p.speedMs = speedMs;
   return false;
 }
 
@@ -151,7 +190,7 @@ function needsWorker(b: Building): boolean {
   return b.kind !== 'house' && b.kind !== 'barracks' && isBuilt(b) && !b.paused;
 }
 
-const staffed = new Uint8Array(TOWN.plotCount);
+const staffed = new Uint8Array(TOWN.maxBuildings);
 
 /** Once a second: every working building gets a worker, some of the rest build while anything is being built, the others carry. */
 function assignRoles(world: World, town: Town): void {
@@ -179,7 +218,7 @@ function assignRoles(world: World, town: Town): void {
     for (const p of world.people) {
       if (!p.alive || p.side !== side || (p.role !== 'carrier' && p.role !== 'builder')) continue;
       // Someone with empty hands rather than a man in the middle of a delivery.
-      const d2 = (p.x - plotX(side, plot)) ** 2 + (p.z - plotZ(side, plot)) ** 2 + (p.holding ? 1e6 : 0);
+      const d2 = (p.x - b.x) ** 2 + (p.z - b.z) ** 2 + (p.holding ? 1e6 : 0);
       if (d2 < bestD2) {
         best = p;
         bestD2 = d2;
@@ -220,14 +259,14 @@ function enemyNear(world: World, side: Side, x: number, z: number): boolean {
   return false;
 }
 
-function stepRecruit(town: Town, p: Person, dtSeconds: number): void {
+function stepRecruit(world: World, town: Town, p: Person, dtSeconds: number): void {
   // The nearest finished barracks.
   let plot = NOWHERE;
   let bestD2 = Number.POSITIVE_INFINITY;
   for (let i = 0; i < town.plots.length; i++) {
     const b = town.plots[i];
     if (!b || b.kind !== 'barracks' || (b.level === 1 && !isBuilt(b))) continue;
-    const d2 = (p.x - plotX(p.side, i)) ** 2 + (p.z - plotZ(p.side, i)) ** 2;
+    const d2 = (p.x - b.x) ** 2 + (p.z - b.z) ** 2;
     if (d2 < bestD2) {
       plot = i;
       bestD2 = d2;
@@ -240,7 +279,7 @@ function stepRecruit(town: Town, p: Person, dtSeconds: number): void {
     return;
   }
   p.act = 'walk';
-  if (!walkTo(p, doorX(p.side, plot), doorZ(p.side, plot), dtSeconds)) return;
+  if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   p.alive = false;
   town.underArms += 1;
   waiting.arrived += 1;
@@ -286,13 +325,14 @@ export function returnHome(world: World, side: Side, count: number, x: number, z
 
 /** Newcomers: a fed house (or the keep) with room takes one in every so often, while the town has room at all. */
 function grow(world: World, town: Town, living: number, dtSeconds: number): void {
-  if (living + town.underArms >= housingCapacity(town)) return;
+  // Men under arms live in camp, not in the houses: the town fills up again behind them.
+  if (living >= housingCapacity(town)) return;
   const side = town.side;
   if (!town.starving && town.keepResidents < PEOPLE.keepResidents) {
     town.keepGrowS += dtSeconds;
     if (town.keepGrowS >= PEOPLE.growSeconds) {
       town.keepGrowS = 0;
-      spawnPerson(world, side, doorX(side, KEEP), doorZ(side, KEEP), KEEP);
+      spawnPerson(world, side, doorX(town, KEEP), doorZ(town, KEEP), KEEP);
       return;
     }
   }
@@ -302,12 +342,13 @@ function grow(world: World, town: Town, living: number, dtSeconds: number): void
     b.growS += dtSeconds;
     if (b.growS < PEOPLE.growSeconds) continue;
     b.growS = 0;
-    spawnPerson(world, side, doorX(side, plot), doorZ(side, plot), plot);
+    spawnPerson(world, side, doorX(town, plot), doorZ(town, plot), plot);
     return;
   }
 }
 
 export function stepPeople(world: World, dtSeconds: number): void {
+  world.nav.budget = ROADS.pathsPerStep;
   for (const town of world.towns) {
     for (const b of town.plots) {
       if (!b) continue;
@@ -346,12 +387,12 @@ export function stepPeople(world: World, dtSeconds: number): void {
     p.speedMs = 0;
     if (p.fleeing) {
       p.act = 'flee';
-      walkTo(p, townX(p.side), townZ(p.side), dtSeconds, PEOPLE.walkSpeedMs * 2);
+      walkTo(world, p, doorX(town, KEEP), doorZ(town, KEEP), dtSeconds, 2);
       continue;
     }
     if (p.role === 'worker') stepWorker(world, town, p, dtSeconds);
     else if (p.role === 'builder') stepBuilder(world, town, p, dtSeconds);
-    else if (p.role === 'recruit') stepRecruit(town, p, dtSeconds);
+    else if (p.role === 'recruit') stepRecruit(world, town, p, dtSeconds);
     else stepCarrier(world, town, p, dtSeconds);
   }
   for (const town of world.towns) grow(world, town, living[town.side], dtSeconds);

@@ -1,6 +1,7 @@
 import { ARMY, COMBAT, FATIGUE, FOOD, MORALE, TOWN } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
 import { assignSlots, facingToward, forwardX, forwardZ, isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
+import { stampBuilding } from './nav.ts';
 import { returnHome } from './people.ts';
 import { townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
@@ -46,7 +47,8 @@ export function damageBuilding(world: World, side: Side, plot: number, damage: n
   b.hp -= damage;
   if (b.hp <= 0) {
     town.plots[plot] = null;
-    world.events.push('destroyed', buildingX(side, plot), buildingZ(side, plot), side);
+    stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, false);
+    world.events.push('destroyed', b.x, b.z, side);
   }
 }
 
@@ -123,8 +125,8 @@ export function stepMelee(world: World): void {
         continue;
       }
       if (!sieging) continue;
-      const bx = buildingX(r.targetSide, r.targetPlot);
-      const bz = buildingZ(r.targetSide, r.targetPlot);
+      const bx = buildingX(world, r.targetSide, r.targetPlot);
+      const bz = buildingZ(world, r.targetSide, r.targetPlot);
       const reach = buildingRadiusM(r.targetPlot) + r.def.reachM;
       if ((bx - s.x) ** 2 + (bz - s.z) ** 2 > reach * reach) continue;
       s.sinceAttackS = 0;
@@ -210,7 +212,7 @@ export function stepMorale(world: World, dtSeconds: number): void {
     if (safe) r.morale = Math.min(topMorale, r.morale + MORALE.routRecoverPerSecond * dtSeconds);
     if (r.shattered) {
       const homeM = Math.hypot(r.centreX - townX(r.side), r.centreZ - townZ(r.side));
-      if (homeM < TOWN.outerRadiusM + 25) disband(world, r);
+      if (homeM < TOWN.refugeRadiusM + 25) disband(world, r);
     } else if (safe && r.morale >= MORALE.rallyAt) {
       rally(world, r);
     }

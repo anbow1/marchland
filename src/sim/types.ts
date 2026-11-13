@@ -56,8 +56,15 @@ export type UnitKind = (typeof UNIT_KINDS)[number];
 export type CommandResult =
   | 'ok'
   | 'cannotAfford'
-  | 'plotTaken'
-  | 'wrongPlot'
+  | 'tooFar'
+  | 'blocked'
+  | 'tooSteep'
+  | 'needsForest'
+  | 'needsWater'
+  | 'needsStone'
+  | 'needsOre'
+  | 'needsLand'
+  | 'townFull'
   | 'noPeople'
   | 'plotEmpty'
   | 'maxLevel'
@@ -71,24 +78,23 @@ export type CommandResult =
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
-/** What ground a plot stands on, which decides what may be built there. */
-export type PlotKind = 'town' | 'village' | 'forest' | 'lake' | 'rock';
+/** What a building needs from the land it is put on. */
+export type SiteNeed = 'none' | 'forest' | 'water' | 'stone' | 'ore' | 'fields';
 
-/** Which buildings each kind of plot takes: crafts and houses by the keep, farming in the village, the rest where the land gives it. */
-export const BUILDS_ON: Record<BuildingKind, readonly PlotKind[]> = {
-  house: ['town', 'village'],
-  woodcutter: ['forest'],
-  quarry: ['rock'],
-  farm: ['village'],
-  fisher: ['lake'],
-  bakery: ['town'],
-  pigFarm: ['village'],
-  butcher: ['town'],
-  tannery: ['town'],
-  ironMine: ['rock'],
-  smithy: ['town'],
-  armourer: ['town'],
-  fletcher: ['town'],
-  stable: ['village'],
-  barracks: ['town'],
+export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
+  house: 'none',
+  woodcutter: 'forest',
+  quarry: 'stone',
+  farm: 'fields',
+  fisher: 'water',
+  bakery: 'none',
+  pigFarm: 'none',
+  butcher: 'none',
+  tannery: 'none',
+  ironMine: 'ore',
+  smithy: 'none',
+  armourer: 'none',
+  fletcher: 'none',
+  stable: 'none',
+  barracks: 'none',
 };

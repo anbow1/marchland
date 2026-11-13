@@ -17,11 +17,18 @@ export const MAP = {
   halfM: 200,
   /** Town centres sit on the diagonal, this far from the origin on each axis. */
   townOffsetM: 125,
-  /** Ground is level inside this radius of a town centre, then blends into the hills. */
-  townFlatRadiusM: 58,
-  townBlendRadiusM: 95,
-  /** Peak-to-mean height of the hills. Gentle: formations must stay readable. */
-  hillHeightM: 6,
+  /** Ground is level inside this radius of a keep, then blends into the hills. */
+  townFlatRadiusM: 26,
+  townBlendRadiusM: 85,
+  /** Peak-to-mean height of the rolling hills, of the finer folds on them, and of the two knolls that flank the field. */
+  hillHeightM: 9,
+  foldHeightM: 1.6,
+  knollHeightM: 9,
+  knollRadiusM: 48,
+  /** The knolls stand this far to either side of the map's middle. */
+  knollOffsetM: 105,
+  /** The hills are this much lower on the open field between the towns, where the lines meet. */
+  fieldReliefFactor: 0.5,
   /** No trees inside this radius of a town, nor on the open field between the towns. */
   forestClearRadiusM: 82,
   fieldHalfWidthM: 46,
@@ -29,29 +36,26 @@ export const MAP = {
 } as const;
 
 export const TOWN = {
-  /** Town plots for houses, crafts and the barracks: an inner ring and an outer ring around the keep. */
-  innerPlots: 6,
-  innerRadiusM: 24,
-  outerPlots: 8,
-  outerRadiusM: 44,
-  /** Farming plots along the village street; forest plots at the nearest wood; plots on the lake shore; plots on rock. */
-  villagePlots: 6,
-  forestPlots: 2,
-  lakePlots: 2,
-  rockPlots: 2,
-  plotCount: 26,
-  /** The village: its street starts this far from the keep towards the enemy and to one side, plots this far apart. */
-  villageForwardM: 70,
-  villageSideM: 75,
-  villagePitchM: 13,
-  /** The lake: its centre from the keep (towards the enemy, to the other side) and its radius. */
+  /** Buildings a side may have at once. */
+  maxBuildings: 48,
+  /** A side builds within this distance of its own keep, and no nearer than this to the enemy's. */
+  territoryRadiusM: 180,
+  enemyKeepClearM: 90,
+  /** Free ground kept between two buildings' footprints. */
+  buildingGapM: 1.5,
+  /** A building needs ground this level: the most its footprint may rise from its lowest to its highest point. */
+  maxFootprintRiseM: 2.2,
+  /** How near a woodcutter must be to trees, a fisher to water, a quarry or mine to its rock. */
+  forestReachM: 26,
+  waterReachM: 16,
+  depositReachM: 15,
+  /** The lakes: each side's lies this far from its keep (towards the enemy, and to one side), with this radius and depth. */
   lakeForwardM: 25,
   lakeSideM: 80,
   lakeRadiusM: 27,
   lakeDepthM: 2.4,
-  /** Quarry and mine stand on the rock behind the town. */
-  rockBackM: 52,
-  rockSideM: 24,
+  /** Outcrops of building stone and of iron ore: radius of each. */
+  depositRadiusM: 9,
   /** Footprint radius used for clicks, melee reach on buildings and keeping soldiers out. */
   buildingRadiusM: 5.5,
   keepRadiusM: 8,
@@ -62,6 +66,8 @@ export const TOWN = {
   keepArrowDamage: 9,
   /** Height the keep's archers shoot from. */
   keepTopM: 13,
+  /** Men who have run from a fight gather this far from their keep. */
+  refugeRadiusM: 56,
   /** New regiments form up this far from the keep, towards the middle of the map. */
   rallyDistanceM: 66,
   keepGoldPerSecond: 0.4,
@@ -79,22 +85,24 @@ export const PEOPLE = {
   rationsPerMinute: 0.3,
   /** Tax from each fed townsman. */
   taxGoldPerSecond: 0.02,
-  /** A person walks at marching pace; under a load the same (a sack, not a millstone). */
-  walkSpeedMs: 1.4,
+  /** A person walks briskly; under a load the same (a sack, not a millstone). Tuned: at 1.4 the farms' corn did not reach the bakery in time. */
+  walkSpeedMs: 1.7,
   /** Units of one good a carrier takes at once. */
-  carryCapacity: 3,
+  carryCapacity: 5,
   /** Seconds to pick a load up or set it down. */
   handlingSeconds: 1,
   /** A building's stores: carriers fill inputs up to the target; work stops when an output reaches its cap. */
-  inputTarget: 6,
-  outputCap: 8,
+  inputTarget: 8,
+  outputCap: 14,
   /** Outputs are carried to the keep once this many lie in the yard. */
-  clearOutputAt: 3,
+  clearOutputAt: 4,
   /** Rations a house likes to have in the larder. */
   houseFoodTarget: 5,
   /** Share of the people without a workplace who build while anything is being built; the rest carry. */
   builderShare: 0.3,
   maxBuildersPerSite: 3,
+  /** A town keeps at least this many free hands when men are called up: someone has to carry the bread. */
+  minFreeAfterCallUp: 4,
   /** People run for the keep when an enemy regiment is this close, and come back this long after it has gone. */
   fleeRadiusM: 32,
   calmSeconds: 6,
@@ -104,14 +112,30 @@ export const PEOPLE = {
   maxPerSide: 170,
 } as const;
 
+export const ROADS = {
+  /** The grid roads and paths are laid on: one cell is this many metres square. */
+  cellM: 2,
+  /** A road costs this much stone for every cell it covers (rounded up over the whole stretch). */
+  stonePerCell: 0.34,
+  /** How fast people walk on a road, on open ground and among trees, as a share of their walking pace. */
+  roadSpeedFactor: 1.4,
+  openSpeedFactor: 1,
+  forestSpeedFactor: 0.7,
+  /** Paths looked for in one step of the simulation at most: the rest wait a step. */
+  pathsPerStep: 6,
+  /** Way points a path may hold. */
+  maxWaypoints: 96,
+} as const;
+
 export const FIELDS = {
   /** Strips of land a farm works at levels 1…3: the farmland grows with the farm. */
   stripsPerLevel: [2, 4, 6] as readonly number[],
   maxStrips: 6,
-  /** A strip: this long along the village street, this wide; the first lies this far behind the farm. */
+  /** A strip: this long across the back of the farm, this wide; the first lies this far behind the farm. */
   stripLengthM: 12,
   stripWidthM: 6,
   firstStripM: 11,
+  stripGapM: 0.6,
   /** Breaking new ground, sowing, the wait for the corn, and the harvest, in seconds at level 1. */
   establishSeconds: 14,
   sowSeconds: 9,
@@ -122,8 +146,8 @@ export const FIELDS = {
 
 /** Trades whose worker goes out to the land and comes back with a load: seconds on the spot and what a trip brings. */
 export const GATHER = {
-  woodcutter: { seconds: 9, amount: 2, reachM: 16 },
-  fisher: { seconds: 11, amount: 2, reachM: 9 },
+  woodcutter: { seconds: 8, amount: 4, reachM: 16 },
+  fisher: { seconds: 10, amount: 3, reachM: 9 },
 } as const;
 
 export interface Recipe {
@@ -397,6 +421,8 @@ export const AI = {
   retreatLossShare: 0.7,
   /** Gold kept back before spending on upgrades. */
   upgradeReserveGold: 220,
+  /** Free hands the computer keeps at home for every building it has, on top of the town's minimum. */
+  freeHandsPerBuilding: 0.45,
 } as const;
 
 export const CAMERA = {

@@ -1,4 +1,4 @@
-import { AI_TUNING, ARMY, MAP, PEOPLE } from '../config.ts';
+import { AI_TUNING, ARMY, MAP, PEOPLE, TOWN } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, stepAi } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
@@ -8,7 +8,8 @@ import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
 import { doorX, doorZ, KEEP, type Person, spawnPerson, stepPeople } from './people.ts';
 import { createRegiment, type Regiment } from './regiment.ts';
-import { facingToEnemy, plotX, plotZ, rallyX, rallyZ } from './terrain.ts';
+import { createNav, type Nav, stampBuilding } from './nav.ts';
+import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
 
 // The whole game state and its one fixed update order (rules §10):
@@ -31,6 +32,8 @@ export interface World {
   people: Person[];
   /** Clock to the next handing-out of jobs. */
   rolesS: number;
+  /** Roads and where buildings stand, for finding ways. */
+  nav: Nav;
   arrows: Arrow[];
   events: EventQueue;
   /** -1 while the game is being played. */
@@ -62,6 +65,7 @@ export function createWorld(options: WorldOptions): World {
     regiments: [],
     people: [],
     rolesS: 0,
+    nav: createNav(),
     arrows: createArrowPool(),
     events: new EventQueue(),
     winner: -1,
@@ -73,9 +77,11 @@ export function createWorld(options: WorldOptions): World {
     kills: [0, 0],
     stepCount: 0,
   };
+  for (const side of [PLAYER, COMPUTER] as const) stampBuilding(world.nav, townX(side), townZ(side), TOWN.keepRadiusM, true);
   // Each keep starts with its household: the first carriers and builders.
   for (const side of [PLAYER, COMPUTER] as const) {
-    for (let i = 0; i < PEOPLE.keepResidents; i++) spawnPerson(world, side, doorX(side, KEEP) + (i % 4) - 1.5, doorZ(side, KEEP) + Math.floor(i / 4) - 0.5, KEEP);
+    const town = world.towns[side];
+    for (let i = 0; i < PEOPLE.keepResidents; i++) spawnPerson(world, side, doorX(town, KEEP) + (i % 4) - 1.5, doorZ(town, KEEP) + Math.floor(i / 4) - 0.5, KEEP);
   }
   return world;
 }
@@ -127,7 +133,8 @@ export function stepWorld(world: World, dtSeconds: number): void {
     fieldTrained(world, town);
     while (town.finishedPlots.length > 0) {
       const plot = town.finishedPlots.pop() as number;
-      world.events.push('built', plotX(town.side, plot), plotZ(town.side, plot), town.side);
+      const b = town.plots[plot];
+      if (b) world.events.push('built', b.x, b.z, town.side);
     }
   }
   stepAnchors(world, dtSeconds);
