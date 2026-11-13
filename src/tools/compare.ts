@@ -12,7 +12,12 @@ import { Stage } from '../render/stage.ts';
 import { loadSurfaces, surfaceMaterial } from '../render/surfaces.ts';
 import { buildTerrain } from '../render/terrainView.ts';
 import { heightAtM } from '../sim/terrain.ts';
+import { cmdBuildRoad } from '../sim/commands.ts';
+import { stampBuilding } from '../sim/nav.ts';
 import { createWorld, spawnRegiment } from '../sim/world.ts';
+import { Clearings } from '../render/clearings.ts';
+import { buildForest } from '../render/forestView.ts';
+import { buildLand } from '../render/landView.ts';
 
 // A page for one decision, not part of the game: the same buildings in three
 // makes — geometry from code, downloaded stylised models, downloaded realistic
@@ -22,6 +27,13 @@ import { createWorld, spawnRegiment } from '../sim/world.ts';
 //
 //   npx vite build --config vite.compare.config.ts
 //   node ../tools/measure/serve.mjs dist-compare 4173     (with dist-compare/models linked to the downloads)
+
+// Where the exhibits stand: two rows on the level ground round the player's keep, clear of the stone
+// outcrop behind it, with a road between the rows.
+const COLUMNS = [-162, -134, -104, -72] as const;
+const ROW_SMITHY = 100;
+const ROW_HOUSE = 132;
+const ROAD_Z = 116;
 
 interface Exhibit {
   /** Folder under /models and the glTF file in it; empty for a building from code. */
@@ -39,9 +51,9 @@ interface Exhibit {
 // (a tavern and a forge) are left out: their colours are stored in the retired specular-glossiness
 // extension in a form the loader shows wrongly (green and near-black).
 const EXHIBITS: Record<string, Exhibit> = {
-  styledSmithy: { url: 'medieval_times_-_blacksmiths_workshop/scene.gltf', x: -118, z: 108, fitM: 12, scale: 1, yawRad: 0 },
-  realSmithy: { url: 'medieval_blacksmith/scene.gltf', x: -86, z: 108, fitM: 0, scale: 1, yawRad: 0 },
-  realShop: { url: 'medieval_house_and_wine_shop/scene.gltf', x: -86, z: 140, fitM: 15, scale: 1, yawRad: 0 },
+  styledSmithy: { url: 'medieval_times_-_blacksmiths_workshop/scene.gltf', x: COLUMNS[2], z: ROW_SMITHY, fitM: 12, scale: 1, yawRad: 0 },
+  realSmithy: { url: 'medieval_blacksmith/scene.gltf', x: COLUMNS[3], z: ROW_SMITHY, fitM: 0, scale: 1, yawRad: 0 },
+  realShop: { url: 'medieval_house_and_wine_shop/scene.gltf', x: COLUMNS[3], z: ROW_HOUSE, fitM: 15, scale: 1, yawRad: 0 },
 };
 
 /** Models written for the retired specular-glossiness extension carry their colour there: move it to where the loader looks. */
@@ -90,13 +102,29 @@ const stage = new Stage(canvas, { quality: 'high', maxPixelRatio: 1 });
 await stage.init();
 const lighting = new Lighting(stage.renderer, stage.scene, AFTERNOON, 'high');
 const surfaces = await loadSurfaces('high', () => {});
-stage.scene.add(buildTerrain(surfaces, new GroundWorks().texture));
+// The game's own ground as it looks once people have built: a road between the rows, worn yards under the
+// buildings, and the land's rocks, bushes and trees, cleared where a building stands.
+const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
+world.towns[0].stock.stone = 1000;
+cmdBuildRoad(world, 0, COLUMNS[0] - 20, ROAD_Z, COLUMNS[3] + 20, ROAD_Z);
+for (const x of COLUMNS) for (const z of [ROW_SMITHY, ROW_HOUSE]) stampBuilding(world.nav, x, z, 9, true);
+const works = new GroundWorks();
+works.update(world, 1);
+stage.scene.add(buildTerrain(surfaces, works.texture));
 addHorizon(stage.scene);
+const land = buildLand(surfaces);
+for (const part of land.parts) stage.scene.add(part);
+const trees = buildForest('high', surfaces);
+for (const mesh of trees) stage.scene.add(mesh);
+const clearings = new Clearings();
+for (const s of land.scattered) clearings.add(s.mesh, s.reachM);
+for (const mesh of trees) clearings.add(mesh, 2.4);
+clearings.update(world);
 await lighting.bakeProbe(stage.camera);
 
 // Buildings from code: the same geometry in the flat palette and with the scans the game uses today.
 const codeMaterial = surfaceMaterial(surfaces, 'building');
-for (const [kind, level, x, z, flat] of [['smithy', 1, -178, 108, true], ['house', 3, -178, 140, true], ['smithy', 1, -150, 108, false], ['house', 3, -150, 140, false]] as const) {
+for (const [kind, level, x, z, flat] of [['smithy', 1, COLUMNS[0], ROW_SMITHY, true], ['house', 3, COLUMNS[0], ROW_HOUSE, true], ['smithy', 1, COLUMNS[1], ROW_SMITHY, false], ['house', 3, COLUMNS[1], ROW_HOUSE, false]] as const) {
   const mesh = new Mesh(buildingGeometry(kind, level, TEAM_HEX[0], surfaces, flat), codeMaterial);
   mesh.position.set(x, heightAtM(x, z), z);
   mesh.castShadow = true;
@@ -121,13 +149,12 @@ for (const [name, e] of Object.entries(EXHIBITS)) {
   report[name] = { triangles, draws, sizeM: [size.x * scale, size.y * scale, size.z * scale].map((v) => Math.round(v * 10) / 10) };
 }
 
-// Men for scale: one regiment in front of each row.
-const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
-for (const x of [-178, -150, -118, -86]) spawnRegiment(world, 0, 'swordsmen', x, 124, 0);
+// Men for scale: a regiment on the road before each column.
+for (const x of COLUMNS) spawnRegiment(world, 0, 'swordsmen', x, ROAD_Z, 0);
 const army = new ArmyView(stage.scene);
 army.update(world);
 
-const camera = new RtsCamera(-125, 125, 0);
+const camera = new RtsCamera(-117, ROAD_Z, 0);
 const offset = { x: 0, y: 0, z: 0 };
 function place(x: number, z: number, distanceM: number, yawRad: number): void {
   camera.goal.targetX = x;
@@ -136,7 +163,7 @@ function place(x: number, z: number, distanceM: number, yawRad: number): void {
   camera.goal.yawRad = yawRad;
   camera.snap();
 }
-place(-125, 124, 70, 0);
+place(-117, ROAD_Z, 70, 0);
 let frames = 0;
 function frame(): void {
   const pose = camera.shown;
