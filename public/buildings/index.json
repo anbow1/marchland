@@ -23,6 +23,66 @@
   "file": "bakery_3.glb",
   "triangles": 8916
  },
+ "barracks:1": {
+  "file": "barracks_1.glb",
+  "triangles": 4768
+ },
+ "barracks:2": {
+  "file": "barracks_2.glb",
+  "triangles": 4944
+ },
+ "barracks:3": {
+  "file": "barracks_3.glb",
+  "triangles": 4944
+ },
+ "butcher:1": {
+  "file": "butcher_1.glb",
+  "triangles": 3748
+ },
+ "butcher:2": {
+  "file": "butcher_2.glb",
+  "triangles": 3924
+ },
+ "butcher:3": {
+  "file": "butcher_3.glb",
+  "triangles": 3968
+ },
+ "farm:1": {
+  "file": "farm_1.glb",
+  "triangles": 3036
+ },
+ "farm:2": {
+  "file": "farm_2.glb",
+  "triangles": 3152
+ },
+ "farm:3": {
+  "file": "farm_3.glb",
+  "triangles": 3152
+ },
+ "fisher:1": {
+  "file": "fisher_1.glb",
+  "triangles": 1080
+ },
+ "fisher:2": {
+  "file": "fisher_2.glb",
+  "triangles": 1240
+ },
+ "fisher:3": {
+  "file": "fisher_3.glb",
+  "triangles": 1400
+ },
+ "fletcher:1": {
+  "file": "fletcher_1.glb",
+  "triangles": 3484
+ },
+ "fletcher:2": {
+  "file": "fletcher_2.glb",
+  "triangles": 3512
+ },
+ "fletcher:3": {
+  "file": "fletcher_3.glb",
+  "triangles": 3540
+ },
  "house:1": {
   "file": "house_1.glb",
   "triangles": 4936
@@ -47,6 +107,30 @@
   "file": "ironMine_3.glb",
   "triangles": 2788
  },
+ "pigFarm:1": {
+  "file": "pigFarm_1.glb",
+  "triangles": 1348
+ },
+ "pigFarm:2": {
+  "file": "pigFarm_2.glb",
+  "triangles": 1496
+ },
+ "pigFarm:3": {
+  "file": "pigFarm_3.glb",
+  "triangles": 1644
+ },
+ "quarry:1": {
+  "file": "quarry_1.glb",
+  "triangles": 1764
+ },
+ "quarry:2": {
+  "file": "quarry_2.glb",
+  "triangles": 1896
+ },
+ "quarry:3": {
+  "file": "quarry_3.glb",
+  "triangles": 2028
+ },
  "smelter:1": {
   "file": "smelter_1.glb",
   "triangles": 2132
@@ -70,6 +154,30 @@
  "smithy:3": {
   "file": "smithy_3.glb",
   "triangles": 2566
+ },
+ "stable:1": {
+  "file": "stable_1.glb",
+  "triangles": 1424
+ },
+ "stable:2": {
+  "file": "stable_2.glb",
+  "triangles": 1660
+ },
+ "stable:3": {
+  "file": "stable_3.glb",
+  "triangles": 1660
+ },
+ "tannery:1": {
+  "file": "tannery_1.glb",
+  "triangles": 1460
+ },
+ "tannery:2": {
+  "file": "tannery_2.glb",
+  "triangles": 1644
+ },
+ "tannery:3": {
+  "file": "tannery_3.glb",
+  "triangles": 1644
  },
  "vineyard:1": {
   "file": "vineyard_1.glb",

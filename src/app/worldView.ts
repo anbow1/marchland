@@ -12,6 +12,7 @@ import { GroundWorks } from '../render/groundWorks.ts';
 import { buildLand } from '../render/landView.ts';
 import { type GroundTiles, Markers } from '../render/markers.ts';
 import { PeopleView } from '../render/peopleView.ts';
+import { SmokeView } from '../render/smokeView.ts';
 import { VinesView } from '../render/vinesView.ts';
 import { type Quality, Stage } from '../render/stage.ts';
 import { loadSurfaces, releaseCpuCopies } from '../render/surfaces.ts';
@@ -48,6 +49,8 @@ export class WorldView {
   private markers!: Markers;
   private people!: PeopleView;
   private vines!: VinesView;
+  private smoke!: SmokeView;
+  private readonly smokeSources = new Float32Array(220 * 3);
   private readonly works = new GroundWorks();
   private readonly clearings = new Clearings();
   private readonly offset = { x: 0, y: 0, z: 0 };
@@ -84,6 +87,7 @@ export class WorldView {
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
     this.vines = new VinesView(scene, surfaces);
+    this.smoke = new SmokeView(scene);
     this.army = new ArmyView(scene);
     this.markers = new Markers(scene);
     shareStaticInstanceShaders(this.stage.renderer, scene);
@@ -125,6 +129,7 @@ export class WorldView {
     this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
     this.people.update(world);
     this.vines.update(world);
+    this.smoke.update(this.smokeSources, this.town.smokeSources(world, this.smokeSources), frameSeconds);
     this.army.update(world);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);
     this.stage.render();

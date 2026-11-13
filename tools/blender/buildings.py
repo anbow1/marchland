@@ -428,3 +428,280 @@ def winery(k, level):
 
 BUILDERS["vineyard"] = vineyard
 BUILDERS["winery"] = winery
+
+
+from parts import HIDE, HORSE_BAY, HORSE_GREY, MEAT, WATER, cart, fence, haystack, horse, pig, target_butt, trough  # noqa: E402
+
+
+def quarry(k, level):
+    # A cut face of rock stepping down at the back, dressed blocks in rows, a jib crane, the masons' lodge.
+    for i, (y, h, w) in enumerate(((3.3, 3.4, 8.2), (2.1, 2.2, 7.0), (1.2, 1.1, 5.2))):
+        k.box(0.3 * (i - 1), y, -0.3, w, 1.4, h + 0.3, ROCK, bevel=0.12)
+    for i in range(4 + level * 2):
+        x = -3.2 + (i % 4) * 1.1
+        y = -1.2 - (i // 4) * 0.9
+        k.box(x, y, 0, 0.9, 0.6, 0.55, ASHLAR, bevel=0.03, turn=k.jitter(0.08))
+        if i % 3 == 0:
+            k.box(x, y, 0.55, 0.9, 0.6, 0.5, ASHLAR, bevel=0.03, turn=k.jitter(0.08))
+    # The crane: a mast, a jib and a block hanging from it.
+    k.box(2.8, 0.6, 0, 0.3, 0.3, 4.8, BEAM, bevel=0.02)
+    k.beam((2.8, 0.6, 4.4), (0.4, 1.0, 5.0), 0.22, 0.22, BEAM, bevel=0.02)
+    k.beam((2.8, 0.6, 2.4), (1.6, 0.8, 4.6), 0.15, 0.15, BEAM)
+    for dx in (-0.7, 0.7):
+        k.beam((2.8 + dx, 0.6 - 0.7, 0), (2.8, 0.6, 1.6), 0.16, 0.16, BEAM)
+    k.box(0.5, 1.0, 2.2, 0.04, 0.04, 2.8, "straw#c9b678")
+    k.box(0.5, 1.0, 1.6, 0.8, 0.6, 0.6, ASHLAR, bevel=0.03)
+    # The lodge: an open-fronted shed with a banker (work bench) and tools.
+    m = k.mark()
+    lean_to(k, -1.6, 1.6, 1.2, -1.2, 2.0, 2.6, SHINGLES)
+    k.box(0, 0.5, 0, 2.6, 0.6, 0.8, BOARDS, bevel=0.02)
+    k.box(0, 0.5, 0.8, 0.6, 0.4, 0.35, ASHLAR, bevel=0.03)
+    k.move_since(m, at(-2.6, -3.0, 0, 0.0))
+    cart(k, 3.3, -2.8, 0.4, ASHLAR)
+    for i in range(10):
+        k.box(-4.0 + k.jitter(0.6), 1.0 + k.jitter(0.8), -0.1, 0.4, 0.35, 0.25, RUBBLE, turn=k.jitter(3), bevel=0.04)
+    return {}
+
+
+def farm(k, level):
+    # The farmhouse under a deep thatch, a boarded barn with wide doors, a haystack, a cart and a well.
+    m = k.mark()
+    footing(k, 5.6, 4.0, 0.35)
+    block(k, 5.6, 4.0, 0.35, 2.3, PLASTER, True, front=[(-0.5, 0.5), (1.3, 2.1)])
+    door(k, 0, -2.0, 0.35)
+    window(k, 1.7, -2.0, 1.2, w=0.6, h=0.6)
+    roof(k, 5.6, 4.0, 2.65, 50, 0.6, 0.45, 0.35, THATCH, hip=1.0)
+    chimney(k, 1.6, 0.6, 0.35, 5.6, w=0.6)
+    k.smoke.append((1.6, 0.6, 5.8))
+    k.move_since(m, at(-2.0, 1.4))
+    m = k.mark()
+    k.box(0, 0, 0, 3.4, 4.6, 3.0, BOARDS_DARK)
+    for x in (-1.7, 1.7):
+        for y in (-2.3, 2.3):
+            k.box(x, y, 0, 0.2, 0.2, 3.0, BEAM)
+    k.box(0, -2.33, 0, 2.0, 0.08, 2.4, BOARDS)
+    k.box(0, -2.36, 1.2, 2.0, 0.06, 0.1, BEAM)
+    ridge = roof(k, 4.6, 3.4, 3.0, 45, 0.4, 0.3, 0.3, THATCH, hip=0.6)
+    k.move_since(m, at(2.6, 1.4, 0, 1.5708))
+    haystack(k, 3.8, -2.6, 1.0)
+    if level >= 2:
+        haystack(k, 2.4, -3.4, 0.8)
+    cart(k, -0.4, -3.2, 1.2, "straw#c9b678" if level >= 2 else None)
+    # The well.
+    k.cylinder(-3.6, -2.8, 0, 0.6, 0.6, 0.7, 10, RUBBLE)
+    k.cylinder(-3.6, -2.8, 0.65, 0.45, 0.45, 0.06, 10, WATER)
+    for dx in (-0.55, 0.55):
+        k.box(-3.6 + dx, -2.8, 0.7, 0.1, 0.1, 1.2, BEAM)
+    k.box(-3.6, -2.8, 1.85, 1.3, 0.12, 0.12, BEAM)
+    fence(k, -4.4, -0.6, -4.4, -4.2)
+    return {}
+
+
+def fisher(k, level):
+    m = k.mark()
+    footing(k, 4.4, 3.6, 0.3)
+    block(k, 4.4, 3.6, 0.3, 2.0, BOARDS_DARK, framed=False)
+    door(k, 0.8, -1.8, 0.3, w=0.9, h=1.8)
+    window(k, -1.0, -1.8, 1.0, w=0.5, h=0.5)
+    roof(k, 4.4, 3.6, 2.3, 48, 0.5, 0.4, 0.3, THATCH, hip=0.8)
+    k.move_since(m, at(-2.0, 2.0))
+    # Drying racks hung with the catch.
+    for rack in range(1 + level):
+        y = -0.4 - rack * 1.4
+        for x in (-3.6, -0.4):
+            k.box(x, y, 0, 0.1, 0.1, 1.9, BEAM)
+        k.box(-2.0, y, 1.85, 3.4, 0.08, 0.08, BEAM)
+        for i in range(8):
+            k.box(-3.3 + i * 0.42, y, 1.2, 0.12, 0.04, 0.55, "fish#8fa3b0")
+    # A boat drawn up on the bank, upturned, and its oars; a net on stakes; baskets.
+    m = k.mark()
+    k.box(0, 0, 0, 1.4, 4.2, 0.45, BOARDS, bevel=0.06)
+    k.slab([(-0.7, -2.1, 0.45), (0.7, -2.1, 0.45), (0.7, 2.1, 0.45), (-0.7, 2.1, 0.45)], 0.05, BOARDS_DARK)
+    k.beam((0, -2.1, 0.2), (0, -2.7, 0.55), 0.18, 0.12, BOARDS)
+    k.move_since(m, at(2.8, 0.2, 0, 0.15))
+    for x in (1.4, 3.8):
+        k.box(x, -3.4, 0, 0.1, 0.1, 1.5, BEAM)
+    k.slab([(1.4, -3.4, 1.45), (3.8, -3.4, 1.45), (3.8, -3.4, 0.3), (1.4, -3.4, 0.3)], 0.02, "straw#c9b678")
+    for i in range(2 + level):
+        k.cylinder(-3.6 + i * 0.6, -3.6, 0, 0.25, 0.3, 0.4, 8, "straw#c9b678")
+    return {}
+
+
+def pig_farm(k, level):
+    m = k.mark()
+    block(k, 5.0, 3.0, 0, 1.7, BOARDS_DARK, framed=False)
+    for x in (-1.6, 0, 1.6):
+        k.box(x, -1.52, 0, 1.0, 0.06, 1.1, SOOT)
+    roof(k, 5.0, 3.0, 1.7, 30, 0.5, 0.3, 0.3, THATCH, hip=0.5)
+    k.move_since(m, at(-1.0, 2.8))
+    # The pen: a fenced yard of mud, the pigs, a trough, a straw heap.
+    k.box(0, -1.0, -0.05, 8.4, 5.2, 0.08, "mud")
+    fence(k, -4.2, 1.6, -4.2, -3.6)
+    fence(k, -4.2, -3.6, 4.2, -3.6)
+    fence(k, 4.2, -3.6, 4.2, 1.6)
+    for i in range(3 + level):
+        pig(k, -3.0 + i * 1.3 + k.jitter(0.3), -1.0 + k.jitter(1.6), turn=k.jitter(3.1), scale=0.9 + k.jitter(0.15))
+    trough(k, 2.8, -0.2, 1.8, turn=1.5708)
+    haystack(k, 3.2, 3.0, 0.9)
+    k.box(-3.4, 1.0, 0, 1.2, 0.9, 0.5, "straw#c9b678", bevel=0.15)
+    return {}
+
+
+def butcher(k, level):
+    sx, sy = 5.6, 4.2
+    footing(k, sx, sy, 0.4)
+    block(k, sx, sy, 0.4, 2.6, PLASTER, True, front=[(-1.7, -0.7), (0.6, 1.6)])
+    door(k, -1.2, -sy / 2, 0.4)
+    window(k, 1.1, -sy / 2, 1.2, w=0.9, h=0.7, shutters=False)
+    ridge = roof(k, sx, sy, 3.0, 50, 0.5, 0.35, 0.2, TILES)
+    gables(k, sx, sy, 3.0, ridge, PLASTER)
+    # The smokehouse: a squat stone hut with its own smoking chimney.
+    k.box(sx / 2 + 1.3, 0.6, 0, 2.0, 2.2, 2.2, RUBBLE, bevel=0.03)
+    k.slab([(sx / 2 + 0.2, -0.6, 2.2), (sx / 2 + 2.4, -0.6, 2.2), (sx / 2 + 2.4, 1.8, 2.7), (sx / 2 + 0.2, 1.8, 2.7)][::-1], 0.14, SHINGLES, BOARDS)
+    chimney(k, sx / 2 + 1.3, 1.2, 2.2, 3.6, w=0.55)
+    k.smoke.append((sx / 2 + 1.3, 1.2, 3.8))
+    # A rack under the eaves hung with sides of meat and strings of sausages; a block and cleaver.
+    for x in (-2.6, 0.2):
+        k.box(x, -sy / 2 - 0.9, 0, 0.12, 0.12, 2.3, BEAM)
+    k.box(-1.2, -sy / 2 - 0.9, 2.25, 3.0, 0.12, 0.12, BEAM)
+    for i in range(5 + level):
+        x = -2.3 + i * 0.45
+        if i % 2:
+            k.box(x, -sy / 2 - 0.9, 1.3, 0.3, 0.14, 0.9, MEAT, bevel=0.06)
+        else:
+            for j in range(4):
+                k.box(x, -sy / 2 - 0.9, 2.0 - j * 0.2, 0.09, 0.09, 0.18, "meat#7a3a30", bevel=0.03)
+    k.cylinder(1.6, -sy / 2 - 1.2, 0, 0.4, 0.42, 0.8, 9, BARK)
+    k.box(1.6, -sy / 2 - 1.2, 0.8, 0.06, 0.3, 0.12, STEEL)
+    barrel(k, 2.4, -sy / 2 - 0.5, 0.85)
+    return {}
+
+
+def tannery(k, level):
+    sx, sy = 5.4, 4.0
+    footing(k, sx, sy, 0.3)
+    block(k, sx, sy, 0.3, 2.4, BOARDS_DARK, framed=False)
+    door(k, -1.4, -sy / 2, 0.3)
+    ridge = roof(k, sx, sy, 2.7, 45, 0.5, 0.35, 0.22, SHINGLES)
+    gables(k, sx, sy, 2.7, ridge, BOARDS_DARK, framed=False)
+    # The vats: sunk tubs of brown liquor in a row in the yard.
+    for i in range(3 + (1 if level >= 2 else 0)):
+        x = -3.0 + i * 1.5
+        k.cylinder(x, -3.4, 0, 0.62, 0.62, 0.55, 12, BOARDS, bevel=0.02)
+        k.cylinder(x, -3.4, 0.5, 0.55, 0.55, 0.03, 12, "liquor#5a3a1e")
+    # Frames with hides stretched to dry: the sign of the trade from afar.
+    for i, x in enumerate((1.4, 3.2)):
+        m = k.mark()
+        for dx in (-0.8, 0.8):
+            k.box(dx, 0, 0, 0.1, 0.1, 2.0, BEAM)
+        k.box(0, 0, 1.95, 1.8, 0.1, 0.1, BEAM)
+        k.box(0, 0, 0.35, 1.8, 0.1, 0.1, BEAM)
+        k.slab([(-0.7, 0.03, 1.85), (0.7, 0.03, 1.85), (0.75, 0.03, 0.45), (-0.65, 0.03, 0.5)], 0.02, HIDE)
+        k.move_since(m, at(x, -1.6 - i * 0.2, 0, 0.3))
+    # Oak bark for the tanning, stacked under a little roof.
+    lean_to(k, sx / 2 + 0.1, sx / 2 + 1.8, 1.8, -1.0, 1.6, 2.0, SHINGLES)
+    for i in range(6):
+        k.box(sx / 2 + 0.9, -0.6 + i * 0.4, 0, 1.2, 0.35, 0.9 + k.jitter(0.2), BARK)
+    return {}
+
+
+def fletcher(k, level):
+    sx, sy = 5.4, 4.0
+    footing(k, sx, sy, 0.4)
+    block(k, sx, sy, 0.4, 2.5, PLASTER, True, front=[(-1.9, -0.9), (0.4, 1.4)])
+    door(k, -1.4, -sy / 2, 0.4)
+    window(k, 0.9, -sy / 2, 1.2, w=0.8, h=0.7)
+    ridge = roof(k, sx, sy, 2.9, 52, 0.5, 0.35, 0.3, THATCH, hip=0.9)
+    # Under the front eaves: a rack of bows, sheaves of arrows in barrels, a stack of staves.
+    k.box(1.6, -sy / 2 - 0.5, 0, 2.2, 0.1, 0.1, BEAM)
+    k.box(1.6, -sy / 2 - 0.5, 1.7, 2.2, 0.1, 0.1, BEAM)
+    for i in range(6):
+        x = 0.7 + i * 0.36
+        k.beam((x, -sy / 2 - 0.5, 0.05), (x + 0.1, -sy / 2 - 0.45, 1.75), 0.04, 0.06, "bow#7d6a3c")
+    for i in range(2):
+        barrel(k, 3.3 + i * 0.6, -sy / 2 - 0.6, 0.7)
+        for j in range(6):
+            k.box(3.3 + i * 0.6 + k.jitter(0.12), -sy / 2 - 0.6 + k.jitter(0.12), 0.6, 0.02, 0.02, 0.75, BEAM)
+    for i in range(3 + level):
+        log(k, -3.1, -2.8 - i * 0.18, 0.08 + (i % 2) * 0.1, 2.0, 0.05, turn=1.5708 + k.jitter(0.1))
+    # The butt they try the bows at.
+    target_butt(k, -2.4, -4.0, 0.2)
+    return {}
+
+
+def stable(k, level):
+    # A long low stable with a door to every stall, a fenced paddock with horses, hay, a trough.
+    m = k.mark()
+    sx = 7.0
+    block(k, sx, 3.2, 0, 2.4, BOARDS_DARK, framed=False)
+    for i in range(4):
+        x = -2.6 + i * 1.75
+        k.box(x, -1.63, 0.05, 1.0, 0.08, 1.2, BOARDS)
+        k.box(x, -1.63, 1.25, 1.0, 0.08, 0.95, SOOT)
+    for x in (-sx / 2, sx / 2):
+        k.box(x, -1.6, 0, 0.2, 0.2, 2.4, BEAM)
+    ridge = roof(k, sx, 3.2, 2.4, 40, 0.6, 0.3, 0.25, SHINGLES)
+    gables(k, sx, 3.2, 2.4, ridge, BOARDS_DARK, framed=False)
+    k.move_since(m, at(0, 2.6))
+    fence(k, -4.0, 0.6, -4.0, -4.0)
+    fence(k, -4.0, -4.0, 4.0, -4.0)
+    fence(k, 4.0, -4.0, 4.0, 0.6)
+    horse(k, -2.0, -2.0, 0.6, HORSE_BAY, grazing=True)
+    horse(k, 1.8, -2.4, -1.2, HORSE_GREY)
+    if level >= 2:
+        horse(k, 0.0, -1.0, 2.6, HORSE_BAY)
+    trough(k, 3.0, -0.6, 1.6)
+    haystack(k, -3.0, 0.2, 0.7)
+    return {}
+
+
+def barracks(k, level):
+    sx, sy = 8.0, 5.0
+    plinth = 0.4
+    footing(k, sx, sy, plinth, ASHLAR)
+    k.box(0, 0, plinth, sx, sy, 2.8, RUBBLE)
+    door(k, 0, -sy / 2, plinth, w=1.6, h=2.3)
+    for x in (-2.6, 2.6):
+        window(k, x, -sy / 2, plinth + 1.0, w=0.4, h=0.8, shutters=False)
+    up = plinth + 2.8
+    k.box(0, 0, up, sx, sy + 0.4, 2.4, PLASTER)
+    block(k, sx, sy + 0.4, up, 2.4, PLASTER, True, front=[(-3.0, -2.3), (-1.2, -0.5), (0.5, 1.2), (2.3, 3.0)])
+    for x in (-2.65, -0.85, 0.85, 2.65):
+        window(k, x, -(sy + 0.4) / 2, up + 0.8, w=0.5, h=0.7)
+    eave = up + 2.4
+    ridge = roof(k, sx, sy + 0.4, eave, 50, 0.5, 0.4, 0.22, TILES)
+    gables(k, sx, sy + 0.4, eave, ridge, PLASTER)
+    chimney(k, -sx / 2 + 1.2, 0.8, plinth, ridge + 0.8, w=0.8)
+    k.smoke.append((-sx / 2 + 1.2, 0.8, ridge + 1.0))
+    # The banner of the side over the door.
+    k.box(0, -sy / 2 - 0.3, up + 0.4, 0.1, 0.1, 4.5, BEAM)
+    k.slab([(0.05, -sy / 2 - 0.3, up + 4.7), (1.6, -sy / 2 - 0.3, up + 4.4), (1.6, -sy / 2 - 0.3, up + 3.3), (0.05, -sy / 2 - 0.3, up + 3.6)], 0.03, TEAM)
+    # The drill yard: pells (posts to hack at), a rack of spears, a target.
+    for i, x in enumerate((-3.2, -2.0)):
+        k.box(x, -sy / 2 - 2.2, 0, 0.3, 0.3, 1.8, BARK)
+        k.box(x, -sy / 2 - 2.2, 1.1, 0.7, 0.12, 0.12, BEAM)
+    k.box(2.4, -sy / 2 - 1.0, 0, 2.4, 0.1, 0.1, BEAM)
+    k.box(2.4, -sy / 2 - 1.0, 1.5, 2.4, 0.1, 0.1, BEAM)
+    for i in range(7):
+        x = 1.4 + i * 0.33
+        k.box(x, -sy / 2 - 1.0, 0, 0.05, 0.05, 2.6, BOARDS)
+        k.box(x, -sy / 2 - 1.0, 2.6, 0.08, 0.03, 0.3, STEEL)
+    target_butt(k, 3.6, -sy / 2 - 3.2, -0.3)
+    if level >= 2:
+        k.box(-0.4, -sy / 2 - 3.0, 0, 1.6, 0.6, 0.9, BOARDS, bevel=0.02)
+        for i in range(3):
+            k.box(-0.9 + i * 0.5, -sy / 2 - 3.0, 0.9, 0.4, 0.06, 0.55, TEAM, tilt=(-0.2, 0), bevel=0.02)
+    return {}
+
+
+BUILDERS.update({
+    "quarry": quarry,
+    "farm": farm,
+    "fisher": fisher,
+    "pigFarm": pig_farm,
+    "butcher": butcher,
+    "tannery": tannery,
+    "fletcher": fletcher,
+    "stable": stable,
+    "barracks": barracks,
+})

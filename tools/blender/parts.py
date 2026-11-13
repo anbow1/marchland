@@ -264,3 +264,91 @@ def stump(k, x, y):
 def smoke_marker(k, x, y, z):
     """An empty marker the game finds by name and puts smoke on (made as a tiny box named in the part list)."""
     k.smoke.append((x, y, z))
+
+
+# ---- animals and work things -------------------------------------------------
+
+PIG = "pig#c79a8c"
+HORSE_BAY = "horse#5b3f2c"
+HORSE_GREY = "horse#8b8780"
+HIDE = "hide#a98a62"
+MEAT = "meat#8c4a40"
+HAY = "straw#c9b678"
+WATER = "water#2a3a3a"
+
+
+def pig(k, x, y, turn=0.0, scale=1.0):
+    m = k.mark()
+    s = scale
+    k.box(0, 0, 0.25 * s, 0.45 * s, 1.0 * s, 0.45 * s, PIG, bevel=0.08 * s)
+    k.box(0, -0.58 * s, 0.32 * s, 0.32 * s, 0.3 * s, 0.3 * s, PIG, bevel=0.05 * s)
+    k.box(0, -0.75 * s, 0.34 * s, 0.16 * s, 0.08 * s, 0.12 * s, "pig#a87a6c")
+    for dx in (-0.14, 0.14):
+        for dy in (-0.32, 0.32):
+            k.box(dx * s, dy * s, 0, 0.09 * s, 0.09 * s, 0.28 * s, PIG)
+    k.move_since(m, at(x, y, 0, turn))
+
+
+def horse(k, x, y, turn=0.0, coat=HORSE_BAY, grazing=False):
+    m = k.mark()
+    k.box(0, 0, 0.95, 0.5, 1.5, 0.6, coat, bevel=0.1)
+    head_z = 0.75 if grazing else 1.55
+    k.beam((0, -0.65, 1.35), (0, -1.05, head_z + 0.1), 0.26, 0.34, coat, bevel=0.04)
+    k.box(0, -1.15, head_z - 0.15, 0.22, 0.5, 0.26, coat, bevel=0.04, tilt=(0.6 if grazing else -0.3, 0))
+    k.box(0, -0.85, 1.55 if not grazing else 1.2, 0.08, 0.5, 0.25, "horse#2e2824")
+    k.beam((0, 0.72, 1.4), (0, 0.95, 0.75), 0.1, 0.12, "horse#2e2824")
+    for dx in (-0.16, 0.16):
+        for dy in (-0.55, 0.55):
+            k.box(dx, dy, 0, 0.12, 0.14, 0.95, coat)
+    k.move_since(m, at(x, y, 0, turn))
+
+
+def trough(k, x, y, length=1.6, turn=0.0):
+    m = k.mark()
+    k.box(0, 0, 0, length, 0.5, 0.45, BOARDS, bevel=0.02)
+    k.box(0, 0, 0.4, length - 0.12, 0.38, 0.03, WATER)
+    k.move_since(m, at(x, y, 0, turn))
+
+
+def haystack(k, x, y, r=1.2):
+    k.cylinder(x, y, 0, r, r * 0.9, r * 0.8, 10, HAY)
+    k.cylinder(x, y, r * 0.8, r * 0.9, 0.1, r * 0.9, 10, HAY)
+
+
+def fence(k, x0, y0, x1, y1, posts_every=1.6):
+    import math as _m
+    length = _m.hypot(x1 - x0, y1 - y0)
+    n = max(1, round(length / posts_every))
+    for i in range(n + 1):
+        t = i / n
+        k.box(x0 + (x1 - x0) * t, y0 + (y1 - y0) * t, 0, 0.12, 0.12, 1.1, BEAM)
+    for z in (0.45, 0.9):
+        k.beam((x0, y0, z), (x1, y1, z), 0.07, 0.1, BOARDS)
+
+
+def cart(k, x, y, turn=0.0, load=None):
+    m = k.mark()
+    k.box(0, 0, 0.55, 1.3, 2.2, 0.12, BOARDS, bevel=0.02)
+    for dx in (-0.62, 0.62):
+        k.box(dx, 0, 0.67, 0.06, 2.2, 0.35, BOARDS)
+    for dx in (-0.75, 0.75):
+        v = k.cylinder(0, 0, -0.05, 0.5, 0.5, 0.1, 12, BOARDS)
+        k.place(v, Matrix.Translation((dx, 0.2, 0.5)) @ Matrix.Rotation(1.5708, 4, "Y"))
+    k.beam((-0.3, -1.1, 0.6), (-0.3, -2.4, 0.45), 0.08, 0.08, BEAM)
+    k.beam((0.3, -1.1, 0.6), (0.3, -2.4, 0.45), 0.08, 0.08, BEAM)
+    if load:
+        k.box(0, 0, 0.67, 1.1, 2.0, 0.45, load, bevel=0.1)
+    k.move_since(m, at(x, y, 0, turn))
+
+
+def target_butt(k, x, y, turn=0.0):
+    """An archery butt: a straw boss on a trestle, painted rings."""
+    m = k.mark()
+    k.beam((-0.5, 0.35, 0), (0, 0.1, 1.5), 0.08, 0.08, BEAM)
+    k.beam((0.5, 0.35, 0), (0, 0.1, 1.5), 0.08, 0.08, BEAM)
+    v = k.cylinder(0, 0, -0.15, 0.6, 0.6, 0.3, 14, HAY)
+    k.place(v, Matrix.Translation((0, 0, 1.05)) @ Matrix.Rotation(1.5708, 4, "X"))
+    for r, col in ((0.42, "paint#e8e0d0"), (0.28, "paint#a8302a"), (0.14, "paint#e8e0d0")):
+        v = k.cylinder(0, 0, -0.01, r, r, 0.02, 14, col)
+        k.place(v, Matrix.Translation((0, -0.16, 1.05)) @ Matrix.Rotation(1.5708, 4, "X"))
+    k.move_since(m, at(x, y, 0, turn))

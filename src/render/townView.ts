@@ -139,6 +139,35 @@ export class TownView {
     this.ghostMaterial.color.copy(allowed ? GHOST_OK : GHOST_BAD);
   }
 
+  /**
+   * Writes x, y, z of every point smoke rises from now into `out`; returns how many. A house smokes
+   * while people live in it; a workshop while someone works there; the smelter's clamp always.
+   */
+  smokeSources(world: World, out: Float32Array): number {
+    let n = 0;
+    const capacity = out.length / 3;
+    for (const town of world.towns) {
+      for (const b of town.plots) {
+        if (!b || b.constructionLeftS > 0) continue;
+        const model = this.models.get(`${b.kind}:${b.level}:${town.side}`);
+        if (!model || model.smoke.length === 0) continue;
+        const busy = b.kind === 'house' ? b.residents > 0 : b.workRate > 0 || b.kind === 'smelter';
+        if (!busy) continue;
+        const y = heightAtM(b.x, b.z);
+        const cos = Math.cos(b.yawRad);
+        const sin = Math.sin(b.yawRad);
+        for (const point of model.smoke) {
+          if (n >= capacity) return n;
+          out[n * 3] = b.x + point.x * cos + point.z * sin;
+          out[n * 3 + 1] = y + point.y;
+          out[n * 3 + 2] = b.z - point.x * sin + point.z * cos;
+          n++;
+        }
+      }
+    }
+    return n;
+  }
+
   update(world: World, frameSeconds = 0): void {
     for (const town of world.towns) {
       const side = town.side;

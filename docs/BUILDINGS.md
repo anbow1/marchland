@@ -84,26 +84,26 @@ roads serve all of them.
 ### Building materials (Budulec)
 
 - **Woodcutter's Lodge** — 6 timber a trip (8 s of felling + the walk). *Model from Blender.*
-- **Quarry** — 1 stone. *Shapes from code; model to come.*
+- **Quarry** — 1 stone. *Model from Blender.*
 - Sawmill — *planned (§4)*
 - Forester's Hut — *planned (§4)*
 
 ### Grain and bread (Zboże i chleb)
 
-- **Farm** — 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Shapes from code; model to come.*
+- **Farm** — 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Model from Blender.*
 - **Windmill** — 2 grain → 2 flour. *Model from Blender.*
 - **Bakery** — 1 flour → 1 bread. *Model from Blender.*
 - Brewery — *planned (§4)*
 
 ### Meat, sausage and hides (Mięso, kiełbasy i skóry)
 
-- **Pig Farm** — 1 grain → 2 meat, 1 hides. *Shapes from code; model to come.*
-- **Butcher** — 1 meat → 1 sausages. *Shapes from code; model to come.*
+- **Pig Farm** — 1 grain → 2 meat, 1 hides. *Model from Blender.*
+- **Butcher** — 1 meat → 1 sausages. *Model from Blender.*
 - Hunter's Lodge — *planned (§4)*
 
 ### Fish (Ryby)
 
-- **Fisher's Hut** — 3 fish a trip (10 s at the water + the walk). *Shapes from code; model to come.*
+- **Fisher's Hut** — 3 fish a trip (10 s at the water + the walk). *Model from Blender.*
 
 ### Wine (Wino)
 
@@ -119,16 +119,16 @@ roads serve all of them.
 
 ### Leather armour and bows (Zbroje skórzane i łuki)
 
-- **Tannery** — 1 hides → 1 leather armour. *Shapes from code; model to come.*
-- **Fletcher** — 1 timber → 1 bows. *Shapes from code; model to come.*
+- **Tannery** — 1 hides → 1 leather armour. *Model from Blender.*
+- **Fletcher** — 1 timber → 1 bows. *Model from Blender.*
 
 ### Horses (Konie)
 
-- **Stable** — 3 grain → 1 horses. *Shapes from code; model to come.*
+- **Stable** — 3 grain → 1 horses. *Model from Blender.*
 
 ### Army and defence (Wojsko i obrona)
 
-- **Barracks** — regiments (see UNITS.md). *Shapes from code; model to come.*
+- **Barracks** — regiments (see UNITS.md). *Model from Blender.*
 - Siege Workshop — *planned (§4)*
 - Watchtower — *planned (§4)*
 - Palisade and Gate — *planned (§4)*
