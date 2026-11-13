@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { FIELDS, FOOD, PEOPLE, REARM, ROADS, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdBuild, cmdBuildRoad, cmdMove, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from '../src/sim/commands.ts';
+import { ARMY, FIELDS, FOOD, PEOPLE, REARM, ROADS, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from '../src/sim/commands.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
@@ -276,18 +276,18 @@ describe('recruiting', () => {
 });
 
 describe('balance', () => {
-  // With flour and iron as steps of their own, the first regiment takes the field at 14–16 minutes.
-  it('the computer\'s town grows, stays fed and fields an army inside seventeen minutes', () => {
+  // With flour and iron as steps of their own, the first regiment takes the field at about 20 minutes.
+  it('the computer\'s town grows, stays fed and fields an army inside 23 minutes', () => {
     const world = createWorld({ seed: 7, difficulty: 'normal', computerPlays: true });
     let firstArmyS = -1;
-    runUntil(world, 17 * 60, () => {
+    runUntil(world, 23 * 60, () => {
       if (firstArmyS < 0 && menAlive(world, COMPUTER) > 0) firstArmyS = world.timeS;
       return false;
     });
     const town = world.towns[COMPUTER];
     expect(town.plots.filter((b) => b !== null).length).toBeGreaterThanOrEqual(12);
     expect(firstArmyS).toBeGreaterThan(0);
-    expect(firstArmyS).toBeLessThan(17 * 60);
+    expect(firstArmyS).toBeLessThan(23 * 60);
     expect(world.people.filter((p) => p.alive && p.side === COMPUTER).length).toBeGreaterThanOrEqual(12);
   }, 60_000);
 });
@@ -371,4 +371,34 @@ describe('wine', () => {
     expect(h.hasWine).toBe(true);
     expect(WINE.taxFactor).toBeGreaterThan(1);
   });
+});
+
+describe('the home guard', () => {
+  it('militia takes orders only near its own keep, never against buildings; re-armed it may march out', () => {
+    const world = rich(quietWorld());
+    const guard = spawnRegiment(world, PLAYER, 'militia', townX(PLAYER) + 20, townZ(PLAYER) - 20, 0);
+    expect(cmdMove(world, guard.id, townX(PLAYER) + 40, townZ(PLAYER) - 40, null, false)).toBe('ok');
+    expect(cmdMove(world, guard.id, 0, 0, null, false)).toBe('defenceOnly');
+    expect(cmdAttackBuilding(world, guard.id, COMPUTER, -1)).toBe('defenceOnly');
+    const enemyFar = spawnRegiment(world, COMPUTER, 'pikemen', 0, 0, 0);
+    expect(cmdAttackRegiment(world, guard.id, enemyFar.id)).toBe('defenceOnly');
+    // In a group order the guard stays behind and the rest march.
+    const line = spawnRegiment(world, PLAYER, 'pikemen', townX(PLAYER) + 30, townZ(PLAYER) - 10, 0);
+    expect(cmdMoveGroup(world, [guard.id, line.id], 0, 0, 0, false)).toBe('ok');
+    expect(line.order).toBe('move');
+    expect(guard.destX).not.toBeCloseTo(0, 0);
+    // Re-armed as pikemen it is an army like any other.
+    guard.kind = 'pikemen';
+    guard.def = UNITS.pikemen;
+    expect(cmdMove(world, guard.id, 0, 0, null, false)).toBe('ok');
+  });
+
+  it('the computer keeps its militia at home and does not send it with a wave', () => {
+    const world = createWorld({ seed: 7, difficulty: 'normal', computerPlays: true });
+    runUntil(world, 30 * 60, () => false);
+    for (const r of world.regiments) {
+      if (r.side !== COMPUTER || !r.def.defenceOnly || r.aliveMen === 0) continue;
+      expect(Math.hypot(r.centreX - townX(COMPUTER), r.centreZ - townZ(COMPUTER))).toBeLessThanOrEqual(ARMY.homeGuardRadiusM + 5);
+    }
+  }, 60_000);
 });

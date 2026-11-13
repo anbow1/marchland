@@ -1,11 +1,11 @@
-import { AI, AI_TUNING, TOWN } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMoveGroup, cmdRecruit, cmdUpgrade, roadCost } from './commands.ts';
-import { canAffordBuilding, peopleFor } from './economy.ts';
+import { AI, AI_TUNING, REARM, TOWN, UNITS } from '../config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from './commands.ts';
+import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, type Regiment } from './regiment.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
-import { type BuildingKind, enemyOf, type Side, type UnitKind } from './types.ts';
+import { type BuildingKind, enemyOf, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 
 // The computer player. It runs a town on the same economy and gives the same
@@ -52,15 +52,19 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'fisher',
   'farm',
   'house',
-  'pigFarm',
   'ironMine',
-  'house',
-  'barracks',
-  'tannery',
-  'smelter',
   'woodcutter',
+  'barracks',
+  'smelter',
   'smithy',
+  'pigFarm',
+  'tannery',
   'house',
+  'woodcutter',
+  'house',
+  'farm',
+  'windmill',
+  'bakery',
   'butcher',
   'fletcher',
   'woodcutter',
@@ -149,7 +153,11 @@ function recruit(world: World, ai: AiState): void {
       return;
     }
   }
-  // Nothing better for a long time and gold to spare: call up the militia.
+  // Nothing better for a long time and gold to spare: call up the militia, as a home guard of a regiment or two.
+  let guards = 0;
+  for (const r of world.regiments) if (r.side === ai.side && r.aliveMen > 0 && r.def.defenceOnly) guards++;
+  for (const order of world.towns[ai.side].recruitQueue) if (UNITS[order.kind].defenceOnly) guards++;
+  if (guards >= AI.maxGuardRegiments) return;
   if (ai.sinceRecruitS > 120 && world.towns[ai.side].stock.gold > 180 && cmdRecruit(world, ai.side, 'militia') === 'ok') ai.sinceRecruitS = 0;
 }
 
@@ -203,6 +211,30 @@ function enemyWithin(world: World, side: Side, x: number, z: number, radiusM: nu
   return false;
 }
 
+/** What the computer re-arms its militia as, best first: whichever it has the barracks and the arms for. */
+const REARM_PREFERENCE: readonly UnitKind[] = ['swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'archers'];
+
+/**
+ * In quiet times the militia walks to the barracks and is re-armed there as soon as the town has the
+ * arms for it: the computer's levy becomes its army, as the player's can.
+ */
+function rearmGuards(world: World, ai: AiState, home: readonly Regiment[]): void {
+  const town = world.towns[ai.side];
+  for (const r of home) {
+    if (!r.def.defenceOnly || r.rearmTo !== null || r.order === 'move') continue;
+    for (const to of REARM_PREFERENCE) {
+      if (!REARM.paths[r.kind].includes(to) || barracksLevel(town) < UNITS[to].barracksLevel) continue;
+      const cost = rearmCost(r, to);
+      if (RESOURCE_IDS.some((id) => town.stock[id] < (cost[id] ?? 0))) continue;
+      if (cmdRearm(world, r.id, to) === 'ok') return;
+      // Affordable but not at the barracks: march there first.
+      const barracks = town.plots.find((b) => b !== null && b.kind === 'barracks' && b.constructionLeftS <= 0);
+      if (barracks) cmdMove(world, r.id, barracks.x + Math.sin(barracks.yawRad) * 16, barracks.z + Math.cos(barracks.yawRad) * 16, null, false);
+      return;
+    }
+  }
+}
+
 function command(world: World, ai: AiState): void {
   const side = ai.side;
   const foe = enemyOf(side);
@@ -219,7 +251,8 @@ function command(world: World, ai: AiState): void {
       waveMen += r.aliveMen;
     } else {
       home.push(r);
-      homeMen += r.aliveMen;
+      // Home guards defend but never march out with a wave.
+      if (!r.def.defenceOnly) homeMen += r.aliveMen;
     }
   }
 
@@ -231,14 +264,18 @@ function command(world: World, ai: AiState): void {
   } else if (ai.homeDefending) {
     ai.homeDefending = false;
     if (home.length > 0) cmdMoveGroup(world, home.map((r) => r.id), rallyX(side), rallyZ(side), facingToEnemy(side), false);
+  } else {
+    rearmGuards(world, ai, home);
   }
 
   if (ai.mode === 'gather') {
     const needMen = Math.min(tuning.firstWaveMen + ai.wave * tuning.waveGrowthMen, 96);
-    if (threatened || (homeMen < needMen && !(ai.sinceWaveS >= tuning.waveTimeoutS && home.length >= 2))) return;
+    // Home guards stay behind, so only regiments that may march count towards a wave.
+    const marching = home.filter((r) => !r.def.defenceOnly).length;
+    if (threatened || marching === 0 || (homeMen < needMen && !(ai.sinceWaveS >= tuning.waveTimeoutS && marching >= 2))) return;
     ai.mode = 'stage';
     ai.stageS = 0;
-    ai.waveIds = home.map((r) => r.id);
+    ai.waveIds = home.filter((r) => !r.def.defenceOnly).map((r) => r.id);
     ai.waveStartMen = homeMen;
     const dx = townX(side) - townX(foe);
     const dz = townZ(side) - townZ(foe);

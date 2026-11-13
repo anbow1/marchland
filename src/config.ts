@@ -78,7 +78,7 @@ export const PEOPLE = {
   /** The keep's own household: the people a game starts with, and who they are again after a disaster. */
   keepResidents: 8,
   /** People a house holds at levels 1…3. */
-  houseResidents: [6, 10, 14] as readonly number[],
+  houseResidents: [8, 12, 16] as readonly number[],
   /** A fed house with room takes in a newcomer this often. */
   growSeconds: 30,
   /** Rations one person eats a minute at home (tuned with the soldiers' 0.25: work makes hungrier). */
@@ -141,7 +141,7 @@ export const FIELDS = {
   sowSeconds: 9,
   growSeconds: 60,
   harvestSeconds: 11,
-  grainPerHarvest: 7,
+  grainPerHarvest: 10,
 } as const;
 
 /** Vines: planted once, then they bear every season with no new sowing; slower than corn. */
@@ -311,6 +311,8 @@ export interface UnitDef {
   bodyRadiusM: number;
   /** Gold paid to the enemy for each man of this unit they bring down. */
   bounty: number;
+  /** A home guard: takes orders only within ARMY.homeGuardRadiusM of its own keep; re-arm it to take it further. */
+  defenceOnly: boolean;
 }
 
 // Speeds: a marching man 1.4 m/s, a running armed man about 3 m/s, a horse at
@@ -319,14 +321,14 @@ export interface UnitDef {
 // bolt about 60, a torsion engine's bolt 70 (published reconstructions).
 // Everything else in this table is game balance, tuned in tests/.
 const NO_MISSILE = { missileRangeM: 0, missileMinRangeM: 0, missileDamage: 0, missilePierce: 0, missileSpeedMs: 0, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 0, reloadS: 0 };
-const FOOT = { ...NO_MISSILE, crew: 1, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
-const HORSE = { ...NO_MISSILE, crew: 1, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
-const ENGINE = { cavalry: false, engine: true, attack: 0, defence: 0, armour: 0, damage: 0, reachM: 0, attackIntervalS: 1, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, turnRateRadS: 0.5, recruitSeconds: 20 };
+const FOOT = { ...NO_MISSILE, defenceOnly: false, crew: 1, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const HORSE = { ...NO_MISSILE, defenceOnly: false, crew: 1, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const ENGINE = { defenceOnly: false, cavalry: false, engine: true, attack: 0, defence: 0, armour: 0, damage: 0, reachM: 0, attackIntervalS: 1, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, turnRateRadS: 0.5, recruitSeconds: 20 };
 
 export const UNITS: Record<UnitKind, UnitDef> = {
   // Townsmen with a shield and a spear: cheap, steady enough behind the shield, quick to run.
   // A spear and a wooden shield made at the keep (one timber a man), no armour: raised before there is a barracks.
-  militia: { ...FOOT, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
+  militia: { ...FOOT, defenceOnly: true, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
   // A hedge of pikes: the answer to horsemen, open to arrows.
   pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, bounty: 2 },
   archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 9, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
@@ -370,6 +372,8 @@ export const ARMY = {
   engagedTurnRateRadS: 0.35,
   forestFootSpeedFactor: 0.85,
   forestHorseSpeedFactor: 0.6,
+  /** A home guard (militia) goes no further than this from its own keep: the town, its fields and villages. */
+  homeGuardRadiusM: 115,
   /** Fallen soldiers sink into the ground and are removed after this long. */
   bodySeconds: 6,
 } as const;
@@ -463,7 +467,7 @@ export interface AiTuning {
 
 export const AI_TUNING: Record<Difficulty, AiTuning> = {
   easy: { productionFactor: 0.7, firstWaveMen: 36, waveGrowthMen: 8, waveTimeoutS: 420 },
-  normal: { productionFactor: 1, firstWaveMen: 36, waveGrowthMen: 12, waveTimeoutS: 330 },
+  normal: { productionFactor: 1, firstWaveMen: 24, waveGrowthMen: 12, waveTimeoutS: 330 },
   hard: { productionFactor: 1.35, firstWaveMen: 48, waveGrowthMen: 16, waveTimeoutS: 260 },
 };
 
@@ -477,8 +481,10 @@ export const AI = {
   upgradeReserveGold: 220,
   /** Stone the computer keeps for buildings: roads are laid only with what is left over. */
   roadStoneReserve: 30,
+  /** Regiments of militia the computer keeps as a home guard at most. */
+  maxGuardRegiments: 2,
   /** Free hands the computer keeps at home for every building it has, on top of the town's minimum. */
-  freeHandsPerBuilding: 0.45,
+  freeHandsPerBuilding: 0.15,
 } as const;
 
 export const CAMERA = {

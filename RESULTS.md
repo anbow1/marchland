@@ -5,6 +5,25 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-13 · Milicja tylko do obrony; strojenie po zmianie
+
+- **Milicja = straż domowa**: rozkazy tylko do 115 m od własnego zamku, bez ataku
+  na budynki; w rozkazie grupowym zostaje, reszta idzie; zapędzona za daleko
+  wraca. Po przezbrojeniu przy koszarach — zwykłe wojsko.
+- **Komputer**: najwyżej 2 oddziały milicji, nie bierze ich do fal, przezbraja je,
+  gdy ma broń; naprawiony błąd, przez który po upływie czasu wysyłał pustą falę.
+  Kolejność budowy: kopalnia, koszary, huta i kuźnia wcześniej; dwóch drwali
+  więcej, drugi młyn z piekarnią; pierwsza fala 24 ludzi (było 36).
+- **Ekonomia**: chata mieści 8 / 12 / 16 osób (było 6 / 10 / 14), żniwa dają 10
+  zboża (było 7) — bez tego miasta z dłuższymi łańcuchami głodowały i nie miały
+  kogo powołać.
+- **Czasy** (`npm run timeline`, trzy ziarna): pierwszy regularny regiment ok.
+  20. minuty; komputer zdobywa zamek bezczynnego gracza w 33.–35. minucie
+  (górna granica planu 25–35). Komputer przeciw komputerowi: pierwsze starcia
+  ok. 28. minuty, ok. 30 poległych do 35. minuty. **Do poprawy**: wcześniejsze
+  starcia (np. zagony lekkiej jazdy na wsie, mniejsza pierwsza fala).
+- Testy 57/57 (nowe: straż domowa, komputer trzyma milicję w domu).
+
 ## 2026-11-13 · Budynki z Blendera, młyn, huta, wino, milicja z zamku, przezbrojenie
 
 - **10 budynków z Blendera** w 3 poziomach (`tools/blender/`, `public/buildings/`),

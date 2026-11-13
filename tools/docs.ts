@@ -9,7 +9,7 @@
 //
 // tests/docs.test.ts fails while a document on disk is not what this produces.
 import { existsSync } from 'node:fs';
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../src/config.ts';
+import { AI, ARMY, BUILDINGS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../src/config.ts';
 import { BUILDING_KINDS, type BuildingKind, type Cost, RESOURCE_IDS, type ResourceId, SITE_NEED, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 
 const GOOD_EN: Record<ResourceId, string> = {
@@ -368,6 +368,7 @@ export function unitsDoc(): string {
   const special = UNIT_KINDS.map((kind) => {
     const d = UNITS[kind];
     const notes: string[] = [];
+    if (d.defenceOnly) notes.push(`tylko obrona: rozkazy do ${ARMY.homeGuardRadiusM} m od własnego zamku, bez ataku na budynki`);
     if (d.bonusVsCavalry > 0) notes.push(`+${d.bonusVsCavalry} do ataku przeciw jeździe`);
     if (d.chargeBonus >= 5) notes.push(`szarża +${d.chargeBonus} do ataku, wstrząs ${d.chargeShock}`);
     if (d.missileBlock > 0) notes.push(`${Math.round(d.missileBlock * 100)} % szans zatrzymania pocisku`);
@@ -384,7 +385,11 @@ zmień konfigurację (albo tekst w \`tools/docs.ts\`) i wygeneruj ponownie.*
 - Limit: ${ARMY.maxSoldiersPerSide} żołnierzy na stronę (200 na polu). W kolejce koszar najwyżej ${ARMY.maxRecruitQueue} rozkazy.
 - Regiment powstaje z mieszkańców: tylu ludzi, ilu żołnierzy (machiny: obsługa), idzie do koszar,
   bierze ekwipunek z magazynu zamku i dopiero wtedy staje w szyku przed miastem.
-- Poziom koszar decyduje, kogo można szkolić (kolumna „Koszary”).
+- Poziom koszar decyduje, kogo można szkolić (kolumna „Koszary”; 0 = w zamku, bez koszar).
+- **Straż domowa**: milicja słucha rozkazów tylko do ${ARMY.homeGuardRadiusM} m od własnego zamku i nie atakuje
+  budynków; przy rozkazie dla grupy zostaje, a reszta idzie. Kto zapędzi się dalej w pościgu, wraca.
+  Po przezbrojeniu przy koszarach oddział staje się zwykłym wojskiem i może iść do ataku.
+  Komputer trzyma najwyżej ${AI.maxGuardRegiments} oddziały milicji, nie bierze ich do fal i przezbraja je, gdy ma broń.
 - Żołnierz zjada ${FOOD.soldierRationsPerMinute} racji na minutę z magazynu zamku; głodne wojsko ma morale niższe o ${FOOD.starvingMoralePenalty}.
 - Walka: szyk, zmęczenie, morale, flanka i tył, szarża, ucieczka i zbiórka — jak w grach Total War,
   w skali regimentów po 8–12 ludzi. Liczby w \`src/config.ts\` (COMBAT, FATIGUE, MORALE, MISSILE).

@@ -1,4 +1,4 @@
-import { PEOPLE, REARM, ROADS, TOWN, UNITS } from '../config.ts';
+import { ARMY, PEOPLE, REARM, ROADS, TOWN, UNITS } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
 import { layRoad, roadCells, stampBuilding } from './nav.ts';
 import { checkSite } from './placement.ts';
@@ -81,6 +81,11 @@ function commandable(world: World, regimentId: number): Regiment | CommandResult
   return r;
 }
 
+/** True where a home guard may go: within ARMY.homeGuardRadiusM of its side's keep. */
+export function inHomeLand(side: Side, x: number, z: number): boolean {
+  return Math.hypot(x - townX(side), z - townZ(side)) <= ARMY.homeGuardRadiusM;
+}
+
 /** What re-arming a regiment as `to` costs now: gold, and the equipment its living men do not already carry. */
 export function rearmCost(r: Regiment, to: UnitKind): Cost {
   const from = r.def;
@@ -139,6 +144,7 @@ export function cmdRearm(world: World, regimentId: number, to: UnitKind): Comman
 export function cmdMove(world: World, regimentId: number, x: number, z: number, facingRad: number | null, run: boolean): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
+  if (r.def.defenceOnly && !inHomeLand(r.side, x, z)) return 'defenceOnly';
   r.order = 'move';
   r.destX = clampToMap(x);
   r.destZ = clampToMap(z);
@@ -154,6 +160,7 @@ export function cmdAttackRegiment(world: World, regimentId: number, targetId: nu
   if (typeof r === 'string') return r;
   const target = findRegiment(world, targetId);
   if (!target || target.aliveMen === 0 || target.side === r.side) return 'noSuchRegiment';
+  if (r.def.defenceOnly && !inHomeLand(r.side, target.centreX, target.centreZ)) return 'defenceOnly';
   r.order = 'attackRegiment';
   r.targetRegimentId = targetId;
   r.run = false;
@@ -165,6 +172,8 @@ export function cmdAttackBuilding(world: World, regimentId: number, targetSide: 
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
   if (targetSide === r.side || !buildingStands(world, targetSide, plot)) return 'plotEmpty';
+  // A home guard does not go raiding.
+  if (r.def.defenceOnly) return 'defenceOnly';
   r.order = 'attackBuilding';
   r.targetSide = targetSide;
   r.targetPlot = plot;
@@ -193,12 +202,18 @@ export function cmdMoveGroup(world: World, regimentIds: readonly number[], x: nu
   if (world.winner !== -1) return 'gameOver';
   const front: Regiment[] = [];
   const rear: Regiment[] = [];
+  let guardsLeft = 0;
   for (const id of regimentIds) {
     const r = findRegiment(world, id);
     if (!r || r.aliveMen === 0 || r.state === 'routing') continue;
+    // Home guards stay behind when the line goes beyond the town's land; the rest march.
+    if (r.def.defenceOnly && !inHomeLand(r.side, x, z)) {
+      guardsLeft++;
+      continue;
+    }
     (isArcher(r) ? rear : front).push(r);
   }
-  if (front.length + rear.length === 0) return 'noSuchRegiment';
+  if (front.length + rear.length === 0) return guardsLeft > 0 ? 'defenceOnly' : 'noSuchRegiment';
   // File axis of the new line: (cos f, −sin f).
   const ax = Math.cos(facingRad);
   const az = -Math.sin(facingRad);

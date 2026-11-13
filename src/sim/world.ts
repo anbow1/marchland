@@ -8,6 +8,7 @@ import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
 import { doorX, doorZ, KEEP, type Person, spawnPerson, stepPeople } from './people.ts';
 import { createRegiment, type Regiment } from './regiment.ts';
+import { cmdMove, inHomeLand } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
@@ -123,6 +124,19 @@ function stepRearming(world: World, dtSeconds: number): void {
   }
 }
 
+/** A home guard that has chased an enemy out of the town's land stops there and comes back. */
+function leashHomeGuards(world: World): void {
+  for (const r of world.regiments) {
+    if (!r.def.defenceOnly || r.aliveMen === 0 || r.state !== 'formed') continue;
+    if (inHomeLand(r.side, r.centreX, r.centreZ)) continue;
+    const back = ARMY.homeGuardRadiusM - 10;
+    const dx = r.centreX - townX(r.side);
+    const dz = r.centreZ - townZ(r.side);
+    const d = Math.hypot(dx, dz) || 1;
+    cmdMove(world, r.id, townX(r.side) + (dx / d) * back, townZ(r.side) + (dz / d) * back, null, false);
+  }
+}
+
 function fieldTrained(world: World, town: Town): void {
   while (town.trained.length > 0) {
     const kind = town.trained.shift() as UnitKind;
@@ -141,6 +155,7 @@ function fieldTrained(world: World, town: Town): void {
 export function stepWorld(world: World, dtSeconds: number): void {
   if (world.winner !== -1) return;
   world.timeS += dtSeconds;
+  world.stepCount += 1;
   if (world.ai) stepAi(world, world.ai, dtSeconds);
   stepPeople(world, dtSeconds);
   for (const town of world.towns) {
@@ -155,6 +170,8 @@ export function stepWorld(world: World, dtSeconds: number): void {
     }
   }
   stepRearming(world, dtSeconds);
+  // Once a second is enough to turn back a guard that has run too far.
+  if (world.stepCount % 60 === 0) leashHomeGuards(world);
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);
   stepMelee(world);

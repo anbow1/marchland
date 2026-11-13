@@ -121,7 +121,7 @@ const pl: Strings = {
     barracks: { name: 'Koszary', about: 'Wezwani mieszkańcy biorą tu ekwipunek i stają w szyku. Wyższy poziom to lepsze oddziały.' },
   },
   units: {
-    militia: { name: 'Milicja', about: 'Mieszczanie z włócznią i drewnianą tarczą, bez zbroi. Werbowani w zamku, zanim staną koszary; później do przezbrojenia.' },
+    militia: { name: 'Milicja', about: 'Mieszczanie z włócznią i drewnianą tarczą, bez zbroi. Werbowani w zamku, zanim staną koszary. Tylko do obrony miasta i okolic; po przezbrojeniu przy koszarach — wojsko do ataku.' },
     pikemen: { name: 'Pikinierzy', about: 'Las pik. Stojąc w szyku, zatrzymują szarżę jazdy; bez tarcz giną od strzał.' },
     archers: { name: 'Łucznicy', about: 'Strzelają na 80 m. W zwarciu giną.' },
     swordsmen: { name: 'Miecznicy', about: 'Miecz, tarcza i kolczuga: wygrywają prostą walkę piechoty.' },
@@ -156,6 +156,7 @@ const pl: Strings = {
     notAtBarracks: 'Oddział musi stać przy własnych koszarach.',
     inCombat: 'Oddział walczy: przezbrojenie po walce.',
     rearming: 'Oddział jest właśnie przezbrajany.',
+    defenceOnly: 'Milicja broni tylko miasta i okolic. Przezbrój ją przy koszarach, żeby ruszyła dalej.',
     gameOver: 'Gra skończona.',
   },
   difficulty: { easy: 'Łatwy', normal: 'Normalny', hard: 'Trudny' },
@@ -274,7 +275,7 @@ const en: Strings = {
     barracks: { name: 'Barracks', about: 'Townspeople called up take their equipment here and form up. A higher level trains better regiments.' },
   },
   units: {
-    militia: { name: 'Militia', about: 'Townsmen with a spear and a wooden shield, no armour. Raised at the keep before there is a barracks; re-arm them later.' },
+    militia: { name: 'Militia', about: 'Townsmen with a spear and a wooden shield, no armour. Raised at the keep before there is a barracks. Defends the town and its land only; re-armed at the barracks it becomes an army that can attack.' },
     pikemen: { name: 'Pikemen', about: 'A hedge of pikes. Standing in formation they stop a cavalry charge; with no shields they die to arrows.' },
     archers: { name: 'Archers', about: 'Shoot to 80 m. Die in melee.' },
     swordsmen: { name: 'Swordsmen', about: 'Sword, shield and mail: they win a straight fight on foot.' },
@@ -309,6 +310,7 @@ const en: Strings = {
     notAtBarracks: 'The regiment must stand by its own barracks.',
     inCombat: 'The regiment is fighting: re-arm it after the fight.',
     rearming: 'The regiment is being re-armed.',
+    defenceOnly: 'Militia only defends the town and its land. Re-arm it at the barracks to take it further.',
     gameOver: 'The game is over.',
   },
   difficulty: { easy: 'Easy', normal: 'Normal', hard: 'Hard' },

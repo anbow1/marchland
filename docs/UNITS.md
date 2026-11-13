@@ -8,7 +8,11 @@ zmień konfigurację (albo tekst w `tools/docs.ts`) i wygeneruj ponownie.*
 - Limit: 100 żołnierzy na stronę (200 na polu). W kolejce koszar najwyżej 3 rozkazy.
 - Regiment powstaje z mieszkańców: tylu ludzi, ilu żołnierzy (machiny: obsługa), idzie do koszar,
   bierze ekwipunek z magazynu zamku i dopiero wtedy staje w szyku przed miastem.
-- Poziom koszar decyduje, kogo można szkolić (kolumna „Koszary”).
+- Poziom koszar decyduje, kogo można szkolić (kolumna „Koszary”; 0 = w zamku, bez koszar).
+- **Straż domowa**: milicja słucha rozkazów tylko do 115 m od własnego zamku i nie atakuje
+  budynków; przy rozkazie dla grupy zostaje, a reszta idzie. Kto zapędzi się dalej w pościgu, wraca.
+  Po przezbrojeniu przy koszarach oddział staje się zwykłym wojskiem i może iść do ataku.
+  Komputer trzyma najwyżej 2 oddziały milicji, nie bierze ich do fal i przezbraja je, gdy ma broń.
 - Żołnierz zjada 0.25 racji na minutę z magazynu zamku; głodne wojsko ma morale niższe o 25.
 - Walka: szyk, zmęczenie, morale, flanka i tył, szarża, ucieczka i zbiórka — jak w grach Total War,
   w skali regimentów po 8–12 ludzi. Liczby w `src/config.ts` (COMBAT, FATIGUE, MORALE, MISSILE).
@@ -43,7 +47,7 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 
 ## 4. Do czego służą
 
-- **Milicja z tarczami** — Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia. *(25 % szans zatrzymania pocisku)*
+- **Milicja z tarczami** — Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia. *(tylko obrona: rozkazy do 115 m od własnego zamku, bez ataku na budynki; 25 % szans zatrzymania pocisku)*
 - **Pikinierzy** — Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców. *(+8 do ataku przeciw jeździe; zasięg broni 3 m)*
 - **Łucznicy** — Daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.
 - **Miecznicy** — Miecz, tarcza, kolczuga: wygrywają zwykłą walkę pieszą i znoszą ostrzał. *(35 % szans zatrzymania pocisku)*

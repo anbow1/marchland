@@ -12,7 +12,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 2. Ludzie
 
-- Zamek ma własną załogę: 8 osób na start. Chata mieści 6 / 10 / 14 osób (poziomy 1–3).
+- Zamek ma własną załogę: 8 osób na start. Chata mieści 8 / 12 / 16 osób (poziomy 1–3).
 - Najedzona chata z wolnym miejscem przyjmuje nowego mieszkańca co 30 s.
 - Każdy człowiek ma jedną rolę naraz, przydzielaną automatycznie co sekundę:
   1. **pracownik** — po jednym na każdy czynny budynek produkcyjny (najbliższy wolny człowiek),
@@ -70,7 +70,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 ## 6. Pola, las, jezioro, skała
 
 - **Pole**: rolnik karczuje pas ziemi (14 s, raz), sieje (9 s), zboże rośnie 60 s,
-  potem żniwa (11 s) i 7 zboża wraca do zagrody. Pas ma 12 × 6 m;
+  potem żniwa (11 s) i 10 zboża wraca do zagrody. Pas ma 12 × 6 m;
   zagroda uprawia 2 / 4 / 6 pasów na poziomach 1–3. Pasy leżą za zagrodą, w stronę przeciwną
   do drzwi, i nic nie można na nich postawić — rolnictwo zużywa teren, więc zagrody buduje się
   jako wieś na otwartej przestrzeni, a rzemiosło przy zamku.

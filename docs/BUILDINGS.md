@@ -8,10 +8,10 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | # | Building | Price (level 1) | Ground it needs | What it gives | Workers | Hit points |
 |---|---|---|---|---|---|---|
 | 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Lose it and the game is lost | — | 1800 |
-| 2 | **House** | 40 gold, 10 timber | any level ground | 6 / 10 / 14 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
+| 2 | **House** | 40 gold, 10 timber | any level ground | 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
 | 3 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 6 timber a trip (8 s of felling + the walk) | 1 | 250 |
 | 4 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
-| 5 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 7 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
+| 5 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
 | 6 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
 | 7 | **Windmill** | 70 gold, 30 timber | any level ground | 2 grain → 2 flour every 6 s | 1 | 300 |
 | 8 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
@@ -74,7 +74,7 @@ roads serve all of them.
 
 ### Living and the town (Mieszkanie i miasto)
 
-- **House** — 6 / 10 / 14 residents (levels 1–3); tax 1.2 gold a minute from each fed resident. *Model from Blender.*
+- **House** — 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident. *Model from Blender.*
 - Storehouse — *planned (§4)*
 - Market — *planned (§4)*
 - Well — *planned (§4)*
@@ -90,7 +90,7 @@ roads serve all of them.
 
 ### Grain and bread (Zboże i chleb)
 
-- **Farm** — 7 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Shapes from code; model to come.*
+- **Farm** — 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Shapes from code; model to come.*
 - **Windmill** — 2 grain → 2 flour. *Model from Blender.*
 - **Bakery** — 1 flour → 1 bread. *Model from Blender.*
 - Brewery — *planned (§4)*

@@ -94,6 +94,7 @@ export type CommandResult =
   | 'notAtBarracks'
   | 'inCombat'
   | 'rearming'
+  | 'defenceOnly'
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
