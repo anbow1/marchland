@@ -135,4 +135,4 @@ class Kit:
 
 
 def export_glb(path: str) -> None:
-    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True, export_materials="PLACEHOLDER", export_normals=True, export_texcoords=False)
+    bpy.ops.export_scene.gltf(filepath=path, export_format="GLB", export_yup=True, export_apply=True, export_materials="EXPORT", export_normals=True, export_texcoords=False)
