@@ -7,7 +7,7 @@ import { freePeople } from '../src/sim/people.ts';
 import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
 import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
-import { growthOf, TREES } from '../src/sim/trees.ts';
+import { claimNearestTree, createStand, fellTree, growthOf, plantTree, stepStand, TREES } from '../src/sim/trees.ts';
 import { type BuildingKind, COMPUTER, PLAYER } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
@@ -158,6 +158,24 @@ describe('a living town', () => {
     });
     expect((town.plots[cutter]?.out.wood ?? 0) + 0).toBeGreaterThan(0);
     expect(town.stock.fish + (town.plots[fisher]?.out.fish ?? 0)).toBeGreaterThan(0);
+  });
+
+  it('a sapling grows once into a tree, and only the grown tree may be felled', () => {
+    const stand = createStand();
+    const i = TREES.inside.indexOf(1);
+    const x = TREES.x[i] as number;
+    const z = TREES.z[i] as number;
+    expect(claimNearestTree(stand, x, z, 0.5, 0)).toBe(i);
+    fellTree(stand, i, 10);
+    plantTree(stand, i, 14);
+    // Growing: passed over, however near.
+    expect(claimNearestTree(stand, x, z, 0.5, 14 + FORESTRY.growS / 2)).toBe(-1);
+    expect(claimNearestTree(stand, x, z, 0.5, 14 + FORESTRY.growS - 1)).toBe(-1);
+    // Grown: a tree like the others again.
+    stepStand(stand, 14 + FORESTRY.growS);
+    expect(growthOf(stand, i, 14 + FORESTRY.growS)).toBe(1);
+    expect(stand.changed.has(i)).toBe(false);
+    expect(claimNearestTree(stand, x, z, 0.5, 14 + FORESTRY.growS)).toBe(i);
   });
 
   it('a woodcutter fells the trees round his hut, plants one for every tree, and the saplings grow back', () => {
