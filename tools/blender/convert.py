@@ -57,7 +57,7 @@ MODELS = {
         "fit_m": 11.0,
         "turn_deg": 0,
         "surfaces": [(r"^material$", None)],
-        "min_part_m": 0.35,
+        "min_part_m": 0.6,
         "plate_m": 0.45,
         "smoke": [],
     },
@@ -154,6 +154,8 @@ def main() -> None:
         plate = floor + spec["plate_m"] / rough_scale
         bmesh.ops.delete(bm, geom=[f for f in bm.faces if max(v.co.z for v in f.verts) < plate], context="FACES")
         bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
+    # Flat walls and roofs made of many faces become one face each: free triangles, no change to the look.
+    bmesh.ops.dissolve_limit(bm, angle_limit=math.radians(1.5), use_dissolve_boundaries=False, verts=bm.verts, edges=bm.edges, delimit={"MATERIAL"})
     bm.to_mesh(body.data)
     bm.free()
     tris_in = sum(len(p.vertices) - 2 for p in body.data.polygons)
