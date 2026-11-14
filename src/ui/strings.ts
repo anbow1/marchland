@@ -16,6 +16,8 @@ interface Strings {
   difficulty: Record<Difficulty, string>;
   keep: string;
   play: string;
+  /** Before the build stamp in the menus. */
+  version: string;
   resume: string;
   restart: string;
   paused: string;
@@ -174,6 +176,7 @@ const pl: Strings = {
   difficulty: { easy: 'Łatwy', normal: 'Normalny', hard: 'Trudny' },
   keep: 'Zamek',
   play: 'Graj',
+  version: 'Wersja',
   resume: 'Wróć do gry',
   restart: 'Nowa gra',
   paused: 'Pauza',
@@ -340,6 +343,7 @@ const en: Strings = {
   difficulty: { easy: 'Easy', normal: 'Normal', hard: 'Hard' },
   keep: 'Keep',
   play: 'Play',
+  version: 'Build',
   resume: 'Back to the game',
   restart: 'New game',
   paused: 'Paused',

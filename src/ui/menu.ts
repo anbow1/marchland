@@ -1,3 +1,4 @@
+import { BUILD } from '../version.ts';
 import type { Difficulty, Side } from '../sim/types.ts';
 import { PLAYER } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
@@ -41,7 +42,7 @@ export class Menu {
       `<h1>${T.title}</h1><p class="sub">${T.subtitle}</p>` +
         choiceRow(T.difficultyLabel, 'difficulty', [['easy', T.difficulty.easy], ['normal', T.difficulty.normal], ['hard', T.difficulty.hard]], choice.difficulty) +
         choiceRow(T.quality, 'quality', [['high', T.qualityHigh], ['low', T.qualityLow]], choice.quality) +
-        `<button class="primary" data-go="1">${T.play}</button>${helpHtml()}`,
+        `<button class="primary" data-go="1">${T.play}</button>${helpHtml()}<p class="small">${T.version} ${BUILD}</p>`,
     );
     return new Promise((resolve) => {
       sheet.addEventListener('click', (e) => {
@@ -60,7 +61,7 @@ export class Menu {
   }
 
   pause(loadedSeconds: number, onResume: () => void, onRestart: () => void): void {
-    const sheet = this.show(`<h2>${T.paused}</h2><button class="primary" data-do="resume">${T.resume}</button><button data-do="restart">${T.restart}</button>${helpHtml()}<p class="small">Loaded in ${loadedSeconds.toFixed(1)} s</p>`);
+    const sheet = this.show(`<h2>${T.paused}</h2><button class="primary" data-do="resume">${T.resume}</button><button data-do="restart">${T.restart}</button>${helpHtml()}<p class="small">${T.version} ${BUILD} · ${loadedSeconds.toFixed(1)} s</p>`);
     sheet.addEventListener('click', (e) => {
       const what = (e.target as HTMLElement).dataset['do'];
       if (what === 'resume') onResume();

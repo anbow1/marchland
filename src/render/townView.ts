@@ -8,6 +8,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
 import { type SurfaceModel, surfaceModel } from './surfaceModel.ts';
 import { TEAM_HEX } from './palette.ts';
+import { freshUrl } from '../version.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // The two towns: a mesh for each place in a town's list of buildings and one
@@ -85,7 +86,7 @@ export class TownView {
    * kind on the shapes from code, with a warning: the game is playable without them.
    */
   async loadModels(base: string): Promise<number> {
-    const response = await fetch(`${base}buildings/index.json`);
+    const response = await fetch(freshUrl(base, 'buildings/index.json'));
     if (!response.ok) {
       console.warn(`[models] no index at ${base}buildings/index.json (${response.status}): buildings keep their shapes from code`);
       return 0;
@@ -97,7 +98,7 @@ export class TownView {
       if ((kind as string) === 'keep') {
         // The keep from Buckstone Castle (tools/blender/keep.py): one model, both sides, each its own flag.
         try {
-          const gltf = await loader.loadAsync(`${base}buildings/${entry.file}`);
+          const gltf = await loader.loadAsync(freshUrl(base, `buildings/${entry.file}`));
           for (const side of [0, 1] as const satisfies readonly Side[]) (this.keeps[side] as Mesh).geometry = surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]).body;
         } catch (error) {
           console.warn(`[models] ${entry.file} did not load: ${String(error)}`);
@@ -106,7 +107,7 @@ export class TownView {
       }
       if (!(BUILDING_KINDS as readonly string[]).includes(kind)) return;
       try {
-        const gltf = await loader.loadAsync(`${base}buildings/${entry.file}`);
+        const gltf = await loader.loadAsync(freshUrl(base, `buildings/${entry.file}`));
         for (const side of [0, 1] as const satisfies readonly Side[]) this.models.set(`${kind}:${level}:${side}`, surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]));
       } catch (error) {
         console.warn(`[models] ${entry.file} did not load: ${String(error)}`);

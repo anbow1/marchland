@@ -7,6 +7,7 @@ import type { World } from '../sim/world.ts';
 import { surfacePaint } from './buildingParts.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import { surfaceGeometry } from './surfaceModel.ts';
+import { freshUrl } from '../version.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // The walls: a stretch of masonry with a merlon for every 2 m cell, turned along the line it was
@@ -61,7 +62,7 @@ export class WallView {
   /** Swaps the stretch from code for the modelled one; keeps the former if the file does not load. */
   async loadModel(base: string): Promise<void> {
     try {
-      const gltf = await new GLTFLoader().loadAsync(`${base}buildings/wall.glb`);
+      const gltf = await new GLTFLoader().loadAsync(freshUrl(base, 'buildings/wall.glb'));
       const old = this.mesh.geometry;
       this.mesh.geometry = surfaceGeometry(gltf.scene, this.lib);
       old.dispose();
