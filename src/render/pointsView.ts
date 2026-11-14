@@ -2,6 +2,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Color, CylinderGeometry, DoubleSide, Mesh, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, PlaneGeometry, RingGeometry, type Scene } from 'three/webgpu';
 import { POINTS } from '../config.ts';
 import type { Point } from '../sim/points.ts';
+import { LAYOUT } from '../sim/layout.ts';
 import { heightAtM, SIDE_X, SIDE_Z } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
 import { freshUrl } from '../version.ts';
@@ -24,6 +25,17 @@ const DRESSING: Record<Point['kind'], { model: string; at: [number, number] }[]>
     { model: 'house_1.glb', at: [15, 6] },
     { model: 'house_2.glb', at: [-15, -4] },
     { model: 'house_1.glb', at: [2, 17] },
+  ],
+};
+
+/** On the crossing the places stand on the river's line (the fords, the causeway): their buildings go on the banks. */
+const DRESSING_RIVER: Record<Point['kind'], { model: string; at: [number, number] }[]> = {
+  mine: [{ model: 'ironMine_1.glb', at: [0, 17] }],
+  quarry: [{ model: 'quarry_1.glb', at: [0, -17] }],
+  village: [
+    { model: 'house_1.glb', at: [6, 19] },
+    { model: 'house_2.glb', at: [-6, -19] },
+    { model: 'house_1.glb', at: [14, -21] },
   ],
 };
 
@@ -76,7 +88,7 @@ export class PointsView {
     const fx = SIDE_Z;
     const fz = -SIDE_X;
     for (const p of this.places) {
-      for (const d of DRESSING[p.kind]) {
+      for (const d of (LAYOUT === 'river' ? DRESSING_RIVER : DRESSING)[p.kind]) {
         const model = await modelOf(d.model);
         if (!model) continue;
         const x = p.x + SIDE_X * d.at[0] + fx * d.at[1];

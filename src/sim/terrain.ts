@@ -2,7 +2,7 @@ import { MAP, POINTS, TOWN } from '../config.ts';
 import { fbm2 } from '../core/noise.ts';
 import type { Side } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
-import { PLAYER_SITE } from './layout.ts';
+import { LAYOUT, PLAYER_SITE } from './layout.ts';
 
 // The map as functions of (x, z): height, forest, water, and the outcrops of
 // stone and ore. The renderer draws from the same functions, so what the
@@ -70,9 +70,68 @@ export function lakeShare(x: number, z: number): number {
   return Math.min(s0, s1);
 }
 
-/** True where the lake is too deep to wade. */
+// ---- the river (map layout 'river') -----------------------------------------
+
+const RIVER = LAYOUT === 'river';
+
+/** Where the river runs across the side axis: through the middle and through each knoll's line, bending between. */
+function riverCentreF(s: number): number {
+  return MAP.riverBendM * Math.sin((Math.PI * s) / MAP.knollOffsetM);
+}
+
+/** What lies at a point by the river: its distance from the stream's middle, and whether it is the causeway or a ford. */
+function riverAt(x: number, z: number): { d: number; crossing: 'none' | 'causeway' | 'ford' } {
+  const f = x * FORWARD_X + z * FORWARD_Z;
+  const s = x * SIDE_X + z * SIDE_Z;
+  const slope = ((MAP.riverBendM * Math.PI) / MAP.knollOffsetM) * Math.cos((Math.PI * s) / MAP.knollOffsetM);
+  const d = Math.abs(f - riverCentreF(s)) / Math.sqrt(1 + slope * slope);
+  const crossing = Math.abs(s) < MAP.crossingHalfM ? 'causeway' : Math.abs(Math.abs(s) - MAP.knollOffsetM) < MAP.crossingHalfM ? 'ford' : 'none';
+  return { d, crossing };
+}
+
+/** The river's share of the ground's height (1 in its bed, falling to 0 across the banks), and the bed's height. */
+function riverBed(x: number, z: number): { share: number; bedM: number } {
+  if (!RIVER) return { share: 0, bedM: 0 };
+  const { d, crossing } = riverAt(x, z);
+  const share = 1 - smoothstep(MAP.riverHalfWidthM, MAP.riverHalfWidthM + MAP.riverBankM, d);
+  if (share <= 0) return { share: 0, bedM: 0 };
+  // A causeway stands a little above the water; a ford lies a hand's breadth under it.
+  if (crossing === 'causeway') return { share, bedM: WATER_LEVEL_M + 0.35 };
+  const inner = Math.max(0, 1 - (d / MAP.riverHalfWidthM) ** 2);
+  const depth = crossing === 'ford' ? MAP.fordDepthM : MAP.riverDepthM * inner + 0.15;
+  return { share, bedM: WATER_LEVEL_M - Math.max(0.15, depth) };
+}
+
+/** True in the river where it is too deep to wade: not at the causeway, not at the fords. */
+export function isRiver(x: number, z: number): boolean {
+  if (!RIVER) return false;
+  const { d, crossing } = riverAt(x, z);
+  return crossing === 'none' && d < MAP.riverHalfWidthM * 0.9;
+}
+
+/** Where to put someone who has stepped into the river: straight out to the nearer bank. False if he is not in it. */
+export function offRiver(x: number, z: number, out: { x: number; z: number }): boolean {
+  if (!isRiver(x, z)) return false;
+  const f = x * FORWARD_X + z * FORWARD_Z;
+  const s = x * SIDE_X + z * SIDE_Z;
+  const centre = riverCentreF(s);
+  const bank = centre + Math.sign(f - centre || 1) * MAP.riverHalfWidthM * 0.95;
+  out.x = SIDE_X * s + FORWARD_X * bank;
+  out.z = SIDE_Z * s + FORWARD_Z * bank;
+  return true;
+}
+
+/** The river's middle line at a point along the side axis, as (x, z): for drawing its water. */
+export function riverPoint(s: number, across: number): [number, number] {
+  const f = riverCentreF(s) + across;
+  return [SIDE_X * s + FORWARD_X * f, SIDE_Z * s + FORWARD_Z * f];
+}
+
+export const HAS_RIVER = RIVER;
+
+/** True where the lake, or the river, is too deep to wade. */
 export function isWater(x: number, z: number): boolean {
-  return lakeShare(x, z) < 0.93;
+  return lakeShare(x, z) < 0.93 || isRiver(x, z);
 }
 
 // ---- mountains and crags ---------------------------------------------------
@@ -224,13 +283,17 @@ export function heightAtM(x: number, z: number): number {
   // The two knolls: either side of the middle, across the field.
   const kx = SIDE_X * MAP.knollOffsetM;
   const kz = SIDE_Z * MAP.knollOffsetM;
-  const knolls = knoll(x, z, kx, kz) + knoll(x, z, -kx, -kz);
+  // On the crossing the river runs where the knolls would stand: they are fords instead.
+  const knolls = RIVER ? 0 : knoll(x, z, kx, kz) + knoll(x, z, -kx, -kz);
   const town = smoothstep(MAP.townFlatRadiusM, MAP.townBlendRadiusM, distanceToNearestTownM(x, z));
   const share = lakeShare(x, z);
   const shore = smoothstep(1.0, 1.6, share);
   // A bowl: level with the land at the rim, deepest in the middle.
   const bowl = share < 1 ? -TOWN.lakeDepthM * (1 - share * share) : 0;
-  return ((rolling + folds) * onField + knolls) * town * shore + bowl + heapHeightM(x, z);
+  const land = ((rolling + folds) * onField + knolls) * town * shore + bowl + heapHeightM(x, z);
+  if (!RIVER) return land;
+  const river = riverBed(x, z);
+  return land * (1 - river.share) + river.bedM * river.share;
 }
 
 /** How much the ground rises across a circle of radius `r`: the difference between its highest and lowest of five points. */
@@ -303,8 +366,12 @@ export function isRock(x: number, z: number): boolean {
 /** Forest density 0…1 at a point; above 0.5 counts as woodland for the rules. */
 export function forestCoverAt(x: number, z: number): number {
   const patches = fbm2(x / 70 + 31.7, z / 70 - 12.3, 3, MAP.terrainSeed + 11);
-  const nearTown = smoothstep(MAP.forestClearRadiusM, MAP.forestClearRadiusM + 25, distanceToNearestTownM(x, z));
-  const offField = smoothstep(MAP.fieldHalfWidthM, MAP.fieldHalfWidthM + 30, distanceToFieldAxisM(x, z));
+  // The road through the forest: woods almost everywhere, a clearing round each town and a narrow ride
+  // between them; elsewhere, woods in patches off an open field.
+  const forest = LAYOUT === 'forest';
+  const clearM = forest ? MAP.forestLayoutClearingM : MAP.forestClearRadiusM;
+  const nearTown = smoothstep(clearM, clearM + 25, distanceToNearestTownM(x, z));
+  const offField = forest ? smoothstep(MAP.forestRideHalfWidthM, MAP.forestRideHalfWidthM + 8, distanceToFieldAxisM(x, z)) : smoothstep(MAP.fieldHalfWidthM, MAP.fieldHalfWidthM + 30, distanceToFieldAxisM(x, z));
   const offLake = smoothstep(1.35, 1.9, lakeShare(x, z));
   const offRock = smoothstep(TOWN.depositRadiusM + 4, TOWN.depositRadiusM + 14, distanceToNearestDepositM(x, z));
   // Trees climb the foothills but not the rock above them.
@@ -312,7 +379,8 @@ export function forestCoverAt(x: number, z: number): number {
   // A glade round each place in the middle, where the regiment that takes it stands.
   let offPlace = 1;
   for (const p of POINTS.list) offPlace = Math.min(offPlace, smoothstep(POINTS.radiusM + 14, POINTS.radiusM + 34, hypot2(x - SIDE_X * p.sideM, z - SIDE_Z * p.sideM)));
-  return smoothstep(0.02, 0.22, patches) * nearTown * offField * offLake * offRock * offHeap * offPlace;
+  const woods = forest ? smoothstep(-0.5, -0.3, patches) : smoothstep(0.02, 0.22, patches);
+  return woods * nearTown * offField * offLake * offRock * offHeap * offPlace;
 }
 
 export function isForest(x: number, z: number): boolean {

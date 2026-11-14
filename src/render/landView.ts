@@ -3,7 +3,7 @@ import { BufferAttribute, BufferGeometry, Color, DataTexture, InstancedMesh, Lin
 import { MAP, TOWN } from '../config.ts';
 import { fbm2, tileFbm } from '../core/noise.ts';
 import { Rng } from '../core/rng.ts';
-import { DEPOSITS, forestCoverAt, HEAPS, heapShare, heightAtM, isWater, lakeShare, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, FORWARD_X, FORWARD_Z, HAS_RIVER, HEAPS, heapShare, heightAtM, isWater, lakeShare, lakeX, lakeZ, riverPoint, WATER_LEVEL_M } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
 import { chunkedInstances } from './chunks.ts';
 import { MeshBuilder, type Paint, type Vec3 } from './meshBuilder.ts';
@@ -155,7 +155,73 @@ function lakeGrid(side: Side): BufferGeometry {
   return g;
 }
 
-function buildWater(): Mesh[] {
+/**
+ * The river's water (map layout 'river'): a strip along its winding line, out past the playable square
+ * to the hills, with the depth below each vertex like the lakes'. The fords show their shallow water;
+ * the causeway stands above it.
+ */
+function riverGrid(): BufferGeometry {
+  const step = 2;
+  const across = MAP.riverHalfWidthM + 5;
+  const reach = MAP.halfM + 300;
+  const ns = Math.ceil((2 * reach) / step) + 1;
+  const na = Math.ceil((2 * across) / 1.5) + 1;
+  const positions = new Float32Array(ns * na * 3);
+  const depth = new Float32Array(ns * na);
+  for (let i = 0; i < ns; i++) {
+    for (let j = 0; j < na; j++) {
+      const k = i * na + j;
+      const [x, z] = riverPoint(-reach + i * step, -across + (j * 2 * across) / (na - 1));
+      positions[k * 3] = x;
+      positions[k * 3 + 1] = WATER_LEVEL_M;
+      positions[k * 3 + 2] = z;
+      depth[k] = WATER_LEVEL_M - heightAtM(x, z);
+    }
+  }
+  const index: number[] = [];
+  for (let i = 0; i < ns - 1; i++) {
+    for (let j = 0; j < na - 1; j++) {
+      const k = i * na + j;
+      if (Math.max(depth[k] as number, depth[k + 1] as number, depth[k + na] as number, depth[k + na + 1] as number) <= 0) continue;
+      // Wound so the face looks up (the strip's axes turn the other way from the lakes' grid).
+      index.push(k, k + na, k + 1, k + 1, k + na, k + na + 1);
+    }
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(positions, 3));
+  g.setAttribute('normal', new BufferAttribute(new Float32Array(ns * na * 3).map((_, i) => (i % 3 === 1 ? 1 : 0)), 3));
+  g.setAttribute('depth', new BufferAttribute(depth, 1));
+  g.setIndex(index);
+  g.computeBoundingSphere();
+  return g;
+}
+
+/** The causeway's parapets: two low walls of grey stone along its sides, from bank to bank. */
+function causeway(lib: SurfaceLibrary): Mesh {
+  const BODY = 1;
+  const CAP = 2;
+  const paints = new Map<number, Paint>([
+    [BODY, { layer: layerOf('rubble'), sizeM: lib.sizeM.rubble, tintHex: 0xbccfff }],
+    [CAP, { layer: layerOf('ashlar'), sizeM: lib.sizeM.ashlar, tintHex: 0xbccae6 }],
+  ]);
+  const b = new MeshBuilder(0, paints);
+  const length = 2 * (MAP.riverHalfWidthM + 7);
+  for (const side of [-1, 1]) {
+    const s = side * (MAP.crossingHalfM - 0.5);
+    b.box(s, -0.6, 0, 0.6, 1.5, length, BODY);
+    b.box(s, 0.9, 0, 0.75, 0.15, length + 0.2, CAP);
+  }
+  const mesh = new Mesh(b.build(), surfaceMaterial(lib, 'causeway'));
+  // The parapets run along the forward axis, across the river, at its middle.
+  mesh.position.set(0, WATER_LEVEL_M + 0.35, 0);
+  mesh.rotation.y = Math.atan2(FORWARD_X, FORWARD_Z);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
+  mesh.name = 'causeway';
+  return mesh;
+}
+
+function buildWater(lib: SurfaceLibrary): Mesh[] {
   const material = lakeMaterial();
   const meshes: Mesh[] = [];
   for (const side of [0, 1] as const satisfies readonly Side[]) {
@@ -164,6 +230,13 @@ function buildWater(): Mesh[] {
     mesh.renderOrder = 5;
     mesh.receiveShadow = true;
     meshes.push(mesh);
+  }
+  if (HAS_RIVER) {
+    const river = new Mesh(riverGrid(), material);
+    river.name = 'river';
+    river.renderOrder = 5;
+    river.receiveShadow = true;
+    meshes.push(river, causeway(lib));
   }
   return meshes;
 }
@@ -286,7 +359,7 @@ export function buildLand(lib: SurfaceLibrary, skyRadiancePreExposed: number): L
   const rocks = buildRocks(lib);
   const bushes = buildBushes(lib);
   return {
-    parts: [...buildWater(), ...rocks, ...bushes],
+    parts: [...buildWater(lib), ...rocks, ...bushes],
     scattered: [...rocks.map((mesh) => ({ mesh, reachM: 0.8 })), ...bushes.map((mesh) => ({ mesh, reachM: 1.0 }))],
   };
 }

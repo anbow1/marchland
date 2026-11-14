@@ -2,7 +2,7 @@ import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt, wallStops } from '
 import { woodStands } from './trees.ts';
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, townX, townZ } from './terrain.ts';
+import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, offRiver, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -243,7 +243,7 @@ const OFF_CLIFF = { x: 0, z: 0 };
 
 /** Puts a soldier who has stepped into a lake back on its bank, and one who has climbed onto sheer rock back at its foot. */
 function avoidWater(s: Soldier): void {
-  if (offCliff(s.x, s.z, OFF_CLIFF)) {
+  if (offCliff(s.x, s.z, OFF_CLIFF) || offRiver(s.x, s.z, OFF_CLIFF)) {
     s.x = OFF_CLIFF.x;
     s.z = OFF_CLIFF.z;
   }

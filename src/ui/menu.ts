@@ -6,6 +6,7 @@ import type { Quality } from '../render/stage.ts';
 import { T } from './strings.ts';
 import { MAP } from '../config.ts';
 import { HEAPS } from '../sim/terrain.ts';
+import { type Layout, LAYOUTS } from '../sim/layout.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 
 // The screens over the game: start, loading, pause, and the end.
@@ -13,14 +14,35 @@ import { TEAM_CSS } from '../render/palette.ts';
 export interface StartChoice {
   difficulty: Difficulty;
   quality: Quality;
-  /** Which of MAP.startSites the keeps stand on. */
+  /** Which of MAP.startSites the keeps stand on, and the lie of the land between them. */
   start: number;
+  map: Layout;
 }
 
 /** A small map of where the keeps may stand: the three places, the chosen one and the enemy's across it, the mountains and crags. */
-function siteMap(chosen: number): string {
+function siteMap(chosen: number, layout: Layout): string {
   const px = (v: number): number => ((v + MAP.halfM) / MAP.sizeM) * 150;
-  let svg = `<svg class="siteMap" viewBox="0 0 150 150" width="150" height="150"><rect width="150" height="150" rx="6" fill="#4d6a33"/>`;
+  const [sx0, sz0] = MAP.startSites[chosen] as readonly [number, number];
+  const len = Math.hypot(sx0, sz0);
+  const fx = -sx0 / len;
+  const fz = -sz0 / len;
+  let svg = `<svg class="siteMap" viewBox="0 0 150 150" width="150" height="150"><rect width="150" height="150" rx="6" fill="${layout === 'forest' ? '#2f4a24' : '#4d6a33'}"/>`;
+  if (layout === 'forest') {
+    // The two clearings and the ride between them.
+    svg += `<line x1="${px(sx0)}" y1="${px(sz0)}" x2="${px(-sx0)}" y2="${px(-sz0)}" stroke="#4d6a33" stroke-width="7" stroke-linecap="round"/>`;
+    for (const k of [1, -1]) svg += `<circle cx="${px(k * sx0)}" cy="${px(k * sz0)}" r="${(MAP.forestLayoutClearingM / MAP.sizeM) * 150}" fill="#4d6a33"/>`;
+  }
+  if (layout === 'river') {
+    // The river across the middle (side axis is the forward axis turned a right angle).
+    let d = '';
+    for (let s = -400; s <= 400; s += 10) {
+      const f = MAP.riverBendM * Math.sin((Math.PI * s) / MAP.knollOffsetM);
+      const x = -fz * s + fx * f;
+      const z = fx * s + fz * f;
+      d += `${d ? 'L' : 'M'}${px(x).toFixed(1)} ${px(z).toFixed(1)}`;
+    }
+    svg += `<path d="${d}" fill="none" stroke="#3f7fa8" stroke-width="4"/>`;
+  }
   for (const h of HEAPS) svg += `<circle cx="${px(h.x)}" cy="${px(h.z)}" r="${(h.radiusM / MAP.sizeM) * 150}" fill="#9a9a96" stroke="#5f5f5b"/>`;
   MAP.startSites.forEach(([x, z], i) => {
     const on = i === chosen;
@@ -60,8 +82,9 @@ export class Menu {
       `<h1>${T.title}</h1><p class="sub">${T.subtitle}</p>` +
         choiceRow(T.difficultyLabel, 'difficulty', [['easy', T.difficulty.easy], ['normal', T.difficulty.normal], ['hard', T.difficulty.hard]], choice.difficulty) +
         choiceRow(T.quality, 'quality', [['high', T.qualityHigh], ['low', T.qualityLow]], choice.quality) +
+        choiceRow(T.mapLabel, 'map', LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
         choiceRow(T.startLabel, 'start', T.startSites.map((name, i) => [String(i), `${i + 1}. ${name}`] as const), String(choice.start)) +
-        `<div class="siteMapBox">${siteMap(choice.start)}</div>` +
+        `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div>` +
         `<button class="primary" data-go="1">${T.play}</button>${helpHtml()}<p class="small">${T.version} ${BUILD}</p>`,
     );
     return new Promise((resolve) => {
@@ -70,10 +93,9 @@ export class Menu {
         const name = target.dataset['name'];
         if (name === 'difficulty') choice.difficulty = target.dataset['value'] as Difficulty;
         if (name === 'quality') choice.quality = target.dataset['value'] as Quality;
-        if (name === 'start') {
-          choice.start = Number(target.dataset['value']);
-          (sheet.querySelector('.siteMapBox') as HTMLElement).innerHTML = siteMap(choice.start);
-        }
+        if (name === 'start') choice.start = Number(target.dataset['value']);
+        if (name === 'map') choice.map = target.dataset['value'] as Layout;
+        if (name === 'start' || name === 'map') (sheet.querySelector('.siteMapBox') as HTMLElement).innerHTML = siteMap(choice.start, choice.map);
         if (name) for (const other of sheet.querySelectorAll(`[data-name="${name}"]`)) other.classList.toggle('on', other === target);
         if (target.dataset['go']) resolve(choice);
       });

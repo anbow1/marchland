@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Trzy układy mapy (M3)
+
+- Wybór w menu „Mapa” (parametr `?map=`): **Otwarte pole**, **Przeprawa**, **Bór**; mapka w
+  menu pokazuje rzekę albo bór dla wybranego miejsca zamku.
+- **Przeprawa**: rzeka wije się przez środek i przecina linię między zamkami dokładnie w trzech
+  miejscach: na środku grobla (20 m, nad wodą, kamienne balustrady), na wysokości wzgórz dwa
+  brody (woda po kostki). Głęboka woda jest nie do przejścia (nawigacja, budowa, ruch: żołnierz
+  wraca na bliższy brzeg). Kopalnia i kamieniołom stoją na brodach, wieś na grobli.
+  Pomiar: komputer 40,9 / 38,2 min przy grobli 14 m → 37,9 / 37,9 przy 20 m.
+- **Bór**: las prawie wszędzie (13 tys. drzew zamiast 3,8 tys.; połowa lasu ozdobnego poza
+  mapą), polany miast 105 m, trakt 24 m, polany punktów. Komputer: 34,8 / 36,2 min.
+- Sprawdzone dla trzech miejsc zamku: rzeka ≥ 230 m od zamku, ≥ 170 m od jeziora, punkty nie
+  w głębokiej wodzie.
+
 ## 2026-11-14 · Trzy poziomy zamku (M3)
 
 - Poziom zamku wyznacza zasięg budowy (230 / 260 / 290 m, pola 300 / 330 / 360 m), najwyższy

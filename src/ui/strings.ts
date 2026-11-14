@@ -36,6 +36,8 @@ interface Strings {
   /** The choice of where the keeps stand, and the names of the three places. */
   startLabel: string;
   startSites: readonly [string, string, string];
+  mapLabel: string;
+  layouts: Record<'field' | 'river' | 'forest', string>;
   loading: string;
   victory: string;
   defeat: string;
@@ -227,6 +229,8 @@ const pl: Strings = {
   difficultyLabel: 'Przeciwnik',
   startLabel: 'Zamek',
   startSites: ['Róg', 'Zachód', 'Południe'],
+  mapLabel: 'Mapa',
+  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór' },
   loading: 'Wczytywanie',
   victory: 'Zwycięstwo',
   defeat: 'Porażka',
@@ -424,6 +428,8 @@ const en: Strings = {
   difficultyLabel: 'Opponent',
   startLabel: 'Keep',
   startSites: ['Corner', 'West', 'South'],
+  mapLabel: 'Map',
+  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road' },
   loading: 'Loading',
   victory: 'Victory',
   defeat: 'Defeat',

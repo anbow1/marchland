@@ -41,6 +41,20 @@ export const MAP = {
   fieldReliefFactor: 0.5,
   /** No trees inside this radius of a town, nor on the open field between the towns. */
   forestClearRadiusM: 66,
+  /** The road through the forest (map layout 'forest'): the clearing round each town, and half the width of the ride between them. */
+  forestLayoutClearingM: 105,
+  /**
+   * The crossing (map layout 'river'): a river across the middle, bending this far either side of the
+   * line between the knolls, this wide and this deep, with banks this wide; a causeway in the middle and a
+   * ford on each knoll's line, this wide along the river, the ford's water this shallow.
+   */
+  riverBendM: 22,
+  riverHalfWidthM: 8,
+  riverDepthM: 2.4,
+  riverBankM: 22,
+  crossingHalfM: 10,
+  fordDepthM: 0.25,
+  forestRideHalfWidthM: 12,
   fieldHalfWidthM: 46,
   terrainSeed: 7,
   /**

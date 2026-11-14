@@ -1,5 +1,6 @@
 import { type BufferGeometry, Color, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three/webgpu';
 import { growthOf, type Stand, TREES } from '../sim/trees.ts';
+import { LAYOUT } from '../sim/layout.ts';
 import { CHUNK_M } from './chunks.ts';
 import { markStaticInstances } from './instancing.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
@@ -67,7 +68,8 @@ export function buildForest(quality: Quality, lib: SurfaceLibrary): Forest {
   const material = surfaceMaterial(lib, 'tree');
   const paints = paintsFor(lib);
   // Low: every other tree outside the playable square, where nobody fights.
-  const decorKeep = quality === 'high' ? 1 : 0.5;
+  // The road through the forest has three times the trees: half as many outside the square there.
+  const decorKeep = (quality === 'high' ? 1 : 0.5) * (LAYOUT === 'forest' ? 0.5 : 1);
   const builders = [pineGeometry(paints), broadleafGeometry(paints)];
   const geometries = builders.map((b) => b.build());
   // Each tree's mesh (by species and square of the map) and its slot in it, so a felled one can be hidden.

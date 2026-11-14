@@ -1,5 +1,5 @@
 import { townX, townZ } from './sim/terrain.ts';
-import { START } from './sim/layout.ts';
+import { LAYOUT, START } from './sim/layout.ts';
 import { Game } from './app/game.ts';
 import { WorldView } from './app/worldView.ts';
 import { SIM } from './config.ts';
@@ -124,13 +124,14 @@ async function run(): Promise<void> {
     history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
   }
   if (!autostart && !chosenAlready) {
-    const choice = await menu.start({ difficulty, quality, start: START });
+    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT });
     difficulty = choice.difficulty;
     quality = askedQuality() ?? choice.quality;
     sound.unlock();
-    if (choice.start !== START) {
-      // The map is laid out from the keeps when the game loads: load it again with the new place.
+    if (choice.start !== START || choice.map !== LAYOUT) {
+      // The map is laid out from the keeps and the layout when the game loads: load it again with the new choice.
       params.set('start', String(choice.start));
+      params.set('map', choice.map);
       params.set('d', difficulty);
       params.set('q', quality);
       params.set('go', '1');

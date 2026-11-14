@@ -167,10 +167,12 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
   właściciela, dopóki wróg nie zajmie punktu. Komputer wysyła wolny oddział po punkt.
   Widać: maszt z chorągwią w barwie właściciela, pierścień na ziemi, zabudowa, romb na
   minimapie, postęp zajmowania pod kursorem, komunikat z „pokaż”.
-- **Trzy układy mapy**, każdy z ziarnem losowym: *Otwarte pole* (dzisiejsza),
-  *Przeprawa* (rzeka z mostem i dwoma brodami — wąskie gardła), *Trakt przez
-  bór* (dwie polany połączone drogą przez las — zasadzki piechoty, jazda
-  bezużyteczna między drzewami).
+- **Trzy układy mapy** (zrobione, wybór w menu „Mapa”): *Otwarte pole* (dotychczasowa);
+  *Przeprawa* — rzeka przez środek, nie do przejścia poza groblą z kamiennymi balustradami
+  na środku i dwoma brodami na wysokości wzgórz (tam stoją kopalnia i kamieniołom; wieś na
+  grobli); *Bór* — las prawie wszędzie, polany wokół miast (105 m), wąski trakt między
+  nimi (24 m) i polany punktów; jazda w lesie słabnie, strzały grzęzną w drzewach.
+  Komputer burzy biernego gracza po 32–36 min na polu i w borze, 38 min na przeprawie.
 - **Wzniesienia liczą się** (plan): strzelcy z góry mają +15 % zasięgu,
   szarża w dół +25 % premii, walka pod górę −1 do ataku.
 - **Wygląd terenu** (zrobione): pagórki z fałdami, dwa wzgórza po bokach pola
