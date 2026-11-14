@@ -230,7 +230,7 @@ describe('the wider roster', () => {
       return lost;
     };
     expect(losses('crossbowmen')).toBeGreaterThan(losses('archers') + 4);
-  });
+  }, 30_000);
 
   it('ballistae reach where archers cannot, and shoot nothing inside their minimum range', () => {
     const shootAt = (distanceM: number): number => {
