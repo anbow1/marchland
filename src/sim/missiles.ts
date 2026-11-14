@@ -1,7 +1,7 @@
 import { damageWall, wallCellAt } from './nav.ts';
 import { keepRules } from './economy.ts';
 import { woodStands } from './trees.ts';
-import { MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
+import { FORMATION, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
 import { isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
@@ -187,7 +187,10 @@ function land(world: World, a: Arrow): void {
   }
   if (!victim) return;
   const r = victim.regiment;
-  const chance = MISSILE.hitChance * (isForest(x, z) && woodStands(world.stand, x, z) ? MISSILE.forestHitFactor : 1) * (1 - r.def.missileBlock);
+  // Open order lets arrows through the gaps; a shield wall turns more of them.
+  const block = r.stance === 'shields' ? Math.min(FORMATION.shieldBlockMax, r.def.missileBlock * FORMATION.shieldBlockFactor) : r.def.missileBlock;
+  const loose = r.formation === 'loose' ? FORMATION.looseHitFactor : 1;
+  const chance = MISSILE.hitChance * loose * (isForest(x, z) && woodStands(world.stand, x, z) ? MISSILE.forestHitFactor : 1) * (1 - block);
   if (world.rng.next() >= chance) return;
   r.morale -= MORALE.arrowHitShock;
   world.events.push('arrowHit', x, z, a.side);
@@ -264,7 +267,8 @@ function stepArchers(world: World, r: Regiment, dtSeconds: number): void {
   if (r.fireSearchS <= 0) {
     r.fireSearchS = 0.5;
     const ordered = r.order === 'attackRegiment' ? findRegiment(world, r.targetRegimentId) : null;
-    r.fireTargetId = ordered && ordered.aliveMen > 0 ? ordered.id : r.order === 'attackBuilding' ? -1 : nearestInRange(world, r);
+    // At will they choose their own mark; held, they shoot only at what they are sent against.
+    r.fireTargetId = ordered && ordered.aliveMen > 0 ? ordered.id : r.order === 'attackBuilding' || !r.fireAtWill ? -1 : nearestInRange(world, r);
   }
   // Archers shoot standing, and not while someone is at their throats.
   if (isEngaged(r) || r.speedMs > 0.3) return;

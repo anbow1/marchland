@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, rearmCost } from '../sim/commands.ts';
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
@@ -22,6 +22,8 @@ export interface HudActions {
   pickGate(): void;
   /** Brings a tower's garrison out. */
   ungarrison(plot: number): void;
+  /** Ranks, formation, stance or shooting for the selected regiments. */
+  setFormation(what: 'ranks' | 'formation' | 'stance' | 'fire', value: string): void;
   /** Turns the map: −1 left, +1 right. */
   rotateCamera(direction: number): void;
   upgrade(plot: number): void;
@@ -236,6 +238,12 @@ export class Hud {
         break;
       case 'ungarrison':
         this.actions.ungarrison(this.plotInPanel);
+        break;
+      case 'ranks':
+      case 'formation':
+      case 'stance':
+      case 'fire':
+        this.actions.setFormation(name, arg);
         break;
       case 'show': {
         const [x, z] = arg.split(',').map(Number);
@@ -498,12 +506,41 @@ export class Hud {
       html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about}"><span class="glyph">${UNIT_GLYPH[r.kind]}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${r.initialMen} ${T.men} · ${this.stateText(r)}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
     }
     html += '</div>';
+    html += this.formationHtml(world, selected);
     // One regiment chosen: what it may be re-armed as.
     if (selected.size === 1) {
       const only = world.regiments.find((r) => selected.has(r.id) && r.aliveMen > 0);
       if (only) html += this.rearmHtml(world, only);
     }
     return html;
+  }
+
+  /** The selected regiments' ranks, formation, stance and shooting: each row only if one of them can. */
+  private formationHtml(world: World, selected: ReadonlySet<number>): string {
+    const regs = world.regiments.filter((r) => selected.has(r.id) && r.aliveMen > 0 && !r.def.engine);
+    if (regs.length === 0) return '';
+    const first = regs[0] as (typeof regs)[number];
+    const button = (act: string, value: string, label: string, on: boolean, tip: string): string =>
+      `<button class="choice${on ? ' on' : ''}" data-act="${act}" data-arg="${value}" data-tip="${tip}">${label}</button>`;
+    let html = '<div class="formations">';
+    const foot = regs.filter((r) => !r.def.cavalry);
+    if (foot.length > 0) {
+      const ranks = Math.ceil((foot[0] as (typeof foot)[number]).initialMen / (foot[0] as (typeof foot)[number]).files);
+      html += `<div class="row"><span class="label">${T.ranksLabel}</span>${FORMATION.rankChoices.map((n) => button('ranks', String(n), String(n), first.formation !== 'wedge' && ranks === n, `${T.ranksLabel}: ${n}`)).join('')}</div>`;
+    }
+    const shapes: string[] = [button('formation', 'line', T.formations.line, first.formation === 'line', T.formations.line)];
+    if (regs.some((r) => r.def.cavalry)) shapes.push(button('formation', 'wedge', T.formations.wedge, first.formation === 'wedge', T.formationTips.wedge));
+    if (foot.length > 0) shapes.push(button('formation', 'loose', T.formations.loose, first.formation === 'loose', T.formationTips.loose));
+    html += `<div class="row"><span class="label">${T.formationLabel}</span>${shapes.join('')}</div>`;
+    const stances: string[] = [];
+    if (regs.some((r) => r.def.missileBlock > 0 && !r.def.cavalry)) stances.push(button('stance', 'shields', T.stances.shields, first.stance === 'shields', T.formationTips.shields));
+    if (regs.some((r) => r.def.bonusVsCavalry > 0 && !r.def.cavalry)) stances.push(button('stance', 'pikeWall', T.stances.pikeWall, first.stance === 'pikeWall', T.formationTips.pikeWall));
+    if (stances.length > 0) html += `<div class="row"><span class="label">${T.stanceLabel}</span>${button('stance', 'normal', T.stances.normal, first.stance === 'normal', T.stances.normal)}${stances.join('')}</div>`;
+    if (regs.some((r) => r.def.missileRangeM > 0)) {
+      const shooter = regs.find((r) => r.def.missileRangeM > 0) as (typeof regs)[number];
+      html += `<div class="row"><span class="label">${T.fireLabel}</span>${button('fire', '1', T.fireAtWill, shooter.fireAtWill, T.formationTips.fire)}${button('fire', '0', T.fireOnOrder, !shooter.fireAtWill, T.formationTips.fire)}</div>`;
+    }
+    return `${html}</div>`;
   }
 
   /** Nothing selected: the building list, or (on its tab, once there is a barracks) the recruiting list. */

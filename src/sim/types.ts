@@ -100,6 +100,7 @@ export type CommandResult =
   | 'towerFull'
   | 'needsWall'
   | 'needsKeep'
+  | 'notThisUnit'
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MISSILE, POINTS, UNITS } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdMove, cmdMoveGroup } from '../src/sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdMove, cmdMoveGroup, cmdRanks, cmdStance } from '../src/sim/commands.ts';
 import { launchElevationRad } from '../src/sim/missiles.ts';
-import { type Regiment, slotX, slotZ } from '../src/sim/regiment.ts';
+import { frontageM, type Regiment, slotX, slotZ } from '../src/sim/regiment.ts';
 import { townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
@@ -307,4 +307,98 @@ describe('places in the middle', () => {
     expect(quarry.owner).toBe(-1);
     void ours;
   }, 30_000);
+});
+
+describe('formations and stances', () => {
+  /** Men an archer regiment brings down in `seconds` from 60 m, set up as `prepare` says, over six seeds. */
+  const arrowLosses = (kind: UnitKind, prepare: (world: World, target: Regiment) => void, seconds = 90): number => {
+    let lost = 0;
+    for (let seed = 1; seed <= 6; seed++) {
+      const world = emptyWorld(seed);
+      spawnRegiment(world, PLAYER, 'archers', 0, 0, Math.PI);
+      const target = spawnRegiment(world, COMPUTER, kind, 0, -60, 0);
+      prepare(world, target);
+      run(world, seconds);
+      lost += target.initialMen - target.aliveMen;
+    }
+    return lost;
+  };
+
+  it('ranks set the block: fewer ranks, a wider front', () => {
+    const world = emptyWorld();
+    const r = spawnRegiment(world, PLAYER, 'pikemen', 0, 0, 0);
+    expect(cmdRanks(world, r.id, 2)).toBe('ok');
+    const wide = frontageM(r);
+    expect(cmdRanks(world, r.id, 6)).toBe('ok');
+    expect(frontageM(r)).toBeLessThan(wide / 2);
+    run(world, 20);
+    for (const s of r.soldiers) expect(Math.hypot(s.x - slotX(r, s.slot), s.z - slotZ(r, s.slot))).toBeLessThan(0.5);
+    // A wedge is for horse.
+    expect(cmdFormation(world, r.id, 'wedge')).toBe('notThisUnit');
+  });
+
+  it('open order and a shield wall take fewer arrows', () => {
+    const inLine = arrowLosses('militia', () => {});
+    const open = arrowLosses('militia', (world, t) => cmdFormation(world, t.id, 'loose'));
+    expect(open).toBeLessThan(inLine * 0.75);
+    // The militia carry wooden shields: raised, they take fewer arrows.
+    const shields = arrowLosses('militia', (world, t) => cmdStance(world, t.id, 'shields'));
+    expect(shields).toBeLessThan(inLine * 0.75);
+  }, 30_000);
+
+  it('a wedge of horse charges harder than a line', () => {
+    const charge = (formation: 'line' | 'wedge'): number => {
+      let killed = 0;
+      for (let seed = 1; seed <= 6; seed++) {
+        const world = emptyWorld(seed);
+        const horse = spawnRegiment(world, PLAYER, 'heavyCavalry', 0, 40, Math.PI);
+        const foot = spawnRegiment(world, COMPUTER, 'swordsmen', 0, -10, 0);
+        cmdFormation(world, horse.id, formation);
+        cmdAttackRegiment(world, horse.id, foot.id);
+        run(world, 25);
+        killed += foot.initialMen - foot.aliveMen + (foot.state === 'routing' ? 4 : 0);
+      }
+      return killed;
+    };
+    expect(charge('wedge')).toBeGreaterThan(charge('line'));
+  });
+
+  it('a pike wall stands against a charge of horse that a block of pikemen would feel', () => {
+    const horseLost = (wall: boolean): number => {
+      let lost = 0;
+      for (let seed = 1; seed <= 6; seed++) {
+        const world = emptyWorld(seed);
+        const pikes = spawnRegiment(world, PLAYER, 'pikemen', 0, 20, Math.PI);
+        const horse = spawnRegiment(world, COMPUTER, 'lightCavalry', 0, -30, 0);
+        if (wall) expect(cmdStance(world, pikes.id, 'pikeWall')).toBe('ok');
+        cmdAttackRegiment(world, horse.id, pikes.id);
+        run(world, 40);
+        lost += horse.initialMen - horse.aliveMen;
+        // The wall does not move.
+        if (wall) expect(Math.hypot(pikes.anchorX, pikes.anchorZ - 20)).toBeLessThan(0.5);
+      }
+      return lost;
+    };
+    expect(horseLost(true)).toBeGreaterThan(horseLost(false));
+  });
+
+  it('shooters held to orders do not shoot at will; sent to attack, they stop in range and shoot', () => {
+    const world = emptyWorld();
+    const archers = spawnRegiment(world, PLAYER, 'archers', 0, 0, Math.PI);
+    const target = spawnRegiment(world, COMPUTER, 'militia', 0, -60, 0);
+    expect(cmdFireAtWill(world, archers.id, false)).toBe('ok');
+    run(world, 30);
+    expect(target.aliveMen).toBe(target.initialMen);
+    // Sent against a regiment far off (a pike wall, which stands): to their range, no closer, and shooting.
+    const field = emptyWorld();
+    const shooters = spawnRegiment(field, PLAYER, 'archers', 0, 0, Math.PI);
+    cmdFireAtWill(field, shooters.id, false);
+    const wall = spawnRegiment(field, COMPUTER, 'pikemen', 0, -170, 0);
+    cmdStance(field, wall.id, 'pikeWall');
+    cmdAttackRegiment(field, shooters.id, wall.id);
+    run(field, 100);
+    expect(Math.hypot(shooters.anchorX - wall.centreX, shooters.anchorZ - wall.centreZ)).toBeGreaterThan(UNITS.archers.missileRangeM * 0.7);
+    // Hit: a pikeman in leather takes several arrows to fall, so the wounds tell, not the dead.
+    expect(wall.soldiers.reduce((sum, man) => sum + man.hp, 0)).toBeLessThan(UNITS.pikemen.hp * wall.initialMen);
+  });
 });

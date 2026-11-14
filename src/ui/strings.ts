@@ -102,6 +102,15 @@ interface Strings {
   state: { hold: string; move: string; attack: string; siege: string; routing: string; fighting: string };
   help: string[];
   groupKept: string;
+  ranksLabel: string;
+  formationLabel: string;
+  formations: { line: string; wedge: string; loose: string };
+  stanceLabel: string;
+  stances: { normal: string; shields: string; pikeWall: string };
+  fireLabel: string;
+  fireAtWill: string;
+  fireOnOrder: string;
+  formationTips: { wedge: string; loose: string; shields: string; pikeWall: string; fire: string };
   saveGame: string;
   loadGame: string;
   saved: string;
@@ -226,6 +235,7 @@ const pl: Strings = {
     rearming: 'Oddział jest właśnie przezbrajany.',
     cannotGarrison: 'Wieżę obsadzają tylko łucznicy albo kusznicy, jednego rodzaju naraz.',
     towerFull: 'Wieża ma już pełną załogę.',
+    notThisUnit: 'Ten oddział tego nie umie.',
     needsKeep: 'Najpierw rozbuduj zamek: koszary nie mogą być wyższe niż on pozwala.',
     needsWall: 'Bramę stawia się we własnym murze: wskaż prosty odcinek co najmniej 6 m.',
     defenceOnly: 'Milicja broni tylko miasta i okolic. Przezbrój ją przy koszarach, żeby ruszyła dalej.',
@@ -334,6 +344,21 @@ const pl: Strings = {
     'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
   ],
   groupKept: 'Zapamiętano grupę',
+  ranksLabel: 'Szeregi',
+  formationLabel: 'Szyk',
+  formations: { line: 'Prostokąt', wedge: 'Klin', loose: 'Luźny' },
+  stanceLabel: 'Postawa',
+  stances: { normal: 'Zwykła', shields: 'Tarcze', pikeWall: 'Ściana pik' },
+  fireLabel: 'Strzelanie',
+  fireAtWill: 'Dowolne',
+  fireOnOrder: 'Na rozkaz',
+  formationTips: {
+    wedge: 'Klin (jazda): szarża mocniejsza o 60 %, obrona słabsza.',
+    loose: 'Szyk luźny: strzały trafiają o połowę rzadziej, wręcz słabiej.',
+    shields: 'Za tarczami: dwa razy mniej trafień strzał, marsz wolniejszy, cios słabszy.',
+    pikeWall: 'Ściana pik: oddział stoi; szarża z przodu nic nie daje, jazda obrywa podwójnie.',
+    fire: 'Dowolne: strzelcy sami wybierają cel w zasięgu. Na rozkaz: tylko w to, na co ich poślesz.',
+  },
   saveGame: 'Zapisz grę',
   loadGame: 'Wczytaj grę',
   saved: 'Zapisano',
@@ -466,6 +491,7 @@ const en: Strings = {
     rearming: 'The regiment is being re-armed.',
     cannotGarrison: 'Only archers or crossbowmen man a tower, one kind at a time.',
     towerFull: 'The tower is fully manned.',
+    notThisUnit: 'This regiment cannot do that.',
     needsKeep: 'Raise the keep first: the barracks may rise no higher than it allows.',
     needsWall: 'A gate goes into your own wall: point at a straight stretch at least 6 m long.',
     defenceOnly: 'Militia only defends the town and its land. Re-arm it at the barracks to take it further.',
@@ -574,6 +600,21 @@ const en: Strings = {
     'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
   ],
   groupKept: 'Group kept',
+  ranksLabel: 'Ranks',
+  formationLabel: 'Formation',
+  formations: { line: 'Block', wedge: 'Wedge', loose: 'Open' },
+  stanceLabel: 'Stance',
+  stances: { normal: 'Normal', shields: 'Shields', pikeWall: 'Pike wall' },
+  fireLabel: 'Shooting',
+  fireAtWill: 'At will',
+  fireOnOrder: 'On order',
+  formationTips: {
+    wedge: 'Wedge (horse): the charge 60 % harder, the defence weaker.',
+    loose: 'Open order: arrows hit half as often, hand to hand it is weaker.',
+    shields: 'Behind shields: half the arrow hits, a slower march, weaker blows.',
+    pikeWall: 'Pike wall: the regiment stands; a charge into its front gets nothing, horse are struck twice as hard.',
+    fire: 'At will: the shooters pick targets in range. On order: only what you send them against.',
+  },
   saveGame: 'Save game',
   loadGame: 'Load game',
   saved: 'Saved',

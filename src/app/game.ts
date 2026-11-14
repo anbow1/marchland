@@ -1,8 +1,8 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
-import type { Regiment } from '../sim/regiment.ts';
+import type { Formation, Regiment, Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
@@ -102,6 +102,25 @@ export class Game implements ControlTarget {
       rotateCamera: (direction) => this.camera.rotate(direction * CAMERA.rotateStepRad),
       upgrade: (plot) => this.report(cmdUpgrade(this.world, PLAYER, plot)),
       upgradeKeep: () => this.report(cmdUpgradeKeep(this.world, PLAYER)),
+      setFormation: (what, value) => {
+        // Every selected regiment that can; a word only when none of them could.
+        let any = false;
+        let last: CommandResult = 'notThisUnit';
+        for (const id of this.selected) {
+          const result =
+            what === 'ranks'
+              ? cmdRanks(this.world, id, Number(value))
+              : what === 'formation'
+                ? cmdFormation(this.world, id, value as Formation)
+                : what === 'stance'
+                  ? cmdStance(this.world, id, value as Stance)
+                  : cmdFireAtWill(this.world, id, value === '1');
+          if (result === 'ok') any = true;
+          else last = result;
+        }
+        if (any) this.sound.play('click');
+        else this.report(last);
+      },
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),

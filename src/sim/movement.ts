@@ -1,6 +1,6 @@
 import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt, wallStops } from './nav.ts';
 import { woodStands } from './trees.ts';
-import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
+import { ARMY, COMBAT, FATIGUE, FORMATION, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
 import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, offRiver, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
@@ -155,8 +155,11 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       faceGoal = true;
       const distanceM = hypot2(goalX - r.anchorX, goalZ - r.anchorZ);
       // Archers stop inside range and shoot; everyone else presses into the enemy's ranks.
-      stopDistanceM = isArcher(r) && (!isEngaged(r) || r.def.engine) ? r.def.missileRangeM * 0.85 : target.radiusM * 0.4 + 1;
-      run = distanceM < ARMY.runWithinM || target.state === 'routing';
+      // Shooters stop inside their range and shoot: they never close to fight hand to hand (they defend themselves when caught).
+      stopDistanceM = isArcher(r) ? r.def.missileRangeM * 0.85 : target.radiusM * 0.4 + 1;
+      // Sent to attack, they go at the run (engines cannot); shooters run only to their range.
+      run = !r.def.engine;
+      void distanceM;
     }
   } else if (r.order === 'attackBuilding') {
     if (!buildingStands(world, r.targetSide, r.targetPlot)) {
@@ -182,8 +185,12 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
   let desiredFacing = goalFacing;
   let movedM = 0;
   const running = run && distanceM > stopDistanceM + 0.05;
+  // A pike wall stands where it is: it only turns to face.
+  if (r.stance === 'pikeWall') stopDistanceM = Math.max(stopDistanceM, distanceM + 1);
   if (distanceM > stopDistanceM + 0.05) {
     let speed = (run ? runSpeedMs(r) : r.def.walkSpeedMs) * terrainSpeedFactor(world, r, r.anchorX, r.anchorZ);
+    // Behind a shield wall the ranks shuffle forward.
+    if (r.stance === 'shields') speed *= FORMATION.shieldSpeedFactor;
     if (r.lagM > ARMY.cohesionLagM) speed *= ARMY.cohesionSlowFactor;
     // In melee the formation only leans on the enemy; a move order pulls it out of the fight.
     if (isEngaged(r) && r.order !== 'move') speed = Math.min(speed, 0.5);

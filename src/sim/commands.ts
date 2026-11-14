@@ -4,7 +4,7 @@ import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBui
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
-import { frontageM, isArcher, type Regiment } from './regiment.ts';
+import { type Formation, frontageM, isArcher, type Regiment, type Stance } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
@@ -46,6 +46,48 @@ export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x
 export function cmdUpgrade(world: World, side: Side, plot: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   return startUpgrade(world.towns[side], plot);
+}
+
+/** Sets how many men a regiment of foot puts in its front rank, from the number of ranks wanted; the block keeps to it as men fall. */
+export function cmdRanks(world: World, regimentId: number, ranks: number): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (r.def.engine || ranks < 1) return 'notThisUnit';
+  r.files = Math.max(1, Math.ceil(r.initialMen / ranks));
+  if (r.formation === 'wedge') r.formation = 'line';
+  return 'ok';
+}
+
+/** A block of ranks; a wedge (horse only) for the charge; open order (foot) against arrows. */
+export function cmdFormation(world: World, regimentId: number, formation: Formation): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (r.def.engine) return 'notThisUnit';
+  if (formation === 'wedge' && !r.def.cavalry) return 'notThisUnit';
+  if (formation === 'loose' && r.def.cavalry) return 'notThisUnit';
+  r.formation = formation;
+  return 'ok';
+}
+
+/** A shield wall (only men who carry shields), a pike wall (only pikemen and halberdiers), or neither. */
+export function cmdStance(world: World, regimentId: number, stance: Stance): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (stance === 'shields' && (r.def.missileBlock <= 0 || r.def.cavalry || r.def.engine)) return 'notThisUnit';
+  if (stance === 'pikeWall' && (r.def.bonusVsCavalry <= 0 || r.def.cavalry)) return 'notThisUnit';
+  r.stance = stance;
+  // A pike wall stands: whatever it was marching to, it stops here.
+  if (stance === 'pikeWall') holdHere(r);
+  return 'ok';
+}
+
+/** Shooters choose their own targets, or shoot only at what they are sent against. */
+export function cmdFireAtWill(world: World, regimentId: number, on: boolean): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (r.def.missileRangeM <= 0) return 'notThisUnit';
+  r.fireAtWill = on;
+  return 'ok';
 }
 
 /** Starts raising the side's keep a level (KEEP_LEVELS). */
@@ -151,6 +193,8 @@ export function cmdRearm(world: World, regimentId: number, to: UnitKind): Comman
 export function cmdMove(world: World, regimentId: number, x: number, z: number, facingRad: number | null, run: boolean): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
+  // Marching off or charging breaks a pike wall.
+  if (r.stance === 'pikeWall') r.stance = 'normal';
   if (r.def.defenceOnly && !inHomeLand(r.side, x, z)) return 'defenceOnly';
   r.order = 'move';
   r.destX = clampToMap(x);
@@ -165,6 +209,8 @@ export function cmdMove(world: World, regimentId: number, x: number, z: number, 
 export function cmdAttackRegiment(world: World, regimentId: number, targetId: number): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
+  // Marching off or charging breaks a pike wall.
+  if (r.stance === 'pikeWall') r.stance = 'normal';
   const target = findRegiment(world, targetId);
   if (!target || target.aliveMen === 0 || target.side === r.side) return 'noSuchRegiment';
   if (r.def.defenceOnly && !inHomeLand(r.side, target.centreX, target.centreZ)) return 'defenceOnly';
@@ -178,6 +224,8 @@ export function cmdAttackRegiment(world: World, regimentId: number, targetId: nu
 export function cmdAttackBuilding(world: World, regimentId: number, targetSide: Side, plot: number): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
+  // Marching off or charging breaks a pike wall.
+  if (r.stance === 'pikeWall') r.stance = 'normal';
   if (targetSide === r.side || !buildingStands(world, targetSide, plot)) return 'plotEmpty';
   // A home guard does not go raiding.
   if (r.def.defenceOnly) return 'defenceOnly';

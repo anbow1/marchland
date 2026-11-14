@@ -1,4 +1,4 @@
-import { ARMY, COMBAT, FATIGUE, FOOD, MORALE, TOWN, WALLS } from '../config.ts';
+import { ARMY, COMBAT, FATIGUE, FOOD, FORMATION, MORALE, TOWN, WALLS } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
 import { assignSlots, facingToward, forwardX, forwardZ, isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
 import { damageWall, stampBuilding } from './nav.ts';
@@ -60,6 +60,12 @@ function isBraced(target: Regiment, frontal: boolean): boolean {
   return frontal && target.def.bonusVsCavalry > 0 && target.state === 'formed' && target.speedMs < 0.5;
 }
 
+/** What is left of a charge into the target's front: a pike wall takes it all, braced spears most. */
+function chargeShare(target: Regiment, frontal: boolean): number {
+  if (frontal && target.stance === 'pikeWall' && target.state === 'formed') return 0;
+  return isBraced(target, frontal) ? COMBAT.bracedChargeFactor : 1;
+}
+
 function strike(world: World, s: Soldier, t: Soldier): void {
   const a = s.regiment;
   const b = t.regiment;
@@ -84,7 +90,9 @@ function strike(world: World, s: Soldier, t: Soldier): void {
   // speed a moment ago, so two regiments that charge each other both get it.
   if (a.sinceStrikeS > 2 && a.def.chargeBonus > 0 && a.sinceChargeSpeedS < COMBAT.chargeMemoryS) {
     a.chargeLeftS = COMBAT.chargeSeconds;
-    b.morale -= a.def.chargeShock * (isBraced(b, frontal) ? COMBAT.bracedChargeFactor : 1);
+    // A wedge of horse drives its charge home harder.
+    const wedge = a.formation === 'wedge' ? FORMATION.wedgeCharge : 1;
+    b.morale -= a.def.chargeShock * wedge * chargeShare(b, frontal);
     world.events.push('charge', t.x, t.z, a.side);
   }
   a.sinceStrikeS = 0;
@@ -95,14 +103,20 @@ function strike(world: World, s: Soldier, t: Soldier): void {
   s.attackCooldownS = a.def.attackIntervalS * world.rng.range(0.85, 1.15);
 
   let attack = a.def.attack - FATIGUE.skillPenalty * a.fatigue;
-  if (b.def.cavalry) attack += a.def.bonusVsCavalry;
+  // A pike wall strikes the horse that run onto it harder; behind a shield wall men strike less.
+  if (b.def.cavalry) attack += a.def.bonusVsCavalry * (a.stance === 'pikeWall' ? FORMATION.pikeWallVsHorse : 1);
+  if (a.stance === 'shields') attack -= FORMATION.shieldAttack;
   let damageFactor = 1;
   if (a.chargeLeftS > 0) {
-    const share = isBraced(b, frontal) ? COMBAT.bracedChargeFactor : 1;
+    const share = chargeShare(b, frontal) * (a.formation === 'wedge' ? FORMATION.wedgeCharge : 1);
     attack += a.def.chargeBonus * share;
     damageFactor += (COMBAT.chargeDamageFactor - 1) * share;
   }
-  const defence = (b.def.defence - FATIGUE.skillPenalty * b.fatigue) * (b.state === 'routing' ? COMBAT.routingDefenceFactor : 1);
+  let shape = 0;
+  if (b.formation === 'loose') shape -= FORMATION.looseDefence;
+  if (b.formation === 'wedge') shape -= FORMATION.wedgeDefence;
+  if (b.stance === 'pikeWall' && frontal) shape += FORMATION.pikeWallDefence;
+  const defence = (b.def.defence + shape - FATIGUE.skillPenalty * b.fatigue) * (b.state === 'routing' ? COMBAT.routingDefenceFactor : 1);
   const chance = Math.min(COMBAT.maxHitChance, Math.max(COMBAT.minHitChance, COMBAT.baseHitChance + COMBAT.hitChancePerPoint * (attack - defence) + directionBonus));
   if (world.rng.next() >= chance) return;
   b.morale -= directionShock;

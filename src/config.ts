@@ -569,6 +569,31 @@ export interface AiTuning {
 }
 
 /**
+ * Formations and stances (regiment.ts). Open order stands the men `looseSpacingFactor` apart: arrows hit
+ * `looseHitFactor` as often, but in melee its men defend `looseDefence` points worse. A wedge of horse
+ * charges with `wedgeCharge` times the bonus and shock, and defends `wedgeDefence` points worse. A
+ * shield wall turns `shieldBlockFactor` times the arrows (to at most `shieldBlockMax`), marches at
+ * `shieldSpeedFactor` and strikes `shieldAttack` points worse. A pike wall stands: a charge into its front
+ * gets nothing, the horse that charge it are struck `pikeWallVsHorse` times as hard, and it defends
+ * `pikeWallDefence` points better.
+ */
+export const FORMATION = {
+  looseSpacingFactor: 1.9,
+  looseHitFactor: 0.5,
+  looseDefence: 2,
+  wedgeCharge: 1.6,
+  wedgeDefence: 1.5,
+  shieldBlockFactor: 2,
+  shieldBlockMax: 0.85,
+  shieldSpeedFactor: 0.55,
+  shieldAttack: 3,
+  pikeWallVsHorse: 2,
+  pikeWallDefence: 3,
+  /** Ranks a player may set a foot regiment to. */
+  rankChoices: [2, 3, 4, 6],
+} as const;
+
+/**
  * The computer's character, on top of its difficulty. `waveMen` and `waveWait` scale the size of its
  * attack waves and how long it waits for them; a raider also sends a regiment every `raidEveryS` to burn
  * buildings out beyond the enemy's town.

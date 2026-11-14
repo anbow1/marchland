@@ -5,6 +5,24 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · M2, etap 1: szeregi, klin, szyk luźny, tarcze, ściana pik, strzelanie dowolne
+
+- **Szeregi**: piechota w prostokąt o 2 / 3 / 4 / 6 szeregach (front wynika z liczby ludzi).
+- **Klin** (jazda): ludzie w trójkącie, szarża ×1,6 (premia i wstrząs), obrona −1,5.
+- **Szyk luźny** (piechota): odstępy ×1,9, strzały trafiają o połowę rzadziej, obrona wręcz −2.
+- **Tarcze** (kto ma tarczę: milicja, miecznicy, kusznicy): osłona przed strzałami ×2 (do 85 %),
+  marsz ×0,55, atak −3.
+- **Ściana pik** (pikinierzy, halabardnicy): oddział stoi (rozkaz marszu ją zwija), szarża w
+  front nic nie daje, jazda obrywa premią przeciw jeździe ×2, obrona +3 od frontu.
+- **Strzelanie**: dowolne (strzelcy sami wybierają cel) albo na rozkaz.
+- **Atak na kliknięty oddział**: biegiem (machiny idą); strzelcy stają na zasięgu (85 %) i
+  strzelają, wręcz walczą tylko, gdy ktoś do nich dopadnie.
+- Panel zaznaczonych oddziałów: rzędy Szeregi / Szyk / Postawa / Strzelanie, tylko te, które
+  któryś z zaznaczonych umie. Testy: 74 / 74 (nowe: szeregi i front, mniej strat od strzał w
+  szyku luźnym i za tarczami, klin zabija więcej od linii, ściana pik stoi i rani jazdę mocniej,
+  strzelcy na rozkaz nie strzelają sami, wysłani stają na zasięgu i trafiają). Tempo komputera
+  bez zmian (35,4 / 35,9 min).
+
 ## 2026-11-14 · Charaktery komputera, tryb Obrona, samouczek (M5 bez taktyki oddziałów)
 
 - **Charaktery**: z umiarem (dotychczasowy), budowniczy (fale ×1,5 ludzi, czeka ×1,35),

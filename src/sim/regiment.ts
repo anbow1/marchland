@@ -1,4 +1,4 @@
-import { type UnitDef, UNITS } from '../config.ts';
+import { FORMATION, type UnitDef, UNITS } from '../config.ts';
 import type { Side, UnitKind } from './types.ts';
 
 // A regiment and its soldiers. Orders go to the regiment; every soldier is an
@@ -34,6 +34,11 @@ export interface Soldier {
 
 export type OrderKind = 'hold' | 'move' | 'attackRegiment' | 'attackBuilding';
 export type RegimentState = 'formed' | 'routing';
+
+/** How a regiment stands: a block of ranks, a wedge for a charge (horse), or open order against arrows. */
+export type Formation = 'line' | 'wedge' | 'loose';
+/** What it does in its formation: nothing special, a shield wall (those with shields), or a pike wall (pikemen). */
+export type Stance = 'normal' | 'shields' | 'pikeWall';
 
 export interface Regiment {
   id: number;
@@ -93,6 +98,12 @@ export interface Regiment {
   rearmLeftS: number;
   /** The tower (its place in the town's list) it is marching to man; -1 none. */
   garrisonPlot: number;
+  /** Men in its front rank as ordered (the ranks follow from the men left); the formation and the stance. */
+  files: number;
+  formation: Formation;
+  stance: Stance;
+  /** Shooters pick their own targets (true) or shoot only at what they are ordered to. */
+  fireAtWill: boolean;
 }
 
 export function forwardX(facingRad: number): number {
@@ -116,16 +127,33 @@ export function angleDelta(a: number, b: number): number {
   return d;
 }
 
+/** A wedge: the point a single rider, each rank behind two wider. Rank of a slot, and its place across. */
+function wedgeRank(slot: number): number {
+  return Math.floor(Math.sqrt(slot));
+}
+
 /** Sideways (in files) and backwards (in ranks) position of a slot. The last, short rank is centred too. */
 function slotFile(r: Regiment, slot: number): number {
-  const files = Math.min(r.def.files, Math.max(1, r.aliveMen));
+  if (r.formation === 'wedge') {
+    const rank = wedgeRank(slot);
+    const first = rank * rank;
+    const inRank = Math.min(2 * rank + 1, r.aliveMen - first);
+    return slot - first - (inRank - 1) / 2;
+  }
+  const files = Math.min(r.files, Math.max(1, r.aliveMen));
   const rank = Math.floor(slot / files);
   const inRank = Math.min(files, r.aliveMen - rank * files);
   return slot - rank * files - (inRank - 1) / 2;
 }
 
 function slotRank(r: Regiment, slot: number): number {
-  return Math.floor(slot / Math.min(r.def.files, Math.max(1, r.aliveMen)));
+  if (r.formation === 'wedge') return wedgeRank(slot);
+  return Math.floor(slot / Math.min(r.files, Math.max(1, r.aliveMen)));
+}
+
+/** Open order stands the men further apart. */
+function spread(r: Regiment): number {
+  return r.formation === 'loose' ? FORMATION.looseSpacingFactor : 1;
 }
 
 /**
@@ -133,11 +161,11 @@ function slotRank(r: Regiment, slot: number): number {
  * front; files are centred on the anchor. File axis = (cos f, −sin f), back = −forward.
  */
 export function placeX(r: Regiment, slot: number, anchorX: number, facingRad: number): number {
-  return anchorX + Math.cos(facingRad) * slotFile(r, slot) * r.def.fileSpacingM - Math.sin(facingRad) * slotRank(r, slot) * r.def.rankSpacingM;
+  return anchorX + Math.cos(facingRad) * slotFile(r, slot) * r.def.fileSpacingM * spread(r) - Math.sin(facingRad) * slotRank(r, slot) * r.def.rankSpacingM * spread(r);
 }
 
 export function placeZ(r: Regiment, slot: number, anchorZ: number, facingRad: number): number {
-  return anchorZ - Math.sin(facingRad) * slotFile(r, slot) * r.def.fileSpacingM - Math.cos(facingRad) * slotRank(r, slot) * r.def.rankSpacingM;
+  return anchorZ - Math.sin(facingRad) * slotFile(r, slot) * r.def.fileSpacingM * spread(r) - Math.cos(facingRad) * slotRank(r, slot) * r.def.rankSpacingM * spread(r);
 }
 
 /** Where a slot is now. */
@@ -151,7 +179,8 @@ export function slotZ(r: Regiment, slot: number): number {
 
 /** Width of the front rank in metres. */
 export function frontageM(r: Regiment): number {
-  return (Math.min(r.def.files, Math.max(1, r.aliveMen)) - 1) * r.def.fileSpacingM;
+  if (r.formation === 'wedge') return 2 * Math.floor(Math.sqrt(Math.max(0, r.aliveMen - 1))) * r.def.fileSpacingM;
+  return (Math.min(r.files, Math.max(1, r.aliveMen)) - 1) * r.def.fileSpacingM * spread(r);
 }
 
 /** Gives the living their places again, front rank first, after a death or a rally. */
@@ -202,6 +231,10 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     rearmTo: null,
     rearmLeftS: 0,
     garrisonPlot: -1,
+    files: def.files,
+    formation: 'line',
+    stance: 'normal',
+    fireAtWill: true,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({
