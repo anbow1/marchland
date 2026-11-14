@@ -29,7 +29,17 @@ interface Candidate {
   scale: number;
 }
 
-const CASTLES: Candidate[] = [
+const BUILDINGS: Candidate[] = [
+  { name: 'blacksmith', url: 'medieval_blacksmith/scene.gltf', fitM: 14, scale: 1 },
+  { name: 'wineShop', url: 'medieval_house_and_wine_shop/scene.gltf', fitM: 16, scale: 1 },
+  { name: 'tavern', url: 'medieval_fantasy_tavern/scene.gltf', fitM: 16, scale: 1 },
+  { name: 'workshop', url: 'medieval_times_-_blacksmiths_workshop/scene.gltf', fitM: 12, scale: 1 },
+  { name: 'forge', url: 'stylized_medieval_forge/scene.gltf', fitM: 14, scale: 1 },
+  { name: 'village', url: 'village/scene.gltf', fitM: 40, scale: 1 },
+];
+// `?set=buildings` shows the downloaded buildings instead of the castles.
+const SHOW_BUILDINGS = new URLSearchParams(location.search).get('set') === 'buildings';
+const CASTLES: Candidate[] = SHOW_BUILDINGS ? BUILDINGS : [
   { name: 'buckstone', url: 'buckstone_castle/scene.gltf', fitM: 30, scale: 1 },
   { name: 'environment', url: 'enviromental_modeling_castle/scene.gltf', fitM: 30, scale: 1 },
   { name: 'towerWalls', url: 'tower_and_castle_walls/scene.glb', fitM: 30, scale: 1 },
@@ -38,7 +48,7 @@ const CASTLES: Candidate[] = [
   { name: 'uv', url: 'uv_castle/scene.gltf', fitM: 30, scale: 1 },
   { name: 'medieval', url: 'medieval_castle/scene.gltf', fitM: 30, scale: 1 },
   { name: 'fougeres', url: 'fougeres_castle/scene.gltf', fitM: 18, scale: 1 },
-];
+  ];
 const CHARACTERS: Candidate[] = [
   { name: 'lowpoly', url: 'lowpoly_medieval_characters/scene.gltf', fitM: 0, scale: 1 },
   { name: 'mannik', url: 'mannik/scene.gltf', fitM: 0, scale: 1 },

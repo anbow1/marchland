@@ -30,7 +30,9 @@ interface Entry {
 
 const params = new URLSearchParams(location.search);
 const level = Number(params.get('level') ?? 1);
-const index = (await (await fetch('./buildings/index.json')).json()) as Record<string, Entry>;
+// `?dir=` another folder with an index.json of the same shape (candidates not yet in the game).
+const dir = params.get('dir') ?? 'buildings';
+const index = (await (await fetch(`./${dir}/index.json`)).json()) as Record<string, Entry>;
 const kinds = [...new Set(Object.keys(index).map((key) => key.split(':')[0] as string))];
 
 const COLUMNS = 4;
@@ -78,7 +80,7 @@ const report: Record<string, { triangles: number; smoke: number; parts: string[]
 for (const kind of kinds) {
   const entry = index[`${kind}:${level}`];
   if (!entry) continue;
-  const gltf = await loader.loadAsync(`./buildings/${entry.file}`);
+  const gltf = await loader.loadAsync(`./${dir}/${entry.file}`);
   const model = surfaceModel(gltf.scene, surfaces, TEAM_HEX[0]);
   const spot = spots[kind] as { x: number; z: number };
   const group = new Group();
