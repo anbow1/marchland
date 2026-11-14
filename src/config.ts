@@ -323,6 +323,40 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
 };
 
+/** Experience: kills per man (of the regiment as raised) that make it seasoned, then veterans; what each rank gives. */
+export const VETERANS = {
+  ranksAt: [0.6, 1.5],
+  attackPerRank: 1,
+  defencePerRank: 1,
+  moralePerRank: 8,
+  /** Shooters of each rank hit this much more often. */
+  missileHitPerRank: 0.12,
+};
+
+/** The captain: the last man of the formation. His fall shakes the regiment; without him it fights and steadies worse. */
+export const CAPTAIN = {
+  fallShock: 12,
+  attackWithout: 1,
+  moraleWithout: 10,
+  recoverFactorWithout: 0.5,
+};
+
+/** Filling a thinned regiment by its barracks (militia by the keep): gold and arms for each new man, his walk and his training. */
+export const REINFORCE = {
+  radiusM: 40,
+  /** The regiment must not have fought for this long. */
+  quietS: 5,
+  /** Training time for a whole regiment's worth; less for fewer. */
+  minSeconds: 4,
+};
+
+/** Soldiers' pay, taken from the keep's gold once a second. Owed for longer than a minute (and at least minArrears), they lose heart. */
+export const PAY = {
+  goldPerManPerMinute: 0.2,
+  minArrears: 3,
+  unpaidMoralePenalty: 15,
+};
+
 /**
  * Re-arming a regiment that stands by its barracks (or, for what the keep can make, by the keep): it keeps
  * its men, their fatigue and their record, and is paid for only in what it lacks — the target's equipment

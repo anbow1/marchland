@@ -149,6 +149,19 @@ interface Strings {
   rearm: string;
   rearmed: string;
   rearmingState: string;
+  reinforce: string;
+  reinforceTip: string;
+  reinforced: string;
+  reinforcingState: string;
+  ranks3: [string, string, string];
+  rankTip: string;
+  captain: string;
+  noCaptain: string;
+  captainFell: string;
+  promoted: string;
+  unpaid: string;
+  paid: string;
+  payTip: string;
   atKeep: string;
   wall: string;
   wallAbout: string;
@@ -230,8 +243,10 @@ const pl: Strings = {
     noSuchRegiment: 'Nie ma takiego oddziału.',
     routing: 'Ten oddział ucieka i nie słucha rozkazów.',
     cannotRearm: 'Tego oddziału nie da się tak przezbroić.',
-    notAtBarracks: 'Oddział musi stać przy własnych koszarach.',
-    inCombat: 'Oddział walczy: przezbrojenie po walce.',
+    notAtBarracks: 'Oddział musi stać przy własnych koszarach (pospolite ruszenie: przy zamku).',
+    inCombat: 'Oddział walczy: poczekaj, aż walka ucichnie.',
+    fullStrength: 'Oddział ma pełny skład.',
+    reinforcing: 'Uzupełnienie już idzie.',
     rearming: 'Oddział jest właśnie przezbrajany.',
     cannotGarrison: 'Wieżę obsadzają tylko łucznicy albo kusznicy, jednego rodzaju naraz.',
     towerFull: 'Wieża ma już pełną załogę.',
@@ -406,6 +421,19 @@ const pl: Strings = {
   rearm: 'Przezbrój',
   rearmed: 'Oddział przezbrojony',
   rearmingState: 'przezbraja się',
+  reinforce: 'Uzupełnij',
+  reinforceTip: 'Uzupełnia oddział do pełnego składu: złoto i broń za każdego nowego, ludzie przychodzą z miasta. Nowi rozwadniają doświadczenie; poległego kapitana zastępuje jeden z nich.',
+  reinforced: 'Oddział uzupełniony',
+  reinforcingState: 'czeka na uzupełnienie',
+  ranks3: ['zieloni', 'zaprawieni', 'weterani'],
+  rankTip: 'Doświadczenie rośnie z każdym zabitym wrogiem: zaprawieni i weterani lepiej walczą, celniej strzelają i trudniej ich złamać.',
+  captain: 'kapitan',
+  noCaptain: 'bez kapitana',
+  captainFell: 'Poległ kapitan oddziału',
+  promoted: 'Oddział zyskał doświadczenie',
+  unpaid: 'Brak złota na żołd: wojsko traci ducha',
+  paid: 'Żołd znów wypłacany',
+  payTip: 'żołd',
   atKeep: 'w zamku, bez koszar',
   wall: 'Mur',
   wallAbout: 'Kamienny mur rysowany od punktu do punktu. Zatrzymuje wszystkich; wróg go rozbija, machiny szybciej. Twoi przechodzą przez bramy.',
@@ -486,8 +514,10 @@ const en: Strings = {
     noSuchRegiment: 'No such regiment.',
     routing: 'That regiment is running and takes no orders.',
     cannotRearm: 'That regiment cannot be re-armed so.',
-    notAtBarracks: 'The regiment must stand by its own barracks.',
-    inCombat: 'The regiment is fighting: re-arm it after the fight.',
+    notAtBarracks: 'The regiment must stand by its own barracks (militia: by the keep).',
+    inCombat: 'The regiment is fighting: wait until the fight dies down.',
+    fullStrength: 'The regiment is at full strength.',
+    reinforcing: 'New men are already on their way.',
     rearming: 'The regiment is being re-armed.',
     cannotGarrison: 'Only archers or crossbowmen man a tower, one kind at a time.',
     towerFull: 'The tower is fully manned.',
@@ -662,6 +692,19 @@ const en: Strings = {
   rearm: 'Re-arm',
   rearmed: 'Regiment re-armed',
   rearmingState: 're-arming',
+  reinforce: 'Reinforce',
+  reinforceTip: 'Fills the regiment to full strength: gold and arms for every new man, the men come from the town. They dilute its experience; a fallen captain is replaced by one of them.',
+  reinforced: 'Regiment reinforced',
+  reinforcingState: 'awaiting new men',
+  ranks3: ['green', 'seasoned', 'veterans'],
+  rankTip: 'Experience grows with every enemy brought down: seasoned men and veterans fight better, shoot straighter and are harder to break.',
+  captain: 'captain',
+  noCaptain: 'no captain',
+  captainFell: 'A regiment\'s captain has fallen',
+  promoted: 'A regiment has gained experience',
+  unpaid: 'No gold for pay: the army loses heart',
+  paid: 'Pay is being met again',
+  payTip: 'pay',
   atKeep: 'at the keep, no barracks needed',
   wall: 'Wall',
   wallAbout: 'A stone wall drawn from point to point. It stops everyone; the enemy batters it down, engines faster. Your men pass through its gates.',

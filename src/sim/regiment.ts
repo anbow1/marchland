@@ -1,4 +1,4 @@
-import { FORMATION, type UnitDef, UNITS } from '../config.ts';
+import { FORMATION, type UnitDef, UNITS, VETERANS } from '../config.ts';
 import type { Side, UnitKind } from './types.ts';
 
 // A regiment and its soldiers. Orders go to the regiment; every soldier is an
@@ -106,6 +106,25 @@ export interface Regiment {
   fireAtWill: boolean;
   /** Seconds since an arrow or bolt last struck one of its men. */
   sinceShotS: number;
+  /** Experience: enemies brought down, per man of the regiment as raised (new men dilute it). */
+  xp: number;
+}
+
+/** 0 green, 1 seasoned, 2 veterans. */
+export function veteranRank(r: Regiment): number {
+  let rank = 0;
+  for (const at of VETERANS.ranksAt) if (r.xp >= at) rank++;
+  return rank;
+}
+
+/** The captain is the regiment's first man; engines have none to lose. */
+export function captainOf(r: Regiment): Soldier | null {
+  return r.def.engine ? null : (r.soldiers[0] ?? null);
+}
+
+/** True when the regiment still has its captain (always, for an engine). */
+export function hasCaptain(r: Regiment): boolean {
+  return r.def.engine || (r.soldiers[0]?.alive ?? false);
 }
 
 export function forwardX(facingRad: number): number {
@@ -185,10 +204,15 @@ export function frontageM(r: Regiment): number {
   return (Math.min(r.files, Math.max(1, r.aliveMen)) - 1) * r.def.fileSpacingM * spread(r);
 }
 
-/** Gives the living their places again, front rank first, after a death or a rally. */
+/** Gives the living their places again, front rank first, after a death or a rally. The captain takes the last place: behind his men. */
 export function assignSlots(r: Regiment): void {
   let slot = 0;
-  for (const s of r.soldiers) if (s.alive) s.slot = slot++;
+  for (let i = 1; i < r.soldiers.length; i++) {
+    const s = r.soldiers[i] as Soldier;
+    if (s.alive) s.slot = slot++;
+  }
+  const first = r.soldiers[0];
+  if (first?.alive) first.slot = slot;
 }
 
 export function createRegiment(id: number, side: Side, kind: UnitKind, x: number, z: number, facingRad: number): Regiment {
@@ -238,6 +262,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     stance: 'normal',
     fireAtWill: true,
     sinceShotS: 999,
+    xp: 0,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({
@@ -259,6 +284,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
       wallCell: -1,
     });
   }
+  assignSlots(r);
   for (const s of r.soldiers) {
     s.x = slotX(r, s.slot);
     s.z = slotZ(r, s.slot);

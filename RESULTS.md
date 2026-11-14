@@ -5,6 +5,24 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · M2, etap 3: weterani, kapitan, uzupełnianie, żołd
+
+- **Weterani**: każdy zabity (wręcz albo strzałą — strzała pamięta, kto ją wypuścił) to
+  doświadczenie oddziału. Zaprawieni (★) od 0,6 zabitego na człowieka, weterani (★★) od 1,5:
+  +1 atak, +1 obrona, +8 morale, strzelcy celniej o 12 % na stopień. Gwiazdki na karcie nad
+  oddziałem i w panelu.
+- **Kapitan**: pierwszy człowiek oddziału, stoi za szeregami. Jego śmierć: −12 morale i
+  komunikat; bez kapitana atak −1, górne morale −10, morale wraca o połowę wolniej.
+- **Uzupełnij** (przycisk przy jednym zaznaczonym oddziale): przy koszarach (milicja przy
+  zamku), poza walką; złoto i broń za brakujących, ludzie przychodzą z miasta, nowi rozwadniają
+  doświadczenie, poległego kapitana zastępuje jeden z nich. Komputer uzupełnia oddziały, które
+  straciły ćwierć ludzi albo kapitana.
+- **Żołd**: 0,2 zł / człowiek / min (pełna armia 20 zł/min); zaległość ponad minutę żołdu =
+  nieopłaceni, −15 górnego morale do spłaty. Panel zamku pokazuje żołd.
+- Testy: 81 / 81 (nowe: doświadczenie ze strzał, weterani wygrywają z zielonymi, kapitan i jego
+  śmierć, uzupełnienie z kosztem i rozcieńczeniem, żołd i zaległości). Tempo komputera
+  35,7 / 36,5 min (było 35,4 / 35,9).
+
 ## 2026-11-14 · M2, etap 2: wzniesienia i szyki komputera
 
 - **Wzniesienia**: strzelcy sięgają do 15 % dalej na niższy teren (w pełni przy 8 m różnicy;

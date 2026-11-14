@@ -1,6 +1,6 @@
-import { ARMY, COMBAT, ELEVATION, FATIGUE, FOOD, FORMATION, MORALE, TOWN, WALLS } from '../config.ts';
+import { ARMY, CAPTAIN, COMBAT, ELEVATION, FATIGUE, FOOD, FORMATION, MORALE, PAY, TOWN, VETERANS, WALLS } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
-import { assignSlots, facingToward, forwardX, forwardZ, isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
+import { assignSlots, captainOf, facingToward, forwardX, forwardZ, hasCaptain, isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
 import { damageWall, stampBuilding } from './nav.ts';
 import { returnHome } from './people.ts';
 import { heightAtM, townX, townZ } from './terrain.ts';
@@ -27,8 +27,29 @@ export function kill(world: World, victim: Soldier, bySide: Side, by: Regiment |
   world.towns[r.side].underArms = Math.max(0, world.towns[r.side].underArms - r.def.crew);
   world.towns[bySide].stock.gold += r.def.bounty;
   world.kills[bySide] += 1;
-  if (by) by.morale = Math.min(by.def.morale, by.morale + MORALE.killBoost);
+  if (by) {
+    const rank = veteranRank(by);
+    by.xp += 1 / by.initialMen;
+    if (veteranRank(by) > rank) world.events.push('promoted', by.centreX, by.centreZ, by.side);
+    by.morale = Math.min(topMorale(world, by), by.morale + MORALE.killBoost);
+  }
   world.events.push('death', victim.x, victim.z, r.side);
+  if (victim === captainOf(r)) {
+    r.morale -= CAPTAIN.fallShock;
+    world.events.push('captainFell', victim.x, victim.z, r.side);
+  }
+}
+
+/** The most heart a regiment can have now: its kind's, more for veterans, less without a captain, hungry or unpaid. */
+export function topMorale(world: World, r: Regiment): number {
+  const town = world.towns[r.side];
+  return (
+    r.def.morale +
+    VETERANS.moralePerRank * veteranRank(r) -
+    (hasCaptain(r) ? 0 : CAPTAIN.moraleWithout) -
+    (town.starving ? FOOD.starvingMoralePenalty : 0) -
+    (town.unpaid ? PAY.unpaidMoralePenalty : 0)
+  );
 }
 
 export function wound(world: World, victim: Soldier, damage: number, bySide: Side, by: Regiment | null): void {
@@ -106,6 +127,8 @@ function strike(world: World, s: Soldier, t: Soldier): void {
   // A pike wall strikes the horse that run onto it harder; behind a shield wall men strike less.
   if (b.def.cavalry) attack += a.def.bonusVsCavalry * (a.stance === 'pikeWall' ? FORMATION.pikeWallVsHorse : 1);
   if (a.stance === 'shields') attack -= FORMATION.shieldAttack;
+  // Experience tells, and so does a captain's voice.
+  attack += VETERANS.attackPerRank * veteranRank(a) - (hasCaptain(a) ? 0 : CAPTAIN.attackWithout);
   let damageFactor = 1;
   if (a.chargeLeftS > 0) {
     const share = chargeShare(b, frontal) * (a.formation === 'wedge' ? FORMATION.wedgeCharge : 1);
@@ -116,7 +139,7 @@ function strike(world: World, s: Soldier, t: Soldier): void {
   const slope = heightAtM(s.x, s.z) - heightAtM(t.x, t.z);
   if (a.chargeLeftS > 0 && slope > ELEVATION.slopeM) attack += a.def.chargeBonus * chargeShare(b, frontal) * (ELEVATION.downhillCharge - 1);
   if (slope < -ELEVATION.slopeM) attack -= ELEVATION.uphillAttack;
-  let shape = 0;
+  let shape = VETERANS.defencePerRank * veteranRank(b);
   if (b.formation === 'loose') shape -= FORMATION.looseDefence;
   if (b.formation === 'wedge') shape -= FORMATION.wedgeDefence;
   if (b.stance === 'pikeWall' && frontal) shape += FORMATION.pikeWallDefence;
@@ -191,7 +214,7 @@ function rout(world: World, r: Regiment): void {
     if (other === r || other.aliveMen === 0 || other.state !== 'formed') continue;
     if ((other.centreX - r.centreX) ** 2 + (other.centreZ - r.centreZ) ** 2 > MORALE.contagionRadiusM ** 2) continue;
     if (other.side === r.side) other.morale -= MORALE.friendRoutShock;
-    else other.morale = Math.min(other.def.morale, other.morale + MORALE.enemyRoutBoost);
+    else other.morale = Math.min(topMorale(world, other), other.morale + MORALE.enemyRoutBoost);
   }
 }
 
@@ -229,16 +252,15 @@ export function stepMorale(world: World, dtSeconds: number): void {
     r.sinceStrikeS += dtSeconds;
     r.chargeLeftS = Math.max(0, r.chargeLeftS - dtSeconds);
     if (!isEngaged(r)) r.threatRegimentId = -1;
-    const town = world.towns[r.side];
-    const topMorale = r.def.morale - (town.starving ? FOOD.starvingMoralePenalty : 0);
+    const top = topMorale(world, r);
     if (r.state === 'formed') {
-      if (!isEngaged(r)) r.morale += MORALE.recoverPerSecond * dtSeconds;
-      r.morale = Math.min(r.morale, topMorale);
+      if (!isEngaged(r)) r.morale += MORALE.recoverPerSecond * (hasCaptain(r) ? 1 : CAPTAIN.recoverFactorWithout) * dtSeconds;
+      r.morale = Math.min(r.morale, top);
       if (r.morale <= 0) rout(world, r);
       continue;
     }
     const safe = !enemyNear(world, r, MORALE.safeFromEnemyM);
-    if (safe) r.morale = Math.min(topMorale, r.morale + MORALE.routRecoverPerSecond * dtSeconds);
+    if (safe) r.morale = Math.min(top, r.morale + MORALE.routRecoverPerSecond * dtSeconds);
     if (r.shattered) {
       const homeM = hypot2(r.centreX - townX(r.side), r.centreZ - townZ(r.side));
       if (homeM < TOWN.refugeRadiusM + 25) disband(world, r);

@@ -83,6 +83,9 @@ export interface RecruitOrder {
   /** Townspeople who must reach the barracks, and how many have. */
   needPeople: number;
   arrived: number;
+  /** Set when the order fills a regiment already in the field: its id and the men it takes. */
+  reinforceId?: number;
+  men?: number;
 }
 
 export interface Town {
@@ -101,6 +104,11 @@ export interface Town {
   recruitQueue: RecruitOrder[];
   /** Regiments whose training finished this step; the world turns them into soldiers. */
   trained: UnitKind[];
+  /** New men for regiments in the field whose training finished this step: the regiment and how many. */
+  reinforced: { id: number; men: number; people: number }[];
+  /** Soldiers' pay owed and not yet paid (arrears when the chest ran dry), and whether they count as unpaid. */
+  payOwed: number;
+  unpaid: boolean;
   /** Plots whose building or upgrade was finished this step; the world announces them. */
   finishedPlots: number[];
   /** The computer's difficulty handicap; 1 for the player. */
@@ -164,7 +172,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.maxBuildings; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, keepLevel: 1, keepUpgradeLeftS: 0, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, keepLevel: 1, keepUpgradeLeftS: 0, rationDebt: 0, starving: false, recruitQueue: [], trained: [], reinforced: [], payOwed: 0, unpaid: false, finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -326,7 +334,7 @@ export function canAffordUnit(stock: Stock, kind: UnitKind): boolean {
 /** Men waiting in the queue; they count against the army limit. */
 export function queuedMen(town: Town): number {
   let men = 0;
-  for (const order of town.recruitQueue) men += UNITS[order.kind].men;
+  for (const order of town.recruitQueue) men += order.men ?? UNITS[order.kind].men;
   return men;
 }
 
@@ -521,7 +529,8 @@ export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): vo
     first.leftS -= dtSeconds;
     if (first.leftS <= 0) {
       town.recruitQueue.shift();
-      town.trained.push(first.kind);
+      if (first.reinforceId !== undefined) town.reinforced.push({ id: first.reinforceId, men: first.men ?? 0, people: first.needPeople });
+      else town.trained.push(first.kind);
     }
   }
 }

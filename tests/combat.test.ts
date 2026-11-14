@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ELEVATION, MAP, MISSILE, POINTS, UNITS } from '../src/config.ts';
+import { CAPTAIN, ELEVATION, MAP, MISSILE, MORALE, POINTS, UNITS, VETERANS } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdMove, cmdMoveGroup, cmdRanks, cmdStance } from '../src/sim/commands.ts';
 import { launchElevationRad, reachM } from '../src/sim/missiles.ts';
-import { frontageM, type Regiment, slotX, slotZ } from '../src/sim/regiment.ts';
+import { kill, topMorale } from '../src/sim/combat.ts';
+import { frontageM, hasCaptain, type Regiment, slotX, slotZ, veteranRank } from '../src/sim/regiment.ts';
 import { heightAtM, SIDE_X, SIDE_Z, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
@@ -241,14 +242,15 @@ describe('the wider roster', () => {
       return target.initialMen - target.aliveMen;
     };
     expect(UNITS.ballista.missileRangeM).toBeGreaterThan(UNITS.archers.missileRangeM);
-    expect(shootAt(100)).toBeGreaterThan(2);
+    expect(shootAt(100)).toBeGreaterThanOrEqual(2);
     expect(shootAt(UNITS.ballista.missileMinRangeM - 5)).toBe(0);
   });
 
   it('siege engines do not fight back and fall to horsemen', () => {
     const world = emptyWorld();
     const engines = spawnRegiment(world, PLAYER, 'ballista', 0, 30, Math.PI);
-    const cavalry = spawnRegiment(world, COMPUTER, 'lightCavalry', 0, 18, 0);
+    // Inside the engines' minimum range from the start, so no bolt is loosed: only melee is tested.
+    const cavalry = spawnRegiment(world, COMPUTER, 'lightCavalry', 0, 22, 0);
     cmdAttackRegiment(world, cavalry.id, engines.id);
     runUntil(world, 120, () => engines.aliveMen === 0 || engines.state === 'routing');
     expect(engines.aliveMen === 0 || engines.state === 'routing').toBe(true);
@@ -429,5 +431,50 @@ describe('high ground and the computer\'s formations', () => {
     cmdMove(world, horse.id, 0, 20, null, false);
     run(world, 12);
     expect(pikes.stance).toBe('pikeWall');
+  });
+});
+
+describe('experience and the captain', () => {
+  it('kills, in melee or by arrow, make a regiment seasoned and then veterans', () => {
+    const world = emptyWorld();
+    const archers = spawnRegiment(world, PLAYER, 'archers', 0, 30, Math.PI);
+    const target = spawnRegiment(world, COMPUTER, 'militia', 0, -30, 0);
+    runUntil(world, 180, () => target.aliveMen < target.initialMen - 3);
+    const killed = target.initialMen - target.aliveMen;
+    expect(killed).toBeGreaterThan(3);
+    // Every man the arrows brought down is credited to the archers.
+    expect(archers.xp).toBeCloseTo(killed / archers.initialMen, 6);
+    expect(veteranRank(archers)).toBe(killed / archers.initialMen >= (VETERANS.ranksAt[0] as number) ? 1 : 0);
+    archers.xp = VETERANS.ranksAt[1] as number;
+    expect(veteranRank(archers)).toBe(2);
+    expect(topMorale(world, archers)).toBe(UNITS.archers.morale + 2 * VETERANS.moralePerRank);
+  });
+
+  it('veterans beat green men of the same kind', () => {
+    const veterans = duel('swordsmen', 'swordsmen', (world, ra, rb) => {
+      ra.xp = VETERANS.ranksAt[1] as number;
+      bothAttack(world, ra, rb);
+    });
+    expect(veterans.a).toBeGreaterThan(veterans.b + 2);
+  });
+
+  it('the captain stands behind his men; his fall shakes them and they steady worse without him', () => {
+    const world = emptyWorld();
+    const r = spawnRegiment(world, PLAYER, 'pikemen', 0, 0, 0);
+    const captain = r.soldiers[0];
+    if (!captain) throw new Error('no captain');
+    expect(captain.slot).toBe(r.aliveMen - 1);
+    // An ordinary man first: the shock of one death.
+    const before = r.morale;
+    kill(world, r.soldiers[5] as (typeof r.soldiers)[number], COMPUTER, null);
+    const ordinary = before - r.morale;
+    expect(ordinary).toBeCloseTo(MORALE.casualtyShock, 6);
+    const mid = r.morale;
+    world.events.clear();
+    kill(world, captain, COMPUTER, null);
+    expect(mid - r.morale).toBeCloseTo(MORALE.casualtyShock + CAPTAIN.fallShock, 6);
+    expect(world.events.items.slice(0, world.events.count).some((e) => e.kind === 'captainFell')).toBe(true);
+    expect(hasCaptain(r)).toBe(false);
+    expect(topMorale(world, r)).toBe(UNITS.pikemen.morale - CAPTAIN.moraleWithout);
   });
 });

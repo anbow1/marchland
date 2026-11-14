@@ -1,9 +1,9 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
 import { resourceIcon } from './icons.ts';
-import { canRearm, rearmCost } from '../sim/commands.ts';
+import { canRearm, canReinforce, missingMen, rearmCost, reinforceCost } from '../sim/commands.ts';
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
-import { isEngaged, type Regiment } from '../sim/regiment.ts';
+import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
 import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS } from '../sim/types.ts';
 import { menAlive, type World } from '../sim/world.ts';
 import { TEAM_CSS } from '../render/palette.ts';
@@ -32,6 +32,7 @@ export interface HudActions {
   togglePaused(plot: number): void;
   recruit(kind: UnitKind): void;
   rearm(regimentId: number, kind: UnitKind): void;
+  reinforce(regimentId: number): void;
   halt(): void;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
@@ -273,6 +274,9 @@ export class Hud {
         this.actions.rearm(Number(id), kind as UnitKind);
         break;
       }
+      case 'reinforce':
+        this.actions.reinforce(Number(arg));
+        break;
       case 'halt':
         this.actions.halt();
         break;
@@ -405,9 +409,10 @@ export class Hud {
   }
 
   /** The keep: its level, what the level gives, and the way to the next. */
-  private keepHtml(town: Town): string {
+  private keepHtml(world: World, town: Town): string {
     const rules = keepRules(town);
-    let status = `${T.keepHp} ${Math.ceil(town.keepHp)}/${rules.hp} · ${T.keepReach} ${rules.territoryM} m · ${T.barracksUpTo} ${rules.barracks}`;
+    const pay = Math.round(menAlive(world, town.side) * PAY.goldPerManPerMinute);
+    let status = `${T.keepHp} ${Math.ceil(town.keepHp)}/${rules.hp} · ${T.keepReach} ${rules.territoryM} m · ${T.barracksUpTo} ${rules.barracks} · ${T.payTip} ${pay}/min${town.unpaid ? ` (${Math.ceil(town.payOwed)})` : ''}`;
     if (town.keepUpgradeLeftS > 0) status += ` · ${T.keepRaising}: ${Math.round((1 - town.keepUpgradeLeftS / KEEP_UPGRADE_SECONDS) * 100)}%`;
     let html = `<div class="heading">${T.keep} · ${T.level} ${town.keepLevel}/${KEEP_LEVELS.length} <span class="status">${status}</span></div><div class="status">${T.keepAbout}</div>`;
     const next = KEEP_LEVELS[town.keepLevel];
@@ -467,14 +472,32 @@ export class Hud {
     return html;
   }
 
-  private stateText(r: Regiment): string {
+  private stateText(world: World, r: Regiment): string {
     if (r.state === 'routing') return T.state.routing;
+    if (world.towns[r.side].recruitQueue.some((o) => o.reinforceId === r.id)) return T.reinforcingState;
     if (r.rearmTo !== null) return `${T.rearmingState} → ${T.units[r.rearmTo].name} (${Math.ceil(r.rearmLeftS)} s)`;
     if (isEngaged(r)) return T.state.fighting;
     if (r.order === 'move') return T.state.move;
     if (r.order === 'attackRegiment') return T.state.attack;
     if (r.order === 'attackBuilding') return T.state.siege;
     return T.state.hold;
+  }
+
+  /** The reinforce button for one selected regiment that has lost men: what filling it costs. */
+  private reinforceHtml(world: World, r: Regiment): string {
+    if (r.side !== PLAYER || r.def.engine || missingMen(r) === 0 || r.rearmTo !== null) return '';
+    const town = world.towns[PLAYER];
+    const able = canReinforce(world, r.id);
+    if (able === 'reinforcing') return '';
+    const cost = reinforceCost(r);
+    let costs = '';
+    for (const id of RESOURCE_IDS) {
+      const amount = cost[id] ?? 0;
+      if (amount === 0) continue;
+      costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
+    }
+    const why = able === 'ok' ? '' : ` — ${T.results[able]}`;
+    return `<div class="row"><button class="option${able === 'ok' ? '' : ' off'}" data-act="reinforce" data-arg="${r.id}" data-tip="${T.reinforceTip}${why}"><span class="name">${T.reinforce} +${missingMen(r)}</span><span class="costs">${costs || '—'}</span></button></div>`;
   }
 
   /** Re-arm buttons for one selected regiment: what it may become, and what that costs. */
@@ -502,15 +525,17 @@ export class Hud {
     let html = `<div class="row"><button class="option" data-act="halt" data-tip="${T.halt}"><span class="name">${T.halt}</span></button><button class="option" data-act="all" data-tip="${T.selectAll}"><span class="name">${T.selectAll}</span></button></div><div class="row wrap">`;
     for (const r of world.regiments) {
       if (!selected.has(r.id) || r.aliveMen === 0) continue;
-      const morale = Math.max(0, Math.round((r.morale / r.def.morale) * 100));
-      html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about}"><span class="glyph">${UNIT_GLYPH[r.kind]}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${r.initialMen} ${T.men} · ${this.stateText(r)}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
+      const morale = Math.min(100, Math.max(0, Math.round((r.morale / r.def.morale) * 100)));
+      const rank = veteranRank(r);
+      const record = `${rank > 0 ? ` · ${T.ranks3[rank]}` : ''}${hasCaptain(r) ? '' : ` · ${T.noCaptain}`}`;
+      html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about} ${T.ranks3[rank]}: ${T.rankTip}"><span class="glyph">${UNIT_GLYPH[r.kind]}${'★'.repeat(rank)}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${r.initialMen} ${T.men} · ${this.stateText(world, r)}${record}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
     }
     html += '</div>';
     html += this.formationHtml(world, selected);
     // One regiment chosen: what it may be re-armed as.
     if (selected.size === 1) {
       const only = world.regiments.find((r) => selected.has(r.id) && r.aliveMen > 0);
-      if (only) html += this.rearmHtml(world, only);
+      if (only) html += this.reinforceHtml(world, only) + this.rearmHtml(world, only);
     }
     return html;
   }
@@ -558,14 +583,15 @@ export class Hud {
       if (!project(r.centreX, groundY(r.centreX, r.centreZ) + 5.6, r.centreZ, this.screen)) continue;
       const strength = Math.round((r.aliveMen / r.initialMen) * 100);
       const morale = r.state === 'routing' ? 'flee' : r.morale > r.def.morale * 0.55 ? 'ok' : r.morale > r.def.morale * 0.25 ? 'warn' : 'bad';
-      const key = `${r.id}|${r.kind}|${r.side}|${strength}|${morale}|${selected.has(r.id) ? 1 : 0}`;
+      const rank = veteranRank(r);
+      const key = `${r.id}|${r.kind}|${r.side}|${strength}|${morale}|${rank}|${selected.has(r.id) ? 1 : 0}`;
       if (this.cardKeys[used] !== key) {
         this.cardKeys[used] = key;
         card.dataset['id'] = String(r.id);
         card.dataset['own'] = r.side === PLAYER ? '1' : '0';
         card.className = `card ${morale}${selected.has(r.id) ? ' selected' : ''}`;
         card.style.borderColor = TEAM_CSS[r.side];
-        card.innerHTML = `<span class="glyph" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span><span class="bar"><i style="width:${strength}%"></i></span>`;
+        card.innerHTML = `<span class="glyph" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span>${rank > 0 ? `<span class="stars">${'★'.repeat(rank)}</span>` : ''}<span class="bar"><i style="width:${strength}%"></i></span>`;
       }
       card.style.display = 'flex';
       card.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y)}px) translate(-50%, -100%)`;
@@ -608,7 +634,7 @@ export class Hud {
       let html: string;
       if (selection.regiments.size > 0) html = this.armyHtml(world, selection.regiments);
       else if (selection.plot >= 0) html = this.plotHtml(world, town, selection.plot);
-      else if (selection.plot === KEEP) html = this.keepHtml(town);
+      else if (selection.plot === KEEP) html = this.keepHtml(world, town);
       else html = this.idleHtml(world, town, selection.tool);
       if (html !== this.panelHtml) {
         this.panelHtml = html;

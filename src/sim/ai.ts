@@ -1,5 +1,5 @@
 import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdStance, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost } from './commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
@@ -251,6 +251,31 @@ function rearmGuards(world: World, ai: AiState, home: readonly Regiment[]): void
 }
 
 /**
+ * In quiet times a regiment that has lost a quarter of its men or more (or its captain) is filled up: by
+ * the barracks if it stands there, otherwise it marches there first when the town can pay for it.
+ */
+function reinforceHome(world: World, ai: AiState, home: readonly Regiment[]): void {
+  const town = world.towns[ai.side];
+  for (const r of home) {
+    if (r.def.engine || r.rearmTo !== null || r.order === 'move' || r.garrisonPlot >= 0) continue;
+    const missing = missingMen(r);
+    if (missing === 0 || (missing < r.initialMen * 0.25 && r.soldiers[0]?.alive)) continue;
+    const cost = reinforceCost(r);
+    if (RESOURCE_IDS.some((id) => town.stock[id] < (cost[id] ?? 0))) continue;
+    const result = cmdReinforce(world, r.id);
+    if (result === 'ok') return;
+    if (result !== 'notAtBarracks') continue;
+    // Militia is filled by the keep: halfway out to the rally point is near enough.
+    if (r.def.barracksLevel === 0) cmdMove(world, r.id, (townX(ai.side) + rallyX(ai.side)) / 2, (townZ(ai.side) + rallyZ(ai.side)) / 2, null, false);
+    else {
+      const barracks = town.plots.find((b) => b !== null && b.kind === 'barracks' && b.constructionLeftS <= 0);
+      if (barracks) cmdMove(world, r.id, barracks.x + Math.sin(barracks.yawRad) * 16, barracks.z + Math.cos(barracks.yawRad) * 16, null, false);
+    }
+    return;
+  }
+}
+
+/**
  * Sends a regiment to take a place in the middle the side does not hold and no enemy stands by, the
  * nearest of those at home that may march; one at least stays home. It counts as home: the next wave
  * takes it along, and the place stays the side's until the enemy takes it back.
@@ -390,6 +415,7 @@ function command(world: World, ai: AiState): void {
     if (home.length > 0) cmdMoveGroup(world, home.map((r) => r.id), rallyX(side), rallyZ(side), facingToEnemy(side), false);
   } else {
     rearmGuards(world, ai, home);
+    reinforceHome(world, ai, home);
     manTowers(world, ai, home);
     seizePoints(world, ai, home);
     raid(world, ai, home);

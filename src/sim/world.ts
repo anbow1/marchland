@@ -1,5 +1,5 @@
 import { doorOfX, doorOfZ } from './placement.ts';
-import { type AiCharacter, AI_TUNING, ARMY, MAP, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
+import { type AiCharacter, AI_TUNING, ARMY, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, createDefence, type DefenceState, stepAi, stepDefence } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
@@ -7,8 +7,8 @@ import { createTown, stepEconomy, type Town } from './economy.ts';
 import { EventQueue } from './events.ts';
 import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
-import { doorX, doorZ, KEEP, type Person, spawnPerson, stepPeople } from './people.ts';
-import { createRegiment, type Regiment } from './regiment.ts';
+import { doorX, doorZ, KEEP, type Person, returnHome, spawnPerson, stepPeople } from './people.ts';
+import { assignSlots, createRegiment, forwardX, forwardZ, type Regiment } from './regiment.ts';
 import { cmdMove, inHomeLand } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { createStand, type Stand, stepStand } from './trees.ts';
@@ -211,6 +211,66 @@ function fieldTrained(world: World, town: Town): void {
     const r = spawnRegiment(world, town.side, kind, x, z, facing);
     world.events.push('recruited', r.centreX, r.centreZ, town.side);
   }
+  while (town.reinforced.length > 0) joinRegiment(world, town, town.reinforced.shift() as { id: number; men: number; people: number });
+}
+
+/**
+ * New men join a regiment in the field: the fallen are replaced, the captain first, and they come up from
+ * behind the formation. Its experience is spread over more men. A regiment gone meanwhile sends them home.
+ */
+function joinRegiment(world: World, town: Town, order: { id: number; men: number; people: number }): void {
+  const r = findRegiment(world, order.id);
+  if (!r || r.aliveMen === 0) {
+    returnHome(world, town.side, order.people, rallyX(town.side), rallyZ(town.side));
+    return;
+  }
+  const before = r.aliveMen;
+  let left = order.men;
+  const backM = r.radiusM + 4;
+  for (const s of r.soldiers) {
+    if (left === 0) break;
+    // Men in a tower are still the regiment's: their places stay theirs.
+    if (s.alive || s.deadS === 999) continue;
+    s.alive = true;
+    s.hp = r.def.hp;
+    s.deadS = 0;
+    s.target = null;
+    s.wallCell = -1;
+    s.attackCooldownS = 0.5;
+    s.x = r.centreX - forwardX(r.facingRad) * backM + world.rng.gauss();
+    s.z = r.centreZ - forwardZ(r.facingRad) * backM + world.rng.gauss();
+    s.vx = 0;
+    s.vz = 0;
+    r.aliveMen += 1;
+    left--;
+  }
+  if (r.aliveMen > 0) r.xp *= before / r.aliveMen;
+  assignSlots(r);
+  world.events.push('reinforced', r.centreX, r.centreZ, r.side);
+}
+
+/**
+ * Soldiers' pay, once a second: owed by the man and taken from the keep's gold in whole pieces as far as it
+ * goes. What the chest cannot meet stays owed; when more than a minute's pay is owing the army is unpaid,
+ * and it is paid again only once the arrears are cleared.
+ */
+function payArmy(world: World): void {
+  for (const town of world.towns) {
+    // The waves of the defence are not the computer's own men: nobody pays them.
+    if (world.defence && town.side === COMPUTER) continue;
+    const perMinute = menAlive(world, town.side) * PAY.goldPerManPerMinute;
+    town.payOwed += perMinute / 60;
+    const paid = Math.min(Math.floor(town.payOwed), Math.max(0, Math.floor(town.stock.gold)));
+    town.stock.gold -= paid;
+    town.payOwed -= paid;
+    if (!town.unpaid && town.payOwed > Math.max(PAY.minArrears, perMinute)) {
+      town.unpaid = true;
+      world.events.push('unpaid', 0, 0, town.side);
+    } else if (town.unpaid && town.payOwed < 1) {
+      town.unpaid = false;
+      world.events.push('paid', 0, 0, town.side);
+    }
+  }
 }
 
 export function stepWorld(world: World, dtSeconds: number): void {
@@ -239,6 +299,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
     leashHomeGuards(world);
     stepStand(world.stand, world.timeS);
     stepPoints(world, 1);
+    payArmy(world);
   }
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);

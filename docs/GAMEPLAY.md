@@ -195,10 +195,10 @@ kusznicy, lekka i ciężka jazda, balisty, trebusz). Dochodzi:
 | **Szerokość szyku** | przeciągnięcie prawym przyciskiem ustawia front i liczbę ludzi w szeregu (4–12) |
 | **Postawy** | trzymaj pozycję / pilnuj (domyślna: odpowiada na atak w promieniu 12 m) / harcuj (strzelcy cofają się przed piechotą); osobno „wstrzymaj ogień” |
 | **Rozkazy** | marsz, bieg, atak, szarża (bieg od razu), cofaj się frontem do wroga, stój, odwrót do zamku, obsadź zamek |
-| **Weterani** | trzy stopnie za zabitych i przetrwane bitwy: +1 atak, +1 obrona, +5 morale każdy; uzupełnienie rozcieńcza stopień |
-| **Kapitan** | jeden oddział przyboczny (ciężka jazda z chorągwią); w promieniu 40 m +10 morale; jego śmierć to wstrząs dla całej armii; nowy dopiero po 3 minutach |
-| **Uzupełnienia** | oddział stojący do 60 m od koszar, poza walką, dobiera ludzi z ludności za ekwipunek na głowę |
-| **Żołd** | wojsko zawodowe (klasa 2–3 i machiny) kosztuje złoto co minutę; milicja i klasa 1 tylko jedzenie. Bez żołdu morale spada |
+| **Weterani** | *zrobione:* dwa stopnie (zaprawieni od 0,6 zabitego na człowieka, weterani od 1,5), zabici wręcz i strzałami: każdy stopień +1 atak, +1 obrona, +8 górnego morale, strzelcy +12 % trafień; uzupełnienie rozcieńcza doświadczenie |
+| **Kapitan** | *zrobione:* w każdym oddziale (bez machin) kapitan stoi za szeregami; jego śmierć to −12 morale; bez niego atak −1, górne morale −10, morale wraca o połowę wolniej; nowy przychodzi z uzupełnieniem. (Kapitan całej armii — później.) |
+| **Uzupełnienia** | *zrobione:* oddział do 40 m od koszar (milicja: od zamku), 5 s poza walką; płaci złoto i broń za każdego brakującego, ludzie odchodzą z pracy, idą do koszar i po krótkim szkoleniu dołączają od tyłu; komputer też uzupełnia |
+| **Żołd** | *zrobione:* 0,2 zł na człowieka na minutę, z zamku co sekundę; zaległość ponad minutę żołdu = wojsko nieopłacone (−15 górnego morale) aż do spłaty. Fale trybu Obrona bez żołdu |
 | **Oblężenie** | palisada i brama od 2. poziomu zamku: bramę rozbija piechota (wolno), balista (średnio), trebusz (szybko); garnizon strzela z murów |
 
 Aktywna pauza (spacja): gra stoi, rozkazy można wydawać i układać w kolejkę

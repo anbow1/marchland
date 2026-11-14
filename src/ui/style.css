@@ -27,6 +27,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cards { position: absolute; inset: 0; pointer-events: none !important; overflow: hidden; }
 .card { position: absolute; left: 0; top: 0; display: flex; flex-direction: column; align-items: stretch; width: 26px; border: 2px solid; border-radius: 3px; background: #14150fd0; pointer-events: auto; cursor: pointer; will-change: transform; }
 .card .glyph { text-align: center; font-size: 15px; line-height: 18px; color: #fff; }
+.card .stars { text-align: center; font-size: 8px; line-height: 9px; color: #f2c94c; letter-spacing: -1px; }
 .card .bar { height: 4px; background: #000a; }
 .card .bar i { display: block; height: 100%; background: #9fd070; }
 .card.warn .bar i { background: #e2c14a; }

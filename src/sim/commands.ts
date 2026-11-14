@@ -1,4 +1,4 @@
-import { ARMY, GATE, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
+import { ARMY, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
@@ -156,6 +156,81 @@ function atBarracks(world: World, r: Regiment): boolean {
     if (hypot2(r.centreX - b.x, r.centreZ - b.z) <= REARM.radiusM) return true;
   }
   return false;
+}
+
+/** Men a regiment lacks of its full strength (men gone into a tower count as present). */
+export function missingMen(r: Regiment): number {
+  let inTowers = 0;
+  for (const s of r.soldiers) if (!s.alive && s.deadS === 999) inTowers++;
+  return Math.max(0, r.initialMen - r.aliveMen - inTowers);
+}
+
+/** What filling a regiment costs: its kind's gold and arms for every new man. */
+export function reinforceCost(r: Regiment): Cost {
+  const missing = missingMen(r);
+  const cost: Cost = {};
+  const gold = Math.round((r.def.goldCost * missing) / r.def.men);
+  if (gold > 0) cost.gold = gold;
+  for (const id of RESOURCE_IDS) {
+    const need = (r.def.equipment[id] ?? 0) * missing;
+    if (need > 0) cost[id] = need;
+  }
+  return cost;
+}
+
+/** True when the regiment stands where it can take new men: by a barracks, or militia by its keep. */
+function atDepot(world: World, r: Regiment): boolean {
+  if (r.def.barracksLevel === 0 && hypot2(r.centreX - townX(r.side), r.centreZ - townZ(r.side)) <= REINFORCE.radiusM + TOWN.keepRadiusM) return true;
+  for (const b of world.towns[r.side].plots) {
+    if (!b || b.kind !== 'barracks' || (b.level === 1 && b.constructionLeftS > 0)) continue;
+    if (hypot2(r.centreX - b.x, r.centreZ - b.z) <= REINFORCE.radiusM) return true;
+  }
+  return false;
+}
+
+/** Why a regiment cannot be filled now; 'ok' if it can. */
+export function canReinforce(world: World, regimentId: number): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (r.def.engine) return 'notThisUnit';
+  const missing = missingMen(r);
+  if (missing === 0) return 'fullStrength';
+  const town = world.towns[r.side];
+  if (town.recruitQueue.some((o) => o.reinforceId === r.id)) return 'reinforcing';
+  if (r.sinceMeleeS < REINFORCE.quietS) return 'inCombat';
+  if (barracksLevel(town) < r.def.barracksLevel) return 'needsBarracks';
+  if (!atDepot(world, r)) return 'notAtBarracks';
+  if (town.recruitQueue.length >= ARMY.maxRecruitQueue) return 'queueFull';
+  if (menAlive(world, r.side) + queuedMenOf(world, r.side) + missing > ARMY.maxSoldiersPerSide) return 'armyFull';
+  const cost = reinforceCost(r);
+  for (const id of RESOURCE_IDS) if (town.stock[id] < (cost[id] ?? 0)) return 'cannotAfford';
+  if (freePeople(world, r.side) < missing * r.def.crew + PEOPLE.minFreeAfterCallUp) return 'noPeople';
+  return 'ok';
+}
+
+function queuedMenOf(world: World, side: Side): number {
+  let men = 0;
+  for (const order of world.towns[side].recruitQueue) men += order.men ?? UNITS[order.kind].men;
+  return men;
+}
+
+/**
+ * Fills a thinned regiment standing by its barracks: the new men are paid for now, leave their work and
+ * walk to the barracks, and join after a short training. They dilute the regiment's experience; a fallen
+ * captain is replaced by one of them.
+ */
+export function cmdReinforce(world: World, regimentId: number): CommandResult {
+  const able = canReinforce(world, regimentId);
+  if (able !== 'ok') return able;
+  const r = findRegiment(world, regimentId) as Regiment;
+  const town = world.towns[r.side];
+  const missing = missingMen(r);
+  const cost = reinforceCost(r);
+  for (const id of RESOURCE_IDS) town.stock[id] -= cost[id] ?? 0;
+  const people = missing * r.def.crew;
+  town.recruitQueue.push({ kind: r.kind, leftS: Math.max(REINFORCE.minSeconds, (r.def.recruitSeconds * missing) / r.def.men), needPeople: people, arrived: 0, reinforceId: r.id, men: missing });
+  callUp(world, r.side, people);
+  return 'ok';
 }
 
 /** Why a regiment cannot be re-armed as `to` now; 'ok' if it can. */

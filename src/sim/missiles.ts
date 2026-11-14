@@ -1,10 +1,10 @@
 import { damageWall, wallCellAt } from './nav.ts';
 import { keepRules } from './economy.ts';
 import { woodStands } from './trees.ts';
-import { ELEVATION, FORMATION, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
+import { ELEVATION, FORMATION, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, VETERANS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
-import { isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
+import { isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
 import { heightAtM, isForest, townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
@@ -37,6 +37,8 @@ export interface Arrow {
   /** Aimed at a building: the side and plot (-1 = keep); plot -2 means "at soldiers". */
   buildingSide: Side;
   buildingPlot: number;
+  /** The regiment that loosed it, credited with whom it brings down; -1 for a keep or a tower. */
+  shooterId: number;
 }
 
 /** What a shot carries, from the unit (or the keep) that looses it. */
@@ -48,25 +50,26 @@ interface Shot {
   splashM: number;
   siegeDamage: number;
   look: number;
+  shooterId: number;
 }
 
 function shotOf(r: Regiment): Shot {
-  return shotOfDef(r.def);
+  return { ...shotOfDef(r.def), shooterId: r.id };
 }
 
 function shotOfDef(d: UnitDef): Shot {
   const look = d.missileSplashM > 0 ? 3 : d.engine ? 2 : d.missilePierce > 0 ? 1 : 0;
-  return { speedMs: d.missileSpeedMs, highArc: d.missileHighArc, damage: d.missileDamage, pierce: d.missilePierce, splashM: d.missileSplashM, siegeDamage: d.missileSiegeDamage, look };
+  return { speedMs: d.missileSpeedMs, highArc: d.missileHighArc, damage: d.missileDamage, pierce: d.missilePierce, splashM: d.missileSplashM, siegeDamage: d.missileSiegeDamage, look, shooterId: -1 };
 }
 
-const KEEP_SHOT: Shot = { speedMs: MISSILE.arrowSpeedMs, highArc: false, damage: TOWN.keepArrowDamage, pierce: 0, splashM: 0, siegeDamage: 0, look: 0 };
+const KEEP_SHOT: Shot = { speedMs: MISSILE.arrowSpeedMs, highArc: false, damage: TOWN.keepArrowDamage, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, shooterId: -1 };
 
 const AT_SOLDIERS = -2;
 
 export function createArrowPool(): Arrow[] {
   const pool: Arrow[] = [];
   for (let i = 0; i < MISSILE.poolSize; i++) {
-    pool.push({ active: false, side: 0, x0: 0, y0: 0, z0: 0, vx: 0, vy: 0, vz: 0, ageS: 0, flightS: 0, damage: 0, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, buildingSide: 0, buildingPlot: AT_SOLDIERS });
+    pool.push({ active: false, side: 0, x0: 0, y0: 0, z0: 0, vx: 0, vy: 0, vz: 0, ageS: 0, flightS: 0, damage: 0, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, buildingSide: 0, buildingPlot: AT_SOLDIERS, shooterId: -1 });
   }
   return pool;
 }
@@ -117,6 +120,7 @@ function launch(world: World, side: Side, shot: Shot, x0: number, y0: number, z0
     a.look = shot.look;
     a.buildingSide = buildingSide;
     a.buildingPlot = buildingPlot;
+    a.shooterId = shot.shooterId;
     world.events.push('arrowShot', x0, z0, side);
     return true;
   }
@@ -135,7 +139,7 @@ function splash(world: World, a: Arrow, x: number, z: number): void {
       const d = hypot2(s.x - x, s.z - z);
       if (d > a.splashM) continue;
       hurt = true;
-      wound(world, s, a.damage * (1 - d / (a.splashM * 2)) * (1 - r.def.armour * (1 - a.pierce)), a.side, null);
+      wound(world, s, a.damage * (1 - d / (a.splashM * 2)) * (1 - r.def.armour * (1 - a.pierce)), a.side, findRegiment(world, a.shooterId));
     }
     if (hurt) r.morale -= MORALE.stoneShock;
   }
@@ -190,12 +194,15 @@ function land(world: World, a: Arrow): void {
   // Open order lets arrows through the gaps; a shield wall turns more of them.
   const block = r.stance === 'shields' ? Math.min(FORMATION.shieldBlockMax, r.def.missileBlock * FORMATION.shieldBlockFactor) : r.def.missileBlock;
   const loose = r.formation === 'loose' ? FORMATION.looseHitFactor : 1;
-  const chance = MISSILE.hitChance * loose * (isForest(x, z) && woodStands(world.stand, x, z) ? MISSILE.forestHitFactor : 1) * (1 - block);
+  // Seasoned shooters hit more often.
+  const shooter = findRegiment(world, a.shooterId);
+  const skill = shooter ? 1 + VETERANS.missileHitPerRank * veteranRank(shooter) : 1;
+  const chance = MISSILE.hitChance * loose * skill * (isForest(x, z) && woodStands(world.stand, x, z) ? MISSILE.forestHitFactor : 1) * (1 - block);
   if (world.rng.next() >= chance) return;
   r.sinceShotS = 0;
   r.morale -= MORALE.arrowHitShock;
   world.events.push('arrowHit', x, z, a.side);
-  wound(world, victim, a.damage * (1 - r.def.armour * (1 - a.pierce)), a.side, null);
+  wound(world, victim, a.damage * (1 - r.def.armour * (1 - a.pierce)), a.side, shooter);
 }
 
 /** How far a regiment's shooters reach at a point: further down onto lower ground (ELEVATION). */

@@ -101,6 +101,8 @@ export type CommandResult =
   | 'needsWall'
   | 'needsKeep'
   | 'notThisUnit'
+  | 'fullStrength'
+  | 'reinforcing'
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';

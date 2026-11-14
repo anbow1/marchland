@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, FORESTRY, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { ARMY, FIELDS, FOOD, FORESTRY, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { kill, topMorale } from '../src/sim/combat.ts';
+import { hasCaptain } from '../src/sim/regiment.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
@@ -433,6 +435,70 @@ describe('militia and re-arming', () => {
     expect(r.aliveMen).toBe(men);
     const wounded = r.soldiers.filter((s) => s.alive && s.hp < UNITS.swordsmen.hp * 0.6).length;
     expect(wounded).toBe(3);
+  });
+});
+
+describe('reinforcements and pay', () => {
+  it('a thinned regiment by its barracks is filled: paid per man, men from the town, experience diluted, a new captain', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const plot = build(world, 'barracks');
+    runUntil(world, 300, () => finished(world, plot));
+    const barracks = town.plots[plot];
+    if (!barracks) throw new Error('no barracks');
+    town.stock.weapon = 10;
+    town.stock.leatherArmor = 10;
+    const r = spawnRegiment(world, PLAYER, 'pikemen', barracks.x + 70, barracks.z, 0);
+    // Spawned regiments did not come from the town: count them under arms as recruiting would.
+    town.underArms += r.initialMen;
+    expect(cmdReinforce(world, r.id)).toBe('fullStrength');
+    for (const s of r.soldiers.slice(0, 4)) kill(world, s, COMPUTER, null);
+    expect(hasCaptain(r)).toBe(false);
+    r.xp = 1.2;
+    expect(cmdReinforce(world, r.id)).toBe('notAtBarracks');
+    expect(cmdMove(world, r.id, barracks.x + 15, barracks.z, 0, false)).toBe('ok');
+    runUntil(world, 120, () => Math.hypot(r.centreX - barracks.x, r.centreZ - barracks.z) < REINFORCE.radiusM - 5 && r.order === 'hold');
+    run(world, REINFORCE.quietS);
+    const gold = town.stock.gold;
+    const free = freePeople(world, PLAYER);
+    expect(cmdReinforce(world, r.id)).toBe('ok');
+    expect(cmdReinforce(world, r.id)).toBe('reinforcing');
+    expect(gold - town.stock.gold).toBe(Math.round((UNITS.pikemen.goldCost * 4) / UNITS.pikemen.men));
+    expect(town.stock.weapon).toBe(6);
+    expect(town.stock.leatherArmor).toBe(6);
+    expect(freePeople(world, PLAYER)).toBe(free - 4);
+    runUntil(world, 240, () => r.aliveMen === r.initialMen);
+    expect(r.aliveMen).toBe(r.initialMen);
+    expect(hasCaptain(r)).toBe(true);
+    expect(r.xp).toBeCloseTo((1.2 * 8) / 12, 6);
+    expect(r.soldiers.filter((s) => s.alive).every((s) => s.hp === UNITS.pikemen.hp)).toBe(true);
+  });
+
+  it('soldiers are paid from the keep; an empty chest leaves them unpaid and downhearted', () => {
+    const world = quietWorld();
+    const twin = quietWorld();
+    const town = world.towns[PLAYER];
+    // By the keep, away from the places worth holding (a held village would bring in gold of its own).
+    const x = townX(PLAYER);
+    const z = townZ(PLAYER) + 40;
+    const r = spawnRegiment(world, PLAYER, 'swordsmen', x, z, 0);
+    spawnRegiment(world, PLAYER, 'swordsmen', x + 20, z, 0);
+    run(world, 120.5);
+    run(twin, 120.5);
+    // 24 men for two minutes: the same town without them is that much richer.
+    expect(twin.towns[PLAYER].stock.gold - town.stock.gold).toBe(Math.floor(24 * 2 * PAY.goldPerManPerMinute));
+    expect(town.unpaid).toBe(false);
+    // An empty chest and pay owing: arrears past a minute's pay leave the army unpaid…
+    town.stock.gold = 0;
+    town.payOwed = 30;
+    run(world, 1);
+    expect(town.unpaid).toBe(true);
+    expect(topMorale(world, r)).toBe(UNITS.swordsmen.morale - PAY.unpaidMoralePenalty);
+    // …until gold comes in and the arrears are paid off.
+    town.stock.gold = 100;
+    run(world, 1);
+    expect(town.unpaid).toBe(false);
+    expect(town.stock.gold).toBeLessThan(100 - 28);
   });
 });
 

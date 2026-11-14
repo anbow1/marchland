@@ -1,6 +1,6 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import type { Formation, Regiment, Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
@@ -125,6 +125,7 @@ export class Game implements ControlTarget {
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),
       rearm: (id, kind) => this.report(cmdRearm(this.world, id, kind)),
+      reinforce: (id) => this.report(cmdReinforce(this.world, id)),
       halt: () => this.haltSelected(),
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
@@ -262,6 +263,24 @@ export class Game implements ControlTarget {
           this.sound.play('build');
           this.hud.toast(T.rearmed, 'good');
         }
+        break;
+      case 'reinforced':
+        if (mine) {
+          this.sound.play('build');
+          this.hud.toast(T.reinforced, 'good', [e.x, e.z]);
+        }
+        break;
+      case 'captainFell':
+        if (mine) this.hud.toast(T.captainFell, 'bad', [e.x, e.z]);
+        break;
+      case 'promoted':
+        if (mine) this.hud.toast(T.promoted, 'good', [e.x, e.z]);
+        break;
+      case 'unpaid':
+        if (mine) this.hud.toast(T.unpaid, 'bad', [townX(PLAYER), townZ(PLAYER)]);
+        break;
+      case 'paid':
+        if (mine) this.hud.toast(T.paid, 'good');
         break;
       case 'recruited':
         if (mine) {

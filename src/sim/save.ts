@@ -142,5 +142,17 @@ export function loadWorld(text: string): World {
     for (const [k, item] of Object.entries((entry['f'] ?? entry['$o']) as Record<string, unknown>)) object[k] = decode(item);
     return object;
   };
-  return decode(root) as World;
+  return upgrade(decode(root) as World);
+}
+
+/** Fills in what saves made before a field existed lack, with the value a new game starts from. */
+function upgrade(world: World): World {
+  for (const town of world.towns) {
+    town.reinforced ??= [];
+    town.payOwed ??= 0;
+    town.unpaid ??= false;
+  }
+  for (const r of world.regiments) r.xp ??= 0;
+  for (const a of world.arrows) a.shooterId ??= -1;
+  return world;
 }
