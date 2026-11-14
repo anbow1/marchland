@@ -94,6 +94,16 @@ export class TownView {
     const loader = new GLTFLoader();
     const jobs = Object.entries(index).map(async ([key, entry]) => {
       const [kind, level] = key.split(':') as [BuildingKind, string];
+      if ((kind as string) === 'keep') {
+        // The keep from Buckstone Castle (tools/blender/keep.py): one model, both sides, each its own flag.
+        try {
+          const gltf = await loader.loadAsync(`${base}buildings/${entry.file}`);
+          for (const side of [0, 1] as const satisfies readonly Side[]) (this.keeps[side] as Mesh).geometry = surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]).body;
+        } catch (error) {
+          console.warn(`[models] ${entry.file} did not load: ${String(error)}`);
+        }
+        return;
+      }
       if (!(BUILDING_KINDS as readonly string[]).includes(kind)) return;
       try {
         const gltf = await loader.loadAsync(`${base}buildings/${entry.file}`);

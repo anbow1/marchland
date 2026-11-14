@@ -60,7 +60,7 @@ export const TOWN = {
   depositRadiusM: 9,
   /** Footprint radius used for clicks, melee reach on buildings and keeping soldiers out. */
   buildingRadiusM: 5.5,
-  keepRadiusM: 8,
+  keepRadiusM: 11,
   keepHp: 1800,
   /** The keep's garrison shoots at enemies this close, one arrow per interval. */
   keepRangeM: 55,

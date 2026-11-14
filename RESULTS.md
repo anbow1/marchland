@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Nowy zamek główny: Buckstone
+
+- Z dziewięciu przesłanych zamków wybrany **Buckstone Castle** (Peter Leban, CC BY 4.0):
+  tynk, mur pruski, rudy dach i baszta pasują do stylu D; pozostałe były albo
+  prostą bryłą (Fougères, UV Castle), albo białą makietą fantasy (Environmental),
+  albo samymi murami (tower and castle walls).
+- `tools/blender/keep.py` zamienia tekstury na powierzchnie gry (jak pozostałe
+  budynki), usuwa płytę gruntu i bluszcz, przerzedza 59 → 22 tys. trójkątów,
+  skaluje do 24 × 15,7 m (22 m z flagą) i stawia flagę w barwie strony.
+- Promień zamku 8 → 11 m (kliknięcia, zasięg walki wręcz, wyjście ludzi z bramy).
+- Testy: 60 / 60.
+
 ## 2026-11-14 · Jezioro: postrzępiony brzeg, woda z Field Line
 
 - Brzeg: do kilku wolnych fal dołożony szum obiegający okrąg (zamyka się sam

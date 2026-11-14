@@ -107,6 +107,10 @@
   "file": "ironMine_3.glb",
   "triangles": 2788
  },
+ "keep:1": {
+  "file": "keep_1.glb",
+  "triangles": 21790
+ },
  "pigFarm:1": {
   "file": "pigFarm_1.glb",
   "triangles": 1348

@@ -59,7 +59,14 @@ widoczny z daleka:
 Dym (gra): z chat z mieszkańcami, z warsztatów przy pracy, z pieca i mielerza huty —
 w punktach, które modele oznaczają pustymi obiektami `smoke_…`.
 
-Do zrobienia: **zamek** (dziś z kodu, `keepGeometry`), warianty (np. dwa wyglądy chaty
+Zamek: **Buckstone Castle** (Peter Leban, CC BY 4.0; `public/buildings/CREDITS.md`),
+przerobiony przez `tools/blender/keep.py` na powierzchnie gry: tynk, ciosy narożne,
+rudy dach z dachówki i szare łupki, drewno, strzecha i bruk z atlasu domów (przypisane
+według miejsca w atlasie, z którego ściana brała kolor); bez płyty gruntu i bluszczu,
+przerzedzony z 59 do 22 tys. trójkątów, 24 m długości, flaga w barwie strony na
+najwyższej iglicy. Kształt z kodu (`keepGeometry`) zostaje, gdy model się nie wczyta.
+
+Do zrobienia: warianty (np. dwa wyglądy chaty
 na poziom), poziomy szczegółów dla widoku z daleka.
 
 Budżet budynku na poziom: do **12 tys. trójkątów** (koszary i zamek do 25
