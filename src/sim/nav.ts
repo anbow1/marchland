@@ -1,5 +1,5 @@
 import { MAP, ROADS } from '../config.ts';
-import { isForest, isWater } from './terrain.ts';
+import { isForest, isImpassable } from './terrain.ts';
 import { hypot2 } from '../core/hypot.ts';
 
 // Where people can walk and how fast. The map is a grid of two-metre cells;
@@ -16,7 +16,7 @@ const COST_ROAD = 1 / ROADS.roadSpeedFactor;
 const COST_OPEN = 1 / ROADS.openSpeedFactor;
 const COST_FOREST = 1 / ROADS.forestSpeedFactor;
 
-// The land itself never changes: forest and water per cell, worked out once.
+// The land itself never changes: forest, and water or sheer rock, per cell, worked out once.
 const FOREST = new Uint8Array(CELLS);
 const WATER = new Uint8Array(CELLS);
 for (let cz = 0; cz < N; cz++) {
@@ -24,7 +24,7 @@ for (let cz = 0; cz < N; cz++) {
     const x = (cx + 0.5) * ROADS.cellM - MAP.halfM;
     const z = (cz + 0.5) * ROADS.cellM - MAP.halfM;
     FOREST[cz * N + cx] = isForest(x, z) ? 1 : 0;
-    WATER[cz * N + cx] = isWater(x, z) ? 1 : 0;
+    WATER[cz * N + cx] = isImpassable(x, z) ? 1 : 0;
   }
 }
 

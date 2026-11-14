@@ -45,16 +45,28 @@ RULES = [
 DEFAULT = "plaster#d8cfc0"
 
 # What each download becomes. `fit_m`: the longer side of the footprint; `turn_deg`: about the vertical
-# so the door faces -Y; `keep`/`drop`: extra regexes over mesh (object) names.
+# so the door faces -Y; `drop`: a regex over mesh (object) names to leave out; `surfaces`: rules
+# (regex, surface or None) tried before RULES; `min_part_m`: meshes smaller than this across (in the
+# game's metres) are left out, the bottles and pebbles a strategy camera never sees and that no
+# thinning can remove; `plate_m`: faces lying wholly this low are the source's ground plate, removed.
 MODELS = {
-    "blacksmith": {"kind": "smithy", "levels": [3], "fit_m": 12.0, "turn_deg": 0, "smoke": [(0.0, 0.0, 1.0)]},
-    "wineShop": {"kind": "winery", "levels": [3], "fit_m": 13.0, "turn_deg": 0, "smoke": []},
+    "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke": [(0.0, 0.0, 1.0)]},
+    "wineShop": {
+        "kind": "winery",
+        "levels": [3],
+        "fit_m": 11.0,
+        "turn_deg": 0,
+        "surfaces": [(r"^material$", None)],
+        "min_part_m": 0.35,
+        "plate_m": 0.45,
+        "smoke": [],
+    },
 }
 
 
-def surface_of(material_name: str) -> str | None:
+def surface_of(material_name: str, extra=()) -> str | None:
     low = material_name.lower()
-    for pattern, surface in RULES:
+    for pattern, surface in list(extra) + RULES:
         if re.search(pattern, low):
             return surface
     return DEFAULT
@@ -71,6 +83,19 @@ def main() -> None:
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=source)
     drop_obj = re.compile(spec["drop"], re.I) if spec.get("drop") else None
+    extra = [(re.compile(p, re.I).pattern, surf) for p, surf in spec.get("surfaces", [])]
+    # The source's size, to judge which parts are too small to keep.
+    lo_all = [math.inf] * 3
+    hi_all = [-math.inf] * 3
+    for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
+        for corner in o.bound_box:
+            w = o.matrix_world @ Vector(corner)
+            for i in range(3):
+                lo_all[i] = min(lo_all[i], w[i])
+                hi_all[i] = max(hi_all[i], w[i])
+    rough_scale = spec["fit_m"] / max(hi_all[0] - lo_all[0], hi_all[1] - lo_all[1])
+    min_part = spec.get("min_part_m", 0.0) / rough_scale
+    small = 0
 
     # Bake every mesh into world space and give its faces their surfaces.
     report = {}
@@ -81,8 +106,16 @@ def main() -> None:
         bm = bmesh.new()
         bm.from_mesh(o.data)
         bm.transform(o.matrix_world)
+        if min_part > 0:
+            xs = [v.co for v in bm.verts]
+            span = Vector((max(v.x for v in xs) - min(v.x for v in xs), max(v.y for v in xs) - min(v.y for v in xs), max(v.z for v in xs) - min(v.z for v in xs)))
+            if span.length < min_part:
+                bm.free()
+                bpy.data.objects.remove(o)
+                small += 1
+                continue
         slots = [s.material.name if s.material else "" for s in o.material_slots] or [""]
-        surfaces = [surface_of(n) for n in slots]
+        surfaces = [surface_of(n, extra) for n in slots]
         doomed = [f for f in bm.faces if surfaces[min(f.material_index, len(surfaces) - 1)] is None]
         bmesh.ops.delete(bm, geom=doomed, context="FACES")
         if not bm.faces:
@@ -116,6 +149,11 @@ def main() -> None:
     bm = bmesh.new()
     bm.from_mesh(body.data)
     bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=0.0005)
+    if spec.get("plate_m"):
+        floor = min(v.co.z for v in bm.verts)
+        plate = floor + spec["plate_m"] / rough_scale
+        bmesh.ops.delete(bm, geom=[f for f in bm.faces if max(v.co.z for v in f.verts) < plate], context="FACES")
+        bmesh.ops.delete(bm, geom=[v for v in bm.verts if not v.link_faces], context="VERTS")
     bm.to_mesh(body.data)
     bm.free()
     tris_in = sum(len(p.vertices) - 2 for p in body.data.polygons)
@@ -157,7 +195,7 @@ def main() -> None:
     with open(index_path, "w") as f:
         json.dump(dict(sorted(index.items())), f, indent=1)
     size = [round((hi.x - lo.x) * scale, 1), round((hi.y - lo.y) * scale, 1), round(height, 1)]
-    print(f"{name}: {tris_in} -> {tris} triangles, {size} m, levels {spec['levels']} of {spec['kind']}")
+    print(f"{name}: {tris_in} -> {tris} triangles, {size} m, levels {spec['levels']} of {spec['kind']}, {small} small parts left out")
     for n, s in sorted(report.items()):
         print(f"   {n:28s} -> {s}")
 

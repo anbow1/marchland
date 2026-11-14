@@ -47,8 +47,11 @@ drzewka technologii, mikrotransakcji, krwi.
   2 m: zatrzymuje wszystkich, wróg go rozbija (machiny szybciej); przerwa w
   murze to brama (prawdziwa brama w planie).
 - **Zasięgi**: drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy
-  (nie przy wrogim zamku); zagrody i winnice do 260 m od zamku; reszta 180 m.
-- **Mapa 560 m**, zamki 550 m od siebie, bez drogi między nimi.
+  (nie przy wrogim zamku); zagrody i winnice do 300 m od zamku; reszta 230 m.
+- **Mapa 560 m**, zamki bliżej rogów, 600 m od siebie, bez drogi między nimi.
+- **Góry i skały**: dwa szare masywy na flankach (w rogach bez zamków) i cztery
+  skalne grzędy po bokach pola. Podnóża gór są do przejścia, rdzeń i grzędy —
+  nie: nie da się tam wejść, budować ani prowadzić drogi; armie muszą je obejść.
 - **Sterowanie myszą**: środkowy przycisk przesuwa mapę, prawy przeciągnięty
   obraca, prawy klik to rozkaz, Ctrl + przeciągnięcie prawym ustawia front.
 
@@ -123,7 +126,7 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
 ## 5. Miasto i mapa
 
 - **Dowolne stawianie** (zrobione): budynek idzie w dowolne miejsce do
-  180 m od własnego zamku, na suchym i dość płaskim terenie, z odstępem od
+  230 m od własnego zamku, na suchym i dość płaskim terenie, z odstępem od
   innych budynków i pól. Gracz wybiera budynek z listy, widzi „ducha”
   (zielony — można, czerwony — nie, z powodem w podpowiedzi), obraca go klawiszem
   R i stawia lewym przyciskiem; Shift stawia kolejne tego samego rodzaju.
@@ -152,7 +155,8 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
 - **Wzniesienia liczą się** (plan): strzelcy z góry mają +15 % zasięgu,
   szarża w dół +25 % premii, walka pod górę −1 do ataku.
 - **Wygląd terenu** (zrobione): pagórki z fałdami, dwa wzgórza po bokach pola
-  bitwy, po jeziorze na stronę, wychodnie kamienia i rudy z głazami, luźne
+  bitwy, dwa szare masywy górskie (do 80 m, z rumowiskami) i cztery skalne grzędy
+  jako przeszkody naturalne, po jeziorze na stronę, wychodnie kamienia i rudy z głazami, luźne
   kamienie i kępy krzaków. Łąka ma kolor zdjęcia lotniczego prawdziwej łąki
   (90 m bez powtórzeń), a skany z bliska dodają tylko źdźbła; każda tekstura
   jest czytana dwa razy pod różnym kątem, więc nie widać siatki powtórzeń.

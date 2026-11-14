@@ -2,7 +2,7 @@ import { cameraPosition, float, int, max, mix, normalWorld, positionWorld, smoot
 import { type BufferAttribute, ClampToEdgeWrapping, DataTexture, LinearFilter, LinearMipmapLinearFilter, Mesh, MeshStandardNodeMaterial, type Node, NoColorSpace, PlaneGeometry, RedFormat, RepeatWrapping, RGBAFormat, type Texture, UnsignedByteType } from 'three/webgpu';
 import { MAP, TOWN } from '../config.ts';
 import { fbm2, tileFbm } from '../core/noise.ts';
-import { DEPOSITS, forestCoverAt, heightAtM, lakeShare } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, heapShare, heightAtM, lakeShare } from '../sim/terrain.ts';
 import { layerOf, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
 
 // The ground: one mesh from the simulation's height function, reaching well
@@ -38,8 +38,8 @@ const DRY_TINT = [1.16, 1.05, 0.7] as const;
 const TURN_SIN = Math.sin(0.65);
 const TURN_COS = Math.cos(0.65);
 /** Turf gives way to rock between these slopes (rise over run). */
-const STEEP_FROM = 0.3;
-const STEEP_FULL = 0.48;
+const STEEP_FROM = 0.42;
+const STEEP_FULL = 0.7;
 /**
  * The scans were taken on worn, late-season ground; high summer grass is greener. A tint per surface
  * (linear RGB multipliers, tuned by eye against the scans' own green patches), kept apart from the scans.
@@ -83,6 +83,12 @@ function rockAt(x: number, z: number): number {
     // A ragged edge: the rock breaks through the turf in tongues and islands, not as a painted disc.
     const ragged = 0.55 + 0.6 * (fbm2(x / 6 + d.x, z / 6 - d.z, 3, MAP.terrainSeed + 41) * 0.5 + 0.5);
     rock = Math.max(rock, near(Math.hypot(x - d.x, z - d.z) / ragged, TOWN.depositRadiusM * 0.7, 3));
+  }
+  // The massifs and crags: bare grey rock above their foothills, the turf breaking up in tongues below.
+  const heap = heapShare(x, z);
+  if (heap < 1.2) {
+    const ragged = 0.08 * fbm2(x / 9, z / 9, 3, MAP.terrainSeed + 43);
+    rock = Math.max(rock, 1 - Math.min(1, Math.max(0, (heap + ragged - 0.78) / 0.14)));
   }
   const slope = Math.hypot(heightAtM(x + 2, z) - heightAtM(x - 2, z), heightAtM(x, z + 2) - heightAtM(x, z - 2)) / 4;
   return Math.max(rock, Math.min(1, Math.max(0, (slope - STEEP_FROM) / (STEEP_FULL - STEEP_FROM))));

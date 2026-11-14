@@ -3,7 +3,7 @@ import { BufferAttribute, BufferGeometry, Color, DataTexture, InstancedMesh, Lin
 import { MAP, TOWN } from '../config.ts';
 import { fbm2, tileFbm } from '../core/noise.ts';
 import { Rng } from '../core/rng.ts';
-import { DEPOSITS, forestCoverAt, heightAtM, isWater, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, HEAPS, heapShare, heightAtM, isWater, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
 import { chunkedInstances } from './chunks.ts';
 import { MeshBuilder, type Paint, type Vec3 } from './meshBuilder.ts';
@@ -194,6 +194,20 @@ function buildRocks(lib: SurfaceLibrary): InstancedMesh[] {
       const a = rng.range(0, Math.PI * 2);
       const r = Math.sqrt(rng.next()) * TOWN.depositRadiusM;
       add(d.x + Math.sin(a) * r, d.z + Math.cos(a) * r, 2.6 - (r / TOWN.depositRadiusM) * 1.7, tint);
+    }
+  }
+  // The crags and the massifs: heaps of great blocks, thickest near the middle, as screes on the slopes.
+  for (const h of HEAPS) {
+    const crag = h.radiusM < 40;
+    const count = crag ? 34 : 170;
+    for (let i = 0; i < count; i++) {
+      const a = rng.range(0, Math.PI * 2);
+      const r = Math.pow(rng.next(), crag ? 0.7 : 0.55) * h.radiusM * (crag ? 1.0 : 1.15);
+      const x = h.x + Math.sin(a) * r;
+      const z = h.z + Math.cos(a) * r;
+      if (heapShare(x, z) > 1.1 || isWater(x, z)) continue;
+      const big = crag ? 4.2 : 6.5;
+      add(x, z, big * (1 - 0.6 * (r / h.radiusM)) * rng.range(0.7, 1.15), STONE_TINT);
     }
   }
   // Loose rocks: more on high and steep ground, none in the woods, the water or the towns' own yards.

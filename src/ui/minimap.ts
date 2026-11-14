@@ -1,6 +1,6 @@
 import { MAP, ROADS, TOWN } from '../config.ts';
 import { cellX, cellZ } from '../sim/nav.ts';
-import { DEPOSITS, forestCoverAt, heightAtM, isWater, townX, townZ } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, heapShare, heightAtM, isCliff, isWater, townX, townZ } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 
@@ -66,6 +66,17 @@ export class Minimap {
           image.data[o] = 52;
           image.data[o + 1] = 92;
           image.data[o + 2] = 118;
+          image.data[o + 3] = 255;
+          continue;
+        }
+        // The massifs and crags: grey rock, lighter with height; their foothills grade into it.
+        const rock = isCliff(wx, wz) ? 1 : Math.max(0, 1 - (heapShare(wx, wz) - 0.7) / 0.5);
+        if (rock > 0) {
+          const grey = 104 + Math.min(40, heightAtM(wx, wz) * 0.6);
+          const k = Math.min(1, rock);
+          image.data[o] = grey * k + (96 - forest * 52) * light * (1 - k);
+          image.data[o + 1] = grey * k + (118 - forest * 46) * light * (1 - k);
+          image.data[o + 2] = (grey + 6) * k + (62 - forest * 26) * light * (1 - k);
           image.data[o + 3] = 255;
           continue;
         }

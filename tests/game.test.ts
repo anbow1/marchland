@@ -14,20 +14,20 @@ function fingerprint(world: World): string {
 
 describe('a whole game', () => {
   // A session is 25–35 minutes (docs/GAMEPLAY.md §1). The computer's militia stays home as a guard, so the
-  // first attack waits for regular troops, and the keeps stand 450 m apart: it razes a town that does
-  // nothing at 38–40 minutes. Too late; to be brought forward (RESULTS.md).
-  it('the computer builds a town, raises an army and razes an idle player within 42 minutes', () => {
+  // first attack waits for regular troops, and the keeps stand 600 m apart near the corners: it razes a
+  // town that does nothing at 44–46 minutes. Too late; to be brought forward (RESULTS.md).
+  it('the computer builds a town, raises an army and razes an idle player within 48 minutes', () => {
     const world = createWorld({ seed: 5, difficulty: 'normal', computerPlays: true });
     let firstRegimentS = -1;
     let peakMen = 0;
-    const seconds = runUntil(world, 42 * 60, () => {
+    const seconds = runUntil(world, 48 * 60, () => {
       const men = menAlive(world, COMPUTER);
       if (men > 0 && firstRegimentS < 0) firstRegimentS = world.timeS;
       if (men > peakMen) peakMen = men;
       return world.winner !== -1;
     });
     expect(world.winner).toBe(COMPUTER);
-    expect(seconds).toBeLessThan(42 * 60);
+    expect(seconds).toBeLessThan(48 * 60);
     // Not a rush either: the player gets time to build.
     expect(seconds).toBeGreaterThan(20 * 60);
     expect(firstRegimentS).toBeGreaterThan(120);

@@ -5,7 +5,7 @@ import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
 import { cellX, cellZ, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
-import { DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
+import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
 import { CpuTimer } from '../render/perf.ts';
@@ -293,6 +293,8 @@ export class Game implements ControlTarget {
     }
     for (const d of DEPOSITS) if (Math.hypot(x - d.x, z - d.z) < TOWN.depositRadiusM) return d.kind === 'stone' ? T.hover.stone : T.hover.ore;
     if (isWater(x, z)) return T.hover.lake;
+    const rock = cliffKind(x, z);
+    if (rock) return T.hover[rock];
     if (forestCoverAt(x, z) > 0.5) return T.hover.forest;
     return '';
   }

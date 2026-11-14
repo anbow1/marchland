@@ -5,6 +5,28 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Mapa: zamki bliżej rogów, większy zasięg, pagórki, góry i skały
+
+- Zamki 195 → 212 m od środka na każdej osi (600 m od siebie); jezioro i wychodnie
+  za zamkiem przesunięte tak, by zmieściły się w mapie.
+- Zasięg budowy 180 → 230 m, pola i winnice 260 → 300 m.
+- Wyższe pagórki (13 m zamiast 9, fałdy 2,2 m, kopce przy polu 15 m). Skała na
+  stokach dopiero od nachylenia 0,42 (wcześniej 0,3), żeby wyższe zbocza nie
+  dostawały szarych pasów.
+- **Góry**: dwa szare masywy na flankach, w rogach, których nie trzymają zamki
+  (promień ok. 92 m, do 80 m wysokości, grzbiety z szumu, rumowiska głazów).
+  Podnóża są do przejścia, rdzeń (70 % promienia) jest nieprzechodni: nikt tam
+  nie wejdzie, nie zbuduje ani nie poprowadzi drogi; żołnierz, który wejdzie na
+  skałę, wraca u jej stóp.
+- **Skały**: cztery skalne grzędy po bokach pola (17 m, stosy głazów), też
+  nieprzechodnie: armia musi je obejść.
+- Wszystko symetryczne względem obrotu o pół koła (sprawdzone na siatce co 7 m),
+  więc żadna strona nie ma przewagi. Minimapa pokazuje skały na szaro, podpowiedź
+  pod kursorem: „Góry — nie do przejścia” / „Skały — trzeba je obejść”.
+- Komputer burzy biernego gracza po 44–46 min (wcześniej 39–41): dłuższy marsz.
+  Nadal za późno względem planu 25–35 min, do poprawy w tempie AI.
+- Testy: 60 / 60 (test całej partii: limit 48 min).
+
 ## 2026-11-14 · Mur i wieża strażnicza z przesłanego zestawu
 
 - **Tower and Castle Walls** (LucasPresoto, CC BY 4.0) przerobione na powierzchnie gry

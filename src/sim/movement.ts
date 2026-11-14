@@ -1,7 +1,7 @@
 import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt } from './nav.ts';
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, townX, townZ } from './terrain.ts';
+import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -237,8 +237,14 @@ function findTarget(world: World, s: Soldier, radiusM: number, placeX: number, p
   return best;
 }
 
-/** Puts a soldier who has stepped into a lake back on its bank. */
+const OFF_CLIFF = { x: 0, z: 0 };
+
+/** Puts a soldier who has stepped into a lake back on its bank, and one who has climbed onto sheer rock back at its foot. */
 function avoidWater(s: Soldier): void {
+  if (offCliff(s.x, s.z, OFF_CLIFF)) {
+    s.x = OFF_CLIFF.x;
+    s.z = OFF_CLIFF.z;
+  }
   if (!isWater(s.x, s.z)) return;
   for (const side of [0, 1] as const) {
     const dx = s.x - lakeX(side);

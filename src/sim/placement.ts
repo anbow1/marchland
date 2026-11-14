@@ -1,6 +1,6 @@
 import { FIELDS, GATHER, MAP, TOWN } from '../config.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
-import { depositNear, DEPOSITS, forestCoverAt, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
+import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -75,7 +75,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   if (hypot2(x - townX(side), z - townZ(side)) > reachOf(kind)) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
   if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
-  for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isWater(x + dx, z + dz)) return fail('blocked');
+  for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isImpassable(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');
   // Not on the crag itself: beside it.
   for (const d of DEPOSITS) if (hypot2(x - d.x, z - d.z) < TOWN.depositRadiusM + 3) return fail('blocked');
@@ -104,7 +104,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
       const sx = x - Math.sin(yawRad) * back;
       const sz = z - Math.cos(yawRad) * back;
       // Land that is wet, wooded or taken ends the farm's fields there.
-      if (isWater(sx, sz) || forestCoverAt(sx, sz) > 0.5 || touchesAnything(world, sx, sz, FIELDS.stripWidthM / 2)) break;
+      if (isImpassable(sx, sz) || forestCoverAt(sx, sz) > 0.5 || touchesAnything(world, sx, sz, FIELDS.stripWidthM / 2)) break;
       site.strips.push({ x: sx, z: sz });
     }
     if (site.strips.length < (FIELDS.stripsPerLevel[0] as number)) return fail('needsLand');

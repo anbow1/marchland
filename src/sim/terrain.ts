@@ -73,6 +73,125 @@ export function isWater(x: number, z: number): boolean {
   return lakeShare(x, z) < 0.93;
 }
 
+// ---- mountains and crags ---------------------------------------------------
+
+/** A massif or a crag: a heap of rock round (x, z); `turn` mirrors its shape for the computer's half of the map. */
+interface Heap {
+  x: number;
+  z: number;
+  radiusM: number;
+  heightM: number;
+  /** Inside this share of its radius the rock is sheer: no one walks, builds or lays a road. */
+  blockShare: number;
+  turn: number;
+  /** Seed of its outline and ridges: the same for a heap and its half-turned twin, so both are one shape. */
+  seed: number;
+}
+
+function layOutHeaps(): Heap[] {
+  const out: Heap[] = [];
+  const m = MAP.mountainOffsetM;
+  // The massifs sit in the two corners the towns do not hold, (+,+) and (−,−): each is the other half-turned.
+  for (const turn of [1, -1]) {
+    out.push({ x: turn * m, z: turn * m, radiusM: MAP.mountainRadiusM, heightM: MAP.mountainHeightM, blockShare: MAP.mountainBlockShare, turn, seed: 71 });
+  }
+  MAP.crags.forEach(([f, sd], i) => {
+    const x = FORWARD_X * f + SIDE_X * sd;
+    const z = FORWARD_Z * f + SIDE_Z * sd;
+    // The list pairs each crag with its twin across the middle: they share a seed and mirror their shape.
+    const turn = f + sd * 0.001 >= 0 ? 1 : -1;
+    out.push({ x, z, radiusM: MAP.cragRadiusM, heightM: MAP.cragHeightM, blockShare: MAP.cragBlockShare, turn, seed: 80 + (i >> 1) });
+  });
+  return out;
+}
+
+export const HEAPS: readonly Heap[] = layOutHeaps();
+
+/** A heap's radius in the direction of (x, z): a noise round its outline gives it spurs and gullies. */
+function heapRadiusAt(h: Heap, x: number, z: number): number {
+  const a = Math.atan2((z - h.z) * h.turn, (x - h.x) * h.turn);
+  const n = fbm2(Math.cos(a) * 1.7 + h.seed, Math.sin(a) * 1.7 - h.seed, 4, MAP.terrainSeed + h.seed);
+  return h.radiusM * (1 + 0.3 * n);
+}
+
+/** Distance from the nearest heap's middle in that heap's radii (below 1 = on it), and which heap; -1 when none is near. */
+function nearestHeap(x: number, z: number): { share: number; heap: number } {
+  let share = Number.POSITIVE_INFINITY;
+  let heap = -1;
+  for (let i = 0; i < HEAPS.length; i++) {
+    const h = HEAPS[i] as Heap;
+    const d = hypot2(x - h.x, z - h.z);
+    if (d > h.radiusM * 1.8) continue;
+    const sh = d / heapRadiusAt(h, x, z);
+    if (sh < share) {
+      share = sh;
+      heap = i;
+    }
+  }
+  return { share, heap };
+}
+
+/** Height the heaps add: foothills rising to a crest, broken by ridges and gullies. */
+function heapHeightM(x: number, z: number): number {
+  let top = 0;
+  for (const h of HEAPS) {
+    const d = hypot2(x - h.x, z - h.z);
+    if (d > h.radiusM * 1.8) continue;
+    const sh = d / heapRadiusAt(h, x, z);
+    if (sh >= 1.5) continue;
+    const lx = (x - h.x) * h.turn;
+    const lz = (z - h.z) * h.turn;
+    const rise = 1 - smoothstep(0.1, 1.5, sh);
+    // Ridged noise: sharp crests where the noise crosses zero.
+    const ridges = 1 - Math.abs(fbm2(lx / (h.radiusM * 0.45) + h.seed, lz / (h.radiusM * 0.45), 4, MAP.terrainSeed + h.seed + 1));
+    top = Math.max(top, h.heightM * Math.pow(rise, 1.7) * (0.5 + 0.5 * ridges * ridges));
+  }
+  return top;
+}
+
+/** 0 at a heap's middle, 1 at its foot and beyond: how far out on the nearest heap a point lies. */
+export function heapShare(x: number, z: number): number {
+  return Math.min(1.5, nearestHeap(x, z).share);
+}
+
+/** True on sheer rock: the cores of the massifs and the crags. */
+export function isCliff(x: number, z: number): boolean {
+  const { share, heap } = nearestHeap(x, z);
+  return heap >= 0 && share < (HEAPS[heap] as Heap).blockShare;
+}
+
+/** What sheer rock a point is on: a massif's or a crag's; null off the rock. */
+export function cliffKind(x: number, z: number): 'mountain' | 'crag' | null {
+  const { share, heap } = nearestHeap(x, z);
+  if (heap < 0) return null;
+  const h = HEAPS[heap] as Heap;
+  if (share >= h.blockShare) return null;
+  return h.radiusM === MAP.mountainRadiusM ? 'mountain' : 'crag';
+}
+
+/** True where no one walks or builds: deep water or sheer rock. */
+export function isImpassable(x: number, z: number): boolean {
+  return isWater(x, z) || isCliff(x, z);
+}
+
+/**
+ * Where to put someone who stood on sheer rock: straight out from the heap's middle to just past its
+ * cliffs. Writes x, z into `out` and returns true, or false if (x, z) is not on rock.
+ */
+export function offCliff(x: number, z: number, out: { x: number; z: number }): boolean {
+  const { share, heap } = nearestHeap(x, z);
+  if (heap < 0) return false;
+  const h = HEAPS[heap] as Heap;
+  if (share >= h.blockShare) return false;
+  const d = hypot2(x - h.x, z - h.z);
+  const edge = heapRadiusAt(h, x, z) * h.blockShare * 1.03;
+  const ux = d > 1e-6 ? (x - h.x) / d : 1;
+  const uz = d > 1e-6 ? (z - h.z) / d : 0;
+  out.x = h.x + ux * edge;
+  out.z = h.z + uz * edge;
+  return true;
+}
+
 /** Height of the lakes' water surface. */
 export const WATER_LEVEL_M = -0.45;
 
@@ -108,7 +227,7 @@ export function heightAtM(x: number, z: number): number {
   const shore = smoothstep(1.0, 1.6, share);
   // A bowl: level with the land at the rim, deepest in the middle.
   const bowl = share < 1 ? -TOWN.lakeDepthM * (1 - share * share) : 0;
-  return ((rolling + folds) * onField + knolls) * town * shore + bowl;
+  return ((rolling + folds) * onField + knolls) * town * shore + bowl + heapHeightM(x, z);
 }
 
 /** How much the ground rises across a circle of radius `r`: the difference between its highest and lowest of five points. */
@@ -137,8 +256,9 @@ function layOutDeposits(): Deposit[] {
   for (const side of [0, 1] as const) {
     const t = turnOf(side);
     const at = (forwardM: number, sideM: number): [number, number] => [townX(side) + t * (FORWARD_X * forwardM + SIDE_X * sideM), townZ(side) + t * (FORWARD_Z * forwardM + SIDE_Z * sideM)];
-    const [sx, sz] = at(-52, -26);
-    const [ox, oz] = at(-52, 26);
+    // Behind the keep, but no further than the corner allows: the keeps stand near the map's corners.
+    const [sx, sz] = at(-40, -34);
+    const [ox, oz] = at(-40, 34);
     out.push({ kind: 'stone', x: sx, z: sz }, { kind: 'ore', x: ox, z: oz });
     // A second outcrop out on the flank, at the edge of the side's reach: ore on the player's, stone on the computer's.
     const [fx, fz] = at(118, 96);
@@ -184,7 +304,9 @@ export function forestCoverAt(x: number, z: number): number {
   const offField = smoothstep(MAP.fieldHalfWidthM, MAP.fieldHalfWidthM + 30, distanceToFieldAxisM(x, z));
   const offLake = smoothstep(1.35, 1.9, lakeShare(x, z));
   const offRock = smoothstep(TOWN.depositRadiusM + 4, TOWN.depositRadiusM + 14, distanceToNearestDepositM(x, z));
-  return smoothstep(0.02, 0.22, patches) * nearTown * offField * offLake * offRock;
+  // Trees climb the foothills but not the rock above them.
+  const offHeap = smoothstep(0.85, 1.15, heapShare(x, z));
+  return smoothstep(0.02, 0.22, patches) * nearTown * offField * offLake * offRock * offHeap;
 }
 
 export function isForest(x: number, z: number): boolean {

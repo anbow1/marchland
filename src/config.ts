@@ -16,14 +16,14 @@ export const MAP = {
   sizeM: 560,
   halfM: 280,
   /** Town centres sit on the diagonal, this far from the origin on each axis. */
-  townOffsetM: 195,
+  townOffsetM: 212,
   /** Ground is level inside this radius of a keep, then blends into the hills. */
   townFlatRadiusM: 26,
   townBlendRadiusM: 85,
   /** Peak-to-mean height of the rolling hills, of the finer folds on them, and of the two knolls that flank the field. */
-  hillHeightM: 9,
-  foldHeightM: 1.6,
-  knollHeightM: 9,
+  hillHeightM: 13,
+  foldHeightM: 2.2,
+  knollHeightM: 15,
   knollRadiusM: 48,
   /** The knolls stand this far to either side of the map's middle. */
   knollOffsetM: 105,
@@ -33,15 +33,35 @@ export const MAP = {
   forestClearRadiusM: 82,
   fieldHalfWidthM: 46,
   terrainSeed: 7,
+  /**
+   * The two grey massifs on the flanks, in the corners the towns do not hold: centred this far out on
+   * each axis, this wide and this high. Their foothills can be climbed; inside `blockShare` of their
+   * radius the rock is sheer, and no one walks, builds or lays a road there.
+   */
+  mountainOffsetM: 215,
+  mountainRadiusM: 92,
+  mountainHeightM: 80,
+  mountainBlockShare: 0.7,
+  /** Rocky crags on the flanks of the field, natural obstacles an army must go round. */
+  cragRadiusM: 17,
+  cragHeightM: 16,
+  cragBlockShare: 0.85,
+  /** Where the crags stand, as (forward, side) from the map's middle in the player's axes; the list is its own half-turn. */
+  crags: [
+    [-70, 150],
+    [70, -150],
+    [-75, -155],
+    [75, 155],
+  ],
 } as const;
 
 export const TOWN = {
   /** Buildings a side may have at once. */
   maxBuildings: 48,
   /** A side builds within this distance of its own keep, and no nearer than this to the enemy's. */
-  territoryRadiusM: 180,
+  territoryRadiusM: 230,
   /** Farms and vineyards may go this far: the farmers walk further out to open land. Woodcutters, quarries and mines may go anywhere. */
-  fieldTerritoryRadiusM: 260,
+  fieldTerritoryRadiusM: 300,
   enemyKeepClearM: 90,
   /** Free ground kept between two buildings' footprints. */
   buildingGapM: 1.5,
@@ -52,7 +72,7 @@ export const TOWN = {
   waterReachM: 16,
   depositReachM: 15,
   /** The lakes: each side's lies this far from its keep (towards the enemy, and to one side), with this radius and depth. */
-  lakeForwardM: 25,
+  lakeForwardM: 55,
   lakeSideM: 80,
   lakeRadiusM: 27,
   lakeDepthM: 2.4,

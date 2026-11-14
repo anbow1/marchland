@@ -464,12 +464,13 @@ describe('walls and watchtowers', () => {
   it('woodcutters, quarries, mines and towers may stand anywhere; farms further than the town', () => {
     const world = rich(quietWorld());
     // Far beyond the town's own land, but not by the enemy keep.
-    const fx = townX(PLAYER) + 200;
+    // Past the town's reach, within the farmers'.
+    const fx = townX(PLAYER) + TOWN.territoryRadiusM + 12;
     const fz = townZ(PLAYER) - 40;
     expect(checkSite(world, PLAYER, 'house', fx, fz, 0).result).toBe('tooFar');
     expect(checkSite(world, PLAYER, 'tower', fx, fz, 0).result).not.toBe('tooFar');
     expect(checkSite(world, PLAYER, 'woodcutter', fx, fz, 0).result).not.toBe('tooFar');
-    expect(checkSite(world, PLAYER, 'farm', townX(PLAYER) + 200, townZ(PLAYER), Math.PI / 2).result).not.toBe('tooFar');
+    expect(checkSite(world, PLAYER, 'farm', townX(PLAYER) + TOWN.territoryRadiusM + 12, townZ(PLAYER), Math.PI / 2).result).not.toBe('tooFar');
     expect(TOWN.fieldTerritoryRadiusM).toBeGreaterThan(TOWN.territoryRadiusM);
   });
 });
