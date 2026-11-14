@@ -49,9 +49,14 @@ DEFAULT = "plaster#d8cfc0"
 # (regex, surface or None) tried before RULES; `min_part_m`: meshes smaller than this across (in the
 # game's metres) are left out, the bottles and pebbles a strategy camera never sees and that no
 # thinning can remove; `plate_m`: faces lying wholly this low are the source's ground plate, removed;
-# `smoke_from`: surfaces whose highest point smokes (a chimney's brick, a hearth's embers).
+# `smoke_from`: surfaces whose highest point smokes (a chimney's brick, a hearth's embers); `around`: an
+# object-name regex, and only meshes whose middle lies within `around_k` of that object's width from its
+# middle are kept (one building out of a scene).
 # Tried and left out: Medieval house and wine shop (Don_Dzen): 670 000 triangles in 9 457 pieces, its
 # walls under a material named only 'material'; no thinning keeps it whole within a building's budget.
+# Medieval Farm Village (Etherlyte): its cottage, cut out with `around` (anchor r"^Roof_Thatched", k 0.6,
+# dropping the scattered bricks), is a plain box under its thatch once its painted door, windows and
+# timbers are gone with the textures; the town's own houses say more.
 MODELS = {
     "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke_from": ["rubble#b8a89a", "ember#ff7a2a"]},
 }
@@ -86,6 +91,19 @@ def main() -> None:
             for i in range(3):
                 lo_all[i] = min(lo_all[i], w[i])
                 hi_all[i] = max(hi_all[i], w[i])
+    anchor = None
+    if spec.get("around"):
+        pattern = re.compile(spec["around"])
+        found = [o for o in bpy.context.scene.objects if o.type == "MESH" and pattern.search(o.name)]
+        w = [o.matrix_world @ Vector(c) for o in found for c in o.bound_box]
+        a_lo = Vector((min(p.x for p in w), min(p.y for p in w)))
+        a_hi = Vector((max(p.x for p in w), max(p.y for p in w)))
+        anchor = ((a_lo + a_hi) / 2, max(a_hi.x - a_lo.x, a_hi.y - a_lo.y) * spec.get("around_k", 0.75))
+        for o in [o for o in bpy.context.scene.objects if o.type == "MESH"]:
+            mid = sum((o.matrix_world @ Vector(c) for c in o.bound_box), Vector()) / 8
+            if (mid.xy - anchor[0]).length > anchor[1]:
+                bpy.data.objects.remove(o)
+        lo_all, hi_all = list(a_lo) + [0], list(a_hi) + [0]
     rough_scale = spec["fit_m"] / max(hi_all[0] - lo_all[0], hi_all[1] - lo_all[1])
     min_part = spec.get("min_part_m", 0.0) / rough_scale
     small = 0

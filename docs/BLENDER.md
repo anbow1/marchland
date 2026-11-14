@@ -81,7 +81,8 @@ przypisuje powierzchnie gry, wyrzuca liście i drobiazgi, scala płaskie ściany
 przerzedza do budżetu, ustawia rozmiar i dym (komin, palenisko). Odrzucone z
 przesłanych: dom z winiarnią (670 tys. trójkątów w 9 457 kawałkach, nie da się go
 przerzedzić w całości), karczma i kuźnia stylizowana (bajkowe dioramy na śniegu),
-warsztat na skale (diorama).
+warsztat na skale (diorama), chałupa ze strzechą z wioski (po zdjęciu tekstur zostaje
+gładka skrzynia — drzwi, okna i belki były tylko namalowane; własne chaty mówią więcej).
 
 Do zrobienia: brama w murze (dziś własny mur przepuszcza swoich wszędzie), warianty (np. dwa wyglądy chaty
 na poziom), poziomy szczegółów dla widoku z daleka.

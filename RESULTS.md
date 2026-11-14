@@ -13,7 +13,8 @@ jeszcze nie mierzyłem.
   gry po nazwach materiałów.
 - Odrzucone: dom z winiarnią (rozsypuje się przy przerzedzaniu: 9 457 kawałków,
   ściany pod materiałem bez nazwy), karczma i kuźnia stylizowana (bajkowe dioramy,
-  materiały spec-gloss), warsztat na skale (diorama).
+  materiały spec-gloss), warsztat na skale (diorama), chałupa z wioski (wycięta ze
+  sceny, ale bez tekstur to gładka skrzynia pod strzechą: drzwi i okna były namalowane).
 
 ## 2026-11-14 · Mapa: zamki bliżej rogów, większy zasięg, pagórki, góry i skały
 
