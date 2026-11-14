@@ -26,8 +26,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import Kit, export_glb  # noqa: E402
 from parts import ASHLAR, BEAM, BOARDS, IRON, SHINGLES, TEAM, door, roof  # noqa: E402
 
-STONE = "ashlar#cdd0d0"
-BODY = "rubble#c4c6c4"
+# The scans are warm (rubble averages 138, 126, 102; ashlar 119, 102, 76): these tints cancel the red so
+# the stone reads grey, as walls of grey stone should.
+STONE = "ashlar#bccae6"
+BODY = "rubble#bccfff"
 # How much taller the wall's merlons are made than the source's.
 MERLON_RAISE = 0.8
 DOOR = "boards#8a7360"
