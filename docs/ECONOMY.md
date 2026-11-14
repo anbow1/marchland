@@ -27,13 +27,13 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Podatek: 1.2 złota na minutę od każdej najedzonej osoby; zamek daje stałe 24 złota na minutę.
 - Gdy wrogi oddział w szyku zbliży się na 32 m, ludzie rzucają pracę i biegną do zamku;
   wracają 6 s po odejściu wroga.
-- Człowiek idzie 1.7 m/s; po drodze 1.4× szybciej, w lesie 0.7×.
+- Człowiek idzie 2 m/s; po drodze 1.4× szybciej, w lesie 0.7×.
 
 ## 3. Logistyka
 
 - **Zamek jest magazynem.** Każdy budynek ma własne składy: wejściowy (tragarze uzupełniają
   do 8 sztuk) i wyjściowy na podwórzu (do 14 sztuk; pełny zatrzymuje pracę).
-- Tragarz niesie do 5 sztuk jednego towaru; podniesienie i odłożenie trwa 1 s.
+- Tragarz niesie do 8 sztuk jednego towaru; podniesienie i odłożenie trwa 1 s.
 - Wolny tragarz bierze najpilniejsze zlecenie, a przy równej pilności najbliższe:
   1. jedzenie do chaty z pustą spiżarnią,
   2. drewno i kamień na plac budowy,

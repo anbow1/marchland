@@ -30,7 +30,7 @@ export const MAP = {
   /** The hills are this much lower on the open field between the towns, where the lines meet. */
   fieldReliefFactor: 0.5,
   /** No trees inside this radius of a town, nor on the open field between the towns. */
-  forestClearRadiusM: 82,
+  forestClearRadiusM: 66,
   fieldHalfWidthM: 46,
   terrainSeed: 7,
   /**
@@ -108,9 +108,9 @@ export const PEOPLE = {
   /** Tax from each fed townsman. */
   taxGoldPerSecond: 0.02,
   /** A person walks briskly; under a load the same (a sack, not a millstone). Tuned: at 1.4 the farms' corn did not reach the bakery in time. */
-  walkSpeedMs: 1.7,
+  walkSpeedMs: 2.0,
   /** Units of one good a carrier takes at once. */
-  carryCapacity: 5,
+  carryCapacity: 8,
   /** Seconds to pick a load up or set it down. */
   handlingSeconds: 1,
   /** A building's stores: carriers fill inputs up to the target; work stops when an output reaches its cap. */

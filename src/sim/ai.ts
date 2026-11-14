@@ -52,23 +52,26 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'house',
   'fisher',
   'farm',
+  // Grain piles up behind one mill and one oven while the town goes hungry: a second pair early.
+  'windmill',
+  'bakery',
   'house',
-  'ironMine',
   'woodcutter',
+  // Leather and bows before iron: archers and pikemen both wear leather, and a bow is only timber.
   'barracks',
-  'smelter',
-  'smithy',
   'pigFarm',
   'tannery',
+  // The pig farm stops when its meat piles up; the butcher turns it into sausage, which feeds the town.
+  'butcher',
+  'fletcher',
+  'farm',
   'house',
+  'ironMine',
+  'smelter',
+  'smithy',
   'woodcutter',
   'house',
   'farm',
-  'windmill',
-  'bakery',
-  'butcher',
-  'fletcher',
-  'woodcutter',
   'house',
   'farm',
   'house',
@@ -92,7 +95,7 @@ const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'wi
 const STAGE_DISTANCE_M = 115;
 
 /** Index in BUILD_ORDER after which the barracks is worth its second level (the weapon chain stands). */
-const BARRACKS_UPGRADE_AFTER = 18;
+const BARRACKS_UPGRADE_AFTER = BUILD_ORDER.indexOf('smithy') + 1;
 
 /** Builds on the ground the planner picks and lays a road from its door to the keep; true when it was built. */
 function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 'noGround' | 'notYet' {

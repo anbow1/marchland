@@ -5,6 +5,26 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Tempo komputera: z 45 do 33–35 minut
+
+Pomiar (oś czasu i stan warsztatów co pół sekundy, minuty 12–30, ziarno 5): broni i złota
+było w bród, wojsko stało na 24–36 ludziach, bo warsztaty czekały na **transport**:
+kamieniołom 67 % czasu z pełnym podwórkiem, młyn 67 % bez zboża (choć w zamku leżało 50),
+garbarnia 83 %, huta 92 % bez surowca, chlewnia zapchana mięsem. Drewna stale ~0: las
+~100 m od zamku, a tragarz z 5 sztukami i 1,7 m/s donosił ~4 drewna na minutę.
+
+| zmiana | burzy biernego gracza (ziarno 5 / 6) |
+|---|---|
+| przed (mapa z górami) | 46,3 / 44,6 min |
+| kolejność budowy: drugi młyn i piekarnia wcześnie, koszary → chlewnia → garbarnia → rzeźnik → łuczarz przed żelazem | 48,3 / 52,7 (sama nie pomaga) |
+| tragarz nosi 8 zamiast 5 | 41,2 / 44,8 |
+| więcej wolnych rąk przy powołaniu (0,3 zamiast 0,15) | bez zmian — cofnięte |
+| ludzie chodzą 2,0 m/s zamiast 1,7 | 37,4 / 37,0 |
+| las bliżej miast: 66 m wolnego zamiast 82 | **33,4 / 35,0** |
+
+Wszystkie zmiany poza kolejnością budowy działają tak samo dla gracza. Test całej partii
+znów ma limit 38 min (było 48). Testy: 60 / 60.
+
 ## 2026-11-14 · Kuźnia z przesłanych modeli
 
 - **Medieval Blacksmith** (Daniel Andersson, CC BY 4.0) jako kuźnia na poziomach 2 i 3:
