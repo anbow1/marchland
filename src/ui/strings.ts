@@ -78,6 +78,9 @@ interface Strings {
   orderHead: string;
   orderTip: string;
   orderArms: string;
+  ordered: string;
+  fromKeep: string;
+  fromBuilding: string;
   orderLess: string;
   orderMore: string;
   orderInf: string;
@@ -257,7 +260,7 @@ const pl: Strings = {
   },
   results: {
     cannotAfford: 'Za mało zasobów.',
-    tooFar: 'Za daleko: buduj w zasięgu zamku albo do 70 m od własnego budynku.',
+    tooFar: 'Za daleko: buduj w zasięgu zamku albo do 70 m od własnego budynku (także w budowie).',
     blocked: 'Miejsce jest zajęte albo zalane.',
     tooSteep: 'Teren jest zbyt stromy.',
     needsForest: 'Drwal musi stać przy lesie, z co najmniej 20 dorosłymi drzewami w zasięgu.',
@@ -356,8 +359,11 @@ const pl: Strings = {
   kindPriorityTip: 'Kto pierwszy dostaje surowiec, gdy kilka warsztatów chce tego samego: ▲ ten rodzaj pierwszy, ▼ ostatni. Kliknij, by zmienić.',
   priorityTip: 'Priorytet tragarzy dla tego towaru: ▲ wysoki (noszą go najpierw), · zwykły, ▼ niski. Kliknij, by zmienić.',
   orderHead: 'zamówione',
-  orderTip: 'Zamówienie: warsztaty robią tyle i stają (∞ = bez limitu, 0 = wstrzymane).',
+  orderTip: 'Zamówienie: warsztaty robią tyle i stają (∞ = bez limitu, 0 = wstrzymane). Warsztaty uzbrojenia startują z zerem: pracują dopiero po zamówieniu.',
   orderArms: 'Zamów uzbrojenie',
+  ordered: 'Zamówione do zrobienia',
+  fromKeep: 'od zamku',
+  fromBuilding: 'od budynku',
   orderLess: 'Mniej',
   orderMore: 'Więcej',
   orderInf: 'Kliknij: bez limitu (∞)',
@@ -662,6 +668,9 @@ const en: Strings = {
   orderHead: 'ordered',
   orderTip: 'Order: the workshops make this much and stop (∞ = no limit, 0 = stopped).',
   orderArms: 'Order arms',
+  ordered: 'On order',
+  fromKeep: 'from the keep',
+  fromBuilding: 'from a building',
   orderLess: 'Less',
   orderMore: 'More',
   orderInf: 'Click: no limit (∞)',

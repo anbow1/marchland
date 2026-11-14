@@ -1,12 +1,12 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveFormation, cmdMoveGroup, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveFormation, cmdMoveGroup, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
-import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
+import { checkSite, mayLayRoadAt, nearestOwnBuildingM, reachOf, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
-import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, type Side } from '../sim/types.ts';
+import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, type GameMode, stepWorld, type World } from '../sim/world.ts';
 import { workState } from '../sim/economy.ts';
 import { CpuTimer } from '../render/perf.ts';
@@ -136,7 +136,18 @@ export class Game implements ControlTarget {
       setKindPriority: (kind, priority) => this.report(cmdKindPriority(this.world, PLAYER, kind, priority)),
       setOrder: (good, amount) => this.report(cmdOrder(this.world, PLAYER, good, amount)),
       toggleGrid: () => this.toggleGrid(),
-      orderRegiments: (kind, count) => this.report(cmdOrderRegiments(this.world, PLAYER, kind, count)),
+      orderRegiments: (kind, count) => {
+        const result = cmdOrderRegiments(this.world, PLAYER, kind, count);
+        this.report(result);
+        if (result !== 'ok') return;
+        // What is now on order, so the player sees the order go in.
+        const orders = this.world.towns[PLAYER].orders;
+        const goods = orderedGoodsFor(kind);
+        const list = RESOURCE_IDS.filter((id) => (goods[id] ?? 0) > 0)
+          .map((id) => `${T.resources[id].toLowerCase()} ${orders[id] ?? 0}`)
+          .join(', ');
+        this.hud.toast(`${T.ordered}: ${list}`, 'good');
+      },
       selectPlot: (plot) => {
         const b = this.world.towns[PLAYER].plots[plot];
         if (!b) return;
@@ -158,9 +169,10 @@ export class Game implements ControlTarget {
     this.controls = new Controls(view.stage.canvas, this.camera, this);
     this.controls.edgeScroll = options.edgeScroll;
     try {
-      this.gridOn = localStorage.getItem('marchland.grid') === '1';
+      // On unless the player switched it off.
+      this.gridOn = localStorage.getItem('marchland.grid') !== '0';
     } catch {
-      this.gridOn = false;
+      this.gridOn = true;
     }
     this.hud.gridOn = this.gridOn;
     this.loop = new FixedLoop({ step: (dt) => this.step(dt), render: (frameSeconds) => this.render(frameSeconds) });
@@ -508,15 +520,15 @@ export class Game implements ControlTarget {
   }
 
   private yawOf(tool: Tool & { kind: 'build' }, x: number, z: number): number {
-    const toKeep = yawToKeep(PLAYER, x, z);
-    if (!this.gridOn) return toKeep + (tool.turns * Math.PI) / 4;
-    // On the grid: the door looks along one of the four axes, the one nearest the keep; R turns by quarters.
-    const quarter = Math.round(toKeep / (Math.PI / 2));
-    return (quarter + Math.floor(tool.turns / 2)) * (Math.PI / 2);
+    // The door looks along one of the map's four axes, the one nearest the way to the keep: buildings stand
+    // square to each other and to the roads, not turned round the keep like spokes. R turns by an eighth
+    // (by a quarter on the grid).
+    const quarter = Math.round(yawToKeep(PLAYER, x, z) / (Math.PI / 2));
+    return quarter * (Math.PI / 2) + (this.gridOn ? Math.floor(tool.turns / 2) * (Math.PI / 2) : (tool.turns * Math.PI) / 4);
   }
 
   /** Buildings on the grid: TOWN.gridM squares, lined up with the road cells, one corner at the keep. */
-  private gridOn = false;
+  private gridOn = true;
 
   private snap(v: number, origin: number): number {
     return origin + Math.round((v - origin) / TOWN.gridM) * TOWN.gridM;
@@ -611,7 +623,14 @@ export class Game implements ControlTarget {
         }
       }
       this.tiles.allowed = this.ghost.allowed;
-      this.setHint(check.result === 'ok' ? `${T.buildings[tool.building].name}: ${T.hintBuild}` : `${T.buildings[tool.building].name}: ${T.results[check.result]}`);
+      let why: string = check.result === 'ok' ? T.hintBuild : T.results[check.result];
+      if (check.result === 'tooFar') {
+        // How far it is: from the keep against its reach, and from the nearest building against 70 m.
+        const fromKeep = Math.round(Math.hypot(gx - townX(PLAYER), gz - townZ(PLAYER)));
+        const fromBuilding = nearestOwnBuildingM(this.world, PLAYER, gx, gz);
+        why += ` (${T.fromKeep} ${fromKeep} / ${Math.round(reachOf(tool.building, this.world.towns[PLAYER].keepLevel))} m${Number.isFinite(fromBuilding) ? ` · ${T.fromBuilding} ${Math.round(fromBuilding)} / ${TOWN.buildingReachM} m` : ''})`;
+      }
+      this.setHint(`${T.buildings[tool.building].name}: ${why}`);
       return 'ghost';
     }
     if (tool.kind === 'gate') {

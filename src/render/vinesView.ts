@@ -79,7 +79,7 @@ export class VinesView {
       for (const b of town.plots) {
         if (!b || b.kind !== 'vineyard') continue;
         signature += `|${b.x.toFixed(1)}${b.level}`;
-        for (const strip of b.strips) signature += strip.state === 'wild' ? 'w' : strip.state === 'ripe' ? 'r' : Math.floor(strip.growth * 8);
+        for (const strip of b.strips) signature += strip.state === 'wild' ? 'w' : strip.state === 'ripe' ? 'r' : Math.floor(strip.growth * 30);
       }
     }
     if (signature === this.signature) return;

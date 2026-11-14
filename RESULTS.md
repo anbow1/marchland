@@ -5,6 +5,34 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Roślinność w stronę docelowego wyglądu, zboże w 3D, chaty na zboczach, poprawki
+
+- **Drzewa z kart liści** (`render/foliage.ts`): korona to kilkadziesiąt kart z teksturą liści
+  malowaną w kodzie (bez pobierania), z normalnymi wygiętymi od środka korony — słońce oświetla ją
+  jak jedną miękką bryłę, środek i spód ciemniejsze. Trzy kształty: świerk (piętra opadających
+  gałęzi, igły), szeroka kopuła (dąb, buk), smukła (brzoza, topola); każde drzewo ma swoją
+  zieleń z palety, ok. 5–8 % już przebarwionych. W głębi lasu korony szersze — sklepienie się
+  zamyka. ~0,3 mln trójkątów na wysokiej jakości, mniej kart na niskiej.
+- **Krzaki**: gęsto na skraju lasu, rzadziej w podszycie, pojedyncze na łąkach; znikają pod
+  budynkami i drogami jak drzewa.
+- **Łąka**: spokojniejsza, głębsza zieleń, mniej żółtych plam; ściółka pod lasem zielono-ciemna.
+- **Zboże w 3D** (`render/cropsView.ts`): zagony porasta zboże, które rośnie płynnie (40 kroków)
+  od kiełków do pasa, w ostatniej trzeciej złocieje, po żniwach znika. Obsiany zagon jest teraz
+  zbożem od brzegu do brzegu (wcześniej szum zostawiał „obsiane w kawałkach”). Winorośl rośnie
+  płynniej (30 kroków zamiast 8).
+- **Chaty na zboczach**: budynek stoi na najwyższym punkcie działki (nie tonie w stoku), pod
+  nim kamienna podmurówka do najniższego.
+- **Ustawienie budynków**: drzwi w czterech kierunkach osi mapy (nie promieniście do zamku),
+  siatka domyślnie włączona. Komputer zostaje przy ustawieniu promienistym: przy kwadratowym jego
+  tragarze chodzą dalej i tempo spadało o 3–5 min (pomiar A/B: 40,1 / 41,2 wobec 37,5 / 36,1).
+- **Zamówienia uzbrojenia**: warsztaty uzbrojenia gracza startują z zamówieniem 0 (broń, łuki,
+  zbroje skórzane, kolczugi, konie); „Zamów ×1 / ×2” pokazuje, co jest zamówione. Symulacja:
+  zamówienie na miecznikach daje dokładnie 12 broni i 12 kolczug, potem warsztaty stają.
+- **Zasięg**: 70 m liczy się też od budynków w budowie; podpowiedź przy „za daleko” podaje
+  odległość od zamku i od najbliższego budynku. Panel dolny rośnie do 62 % ekranu (produkcja
+  rozwija się w całości, bez przewijania w przewijaniu).
+- Testy: 84 / 84. Tempo komputera 37,5 / 36,1 min.
+
 ## 2026-11-14 · Gospodarka i dowodzenie: lista budynków, zamówienia, transport, siatka, szyki
 
 - **Drwal, który nie produkował**: gra pozwalała postawić chatę tam, gdzie w zasięgu stały

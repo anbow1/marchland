@@ -17,6 +17,7 @@ import { PeopleView } from '../render/peopleView.ts';
 import { SmokeView } from '../render/smokeView.ts';
 import { WallView } from '../render/wallView.ts';
 import { VinesView } from '../render/vinesView.ts';
+import { CropsView } from '../render/cropsView.ts';
 import { type Quality, Stage } from '../render/stage.ts';
 import { loadSurfaces, releaseCpuCopies } from '../render/surfaces.ts';
 import { buildTerrain } from '../render/terrainView.ts';
@@ -52,6 +53,7 @@ export class WorldView {
   private markers!: Markers;
   private people!: PeopleView;
   private vines!: VinesView;
+  private crops!: CropsView;
   private smoke!: SmokeView;
   private walls!: WallView;
   private forest!: Forest;
@@ -93,6 +95,7 @@ export class WorldView {
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
     this.vines = new VinesView(scene, surfaces);
+    this.crops = new CropsView(scene);
     this.smoke = new SmokeView(scene);
     this.points = new PointsView(scene, surfaces, createPoints());
     await this.points.load(import.meta.env.BASE_URL);
@@ -139,6 +142,7 @@ export class WorldView {
     this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
     this.people.update(world);
     this.vines.update(world);
+    this.crops.update(world);
     this.walls.update(world, frameSeconds);
     this.forest.update(world.stand, world.timeS);
     this.points.update(world, world.timeS);

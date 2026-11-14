@@ -31,12 +31,19 @@ export function reachOf(kind: BuildingKind, keepLevel = 1): number {
   return rules.territoryM;
 }
 
-/** True when (x, z) lies within TOWN.buildingReachM of one of the side's finished buildings. */
+/** True when (x, z) lies within TOWN.buildingReachM of one of the side's buildings (built or being built; not towers). */
 export function nearOwnBuilding(world: World, side: Side, x: number, z: number): boolean {
+  return nearestOwnBuildingM(world, side, x, z) <= TOWN.buildingReachM;
+}
+
+/** Metres from (x, z) to the nearest of the side's buildings that extend its reach. */
+export function nearestOwnBuildingM(world: World, side: Side, x: number, z: number): number {
+  let best = Number.POSITIVE_INFINITY;
   for (const b of world.towns[side].plots) {
-    if (b && b.constructionLeftS <= 0 && b.kind !== 'tower' && hypot2(x - b.x, z - b.z) <= TOWN.buildingReachM) return true;
+    if (!b || b.kind === 'tower') continue;
+    best = Math.min(best, hypot2(x - b.x, z - b.z));
   }
-  return false;
+  return best;
 }
 
 /** True where a side may put a building of this kind as far as reach goes: the keep's circle, or by its own buildings. */
@@ -144,6 +151,11 @@ export function doorOfX(b: Building): number {
 
 export function doorOfZ(b: Building): number {
   return b.z + Math.cos(b.yawRad) * (TOWN.buildingRadiusM + 0.9);
+}
+
+/** The door's facing along whichever of the map's four axes looks most nearly towards the side's keep: towns laid square, not like spokes. */
+export function squareYawToKeep(side: Side, x: number, z: number): number {
+  return Math.round(yawToKeep(side, x, z) / (Math.PI / 2)) * (Math.PI / 2);
 }
 
 /** The facing that turns a building's door towards its side's keep: the default when a player does not turn it. */

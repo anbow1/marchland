@@ -1,5 +1,5 @@
 import { doorOfX, doorOfZ } from './placement.ts';
-import { type AiCharacter, AI_TUNING, ARMY, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
+import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, createDefence, type DefenceState, stepAi, stepDefence } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
@@ -110,6 +110,8 @@ export function createWorld(options: WorldOptions): World {
     kills: [0, 0],
     stepCount: 0,
   };
+  // The player's arms workshops wait for an order; the computer's work as long as there is room.
+  for (const good of ARMS_GOODS) world.towns[PLAYER].orders[good] = 0;
   for (const side of [PLAYER, COMPUTER] as const) stampBuilding(world.nav, townX(side), townZ(side), TOWN.keepRadiusM, true);
   // Each keep starts with its household: the first carriers and builders.
   for (const side of [PLAYER, COMPUTER] as const) {

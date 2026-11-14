@@ -700,6 +700,9 @@ export const TRANSPORT = [
   { capacity: 20, pace: 1.35, keepLevel: 2, seconds: 60, cost: { gold: 260, wood: 100, horse: 6 } },
 ] as const;
 
+/** The player's arms workshops start with nothing ordered: they make arms only when arms are ordered (the computer works unlimited). */
+export const ARMS_GOODS = ['weapon', 'bow', 'leatherArmor', 'mailArmor', 'horse'] as const;
+
 /** How much a carrier's choice of errand leans towards (or away from) a good the player marked high (or low). */
 export const PRIORITY = { high: 1500, low: -900 } as const;
 

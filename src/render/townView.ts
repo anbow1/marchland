@@ -6,6 +6,8 @@ import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
+import { surfacePaint } from './buildingParts.ts';
+import { MeshBuilder } from './meshBuilder.ts';
 import { type SurfaceModel, surfaceModel } from './surfaceModel.ts';
 import { TEAM_HEX } from './palette.ts';
 import { freshUrl } from '../version.ts';
@@ -40,6 +42,20 @@ export class TownView {
   private readonly models = new Map<string, SurfaceModel>();
   /** The moving part of each slot's building, shown when its model has one. */
   private readonly movers: Mesh[][] = [[], []];
+  /** A rubble-stone plinth under each building, filling the gap where the ground falls away on a slope. */
+  private readonly plinths: Mesh[][] = [[], []];
+  private plinthCache: BufferGeometry | null = null;
+
+  /** A rubble-stone block, 8.6 m square and 1 m deep below its top (scaled down to the ground by each building). */
+  private get plinthGeometry(): BufferGeometry {
+    if (!this.plinthCache) {
+      const stone = 0x8a8478;
+      const b = new MeshBuilder(0, new Map([[stone, surfacePaint(this.lib, 'rubble')]]));
+      b.box(0, -1, 0, 8.6, 1, 8.6, stone);
+      this.plinthCache = b.build();
+    }
+    return this.plinthCache;
+  }
   private readonly ghostMaterial: MeshBasicNodeMaterial;
 
   constructor(
@@ -72,6 +88,13 @@ export class TownView {
         mover.visible = false;
         mesh.add(mover);
         (this.movers[side] as Mesh[]).push(mover);
+        const plinth = new Mesh(this.plinthGeometry, this.material);
+        plinth.name = `plinth ${side}/${slot}`;
+        plinth.castShadow = true;
+        plinth.receiveShadow = true;
+        plinth.visible = false;
+        scene.add(plinth);
+        (this.plinths[side] as Mesh[]).push(plinth);
         (this.shown[side] as string[]).push('');
       }
     }
@@ -147,7 +170,7 @@ export class TownView {
     this.ghost.visible = kind !== null;
     if (kind === null) return;
     this.ghost.geometry = this.geometry(kind, 1, 0);
-    this.ghost.position.set(x, heightAtM(x, z) + 0.05, z);
+    this.ghost.position.set(x, groundUnder(x, z, yawRad)[1] + 0.05, z);
     this.ghost.rotation.y = yawRad;
     this.ghostMaterial.color.copy(allowed ? GHOST_OK : GHOST_BAD);
   }
@@ -166,7 +189,7 @@ export class TownView {
         if (!model || model.smoke.length === 0) continue;
         const busy = b.kind === 'house' ? b.residents > 0 : b.workRate > 0 || b.kind === 'smelter';
         if (!busy) continue;
-        const y = heightAtM(b.x, b.z);
+        const y = groundUnder(b.x, b.z, b.yawRad)[1];
         const cos = Math.cos(b.yawRad);
         const sin = Math.sin(b.yawRad);
         for (const point of model.smoke) {
@@ -196,12 +219,21 @@ export class TownView {
         if (key !== shown[slot]) {
           shown[slot] = key;
           mesh.visible = b !== null;
+          if (!b) ((this.plinths[side] as Mesh[])[slot] as Mesh).visible = false;
           const mover = (this.movers[side] as Mesh[])[slot] as Mesh;
           mover.visible = false;
           if (b) {
             mesh.geometry = this.geometry(b.kind, b.level, side);
-            mesh.position.set(b.x, heightAtM(b.x, b.z), b.z);
+            // On a slope the building stands on the highest ground under it (no wall sinks into the hill);
+            // a plinth of rubble stone fills in down to the lowest.
+            const [low, high] = groundUnder(b.x, b.z, b.yawRad);
+            mesh.position.set(b.x, high, b.z);
             mesh.rotation.y = b.yawRad;
+            const plinth = (this.plinths[side] as Mesh[])[slot] as Mesh;
+            plinth.visible = high - low > 0.25;
+            plinth.position.set(b.x, high + 0.02, b.z);
+            plinth.rotation.y = b.yawRad;
+            plinth.scale.set(1, high - low + 0.4, 1);
             const part = this.models.get(`${b.kind}:${b.level}:${side}`)?.parts[0];
             if (part) {
               mover.geometry = part.geometry;
@@ -220,4 +252,23 @@ export class TownView {
       }
     }
   }
+}
+
+/**
+ * The lowest and highest ground under a building's footprint (a square about 8 m across, turned with it),
+ * from nine points: its floor goes at the highest.
+ */
+export function groundUnder(x: number, z: number, yawRad: number): [number, number] {
+  let low = Number.POSITIVE_INFINITY;
+  let high = Number.NEGATIVE_INFINITY;
+  const c = Math.cos(yawRad);
+  const s = Math.sin(yawRad);
+  for (const a of [-3.8, 0, 3.8]) {
+    for (const b of [-3.8, 0, 3.8]) {
+      const h = heightAtM(x + a * c + b * s, z - a * s + b * c);
+      low = Math.min(low, h);
+      high = Math.max(high, h);
+    }
+  }
+  return [low, high];
 }

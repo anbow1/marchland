@@ -33,7 +33,7 @@ const FLAT_MIP = 7;
 const DETAIL_NEAR_M = 45;
 const DETAIL_FAR_M = 260;
 /** Grass dried out on high ground, as a multiplier of the green. */
-const DRY_TINT = [1.16, 1.05, 0.7] as const;
+const DRY_TINT = [1.08, 1.03, 0.8] as const;
 /** The odd angle (about 37°) the second reading of every texture is turned by. */
 const TURN_SIN = Math.sin(0.65);
 const TURN_COS = Math.cos(0.65);
@@ -46,9 +46,9 @@ const STEEP_FULL = 0.7;
  */
 const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>> = {
   // The drone photograph is of lush grass under a grey sky; a touch warmer for an afternoon sun.
-  pasture: [0.9, 1.04, 0.86],
+  pasture: [0.8, 0.98, 0.76],
   // The litter scan is near black under a strategy camera's exposure.
-  forest_floor: [0.92, 0.9, 0.76],
+  forest_floor: [0.6, 0.7, 0.46],
   // Grey rock reads as snow from above unless it is darkened and greened by lichen.
   rock: [0.62, 0.64, 0.56],
   // Trodden earth in a wet country is grey-brown, not the scan's ochre.
@@ -211,7 +211,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const lush = smoothstep(0.42, 0.66, noiseAt(57, 0.13, 0.81));
   const sere = smoothstep(0.52, 0.76, noiseAt(33, 0.63, 0.27));
   const weeds = smoothstep(0.66, 0.78, noiseAt(6.5, 0.41, 0.07)).mul(smoothstep(0.45, 0.6, coarse));
-  const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.45)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.4)));
+  const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.25)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.15)));
   const distanceM = positionWorld.sub(cameraPosition).length();
   /** How much the fine scans still add on top of the aerial photograph: all of it near, a little far away. */
   const detailShare = float(1).sub(smoothstep(DETAIL_NEAR_M, DETAIL_FAR_M, distanceM)).mul(0.7).add(0.2);
@@ -245,7 +245,8 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   // Corn on the ploughed strips: green shoots that thicken and turn gold as they ripen.
   const corn = made.b;
   const cornColour = mix(vec3(0.1, 0.2, 0.035), vec3(0.5, 0.36, 0.09), smoothstep(0.62, 0.95, corn)).mul(float(0.7).add(fine.mul(0.6)));
-  const colour = mix(scanned, cornColour, smoothstep(0.1, 0.45, corn.add(ragged.mul(0.25))).mul(soil));
+  // A sown strip is corn edge to edge (its growth only sets the colour): no patchy half-sown look.
+  const colour = mix(scanned, cornColour, smoothstep(0.03, 0.09, corn).mul(soil));
   // A slow drift of tone, so one meadow is not one green.
   const tone = float(0.8).add(smoothstep(0.3, 0.7, fine).mul(0.2)).add(coarse.mul(0.12)).add(patch.mul(0.1));
   material.colorNode = colour.mul(tone);
