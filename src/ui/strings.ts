@@ -25,6 +25,9 @@ interface Strings {
   qualityHigh: string;
   qualityLow: string;
   difficultyLabel: string;
+  /** The choice of where the keeps stand, and the names of the three places. */
+  startLabel: string;
+  startSites: readonly [string, string, string];
   loading: string;
   victory: string;
   defeat: string;
@@ -188,6 +191,8 @@ const pl: Strings = {
   qualityHigh: 'Wysoka',
   qualityLow: 'Niska',
   difficultyLabel: 'Przeciwnik',
+  startLabel: 'Zamek',
+  startSites: ['Róg', 'Zachód', 'Południe'],
   loading: 'Wczytywanie',
   victory: 'Zwycięstwo',
   defeat: 'Porażka',
@@ -359,6 +364,8 @@ const en: Strings = {
   qualityHigh: 'High',
   qualityLow: 'Low',
   difficultyLabel: 'Opponent',
+  startLabel: 'Keep',
+  startSites: ['Corner', 'West', 'South'],
   loading: 'Loading',
   victory: 'Victory',
   defeat: 'Defeat',

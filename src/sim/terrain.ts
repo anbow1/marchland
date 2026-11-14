@@ -2,6 +2,7 @@ import { MAP, TOWN } from '../config.ts';
 import { fbm2 } from '../core/noise.ts';
 import type { Side } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
+import { PLAYER_SITE } from './layout.ts';
 
 // The map as functions of (x, z): height, forest, water, and the outcrops of
 // stone and ore. The renderer draws from the same functions, so what the
@@ -16,11 +17,11 @@ import { hypot2 } from '../core/hypot.ts';
 
 /** Town centre of a side: the player in the south-west corner, the computer in the north-east. */
 export function townX(side: Side): number {
-  return side === 0 ? -MAP.townOffsetM : MAP.townOffsetM;
+  return side === 0 ? PLAYER_SITE[0] : -PLAYER_SITE[0];
 }
 
 export function townZ(side: Side): number {
-  return side === 0 ? MAP.townOffsetM : -MAP.townOffsetM;
+  return side === 0 ? PLAYER_SITE[1] : -PLAYER_SITE[1];
 }
 
 /** +1 for the player, −1 for the computer: every offset of a side's layout is multiplied by it. */
@@ -29,10 +30,11 @@ export function turnOf(side: Side): number {
 }
 
 // The player's axes: "forward" looks at the enemy (north-east), "side" is to the right of that (south-east).
-export const FORWARD_X = Math.SQRT1_2;
-export const FORWARD_Z = -Math.SQRT1_2;
-export const SIDE_X = Math.SQRT1_2;
-export const SIDE_Z = Math.SQRT1_2;
+const SITE_M = Math.hypot(PLAYER_SITE[0], PLAYER_SITE[1]);
+export const FORWARD_X = -PLAYER_SITE[0] / SITE_M;
+export const FORWARD_Z = -PLAYER_SITE[1] / SITE_M;
+export const SIDE_X = -FORWARD_Z;
+export const SIDE_Z = FORWARD_X;
 
 function smoothstep(lo: number, hi: number, v: number): number {
   const t = Math.min(1, Math.max(0, (v - lo) / (hi - lo)));
@@ -203,8 +205,8 @@ function distanceToNearestTownM(x: number, z: number): number {
 
 /** Distance from the straight line between the two towns: the open field where armies meet. */
 function distanceToFieldAxisM(x: number, z: number): number {
-  // The towns lie on the line x = -z, so the distance to it is |x + z| / sqrt(2).
-  return Math.abs(x + z) * Math.SQRT1_2;
+  // The towns lie on a line through the middle, along FORWARD.
+  return Math.abs(x * FORWARD_Z - z * FORWARD_X);
 }
 
 /** A rounded hill of the given height and radius centred on (cx, cz). */
@@ -219,9 +221,10 @@ export function heightAtM(x: number, z: number): number {
   const rolling = fbm2(x / 120, z / 120, 4, MAP.terrainSeed) * MAP.hillHeightM;
   const folds = fbm2(x / 34, z / 34, 3, MAP.terrainSeed + 3) * MAP.foldHeightM;
   const onField = 1 - (1 - MAP.fieldReliefFactor) * (1 - smoothstep(MAP.fieldHalfWidthM * 0.6, MAP.fieldHalfWidthM * 1.6, distanceToFieldAxisM(x, z)));
-  // The two knolls: either side of the middle, across the road.
-  const k = MAP.knollOffsetM * Math.SQRT1_2;
-  const knolls = knoll(x, z, k, k) + knoll(x, z, -k, -k);
+  // The two knolls: either side of the middle, across the field.
+  const kx = SIDE_X * MAP.knollOffsetM;
+  const kz = SIDE_Z * MAP.knollOffsetM;
+  const knolls = knoll(x, z, kx, kz) + knoll(x, z, -kx, -kz);
   const town = smoothstep(MAP.townFlatRadiusM, MAP.townBlendRadiusM, distanceToNearestTownM(x, z));
   const share = lakeShare(x, z);
   const shore = smoothstep(1.0, 1.6, share);

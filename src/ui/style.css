@@ -82,6 +82,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .sub { margin: 0; color: #b9b29c; }
 .choiceRow { display: flex; gap: 6px; align-items: center; }
 .choiceRow span { width: 96px; text-align: right; color: #b9b29c; }
+.siteMapBox { display: flex; justify-content: center; margin: 2px 0 4px; }
+.siteMap { border-radius: 6px; box-shadow: 0 1px 4px #0008; }
 .choice, .sheet button { background: #33362a; border: 1px solid #5d5843; border-radius: 3px; padding: 6px 14px; }
 .choice.on { background: #6a5a2a; border-color: #c9ae5a; }
 .sheet button.primary { background: #5c7a35; border-color: #a9cf73; font-size: 17px; padding: 8px 34px; }

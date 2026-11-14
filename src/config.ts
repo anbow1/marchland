@@ -15,8 +15,18 @@ export const MAP = {
   /** Playable square, centred on the origin. */
   sizeM: 560,
   halfM: 280,
-  /** Town centres sit on the diagonal, this far from the origin on each axis. */
+  /** Town centres sit on the diagonal, this far from the origin on each axis (the first place a keep may stand). */
   townOffsetM: 212,
+  /**
+   * The places the player's keep may stand, (x, z), one picked before the game (src/sim/layout.ts): in
+   * the south-west corner, up the west edge, along the south edge. The computer's is always the same
+   * place turned half a circle about the middle.
+   */
+  startSites: [
+    [-212, 212],
+    [-212, 128],
+    [-128, 212],
+  ],
   /** Ground is level inside this radius of a keep, then blends into the hills. */
   townFlatRadiusM: 26,
   townBlendRadiusM: 85,

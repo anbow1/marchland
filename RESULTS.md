@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Ikonki surowców, szary mur, wybór miejsca zamku
+
+- **Ikonki**: 19 rysunkowych ikon SVG (płaskie kolory, ciemny kontur, odblask) zamiast
+  kolorowych kwadracików w pasku surowców i we wszystkich cenach (`src/ui/icons.ts`).
+- **Mur, brama, wieża szare**: skany kamienia są ciepłe (łamany średnio 138/126/102),
+  odcienie `rubble#bccfff` i `ashlar#bccae6` znoszą przewagę czerwieni.
+- **Drzewa**: sadzonka wyrasta raz w drzewo, drwal bierze tylko w pełni wyrośnięte
+  (było już tak; nowy test tego pilnuje).
+- **Wybór miejsca zamku** (3): róg (−212, 212), zachód (−212, 128), południe (−128, 212);
+  komputer lustrzanie. Mapa liczy się z wybranego miejsca przy wczytaniu, więc zmiana
+  przeładowuje stronę z `?start=` i od razu startuje grę. Oś pola, kopce i grzędy liczą
+  się od linii między zamkami. Sprawdzone dla każdego miejsca: jezioro i wychodnie
+  w mapie (min. 16 m od krawędzi), zamek na płaskim, góry ≥ 250 m od zamku; komputer
+  burzy biernego gracza po 32–34 min na każdym z trzech.
+
 ## 2026-11-14 · Brama w murze
 
 - Mur zatrzymywał wszystkich, także własnych żołnierzy (wcześniej błędnie pisałem, że

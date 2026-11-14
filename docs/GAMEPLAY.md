@@ -51,7 +51,11 @@ drzewka technologii, mikrotransakcji, krwi.
   zwykły (400 ciosów zamiast 260).
 - **Zasięgi**: drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy
   (nie przy wrogim zamku); zagrody i winnice do 300 m od zamku; reszta 230 m.
-- **Mapa 560 m**, zamki bliżej rogów, 600 m od siebie, bez drogi między nimi.
+- **Mapa 560 m**, bez drogi między zamkami. **Miejsce zamku** wybiera się w menu
+  spośród trzech: 1. róg (zamki 600 m od siebie), 2. zachodni skraj, 3. południowy
+  skraj (po 495 m); komputer stoi zawsze w miejscu lustrzanym (obrót o pół koła),
+  więc mapa jest uczciwa. Jezioro, wychodnie, pole bitwy, kopce i skalne grzędy
+  układają się względem linii między zamkami; góry stoją w rogach bez zmian.
 - **Wycinka lasu**: drwal ścina najbliższe dorosłe drzewo w promieniu 48 m od chaty
   (8 drewna z drzewa), przy pniu sadzi sadzonkę — jedną za każde ścięte drzewo — i
   dopiero wtedy niesie drewno do zagrody. Sadzonka rośnie 10 minut i znów jest drzewem

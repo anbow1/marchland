@@ -1,4 +1,5 @@
 import { townX, townZ } from './sim/terrain.ts';
+import { START } from './sim/layout.ts';
 import { Game } from './app/game.ts';
 import { WorldView } from './app/worldView.ts';
 import { SIM } from './config.ts';
@@ -112,13 +113,30 @@ function prepareScene(game: Game, scene: string): void {
 }
 
 async function run(): Promise<void> {
-  let difficulty: Difficulty = 'normal';
+  const askedDifficulty = params.get('d');
+  let difficulty: Difficulty = askedDifficulty === 'easy' || askedDifficulty === 'hard' ? askedDifficulty : 'normal';
   let quality = askedQuality() ?? defaultQuality();
-  if (!autostart) {
-    const choice = await menu.start({ difficulty, quality });
+  // Back from choosing another place for the keeps (below): straight into the game, and the next reload
+  // shows the menu again, on the place chosen.
+  const chosenAlready = params.has('go');
+  if (chosenAlready) {
+    params.delete('go');
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+  }
+  if (!autostart && !chosenAlready) {
+    const choice = await menu.start({ difficulty, quality, start: START });
     difficulty = choice.difficulty;
     quality = askedQuality() ?? choice.quality;
     sound.unlock();
+    if (choice.start !== START) {
+      // The map is laid out from the keeps when the game loads: load it again with the new place.
+      params.set('start', String(choice.start));
+      params.set('d', difficulty);
+      params.set('q', quality);
+      params.set('go', '1');
+      location.search = params.toString();
+      return;
+    }
   }
   menu.loading(0);
   const loadStart = performance.now();
