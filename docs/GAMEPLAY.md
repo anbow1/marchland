@@ -245,13 +245,15 @@ Zrobione (2026-11-13):
 - Górny pasek: ludność (i ilu wolnych), racje w zamku i chatach wobec
   zjadanych na minutę, wojsko.
 
+Zrobione: **zakładka Produkcja** — każdy towar: w zamku, wytwarza /min, bilans /min (z ostatnich
+dwóch minut); obok zatory warsztatów (brak surowca — którego, pełne podwórze, brak pracownika,
+wstrzymany) z „pokaż”. **Alarmy z „pokaż”**: wróg w osadzie, wróg przy zamku, głód, oddział
+ucieka lub rozbity, budynek stracony, mur przebity, podwórze pełne od minuty.
+
 Do zrobienia:
 
 - Dolny pasek kart oddziałów (jak dziś nad wojskiem, ale stały): siła, morale,
   stopień, postawa; klik zaznacza, dwuklik centruje kamerę.
-- Ekran produkcji: każdy towar z bilansem na minutę i wskazaniem zatoru
-  (brak surowca / brak tragarza / pełny skład / brak pracownika).
-- Alarmy z klikiem „pokaż”: głód w chacie, pełny skład, zagon, oddział ucieka.
 - Grupy 1–9, podwójny klik = wszystkie tego rodzaju na ekranie, zakładki
   kamery F5–F8.
 - Podpowiedź kontr przy werbunku („dobre na: jazdę; słabe na: łuczników”).

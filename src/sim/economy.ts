@@ -108,6 +108,46 @@ export interface Town {
   /** The keep's own household: people living there now (set by the people's step) and the clock to the next newcomer. */
   keepResidents: number;
   keepGrowS: number;
+  /** Everything the town has made since the start, by good (the production screen's rates come from it). */
+  made: Stock;
+  /** What was made and what lay in the keep, sampled every FLOW_SAMPLE_S, newest last (at most FLOW_SAMPLES). */
+  flow: { made: Stock; stock: Stock }[];
+  flowS: number;
+}
+
+/** Seconds between samples of what a town makes, and how many are kept: rates are over the last two minutes. */
+export const FLOW_SAMPLE_S = 15;
+export const FLOW_SAMPLES = 9;
+
+/** Counts goods made (into a yard, or gold as tax) for the production screen. */
+export function noteMade(town: Town, id: ResourceId, amount: number): void {
+  town.made[id] += amount;
+}
+
+/**
+ * Per good, a minute's making and a minute's change in the keep's store, over the samples kept (two
+ * minutes once the game is that old); zeros before the second sample.
+ */
+export function flowRates(town: Town): { made: Stock; net: Stock } {
+  const made = emptyStock();
+  const net = emptyStock();
+  const first = town.flow[0];
+  const last = town.flow[town.flow.length - 1];
+  if (!first || !last || first === last) return { made, net };
+  const minutes = ((town.flow.length - 1) * FLOW_SAMPLE_S) / 60;
+  for (const id of RESOURCE_IDS) {
+    made[id] = (last.made[id] - first.made[id]) / minutes;
+    net[id] = (last.stock[id] - first.stock[id]) / minutes;
+  }
+  return { made, net };
+}
+
+/** The first input a workshop waits for (it has less than a cycle takes), or null. */
+export function lackingInput(b: Building): ResourceId | null {
+  const recipe = BUILDINGS[b.kind].recipe;
+  if (!recipe) return null;
+  for (const id of RESOURCE_IDS) if ((recipe.inputs[id] ?? 0) > b.inp[id]) return id;
+  return null;
 }
 
 export function emptyStock(): Stock {
@@ -121,7 +161,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.maxBuildings; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -350,6 +390,7 @@ export function keepRationDemandPerSecond(town: Town, soldiers: number): number 
 }
 
 function addGold(town: Town, amount: number): void {
+  town.made.gold += amount;
   town.goldRemainder += amount;
   const whole = Math.floor(town.goldRemainder);
   town.stock.gold += whole;
@@ -375,7 +416,10 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
   }
   b.cycleProgressS += dtSeconds * (LEVEL_SPEED[b.level - 1] as number) * b.workRate * town.productionFactor;
   if (b.cycleProgressS >= recipe.cycleSeconds) {
-    for (const id of RESOURCE_IDS) b.out[id] += recipe.outputs[id] ?? 0;
+    for (const id of RESOURCE_IDS) {
+      b.out[id] += recipe.outputs[id] ?? 0;
+      town.made[id] += recipe.outputs[id] ?? 0;
+    }
     b.cycleStarted = false;
     b.cycleProgressS = 0;
   }
@@ -413,6 +457,12 @@ function construct(town: Town, b: Building, plot: number, dtSeconds: number): vo
 
 /** One fixed step of a town. `soldiers` is the number of its men alive on the field. */
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
+  town.flowS -= dtSeconds;
+  if (town.flowS <= 0) {
+    town.flowS += FLOW_SAMPLE_S;
+    town.flow.push({ made: { ...town.made }, stock: { ...town.stock } });
+    if (town.flow.length > FLOW_SAMPLES) town.flow.shift();
+  }
   town.rationDebt += keepRationDemandPerSecond(town, soldiers) * dtSeconds;
   eat(town.stock, town);
   addGold(town, TOWN.keepGoldPerSecond * dtSeconds);

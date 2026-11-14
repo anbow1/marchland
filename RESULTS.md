@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Zakładka Produkcja i alarmy z „pokaż”
+
+- Gospodarka liczy, ile czego wytworzono (warsztaty, zbieracze, pola, podatki), i co 15 s
+  zapisuje stan; zakładka **Produkcja** pokazuje dla każdego towaru: w zamku, wytwarza /min
+  i bilans /min z ostatnich dwóch minut (ujemny na czerwono), a obok **zatory**: warsztaty
+  pogrupowane według przyczyny (brak surowca — którego, pełne podwórze, brak pracownika,
+  wstrzymany), każdy z „pokaż”.
+- **Alarmy z „pokaż”** (przycisk w komunikacie przenosi kamerę): wróg w osadzie (oddział
+  wroga ≤ 30 m od budynku), wróg przy zamku, głód, nasz oddział ucieka / rozbity, budynek
+  stracony, mur przebity, podwórze pełne od minuty.
+
 ## 2026-11-14 · Komputer stawia wieże; przecinka przestaje być lasem
 
 - Komputer stawia wieżę strażniczą przed miastem (po stronie wroga, z boku drogi ataku;

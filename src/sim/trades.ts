@@ -1,5 +1,5 @@
 import { FIELDS, FORESTRY, GATHER, LEVEL_SPEED, PEOPLE, VINES } from '../config.ts';
-import { type Building, isBuilt, type Town } from './economy.ts';
+import { type Building, isBuilt, noteMade, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
 import { NOWHERE } from './types.ts';
 import type { World } from './world.ts';
@@ -101,6 +101,7 @@ function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: numb
   p.act = 'walk';
   if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   b.out[crop] += vines ? VINES.grapesPerHarvest : FIELDS.grainPerHarvest;
+  noteMade(town, crop, vines ? VINES.grapesPerHarvest : FIELDS.grainPerHarvest);
   p.load = null;
   p.phase = AT_HOME;
 }
@@ -180,6 +181,7 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
     p.timerS -= dtSeconds * paceOf(town, b, p);
     if (p.timerS > 0) return;
     b.out[good] += trade.amount;
+    noteMade(town, good, trade.amount);
     p.load = null;
     p.phase = AT_HOME;
     return;
@@ -194,6 +196,7 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
   }
   if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   b.out[good] += trade.amount;
+  noteMade(town, good, trade.amount);
   p.load = null;
   p.phase = AT_HOME;
 }

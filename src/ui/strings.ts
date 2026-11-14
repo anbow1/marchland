@@ -44,6 +44,17 @@ interface Strings {
   pause: string;
   unpause: string;
   recruit: string;
+  /** The production screen: its tab, its columns, the list of hold-ups, and the alarms that point at a place. */
+  production: string;
+  prodStock: string;
+  prodMade: string;
+  prodNet: string;
+  holdUps: string;
+  allWorking: string;
+  lacks: string;
+  show: string;
+  raid: string;
+  yardFullAlarm: string;
   queue: string;
   halt: string;
   selectAll: string;
@@ -209,6 +220,16 @@ const pl: Strings = {
   pause: 'Wstrzymaj',
   unpause: 'Wznów',
   recruit: 'Werbunek',
+  production: 'Produkcja',
+  prodStock: 'w zamku',
+  prodMade: 'wytwarza /min',
+  prodNet: 'bilans /min',
+  holdUps: 'Zatory',
+  allWorking: 'Wszystkie warsztaty pracują.',
+  lacks: 'brak',
+  show: 'pokaż',
+  raid: 'Wróg w osadzie!',
+  yardFullAlarm: 'Pełne podwórze, tragarze nie nadążają:',
   queue: 'W szkoleniu',
   halt: 'Stój (H)',
   selectAll: 'Całe wojsko (Ctrl+A)',
@@ -382,6 +403,16 @@ const en: Strings = {
   pause: 'Pause',
   unpause: 'Resume',
   recruit: 'Recruit',
+  production: 'Production',
+  prodStock: 'in the keep',
+  prodMade: 'made /min',
+  prodNet: 'change /min',
+  holdUps: 'Hold-ups',
+  allWorking: 'Every workshop is working.',
+  lacks: 'lacks',
+  show: 'show',
+  raid: 'The enemy is in the town!',
+  yardFullAlarm: 'Yard full, the carriers cannot keep up:',
   queue: 'In training',
   halt: 'Halt (H)',
   selectAll: 'Whole army (Ctrl+A)',

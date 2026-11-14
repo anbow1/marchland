@@ -1,7 +1,7 @@
 import { ARMY, BUILDINGS, FIELDS, FOOD, GATE, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, rearmCost } from '../sim/commands.ts';
-import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
+import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, flowRates, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { isEngaged, type Regiment } from '../sim/regiment.ts';
 import { BUILDING_KINDS, type BuildingKind, PLAYER, RESOURCE_IDS, type ResourceId, UNIT_KINDS, type UnitKind } from '../sim/types.ts';
@@ -212,7 +212,7 @@ export class Hud {
   }
 
   private plotInPanel = -1;
-  private tab: 'build' | 'army' = 'build';
+  private tab: 'build' | 'army' | 'prod' = 'build';
 
   private act(name: string, arg: string): void {
     switch (name) {
@@ -231,8 +231,13 @@ export class Hud {
       case 'ungarrison':
         this.actions.ungarrison(this.plotInPanel);
         break;
+      case 'show': {
+        const [x, z] = arg.split(',').map(Number);
+        this.actions.jump(x as number, z as number);
+        break;
+      }
       case 'tab':
-        this.tab = arg === 'army' ? 'army' : 'build';
+        this.tab = arg === 'army' ? 'army' : arg === 'prod' ? 'prod' : 'build';
         break;
       case 'upgrade':
         this.actions.upgrade(this.plotInPanel);
@@ -267,9 +272,15 @@ export class Hud {
     this.panelAge = PANEL_REFRESH_S;
   }
 
-  toast(text: string, tone: 'good' | 'bad' | 'plain' = 'plain'): void {
+  /** A message for a few seconds; with a place, a "show" link that turns the camera there. */
+  toast(text: string, tone: 'good' | 'bad' | 'plain' = 'plain', at: readonly [number, number] | null = null): void {
     const node = el('div', `toast ${tone}`, this.toasts);
     node.textContent = text;
+    if (at) {
+      const link = el('button', 'link', node);
+      link.textContent = T.show;
+      link.addEventListener('click', () => this.actions.jump(at[0], at[1]));
+    }
     while (this.toasts.children.length > 4) this.toasts.firstElementChild?.remove();
     window.setTimeout(() => node.remove(), TOAST_SECONDS * 1000);
   }
@@ -335,6 +346,37 @@ export class Hud {
   private stockText(stock: Readonly<Record<ResourceId, number>>): string {
     const parts = RESOURCE_IDS.filter((id) => stock[id] > 0).map((id) => `${T.resources[id].toLowerCase()} ${stock[id]}`);
     return parts.length > 0 ? parts.join(', ') : '—';
+  }
+
+  /**
+   * Each good: what lies in the keep, what is made a minute and how the store changes a minute (over the
+   * last two minutes); then what holds the workshops up, each line pointing at the building.
+   */
+  private productionHtml(town: Town): string {
+    const { made, net } = flowRates(town);
+    const fmt = (v: number): string => (Math.abs(v) < 0.05 ? '·' : `${v > 0 ? '+' : '−'}${Math.abs(v) < 10 ? Math.abs(v).toFixed(1) : Math.round(Math.abs(v))}`);
+    let rows = '';
+    for (const id of RESOURCE_IDS) {
+      if (town.stock[id] < 0.5 && Math.abs(made[id]) < 0.05 && Math.abs(net[id]) < 0.05) continue;
+      const tone = net[id] < -0.05 ? ' short' : '';
+      rows += `<div class="prodRow"><i class="ico">${resourceIcon(id)}</i><span class="name">${T.resources[id]}</span><b>${Math.floor(town.stock[id])}</b><span>${fmt(made[id])}</span><span class="net${tone}">${fmt(net[id])}</span></div>`;
+    }
+    const head = `<div class="prodRow head"><i></i><span class="name"></span><b>${T.prodStock}</b><span>${T.prodMade}</span><span>${T.prodNet}</span></div>`;
+    // Hold-ups: workshops not working, gathered by kind and reason.
+    const groups = new Map<string, { text: string; count: number; x: number; z: number }>();
+    for (const b of town.plots) {
+      if (!b || b.kind === 'house' || b.kind === 'barracks' || b.kind === 'tower') continue;
+      const state = workState(b);
+      if (state === 'working' || state === 'building' || state === 'waiting') continue;
+      const lacks = state === 'noInput' ? lackingInput(b) : null;
+      const key = `${b.kind}|${state}|${lacks ?? ''}`;
+      const g = groups.get(key);
+      if (g) g.count++;
+      else groups.set(key, { text: `${T.buildings[b.kind].name}: ${T.work[state]}${lacks ? ` (${T.lacks}: ${T.resources[lacks].toLowerCase()})` : ''}`, count: 1, x: b.x, z: b.z });
+    }
+    let holdUps = '';
+    for (const g of groups.values()) holdUps += `<div class="holdUp">${g.count > 1 ? `${g.count}× ` : ''}${g.text} <button class="link" data-act="show" data-arg="${g.x.toFixed(1)},${g.z.toFixed(1)}">${T.show}</button></div>`;
+    return `<div class="prod"><div class="prodTable">${head}${rows}</div><div class="holdUps"><div class="label">${T.holdUps}</div>${holdUps || `<div class="holdUp ok">${T.allWorking}</div>`}</div></div>`;
   }
 
   private plotHtml(world: World, town: Town, plot: number): string {
@@ -427,8 +469,8 @@ export class Hud {
 
   /** Nothing selected: the building list, or (on its tab, once there is a barracks) the recruiting list. */
   private idleHtml(world: World, town: Town, tool: string): string {
-    const tabs = `<div class="row tabs"><button class="tab${this.tab === 'build' ? ' on' : ''}" data-act="tab" data-arg="build">${T.build}</button><button class="tab${this.tab === 'army' ? ' on' : ''}" data-act="tab" data-arg="army">${T.recruit}</button></div>`;
-    return tabs + (this.tab === 'build' ? this.buildHtml(town, tool) : this.recruitHtml(world, town));
+    const tabs = `<div class="row tabs"><button class="tab${this.tab === 'build' ? ' on' : ''}" data-act="tab" data-arg="build">${T.build}</button><button class="tab${this.tab === 'army' ? ' on' : ''}" data-act="tab" data-arg="army">${T.recruit}</button><button class="tab${this.tab === 'prod' ? ' on' : ''}" data-act="tab" data-arg="prod">${T.production}</button></div>`;
+    return tabs + (this.tab === 'build' ? this.buildHtml(town, tool) : this.tab === 'army' ? this.recruitHtml(world, town) : this.productionHtml(town));
   }
 
   private updateCards(world: World, selected: ReadonlySet<number>, project: Project, groundY: (x: number, z: number) => number): void {

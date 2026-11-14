@@ -8,6 +8,7 @@ import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
+import { workState } from '../sim/economy.ts';
 import { CpuTimer } from '../render/perf.ts';
 import { Hud } from '../ui/hud.ts';
 import type { Sound } from '../ui/sound.ts';
@@ -36,6 +37,11 @@ type Tool = { kind: 'build'; building: BuildingKind; turns: number } | { kind: '
 
 /** Least seconds between two "enemy at the town" warnings. */
 const WARNING_GAP_S = 45;
+/** An enemy regiment this close to one of the player's buildings is a raid; told at most this often. */
+const RAID_RADIUS_M = 30;
+const RAID_GAP_S = 40;
+/** A workshop's yard full this long raises an alarm (and again after three times as long). */
+const YARD_FULL_ALARM_S = 60;
 
 export class Game implements ControlTarget {
   readonly world: World;
@@ -130,6 +136,7 @@ export class Game implements ControlTarget {
       if (!r || r.aliveMen === 0) this.selected.delete(id);
     }
     this.warnOfAttack();
+    this.watchTown();
   }
 
   private distanceFromCamera(x: number, z: number): number {
@@ -157,11 +164,11 @@ export class Game implements ControlTarget {
         break;
       case 'rout':
         this.sound.play('hornLow', distanceM);
-        this.hud.toast(mine ? T.routed : T.enemyRouted, mine ? 'bad' : 'good');
+        this.hud.toast(mine ? T.routed : T.enemyRouted, mine ? 'bad' : 'good', mine ? [e.x, e.z] : null);
         break;
       case 'shattered':
         this.sound.play('hornLow', distanceM);
-        this.hud.toast(mine ? T.shattered : T.enemyRouted, mine ? 'bad' : 'good');
+        this.hud.toast(mine ? T.shattered : T.enemyRouted, mine ? 'bad' : 'good', mine ? [e.x, e.z] : null);
         break;
       case 'rally':
         if (mine) this.hud.toast(T.rallied, 'good');
@@ -177,7 +184,7 @@ export class Game implements ControlTarget {
         break;
       case 'wallBroken':
         this.sound.play('thud', distanceM);
-        if (!mine) this.hud.toast(T.wallBroken, 'bad');
+        if (!mine) this.hud.toast(T.wallBroken, 'bad', [e.x, e.z]);
         break;
       case 'rearmed':
         if (mine) {
@@ -193,10 +200,10 @@ export class Game implements ControlTarget {
         break;
       case 'destroyed':
         this.sound.play('thud', distanceM);
-        if (mine) this.hud.toast(T.lost, 'bad');
+        if (mine) this.hud.toast(T.lost, 'bad', [e.x, e.z]);
         break;
       case 'starving':
-        if (mine) this.hud.toast(T.starving, 'bad');
+        if (mine) this.hud.toast(T.starving, 'bad', [townX(PLAYER), townZ(PLAYER)]);
         break;
       case 'fed':
         if (mine) this.hud.toast(T.fed, 'good');
@@ -216,9 +223,47 @@ export class Game implements ControlTarget {
       if (Math.hypot(r.centreX - townX(PLAYER), r.centreZ - townZ(PLAYER)) > AI.defendRadiusM) continue;
       this.lastWarningS = this.world.timeS;
       this.sound.play('horn');
-      this.hud.toast(T.attackWarning, 'bad');
+      this.hud.toast(T.attackWarning, 'bad', [r.centreX, r.centreZ]);
       return;
     }
+  }
+
+  /** Seconds each of the player's workshops has had a full yard, and when it last raised the alarm. */
+  private readonly fullSince = new Map<number, number>();
+  private readonly fullWarned = new Map<number, number>();
+  private lastRaidS = -1e9;
+
+  /**
+   * Alarms the simulation has no event for, looked at once a second: an enemy regiment among the
+   * player's buildings (not just near the keep), and a workshop whose yard has been full a minute.
+   */
+  private watchTown(): void {
+    if (this.world.stepCount % 60 !== 0) return;
+    const town = this.world.towns[PLAYER];
+    const now = this.world.timeS;
+    if (now - this.lastRaidS > RAID_GAP_S) {
+      raid: for (const r of this.world.regiments) {
+        if (r.side !== COMPUTER || r.aliveMen === 0) continue;
+        for (const b of town.plots) {
+          if (!b || Math.hypot(b.x - r.centreX, b.z - r.centreZ) > RAID_RADIUS_M) continue;
+          this.lastRaidS = now;
+          this.sound.play('horn');
+          this.hud.toast(`${T.raid} ${T.buildings[b.kind].name}`, 'bad', [b.x, b.z]);
+          break raid;
+        }
+      }
+    }
+    town.plots.forEach((b, plot) => {
+      if (!b || workState(b) !== 'yardFull') {
+        this.fullSince.delete(plot);
+        return;
+      }
+      const since = this.fullSince.get(plot) ?? now;
+      this.fullSince.set(plot, since);
+      if (now - since < YARD_FULL_ALARM_S || now - (this.fullWarned.get(plot) ?? -1e9) < YARD_FULL_ALARM_S * 3) return;
+      this.fullWarned.set(plot, now);
+      this.hud.toast(`${T.yardFullAlarm} ${T.buildings[b.kind].name}`, 'plain', [b.x, b.z]);
+    });
   }
 
   private render(frameSeconds: number): void {
