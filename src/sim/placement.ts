@@ -1,4 +1,5 @@
 import { FIELDS, GATHER, MAP, TOWN } from '../config.ts';
+import { woodStands } from './trees.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
 import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
@@ -82,7 +83,8 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   if (riseAcrossM(x, z, r) > TOWN.maxFootprintRiseM) return fail('tooSteep');
   const need = SITE_NEED[kind];
   // A woodcutter's hut stands at the edge of the wood, the others in the open.
-  if (need !== 'forest' && forestCoverAt(x, z) > 0.5) return fail('blocked');
+  // Felled ground (under half its trees left) may be built on.
+  if (need !== 'forest' && forestCoverAt(x, z) > 0.5 && woodStands(world.stand, x, z)) return fail('blocked');
   if (need === 'forest') {
     if (!findNearby(x, z, TOWN.forestReachM, (px, pz) => forestCoverAt(px, pz) > 0.6, found)) return fail('needsForest');
     // A few steps into the trees from where they begin.

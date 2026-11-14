@@ -93,6 +93,8 @@ const CELL_M = 12;
 const CELLS = Math.ceil(MAP.sizeM / CELL_M);
 const cellStart = new Int32Array(CELLS * CELLS + 1);
 const cellTrees = new Int32Array(TREES.count);
+/** Each fellable tree's cell, for counting how much of a cell's wood still stands. */
+const treeCell = new Int32Array(TREES.count).fill(-1);
 {
   const cellOf = (i: number): number => {
     const cx = Math.min(CELLS - 1, Math.max(0, Math.floor((TREES.x[i] as number) / CELL_M + CELLS / 2)));
@@ -107,6 +109,7 @@ const cellTrees = new Int32Array(TREES.count);
   for (let i = 0; i < TREES.count; i++) {
     if (!TREES.inside[i]) continue;
     const c = cellOf(i);
+    treeCell[i] = c;
     cellTrees[fill[c] as number] = i;
     fill[c] = (fill[c] as number) + 1;
   }
@@ -123,6 +126,8 @@ export interface Stand {
   /** Trees not simply standing (stumps and saplings), for the view to redraw; and a count of changes. */
   changed: Set<number>;
   version: number;
+  /** Grown trees standing in each cell of the grid: a cell felled to under half its trees is open ground. */
+  standing: Int16Array;
 }
 
 export function createStand(): Stand {
@@ -132,7 +137,21 @@ export function createStand(): Stand {
     claimedS: new Float32Array(TREES.count).fill(-1e9),
     changed: new Set(),
     version: 0,
+    standing: Int16Array.from({ length: CELLS * CELLS }, (_, c) => (cellStart[c + 1] as number) - (cellStart[c] as number)),
   };
+}
+
+/**
+ * False where the wood has been felled: a cell of the grid with fewer than half its trees grown. Where
+ * the map has no trees to fell (outside the square) the forest stands as the cover function says.
+ */
+export function woodStands(stand: Stand, x: number, z: number): boolean {
+  const cx = Math.floor(x / CELL_M + CELLS / 2);
+  const cz = Math.floor(z / CELL_M + CELLS / 2);
+  if (cx < 0 || cz < 0 || cx >= CELLS || cz >= CELLS) return true;
+  const c = cz * CELLS + cx;
+  const total = (cellStart[c + 1] as number) - (cellStart[c] as number);
+  return total === 0 || (stand.standing[c] as number) * 2 >= total;
 }
 
 /** 0 a bare stump, above 0 a sapling growing, 1 a grown tree. */
@@ -178,6 +197,7 @@ export function claimNearestTree(stand: Stand, x: number, z: number, reachM: num
 export function fellTree(stand: Stand, i: number, nowS: number): void {
   stand.felledS[i] = nowS;
   stand.claimedS[i] = -1e9;
+  if (!stand.changed.has(i) && (treeCell[i] as number) >= 0) stand.standing[treeCell[i] as number] = (stand.standing[treeCell[i] as number] as number) - 1;
   stand.changed.add(i);
   stand.version += 1;
 }
@@ -194,6 +214,7 @@ export function stepStand(stand: Stand, nowS: number): void {
     if (growthOf(stand, i, nowS) >= 1) {
       stand.felledS[i] = -1;
       stand.changed.delete(i);
+      if ((treeCell[i] as number) >= 0) stand.standing[treeCell[i] as number] = (stand.standing[treeCell[i] as number] as number) + 1;
       stand.version += 1;
     }
   }

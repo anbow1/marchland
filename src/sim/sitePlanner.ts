@@ -9,7 +9,7 @@ import { hypot2 } from '../core/hypot.ts';
 // computer needs a rule: houses and crafts in rings round its keep, farms
 // along a village street a short walk away with their fields running out
 // behind them, the woodcutter at the nearest edge of the forest, the fisher on
-// the lake, quarry and mine by their rock. Every candidate goes through the
+// the lake, quarry and mine by their rock, watchtowers out in front facing the enemy. Every candidate goes through the
 // same check a player's click does (placement.ts), so the computer builds
 // nowhere a player could not.
 
@@ -52,6 +52,19 @@ function planVillage(world: World, side: Side, kind: BuildingKind): boolean {
     const x = vx + t * (FORWARD_X * along + SIDE_X * across);
     const z = vz + t * (FORWARD_Z * along + SIDE_Z * across);
     if (tryAt(world, side, kind, x, z, yaw)) return true;
+  }
+  return false;
+}
+
+/** Watchtowers stand out in front of the town, either side of the way the enemy comes. */
+function planTower(world: World, side: Side, kind: BuildingKind): boolean {
+  const t = turnOf(side);
+  for (const forward of [72, 84, 60, 96]) {
+    for (const across of [34, -34, 48, -48, 22, -22]) {
+      const x = townX(side) + t * (FORWARD_X * forward + SIDE_X * across);
+      const z = townZ(side) + t * (FORWARD_Z * forward + SIDE_Z * across);
+      if (tryAt(world, side, kind, x, z, Math.atan2(t * FORWARD_X, t * FORWARD_Z))) return true;
+    }
   }
   return false;
 }
@@ -132,6 +145,7 @@ export function planSite(world: World, side: Side, kind: BuildingKind): Plan | n
   else if (need === 'water') found = planLake(world, side, kind);
   else if (need === 'stone' || need === 'ore') found = planDeposit(world, side, kind, need);
   else if (kind === 'farm' || kind === 'vineyard' || kind === 'pigFarm' || kind === 'stable') found = planVillage(world, side, kind) || planTown(world, side, kind);
+  else if (kind === 'tower') found = planTower(world, side, kind) || planTown(world, side, kind);
   else found = planTown(world, side, kind);
   return found ? plan : null;
 }

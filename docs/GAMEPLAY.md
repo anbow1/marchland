@@ -60,7 +60,8 @@ drzewka technologii, mikrotransakcji, krwi.
   (8 drewna z drzewa), przy pniu sadzi sadzonkę — jedną za każde ścięte drzewo — i
   dopiero wtedy niesie drewno do zagrody. Sadzonka rośnie 10 minut i znów jest drzewem
   do ścięcia. Wokół drwala robi się widoczna przecinka; gdy w zasięgu nie ma dorosłych
-  drzew, drwal czeka na sadzonki albo trzeba postawić nowego.
+  drzew, drwal czeka na sadzonki albo trzeba postawić nowego. Przecinka (ponad połowa
+  drzew w kratce 12 m) przestaje być lasem: nie spowalnia, nie osłania, można na niej budować.
 - **Góry i skały**: dwa szare masywy na flankach (w rogach bez zamków) i cztery
   skalne grzędy po bokach pola. Podnóża gór są do przejścia, rdzeń i grzędy —
   nie: nie da się tam wejść, budować ani prowadzić drogi; armie muszą je obejść.

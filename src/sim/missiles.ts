@@ -1,4 +1,5 @@
 import { damageWall, wallCellAt } from './nav.ts';
+import { woodStands } from './trees.ts';
 import { MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
@@ -185,7 +186,7 @@ function land(world: World, a: Arrow): void {
   }
   if (!victim) return;
   const r = victim.regiment;
-  const chance = MISSILE.hitChance * (isForest(x, z) ? MISSILE.forestHitFactor : 1) * (1 - r.def.missileBlock);
+  const chance = MISSILE.hitChance * (isForest(x, z) && woodStands(world.stand, x, z) ? MISSILE.forestHitFactor : 1) * (1 - r.def.missileBlock);
   if (world.rng.next() >= chance) return;
   r.morale -= MORALE.arrowHitShock;
   world.events.push('arrowHit', x, z, a.side);

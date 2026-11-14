@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Komputer stawia wieże; przecinka przestaje być lasem
+
+- Komputer stawia wieżę strażniczą przed miastem (po stronie wroga, z boku drogi ataku;
+  druga później w kolejności budowy) i obsadza ją łucznikami, którzy zostają w domu.
+  Pomiar: wieża stoi z pełną załogą (4), tempo 35,4 / 35,9 min (ziarna 5 / 6; wieża
+  kosztuje 60 kamienia). Mury z bramą dla komputera razem z mechaniką oddziałów (armia
+  musi umieć przejść bramę kolumną).
+- Las w regułach liczy stojące drzewa w kratkach 12 m: gdzie wycięto ponad połowę, nie
+  ma spowolnienia marszu ani osłony przed strzałami, a na przecince wolno budować.
+  Odrośnięte drzewa przywracają las. Nowy test.
+
 ## 2026-11-14 · Ikonki surowców, szary mur, wybór miejsca zamku
 
 - **Ikonki**: 19 rysunkowych ikon SVG (płaskie kolory, ciemny kontur, odblask) zamiast

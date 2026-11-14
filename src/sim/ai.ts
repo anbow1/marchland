@@ -1,5 +1,5 @@
-import { AI, AI_TUNING, REARM, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from './commands.ts';
+import { AI, AI_TUNING, REARM, TOWER, TOWN, UNITS } from '../config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
@@ -64,6 +64,8 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   // The pig farm stops when its meat piles up; the butcher turns it into sausage, which feeds the town.
   'butcher',
   'fletcher',
+  // A watchtower out in front, manned by archers who stay home: a raid meets arrows before the keep.
+  'tower',
   'farm',
   'house',
   'ironMine',
@@ -76,6 +78,7 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'farm',
   'house',
   'stable',
+  'tower',
   'armourer',
   'vineyard',
   'winery',
@@ -239,6 +242,20 @@ function rearmGuards(world: World, ai: AiState, home: readonly Regiment[]): void
   }
 }
 
+/** Archers or crossbowmen at home man the side's watchtowers with free places, one regiment a think. */
+function manTowers(world: World, ai: AiState, home: readonly Regiment[]): void {
+  const town = world.towns[ai.side];
+  for (let plot = 0; plot < town.plots.length; plot++) {
+    const b = town.plots[plot];
+    if (!b || b.kind !== 'tower' || b.constructionLeftS > 0 || b.garrison >= TOWER.maxGarrison) continue;
+    for (const r of home) {
+      if (r.def.missileRangeM <= 0 || r.def.engine || r.garrisonPlot >= 0) continue;
+      if (b.garrisonKind !== null && b.garrisonKind !== r.kind) continue;
+      if (cmdGarrison(world, r.id, plot) === 'ok') return;
+    }
+  }
+}
+
 function command(world: World, ai: AiState): void {
   const side = ai.side;
   const foe = enemyOf(side);
@@ -270,6 +287,7 @@ function command(world: World, ai: AiState): void {
     if (home.length > 0) cmdMoveGroup(world, home.map((r) => r.id), rallyX(side), rallyZ(side), facingToEnemy(side), false);
   } else {
     rearmGuards(world, ai, home);
+    manTowers(world, ai, home);
   }
 
   if (ai.mode === 'gather') {

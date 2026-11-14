@@ -1,4 +1,5 @@
 import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt, wallStops } from './nav.ts';
+import { woodStands } from './trees.ts';
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
 import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, townX, townZ } from './terrain.ts';
@@ -85,8 +86,9 @@ export class SpatialGrid {
   }
 }
 
-function terrainSpeedFactor(r: Regiment, x: number, z: number): number {
-  if (!isForest(x, z)) return 1;
+function terrainSpeedFactor(world: World, r: Regiment, x: number, z: number): number {
+  // The wood slows men only where it still stands: a felled stretch is open ground.
+  if (!isForest(x, z) || !woodStands(world.stand, x, z)) return 1;
   return r.def.cavalry ? ARMY.forestHorseSpeedFactor : ARMY.forestFootSpeedFactor;
 }
 
@@ -181,7 +183,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
   let movedM = 0;
   const running = run && distanceM > stopDistanceM + 0.05;
   if (distanceM > stopDistanceM + 0.05) {
-    let speed = (run ? runSpeedMs(r) : r.def.walkSpeedMs) * terrainSpeedFactor(r, r.anchorX, r.anchorZ);
+    let speed = (run ? runSpeedMs(r) : r.def.walkSpeedMs) * terrainSpeedFactor(world, r, r.anchorX, r.anchorZ);
     if (r.lagM > ARMY.cohesionLagM) speed *= ARMY.cohesionSlowFactor;
     // In melee the formation only leans on the enemy; a move order pulls it out of the fight.
     if (isEngaged(r) && r.order !== 'move') speed = Math.min(speed, 0.5);
@@ -354,7 +356,7 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
   let wantVz = 0;
   if (d > stopM + 0.03) {
     // Slow down over the last stretch so he settles on his place instead of circling it.
-    const speed = Math.min(maxSpeed * terrainSpeedFactor(r, s.x, s.z), (d - stopM) * 5);
+    const speed = Math.min(maxSpeed * terrainSpeedFactor(world, r, s.x, s.z), (d - stopM) * 5);
     wantVx = (dx / d) * speed;
     wantVz = (dz / d) * speed;
   }

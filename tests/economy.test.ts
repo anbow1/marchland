@@ -7,7 +7,7 @@ import { freePeople } from '../src/sim/people.ts';
 import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
 import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
-import { claimNearestTree, createStand, fellTree, growthOf, plantTree, stepStand, TREES } from '../src/sim/trees.ts';
+import { claimNearestTree, createStand, fellTree, growthOf, plantTree, stepStand, TREES, woodStands } from '../src/sim/trees.ts';
 import { type BuildingKind, COMPUTER, PLAYER } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
@@ -158,6 +158,25 @@ describe('a living town', () => {
     });
     expect((town.plots[cutter]?.out.wood ?? 0) + 0).toBeGreaterThan(0);
     expect(town.stock.fish + (town.plots[fisher]?.out.fish ?? 0)).toBeGreaterThan(0);
+  });
+
+  it('felled wood is open ground until it grows back', () => {
+    const stand = createStand();
+    const i = TREES.inside.indexOf(1);
+    const x = TREES.x[i] as number;
+    const z = TREES.z[i] as number;
+    expect(woodStands(stand, x, z)).toBe(true);
+    // Fell every tree within a few metres: more than half the cell's wood.
+    const felled: number[] = [];
+    for (let k = 0; k < TREES.count; k++) {
+      if (!TREES.inside[k] || Math.hypot((TREES.x[k] as number) - x, (TREES.z[k] as number) - z) > 20) continue;
+      fellTree(stand, k, 0);
+      plantTree(stand, k, 0);
+      felled.push(k);
+    }
+    expect(woodStands(stand, x, z)).toBe(false);
+    stepStand(stand, FORESTRY.growS + 1);
+    expect(woodStands(stand, x, z)).toBe(true);
   });
 
   it('a sapling grows once into a tree, and only the grown tree may be felled', () => {
