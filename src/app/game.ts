@@ -44,7 +44,8 @@ const RAID_GAP_S = 40;
 const YARD_FULL_ALARM_S = 60;
 
 export class Game implements ControlTarget {
-  readonly world: World;
+  /** The game being played; replaced whole when a saved game is loaded. */
+  world: World;
   readonly camera: RtsCamera;
   readonly loop: FixedLoop;
   readonly hud: Hud;
@@ -635,6 +636,21 @@ export class Game implements ControlTarget {
     // With troops selected, a tap anywhere but on one's own troops or town is an order.
     if (this.selected.size > 0 && !own && ownPlot === -2) this.order(screenX, screenY, double, null, null);
     else this.select(screenX, screenY, false);
+  }
+
+  /** Whether the map moves when the mouse touches the screen's edge (a setting). */
+  setEdgeScroll(on: boolean): void {
+    this.controls.edgeScroll = on;
+  }
+
+  /** Carries on a saved game: its world replaces this one; selections and tools are put down. */
+  loadSaved(world: World): void {
+    this.world = world;
+    this.selected.clear();
+    this.selectedPlot = NOWHERE;
+    this.tool = null;
+    this.groups.clear();
+    this.camera.jumpTo(townX(PLAYER), townZ(PLAYER));
   }
 
   /** Regiments kept under keys 1–9, and camera views under F5–F8. */

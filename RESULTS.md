@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Zapis gry i ustawienia (M6)
+
+- **Zapis**: cały świat jako tekst (`src/sim/save.ts`): graf obiektów z numerami (żołnierz →
+  oddział, tragarz → budynek), tablice liczb w base64, zbiory, mapy i trzy klasy (losowanie,
+  kolejka zdarzeń, siatka) z metodami. Zapis zna układ mapy i miejsce zamku; wczytanie gry z innej
+  mapy przeładowuje stronę na tamtą mapę. Menu pauzy: „Zapisz grę”; menu startowe: „Wczytaj
+  grę (Przeprawa, 2 min)”. Jedno miejsce zapisu w pamięci przeglądarki.
+- Test: gra komputer–komputer 8 min → zapis → wczytanie → obie toczą się dalej 4 min i są
+  identyczne (czas, magazyny, oddziały co do milimetra, ludzie, las, punkty); zapis < 4 MB.
+  W przeglądarce: zapis na przeprawie, wczytanie ze strony z inną mapą, ten sam czas i złoto.
+- **Ustawienia** w menu pauzy: głośność (0 / 30 / 60 / 100 %), przesuwanie mapy krawędzią
+  ekranu; pamiętane w przeglądarce.
+- **KTX2 odłożone**: powierzchnie są tablicami tekstur składanymi z JPG w przeglądarce; skompresowane
+  tablice wymagają kodera Basis (go tu nie ma) i innej ścieżki ładowania. Pamięć tekstur dziś:
+  ok. 290 MB na High, ¼ na Low.
+
 ## 2026-11-14 · Grupy 1–9, widoki F5–F8, dwuklik, kontry przy werbunku
 
 - Ctrl+1…9 zapamiętuje zaznaczenie, 1…9 je przywraca (dwa razy w 0,4 s: kamera do grupy);

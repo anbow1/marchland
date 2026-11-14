@@ -125,6 +125,7 @@ export function buildForest(quality: Quality, lib: SurfaceLibrary): Forest {
   meshes.push(stumps);
 
   let drawnVersion = -1;
+  let drawnStand: Stand | null = null;
   let lastS = -1e9;
   /** Trees drawn other than whole last time: to be put back when they stand again. */
   const shown = new Set<number>();
@@ -132,6 +133,11 @@ export function buildForest(quality: Quality, lib: SurfaceLibrary): Forest {
     meshes,
     update(stand: Stand, nowS: number): void {
       // Saplings grow slowly: redrawing them twice a second is plenty.
+      // A loaded game brings another stand: drawn afresh (trees it does not list as changed are put back whole below).
+      if (stand !== drawnStand) {
+        drawnStand = stand;
+        drawnVersion = -1;
+      }
       if (stand.version === drawnVersion && (stand.changed.size === 0 || nowS - lastS < 0.5)) return;
       drawnVersion = stand.version;
       lastS = nowS;

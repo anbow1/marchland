@@ -1,5 +1,8 @@
 import { townX, townZ } from './sim/terrain.ts';
 import { LAYOUT, START } from './sim/layout.ts';
+import { loadWorld, saveHeader, saveWorld } from './sim/save.ts';
+import { loadSettings, readSave, storeSettings, writeSave } from './ui/settings.ts';
+import { T } from './ui/strings.ts';
 import { Game } from './app/game.ts';
 import { WorldView } from './app/worldView.ts';
 import { SIM } from './config.ts';
@@ -119,16 +122,34 @@ async function run(): Promise<void> {
   // Back from choosing another place for the keeps (below): straight into the game, and the next reload
   // shows the menu again, on the place chosen.
   const chosenAlready = params.has('go');
-  if (chosenAlready) {
+  // Back from loading a game saved on another map: load it once the map is laid out.
+  let loadSave = params.has('load');
+  if (chosenAlready || loadSave) {
     params.delete('go');
+    params.delete('load');
     history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
   }
-  if (!autostart && !chosenAlready) {
-    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT });
+  const settings = loadSettings();
+  sound.setVolume(settings.volume);
+  const savedText = readSave();
+  const saved = savedText ? saveHeader(savedText) : null;
+  if (!autostart && !chosenAlready && !loadSave) {
+    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT }, saved);
     difficulty = choice.difficulty;
     quality = askedQuality() ?? choice.quality;
     sound.unlock();
-    if (choice.start !== START || choice.map !== LAYOUT) {
+    if (choice.load && saved) {
+      loadSave = true;
+      // A game saved on another map loads after the page is laid out for that map.
+      if (saved.start !== START || saved.layout !== LAYOUT) {
+        params.set('start', String(saved.start));
+        params.set('map', saved.layout);
+        params.set('q', quality);
+        params.set('load', '1');
+        location.search = params.toString();
+        return;
+      }
+    } else if (choice.start !== START || choice.map !== LAYOUT) {
       // The map is laid out from the keeps and the layout when the game loads: load it again with the new choice.
       params.set('start', String(choice.start));
       params.set('map', choice.map);
@@ -154,19 +175,28 @@ async function run(): Promise<void> {
   });
   const scene = params.get('scene');
   if (scene) prepareScene(game, scene);
+  if (loadSave && savedText) game.loadSaved(loadWorld(savedText));
+  game.setEdgeScroll(settings.edgeScroll && !autostart);
   menu.hide();
 
   const openMenu = (): void => {
     if (game.world.winner !== -1) return;
     game.loop.paused = true;
-    menu.pause(
-      loadedSeconds,
-      () => {
+    menu.pause(loadedSeconds, {
+      resume: () => {
         game.loop.paused = false;
         menu.hide();
       },
-      () => location.reload(),
-    );
+      restart: () => location.reload(),
+      save: () => (writeSave(saveWorld(game.world)) ? T.saved : T.saveFailed),
+      settings,
+      changed: (next) => {
+        Object.assign(settings, next);
+        storeSettings(settings);
+        sound.setVolume(settings.volume);
+        game.setEdgeScroll(settings.edgeScroll);
+      },
+    });
   };
   game.onMenu = openMenu;
   game.onEnd = (winner) => menu.end(game.world, winner, () => location.reload());

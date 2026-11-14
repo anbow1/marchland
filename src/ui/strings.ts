@@ -92,6 +92,14 @@ interface Strings {
   state: { hold: string; move: string; attack: string; siege: string; routing: string; fighting: string };
   help: string[];
   groupKept: string;
+  saveGame: string;
+  loadGame: string;
+  saved: string;
+  saveFailed: string;
+  volumeLabel: string;
+  edgeScrollLabel: string;
+  on: string;
+  off: string;
   viewKept: string;
   /** What each kind of regiment is good and poor against, shown when recruiting. */
   counters: Record<UnitKind, string>;
@@ -298,6 +306,14 @@ const pl: Strings = {
     'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
   ],
   groupKept: 'Zapamiętano grupę',
+  saveGame: 'Zapisz grę',
+  loadGame: 'Wczytaj grę',
+  saved: 'Zapisano',
+  saveFailed: 'Przeglądarka nie przyjęła zapisu',
+  volumeLabel: 'Głośność',
+  edgeScrollLabel: 'Krawędź ekranu',
+  on: 'przesuwa',
+  off: 'nie',
   viewKept: 'Zapamiętano widok',
   counters: {
     militia: 'Tania obrona domu. Słaba na każde regularne wojsko.',
@@ -512,6 +528,14 @@ const en: Strings = {
     'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
   ],
   groupKept: 'Group kept',
+  saveGame: 'Save game',
+  loadGame: 'Load game',
+  saved: 'Saved',
+  saveFailed: 'The browser would not take the save',
+  volumeLabel: 'Volume',
+  edgeScrollLabel: 'Screen edge',
+  on: 'moves',
+  off: 'no',
   viewKept: 'View kept',
   counters: {
     militia: 'Cheap home defence. Poor against any regular troops.',

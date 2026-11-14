@@ -262,6 +262,9 @@ kamera do nich), dwuklik oddziału zaznacza wszystkie tego rodzaju na ekranie, C
 zapamiętuje widok kamery, F5…F8 do niego wraca. **Kontry** w podpowiedzi przy werbunku
 („Dobrzy na: jazdę. Słabi na: łuczników…”).
 
+**Zapis gry** (menu pauzy) i **wczytanie** (menu startowe), **ustawienia** (głośność, krawędź
+ekranu) — zrobione.
+
 Do zrobienia:
 
 - Dolny pasek kart oddziałów (jak dziś nad wojskiem, ale stały): siła, morale,

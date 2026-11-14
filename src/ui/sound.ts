@@ -18,6 +18,12 @@ export class Sound {
   private readonly lastAt = new Map<SoundKind, number>();
   volume = 0.6;
 
+  /** 0 (silent) to 1. */
+  setVolume(volume: number): void {
+    this.volume = volume;
+    if (this.master) this.master.gain.value = volume;
+  }
+
   /** Browsers allow audio only after a gesture: call from the first click. */
   unlock(): void {
     if (this.ctx) {

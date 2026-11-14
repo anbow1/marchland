@@ -7,6 +7,8 @@ import { T } from './strings.ts';
 import { MAP } from '../config.ts';
 import { HEAPS } from '../sim/terrain.ts';
 import { type Layout, LAYOUTS } from '../sim/layout.ts';
+import type { SaveHeader } from '../sim/save.ts';
+import type { Settings } from './settings.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 
 // The screens over the game: start, loading, pause, and the end.
@@ -17,6 +19,25 @@ export interface StartChoice {
   /** Which of MAP.startSites the keeps stand on, and the lie of the land between them. */
   start: number;
   map: Layout;
+  /** True when the player chose to load the saved game instead. */
+  load?: boolean;
+}
+
+/** What the pause menu can do besides going on. */
+export interface PauseActions {
+  resume(): void;
+  restart(): void;
+  /** Saves the game; the text it returns is shown under the button. */
+  save(): string;
+  settings: Settings;
+  changed(settings: Settings): void;
+}
+
+function settingsRows(settings: Settings): string {
+  return (
+    choiceRow(T.volumeLabel, 'volume', [['0', '0'], ['0.3', '30%'], ['0.6', '60%'], ['1', '100%']], String(settings.volume)) +
+    choiceRow(T.edgeScrollLabel, 'edge', [['1', T.on], ['0', T.off]], settings.edgeScroll ? '1' : '0')
+  );
 }
 
 /** A small map of where the keeps may stand: the three places, the chosen one and the enemy's across it, the mountains and crags. */
@@ -76,7 +97,7 @@ export class Menu {
   }
 
   /** The title screen; resolves with the player's choices when they press Play. */
-  start(defaults: StartChoice): Promise<StartChoice> {
+  start(defaults: StartChoice, saved: SaveHeader | null = null): Promise<StartChoice> {
     const choice = { ...defaults };
     const sheet = this.show(
       `<h1>${T.title}</h1><p class="sub">${T.subtitle}</p>` +
@@ -85,7 +106,9 @@ export class Menu {
         choiceRow(T.mapLabel, 'map', LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
         choiceRow(T.startLabel, 'start', T.startSites.map((name, i) => [String(i), `${i + 1}. ${name}`] as const), String(choice.start)) +
         `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div>` +
-        `<button class="primary" data-go="1">${T.play}</button>${helpHtml()}<p class="small">${T.version} ${BUILD}</p>`,
+        `<button class="primary" data-go="1">${T.play}</button>` +
+        (saved ? `<button data-load="1">${T.loadGame} <span class="small">(${T.layouts[saved.layout as Layout] ?? saved.layout}, ${Math.floor(saved.timeS / 60)} min)</span></button>` : '') +
+        `${helpHtml()}<p class="small">${T.version} ${BUILD}</p>`,
     );
     return new Promise((resolve) => {
       sheet.addEventListener('click', (e) => {
@@ -98,6 +121,7 @@ export class Menu {
         if (name === 'start' || name === 'map') (sheet.querySelector('.siteMapBox') as HTMLElement).innerHTML = siteMap(choice.start, choice.map);
         if (name) for (const other of sheet.querySelectorAll(`[data-name="${name}"]`)) other.classList.toggle('on', other === target);
         if (target.dataset['go']) resolve(choice);
+        if ((target.closest('[data-load]') as HTMLElement | null)?.dataset['load']) resolve({ ...choice, load: true });
       });
     });
   }
@@ -106,12 +130,26 @@ export class Menu {
     this.show(`<h1>${T.title}</h1><p class="sub">${T.loading}…</p><div class="progress"><i style="width:${Math.round(share * 100)}%"></i></div>`);
   }
 
-  pause(loadedSeconds: number, onResume: () => void, onRestart: () => void): void {
-    const sheet = this.show(`<h2>${T.paused}</h2><button class="primary" data-do="resume">${T.resume}</button><button data-do="restart">${T.restart}</button>${helpHtml()}<p class="small">${T.version} ${BUILD} · ${loadedSeconds.toFixed(1)} s</p>`);
+  pause(loadedSeconds: number, actions: PauseActions): void {
+    const settings = { ...actions.settings };
+    const sheet = this.show(
+      `<h2>${T.paused}</h2><button class="primary" data-do="resume">${T.resume}</button><button data-do="save">${T.saveGame}</button><p class="small saveNote"></p><button data-do="restart">${T.restart}</button>` +
+        settingsRows(settings) +
+        `${helpHtml()}<p class="small">${T.version} ${BUILD} · ${loadedSeconds.toFixed(1)} s</p>`,
+    );
     sheet.addEventListener('click', (e) => {
-      const what = (e.target as HTMLElement).dataset['do'];
-      if (what === 'resume') onResume();
-      if (what === 'restart') onRestart();
+      const target = e.target as HTMLElement;
+      const what = target.dataset['do'];
+      if (what === 'resume') actions.resume();
+      if (what === 'restart') actions.restart();
+      if (what === 'save') (sheet.querySelector('.saveNote') as HTMLElement).textContent = actions.save();
+      const name = target.dataset['name'];
+      if (name === 'volume') settings.volume = Number(target.dataset['value']);
+      if (name === 'edge') settings.edgeScroll = target.dataset['value'] === '1';
+      if (name) {
+        for (const other of sheet.querySelectorAll(`[data-name="${name}"]`)) other.classList.toggle('on', other === target);
+        actions.changed({ ...settings });
+      }
     });
   }
 
