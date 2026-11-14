@@ -3,9 +3,9 @@ import { FIELDS } from '../config.ts';
 import type { Building } from '../sim/economy.ts';
 import { heightAtM } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
-import { surfacePaint } from './buildingParts.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import { layerOf, surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
+import { cardMaterial, vineRowGeometry } from './foliage.ts';
 
 // The vines on a vineyard's strips: rows of posts and wires with the leaves
 // trained along them, running across the strip, and bunches of grapes that
@@ -16,7 +16,6 @@ import { layerOf, surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 const ROW_GAP_M = 1.6;
 const SEGMENT_M = 2.4;
 const MAX_SEGMENTS = 2400;
-const LEAF = 0x6f9a3c;
 const POST = 0x5c4a3a;
 const GRAPE = 0xffffff;
 
@@ -25,7 +24,6 @@ function segmentGeometry(paints: Map<number, Paint>): MeshBuilder {
   // A post at one end, a wire, and the foliage trained along it.
   b.box(-SEGMENT_M / 2, 0, 0, 0.08, 1.35, 0.08, POST);
   b.box(0, 1.1, 0, SEGMENT_M, 0.02, 0.02, POST);
-  b.box(0, 0.55, 0, SEGMENT_M * 0.96, 0.75, 0.42, LEAF);
   b.box(0, 0.25, 0, 0.1, 0.35, 0.1, POST);
   return b;
 }
@@ -43,6 +41,8 @@ function grapesGeometry(): MeshBuilder {
 export class VinesView {
   private readonly vines: InstancedMesh;
   private readonly grapes: InstancedMesh;
+  /** The leaves trained along each segment, as cards. */
+  private readonly leaves: InstancedMesh;
   private readonly m = new Matrix4();
   private readonly p = new Vector3();
   private readonly q = new Quaternion();
@@ -53,13 +53,14 @@ export class VinesView {
 
   constructor(scene: Scene, lib: SurfaceLibrary) {
     const paints = new Map<number, Paint>([
-      [LEAF, surfacePaint(lib, 'leaves', 0xa8cc78)],
       [POST, { layer: layerOf('bark'), sizeM: lib.sizeM.bark, tintHex: 0xffffff }],
     ]);
     const material = surfaceMaterial(lib, 'vines');
     this.vines = new InstancedMesh(segmentGeometry(paints).build(), material, MAX_SEGMENTS);
     this.grapes = new InstancedMesh(grapesGeometry().build(), surfaceMaterial(lib, 'grapes'), MAX_SEGMENTS);
-    for (const mesh of [this.vines, this.grapes]) {
+    this.leaves = new InstancedMesh(vineRowGeometry(SEGMENT_M, 41), cardMaterial('leaves'), MAX_SEGMENTS);
+    this.leaves.name = 'vine leaves';
+    for (const mesh of [this.vines, this.grapes, this.leaves]) {
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -98,8 +99,9 @@ export class VinesView {
       }
     }
     this.vines.count = vines;
+    this.leaves.count = vines;
     this.grapes.count = grapes;
-    for (const mesh of [this.vines, this.grapes]) {
+    for (const mesh of [this.vines, this.grapes, this.leaves]) {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     }
@@ -128,7 +130,9 @@ export class VinesView {
         this.vines.setMatrixAt(vines, this.m.compose(this.p, this.q, this.s));
         // Leaves turn a little yellow as the grapes ripen.
         const yellow = bunch * 0.25;
-        this.vines.setColorAt(vines, this.tint.setRGB(1 + yellow * 0.4, 1, 1 - yellow));
+        this.vines.setColorAt(vines, this.tint.setRGB(1, 1, 1));
+        this.leaves.setMatrixAt(vines, this.m);
+        this.leaves.setColorAt(vines, this.tint.setHex(0x5f8a30).multiplyScalar(1.5).lerp(new Color(0xb09a3c), yellow));
         vines++;
         if (bunch > 0.05) {
           const size = 0.4 + 0.6 * bunch;

@@ -17,7 +17,8 @@ jeszcze nie mierzyłem.
   budynkami i drogami jak drzewa.
 - **Łąka**: spokojniejsza, głębsza zieleń, mniej żółtych plam; ściółka pod lasem zielono-ciemna.
 - **Zboże w 3D** (`render/cropsView.ts`): zagony porasta zboże, które rośnie płynnie (40 kroków)
-  od kiełków do pasa, w ostatniej trzeciej złocieje, po żniwach znika. Obsiany zagon jest teraz
+  od kiełków do pasa, w ostatniej trzeciej złocieje, po żniwach znika. Rzędy winorośli to karty
+  liści (nie skrzynki), żółkną, gdy grona dojrzewają. Obsiany zagon jest teraz
   zbożem od brzegu do brzegu (wcześniej szum zostawiał „obsiane w kawałkach”). Winorośl rośnie
   płynniej (30 kroków zamiast 8).
 - **Chaty na zboczach**: budynek stoi na najwyższym punkcie działki (nie tonie w stoku), pod

@@ -275,3 +275,55 @@ export function crownGeometry(kind: CrownKind, detail: number, seed: number): Bu
   g.computeBoundingSphere();
   return g;
 }
+
+/**
+ * A row of vine foliage trained along a wire, `lengthM` long: cards leaning out either side of the row and
+ * a few on top, between 0.3 and 1.2 m up; darker low down.
+ */
+export function vineRowGeometry(lengthM: number, seed: number): BufferGeometry {
+  const rng = new Rng(seed);
+  const pos: number[] = [];
+  const nor: number[] = [];
+  const uv: number[] = [];
+  const col: number[] = [];
+  const index: number[] = [];
+  const steps = Math.round(lengthM / 0.45);
+  for (let i = 0; i < steps; i++) {
+    const x = -lengthM / 2 + (i + 0.5) * (lengthM / steps) + rng.range(-0.1, 0.1);
+    for (const side of [-1, 1, 0]) {
+      const y = side === 0 ? 1.0 : rng.range(0.45, 0.85);
+      const s = side === 0 ? 0.75 : 0.9;
+      // A card upright across the row's side (or flat on top), tilted out and up.
+      const nx = rng.range(-0.3, 0.3);
+      const ny = side === 0 ? 1 : 0.5;
+      const nz = side === 0 ? 0 : side;
+      const base = pos.length / 3;
+      // Axes across the card: along the row, and up (or across, for the top card).
+      const ax: [number, number, number] = [1, 0, 0];
+      const bx: [number, number, number] = side === 0 ? [0, 0, 1] : [0, 1, -side * 0.45];
+      const cz = side * 0.18;
+      for (const [a, b] of [
+        [-1, -1],
+        [1, -1],
+        [1, 1],
+        [-1, 1],
+      ] as const) {
+        pos.push(x + (ax[0] * a + bx[0] * b) * s * 0.5, y + (ax[1] * a + bx[1] * b) * s * 0.5, cz + (ax[2] * a + bx[2] * b) * s * 0.5);
+        const l = Math.hypot(nx, ny, nz);
+        nor.push(nx / l, ny / l, nz / l);
+        uv.push((a + 1) / 2, (b + 1) / 2);
+        const shade = 0.55 + 0.4 * Math.min(1, y / 1.1);
+        col.push(shade, shade, shade);
+      }
+      index.push(base, base + 1, base + 2, base, base + 2, base + 3);
+    }
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(new Float32Array(pos), 3));
+  g.setAttribute('normal', new BufferAttribute(new Float32Array(nor), 3));
+  g.setAttribute('uv', new BufferAttribute(new Float32Array(uv), 2));
+  g.setAttribute('color', new BufferAttribute(new Float32Array(col), 3));
+  g.setIndex(index);
+  g.computeBoundingSphere();
+  return g;
+}
