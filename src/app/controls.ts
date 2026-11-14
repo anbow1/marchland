@@ -20,6 +20,10 @@ export interface ControlTarget {
   /** A tap: selects, or orders when troops are selected and the tap is not on something selectable. */
   tap(screenX: number, screenY: number, double: boolean): void;
   press(action: Action): void;
+  /** True while regiments are selected: a right-button drag then sets their line and facing instead of turning the map. */
+  hasSelection(): boolean;
+  /** Shows (or hides) where the selected would stand for an order dragged from one screen point to another. */
+  showFacing(x0: number, y0: number, x1: number, y1: number, visible: boolean): void;
 }
 
 const DRAG_PX = 7;
@@ -141,7 +145,10 @@ export class Controls {
     }
     if (!p.dragging) return;
     if (p.touch || p.button === 1) this.dragMap(prevX, prevY, p.x, p.y);
-    else if (p.button === 2 && !this.actions.isCtrlHeld()) {
+    else if (p.button === 2 && (this.target.hasSelection() || this.actions.isCtrlHeld())) {
+      // With troops chosen: the drag lays out their line, from where it began, facing the way it goes.
+      this.target.showFacing(p.startX, p.startY, p.x, p.y, true);
+    } else if (p.button === 2) {
       // Sideways turns the map; forward flattens the view towards the horizon, back raises it towards straight down.
       this.camera.rotate((p.x - prevX) * CAMERA.rotateDragRadPerPx);
       this.camera.tilt((p.y - prevY) * CAMERA.tiltDragRadPerPx);
@@ -171,8 +178,9 @@ export class Controls {
       this.lastOrderMs = now;
       this.lastOrderX = p.startX;
       this.lastOrderY = p.startY;
-      // A plain drag turned the map: no order. Ctrl and a drag sets the front of the line.
-      if (p.dragging && !this.actions.isCtrlHeld()) return;
+      this.target.showFacing(0, 0, 0, 0, false);
+      // A plain drag with nothing chosen turned the map: no order. With troops chosen (or Ctrl) it set the line's facing.
+      if (p.dragging && !this.target.hasSelection() && !this.actions.isCtrlHeld()) return;
       if (p.dragging && this.target.ground(p.x, p.y, this.a)) this.target.order(p.startX, p.startY, double, this.a.x, this.a.z);
       else this.target.order(p.startX, p.startY, double, null, null);
     }

@@ -59,9 +59,9 @@ What each is for:
 
 Rules common to all buildings:
 
-- **The keep's levels.** Level 1: reach 230 m (farms 300 m), barracks up to level 1, 1800 hit points, an arrow every 1 s. Level 2: reach 260 m (farms 330 m), barracks up to level 2, 2600 hit points, an arrow every 0.75 s; costs 250 gold, 60 wood, 120 stone. Level 3: reach 290 m (farms 360 m), barracks up to level 3, 3600 hit points, an arrow every 0.5 s; costs 500 gold, 100 wood, 240 stone. Raising it takes 60 s.
-- **Free placement.** A building goes anywhere within 230 m of its side's keep (farms and vineyards
-  300 m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
+- **The keep's levels.** Level 1: reach 280 m (farms 340 m), barracks up to level 1, 1800 hit points, an arrow every 1 s. Level 2: reach 330 m (farms 390 m), barracks up to level 2, 2600 hit points, an arrow every 0.75 s; costs 250 gold, 60 wood, 120 stone. Level 3: reach 380 m (farms 440 m), barracks up to level 3, 3600 hit points, an arrow every 0.5 s; costs 500 gold, 100 wood, 240 stone. Raising it takes 60 s.
+- **Free placement.** A building goes anywhere within 280 m of its side's keep (farms and vineyards
+  340 m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than 90 m to the enemy's) where the ground under it rises no more than 2.2 m, is not
   water, and is 1.5 m clear of other buildings and of farm strips. A side may have 48 buildings.
 - **Three levels.** Level 3 is the top. A level costs ×1 / ×1.5 / ×2.5 of the base price and works
@@ -69,7 +69,7 @@ Rules common to all buildings:
 - **Built by hand.** Gold is paid at once; timber and stone are carried from the keep to the site, and
   up to 3 builders raise the building only as far as the materials delivered allow.
 - **One worker each.** A workshop works only while its worker is there; a hungry worker works at half speed.
-- **Own stores.** Carriers fill a workshop's inputs up to 8; outputs pile in its yard up to 14, then
+- **Own stores.** Carriers fill a workshop's inputs up to 8; outputs pile in its yard up to 24, then
   work stops until carriers clear them (they come once 4 lie there).
 - **Demolition** returns 50 % of the base price and whatever lay in the yard.
 

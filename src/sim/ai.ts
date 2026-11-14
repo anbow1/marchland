@@ -1,5 +1,5 @@
 import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
@@ -143,6 +143,7 @@ function runTown(world: World, ai: AiState): void {
   }
   if (town.stock.gold < AI.upgradeReserveGold) return;
   if (town.keepLevel < 3 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
+  if (cmdUpgradeTransport(world, ai.side) === 'ok') return;
   for (const kind of UPGRADE_ORDER) {
     for (let plot = 0; plot < town.plots.length; plot++) {
       const b = town.plots[plot];

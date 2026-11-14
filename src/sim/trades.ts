@@ -1,5 +1,5 @@
 import { FIELDS, FORESTRY, GATHER, LEVEL_SPEED, PEOPLE, VINES } from '../config.ts';
-import { type Building, isBuilt, noteMade, type Town } from './economy.ts';
+import { type Building, fillOrder, isBuilt, noteMade, ordersFilled, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
 import { NOWHERE } from './types.ts';
 import type { World } from './world.ts';
@@ -118,9 +118,13 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
     // The yard is full: no point fetching more. (A load that will not quite fit is still fetched: by the
     // time it is felled and split the carriers have usually taken the last one away.)
     if (b.out[good] >= PEOPLE.outputCap) return;
+    // Ordered and the order filled: he waits for more to be ordered.
+    b.held = ordersFilled(town, { [good]: 1 });
+    if (b.held) return;
     if (b.kind === 'woodcutter') {
       // The nearest grown tree no one else is after; none left in reach, and he waits for the saplings.
       p.strip = claimNearestTree(world.stand, b.x, b.z, FORESTRY.reachM, world.timeS);
+      b.noTrees = p.strip < 0;
       if (p.strip < 0) return;
     }
     p.phase = GOING_OUT;
@@ -182,6 +186,7 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
     if (p.timerS > 0) return;
     b.out[good] += trade.amount;
     noteMade(town, good, trade.amount);
+    fillOrder(town, good, trade.amount);
     p.load = null;
     p.phase = AT_HOME;
     return;
@@ -197,6 +202,7 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
   if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
   b.out[good] += trade.amount;
   noteMade(town, good, trade.amount);
+  fillOrder(town, good, trade.amount);
   p.load = null;
   p.phase = AT_HOME;
 }

@@ -7,7 +7,7 @@ type ViewKey = 1 | 2 | 3 | 4;
 /** `groupN` selects group N (twice quickly: the camera goes to it), `setGroupN` (with Ctrl) makes the selection group N; `viewN` and `setViewN` likewise for kept camera views. */
 export type GroupAction = `group${GroupDigit}` | `setGroup${GroupDigit}` | `view${ViewKey}` | `setView${ViewKey}`;
 
-export type Action = 'panLeft' | 'panRight' | 'panForward' | 'panBack' | 'rotateLeft' | 'rotateRight' | 'zoomIn' | 'zoomOut' | 'halt' | 'selectAll' | 'cancel' | 'debug' | 'add' | 'turnBuilding' | 'road' | GroupAction;
+export type Action = 'panLeft' | 'panRight' | 'panForward' | 'panBack' | 'rotateLeft' | 'rotateRight' | 'zoomIn' | 'zoomOut' | 'halt' | 'selectAll' | 'cancel' | 'debug' | 'add' | 'turnBuilding' | 'road' | 'grid' | GroupAction;
 
 const GROUP_KEYS: Record<string, readonly string[]> = {};
 for (let n = 1; n <= 9; n++) {
@@ -32,6 +32,7 @@ export const BINDINGS: Record<Action, readonly string[]> = {
   halt: ['KeyH'],
   turnBuilding: ['KeyR'],
   road: ['KeyG'],
+  grid: ['KeyT'],
   selectAll: ['KeyA'],
   cancel: ['Escape'],
   debug: ['F3'],

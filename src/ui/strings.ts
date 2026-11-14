@@ -71,10 +71,38 @@ interface Strings {
   prodNet: string;
   holdUps: string;
   allWorking: string;
+  prodYards: string;
+  priority: string;
+  priorityTip: string;
+  kindPriorityTip: string;
+  orderHead: string;
+  orderTip: string;
+  orderArms: string;
+  orderLess: string;
+  orderMore: string;
+  orderInf: string;
+  transport: string;
+  transportTip: string;
+  transportLevels: [string, string, string];
+  carries: string;
+  faster: string;
+  transportRaising: string;
+  transportRaised: string;
+  needsKeepLevel: string;
+  buildingsTab: string;
+  listTip: string;
+  underConstructionShort: string;
+  idleShort: string;
+  count: string;
+  levels: string;
+  inYards: string;
+  usesPerMin: string;
+  noBuildings: string;
   lacks: string;
   show: string;
   raid: string;
   yardFullAlarm: string;
+  noTreesAlarm: string;
   queue: string;
   halt: string;
   selectAll: string;
@@ -102,6 +130,7 @@ interface Strings {
   state: { hold: string; move: string; attack: string; siege: string; routing: string; fighting: string };
   help: string[];
   groupKept: string;
+  formationKept: string;
   ranksLabel: string;
   formationLabel: string;
   formations: { line: string; wedge: string; loose: string };
@@ -139,6 +168,10 @@ interface Strings {
   yard: string;
   fields: string;
   hintBuild: string;
+  grid: string;
+  gridTip: string;
+  gridOn: string;
+  gridOff: string;
   hintRoadStart: string;
   hintRoadEnd: string;
   roadCost: string;
@@ -224,10 +257,10 @@ const pl: Strings = {
   },
   results: {
     cannotAfford: 'Za mało zasobów.',
-    tooFar: 'Za daleko od zamku.',
+    tooFar: 'Za daleko: buduj w zasięgu zamku albo do 70 m od własnego budynku.',
     blocked: 'Miejsce jest zajęte albo zalane.',
     tooSteep: 'Teren jest zbyt stromy.',
-    needsForest: 'Drwal musi stać przy lesie.',
+    needsForest: 'Drwal musi stać przy lesie, z co najmniej 20 dorosłymi drzewami w zasięgu.',
     needsWater: 'Rybak musi stać nad jeziorem.',
     needsStone: 'Kamieniołom musi stać przy skale.',
     needsOre: 'Kopalnia musi stać przy rudonośnej skale.',
@@ -318,10 +351,38 @@ const pl: Strings = {
   prodNet: 'bilans /min',
   holdUps: 'Zatory',
   allWorking: 'Wszystkie warsztaty pracują.',
+  prodYards: 'na podwórzach',
+  priority: 'priorytet',
+  kindPriorityTip: 'Kto pierwszy dostaje surowiec, gdy kilka warsztatów chce tego samego: ▲ ten rodzaj pierwszy, ▼ ostatni. Kliknij, by zmienić.',
+  priorityTip: 'Priorytet tragarzy dla tego towaru: ▲ wysoki (noszą go najpierw), · zwykły, ▼ niski. Kliknij, by zmienić.',
+  orderHead: 'zamówione',
+  orderTip: 'Zamówienie: warsztaty robią tyle i stają (∞ = bez limitu, 0 = wstrzymane).',
+  orderArms: 'Zamów uzbrojenie',
+  orderLess: 'Mniej',
+  orderMore: 'Więcej',
+  orderInf: 'Kliknij: bez limitu (∞)',
+  transport: 'Transport',
+  transportTip: 'Ile tragarz niesie za jednym razem i jak szybko idzie. Wyższy poziom: wózki ręczne, potem wozy konne.',
+  transportLevels: ['na plecach', 'wózki ręczne', 'wozy konne'],
+  carries: 'ładunek',
+  faster: 'szybciej',
+  transportRaising: 'Ulepszanie transportu',
+  transportRaised: 'Transport ulepszony',
+  needsKeepLevel: 'wymaga zamku poziomu',
+  buildingsTab: 'Budynki',
+  listTip: 'Kliknij: pokaż następny budynek tego rodzaju i otwórz jego panel.',
+  underConstructionShort: 'w budowie',
+  idleShort: 'stoi',
+  count: 'liczba',
+  levels: 'poziomy',
+  inYards: 'na podwórzach',
+  usesPerMin: 'zużywa /min (pełna praca)',
+  noBuildings: 'Jeszcze nic nie zbudowano.',
   lacks: 'brak',
   show: 'pokaż',
   raid: 'Wróg w osadzie!',
   yardFullAlarm: 'Pełne podwórze, tragarze nie nadążają:',
+  noTreesAlarm: 'Drwal nie ma dorosłych drzew w zasięgu:',
   queue: 'W szkoleniu',
   halt: 'Stój (H)',
   selectAll: 'Całe wojsko (Ctrl+A)',
@@ -335,7 +396,7 @@ const pl: Strings = {
   maxLevel: 'Najwyższy poziom',
   needsBarracksLevel: 'koszary poz.',
   hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
-  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Ctrl + przeciągnięcie prawym: front. Na wroga: atak.',
+  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Ctrl+cyfra: zapamiętaj grupę i jej szyk.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
   fed: 'Miasto znów ma co jeść.',
   routed: 'Nasz oddział ucieka!',
@@ -359,6 +420,7 @@ const pl: Strings = {
     'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
   ],
   groupKept: 'Zapamiętano grupę',
+  formationKept: 'Zapamiętano szyk (oddziały idą razem w tym ustawieniu) pod klawiszem',
   ranksLabel: 'Szeregi',
   formationLabel: 'Szyk',
   formations: { line: 'Prostokąt', wedge: 'Klin', loose: 'Luźny' },
@@ -410,13 +472,17 @@ const pl: Strings = {
   stores: 'Skład',
   yard: 'Podwórze',
   fields: 'Pola',
-  hintBuild: 'Lewy przycisk: postaw · R: obróć · prawy przycisk / Esc: anuluj · Shift: stawiaj kolejne',
+  hintBuild: 'Lewy przycisk: postaw · R: obróć · T: siatka · prawy przycisk / Esc: anuluj · Shift: stawiaj kolejne',
+  grid: 'Siatka',
+  gridTip: 'Budynki przyciągają się do siatki co 16 m, równoległej do dróg, drzwiami w jednym z czterech kierunków (R obraca o 90°): miasto w kwartałach. Pusta kratka między rzędami mieści ulicę.',
+  gridOn: 'wł.',
+  gridOff: 'wył.',
   hintRoadStart: 'Droga: wskaż początek. Prawy przycisk / Esc: koniec.',
   hintRoadEnd: 'Droga: wskaż koniec odcinka.',
   roadCost: 'kamienia',
   turnLeft: 'Obróć mapę w lewo (Q)',
   turnRight: 'Obróć mapę w prawo (E)',
-  work: { working: 'Pracuje', building: 'Budowa', paused: 'Wstrzymany', noWorker: 'Brak pracownika', noInput: 'Czeka na surowiec', yardFull: 'Podwórze pełne — czeka na tragarzy', waiting: 'Czeka' },
+  work: { working: 'Pracuje', building: 'Budowa', paused: 'Wstrzymany', noWorker: 'Brak pracownika', noInput: 'Czeka na surowiec', yardFull: 'Podwórze pełne — czeka na tragarzy', noTrees: 'Brak dorosłych drzew w zasięgu — czeka, aż sadzonki urosną', orderDone: 'Zamówienie wykonane — czeka na następne', waiting: 'Czeka' },
   recruits: 'rekrutów w drodze',
   rearm: 'Przezbrój',
   rearmed: 'Oddział przezbrojony',
@@ -495,10 +561,10 @@ const en: Strings = {
   },
   results: {
     cannotAfford: 'Not enough resources.',
-    tooFar: 'Too far from the keep.',
+    tooFar: 'Too far: build within the keep\'s reach or up to 70 m from a building of yours.',
     blocked: 'The place is taken or under water.',
     tooSteep: 'The ground is too steep.',
-    needsForest: 'A woodcutter must stand by the forest.',
+    needsForest: 'A woodcutter must stand by the forest, with at least 20 grown trees in reach.',
     needsWater: 'A fisher must stand by the lake.',
     needsStone: 'A quarry must stand by a stone outcrop.',
     needsOre: 'A mine must stand by an ore outcrop.',
@@ -589,10 +655,38 @@ const en: Strings = {
   prodNet: 'change /min',
   holdUps: 'Hold-ups',
   allWorking: 'Every workshop is working.',
+  prodYards: 'in yards',
+  priority: 'priority',
+  kindPriorityTip: 'Who gets an input first when several workshops want the same: ▲ this kind first, ▼ last. Click to change.',
+  priorityTip: 'Carriers\' priority for this good: ▲ high (carried first), · normal, ▼ low. Click to change.',
+  orderHead: 'ordered',
+  orderTip: 'Order: the workshops make this much and stop (∞ = no limit, 0 = stopped).',
+  orderArms: 'Order arms',
+  orderLess: 'Less',
+  orderMore: 'More',
+  orderInf: 'Click: no limit (∞)',
+  transport: 'Transport',
+  transportTip: 'How much a carrier takes in one trip and how fast he goes. Higher levels: handcarts, then horse and wagon.',
+  transportLevels: ['on their backs', 'handcarts', 'horse wagons'],
+  carries: 'load',
+  faster: 'faster',
+  transportRaising: 'Improving transport',
+  transportRaised: 'Transport improved',
+  needsKeepLevel: 'needs keep level',
+  buildingsTab: 'Buildings',
+  listTip: 'Click: go to the next building of this kind and open its panel.',
+  underConstructionShort: 'building',
+  idleShort: 'idle',
+  count: 'count',
+  levels: 'levels',
+  inYards: 'in yards',
+  usesPerMin: 'uses /min (full work)',
+  noBuildings: 'Nothing built yet.',
   lacks: 'lacks',
   show: 'show',
   raid: 'The enemy is in the town!',
   yardFullAlarm: 'Yard full, the carriers cannot keep up:',
+  noTreesAlarm: 'No grown trees in reach of:',
   queue: 'In training',
   halt: 'Halt (H)',
   selectAll: 'Whole army (Ctrl+A)',
@@ -606,7 +700,7 @@ const en: Strings = {
   maxLevel: 'Highest level',
   needsBarracksLevel: 'barracks lvl',
   hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
-  hintArmy: 'Right click: march. Double click: run. Ctrl + right drag: set the front. On an enemy: attack.',
+  hintArmy: 'Right click: march. Double click: run. Hold right and drag: line and facing. On an enemy: attack. Ctrl+digit: keep the group and its formation.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
   fed: 'The town has food again.',
   routed: 'Our regiment is running!',
@@ -630,6 +724,7 @@ const en: Strings = {
     'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
   ],
   groupKept: 'Group kept',
+  formationKept: 'Formation kept (the regiments march together in this shape) on key',
   ranksLabel: 'Ranks',
   formationLabel: 'Formation',
   formations: { line: 'Block', wedge: 'Wedge', loose: 'Open' },
@@ -681,13 +776,17 @@ const en: Strings = {
   stores: 'Stores',
   yard: 'Yard',
   fields: 'Fields',
-  hintBuild: 'Left button: place · R: turn · right button / Esc: cancel · Shift: place more',
+  hintBuild: 'Left button: place · R: turn · T: grid · right button / Esc: cancel · Shift: place more',
+  grid: 'Grid',
+  gridTip: 'Buildings snap to a 16 m grid square with the roads, doors facing one of four ways (R turns by 90°): a town in blocks. An empty cell between rows holds a street.',
+  gridOn: 'on',
+  gridOff: 'off',
   hintRoadStart: 'Road: point at the start. Right button / Esc: done.',
   hintRoadEnd: 'Road: point at the end of the stretch.',
   roadCost: 'stone',
   turnLeft: 'Turn the map left (Q)',
   turnRight: 'Turn the map right (E)',
-  work: { working: 'Working', building: 'Building', paused: 'Paused', noWorker: 'No worker', noInput: 'Waiting for input', yardFull: 'Yard full — waiting for carriers', waiting: 'Waiting' },
+  work: { working: 'Working', building: 'Building', paused: 'Paused', noWorker: 'No worker', noInput: 'Waiting for input', yardFull: 'Yard full — waiting for carriers', noTrees: 'No grown trees in reach — waiting for the saplings', orderDone: 'Order filled — waiting for the next', waiting: 'Waiting' },
   recruits: 'recruits on their way',
   rearm: 'Re-arm',
   rearmed: 'Regiment re-armed',

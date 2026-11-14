@@ -1,12 +1,12 @@
 import { ARMY, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
-import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startUpgrade, togglePaused } from './economy.ts';
+import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { type Formation, frontageM, isArcher, type Regiment, type Stance } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
-import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
+import { type BuildingKind, type CommandResult, type Cost, type ResourceId, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -94,6 +94,63 @@ export function cmdFireAtWill(world: World, regimentId: number, on: boolean): Co
 export function cmdUpgradeKeep(world: World, side: Side): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   return startKeepUpgrade(world.towns[side]);
+}
+
+/** Raises the town's transport a level: handcarts, then horse and wagon. */
+export function cmdUpgradeTransport(world: World, side: Side): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  return startTransportUpgrade(world.towns[side]);
+}
+
+/** Sets the carriers' priority for a good: 1 high, 0 normal, −1 low. */
+export function cmdPriority(world: World, side: Side, good: ResourceId, priority: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const p = Math.max(-1, Math.min(1, Math.round(priority)));
+  if (p === 0) delete world.towns[side].priority[good];
+  else world.towns[side].priority[good] = p;
+  return 'ok';
+}
+
+/** Sets which workshops are served first with inputs: 1 high, 0 normal, −1 low. */
+export function cmdKindPriority(world: World, side: Side, kind: BuildingKind, priority: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const p = Math.max(-1, Math.min(1, Math.round(priority)));
+  if (p === 0) delete world.towns[side].kindPriority[kind];
+  else world.towns[side].kindPriority[kind] = p;
+  return 'ok';
+}
+
+/** Sets how much more of a good to make: null lifts the limit, 0 stops it. */
+export function cmdOrder(world: World, side: Side, good: ResourceId, amount: number | null): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const orders = world.towns[side].orders;
+  if (amount === null) delete orders[good];
+  else orders[good] = Math.max(0, Math.round(amount));
+  return 'ok';
+}
+
+/** The goods a regiment's equipment is made of in workshops (timber is felled, not made to order). */
+export function orderedGoodsFor(kind: UnitKind): Cost {
+  const out: Cost = {};
+  const def = UNITS[kind];
+  for (const id of RESOURCE_IDS) {
+    if (id === 'wood' || id === 'gold') continue;
+    const n = (def.equipment[id] ?? 0) * def.men;
+    if (n > 0) out[id] = n;
+  }
+  return out;
+}
+
+/** Orders the arms for `count` regiments of a kind: added to what is already ordered (an unlimited good becomes limited). */
+export function cmdOrderRegiments(world: World, side: Side, kind: UnitKind, count: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const orders = world.towns[side].orders;
+  const goods = orderedGoodsFor(kind);
+  for (const id of RESOURCE_IDS) {
+    const n = goods[id] ?? 0;
+    if (n > 0) orders[id] = (orders[id] ?? 0) + n * count;
+  }
+  return 'ok';
 }
 
 export function cmdDemolish(world: World, side: Side, plot: number): CommandResult {
@@ -268,6 +325,8 @@ export function cmdRearm(world: World, regimentId: number, to: UnitKind): Comman
 export function cmdMove(world: World, regimentId: number, x: number, z: number, facingRad: number | null, run: boolean): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
+  // A single order: its own pace again (cmdMoveFormation sets the shared one after).
+  r.paceCapMs = 0;
   // Marching off or charging breaks a pike wall.
   if (r.stance === 'pikeWall') r.stance = 'normal';
   if (r.def.defenceOnly && !inHomeLand(r.side, x, z)) return 'defenceOnly';
@@ -330,6 +389,20 @@ const SECOND_LINE_M = 9;
  */
 export function cmdMoveGroup(world: World, regimentIds: readonly number[], x: number, z: number, facingRad: number, run: boolean): CommandResult {
   if (world.winner !== -1) return 'gameOver';
+  const result = groupLineSpots(world, regimentIds, x, z, facingRad, lineScratch);
+  if (result !== 'ok') return result;
+  for (let i = 0; i < lineScratch.length; i += 4) cmdMove(world, lineScratch[i] as number, lineScratch[i + 1] as number, lineScratch[i + 2] as number, facingRad, run);
+  return 'ok';
+}
+
+const lineScratch: number[] = [];
+
+/**
+ * Where a group order puts each regiment: one line, the shooters in a second line behind (or in front when
+ * there is no one else), each row ordered as the regiments stand now. Writes id, x, z, frontage per regiment.
+ */
+export function groupLineSpots(world: World, regimentIds: readonly number[], x: number, z: number, facingRad: number, out: number[]): CommandResult {
+  out.length = 0;
   const front: Regiment[] = [];
   const rear: Regiment[] = [];
   let guardsLeft = 0;
@@ -356,12 +429,84 @@ export function cmdMoveGroup(world: World, regimentIds: readonly number[], x: nu
     for (const r of row) {
       const mid = cursor + frontageM(r) / 2;
       cursor += frontageM(r) + LINE_GAP_M;
-      cmdMove(world, r.id, x + ax * mid - Math.sin(facingRad) * backM, z + az * mid - Math.cos(facingRad) * backM, facingRad, run);
+      out.push(r.id, x + ax * mid - Math.sin(facingRad) * backM, z + az * mid - Math.cos(facingRad) * backM, frontageM(r));
     }
   };
   // With no melee troops the archers form the front line themselves.
   placeRow(front, 0);
   placeRow(rear, front.length > 0 ? SECOND_LINE_M : 0);
+  return 'ok';
+}
+
+/** A regiment's place in a kept formation: metres to the right of and behind its reference point, and its turn from the formation's facing. */
+export interface FormationPlace {
+  id: number;
+  right: number;
+  back: number;
+  turnRad: number;
+}
+
+/**
+ * Where each regiment of a kept formation stands when its reference point is at (x, z) facing `facingRad`:
+ * the same shape, turned. Writes x, z, facing per place into `out`.
+ */
+export function formationSpots(places: readonly FormationPlace[], x: number, z: number, facingRad: number, out: number[]): void {
+  out.length = 0;
+  const rx = Math.cos(facingRad);
+  const rz = -Math.sin(facingRad);
+  const fx = Math.sin(facingRad);
+  const fz = Math.cos(facingRad);
+  for (const p of places) out.push(x + rx * p.right - fx * p.back, z + rz * p.right - fz * p.back, facingRad + p.turnRad);
+}
+
+/** The shape several regiments stand in now, as places about their middle and their mean facing (the facing is returned). */
+export function captureFormation(world: World, regimentIds: readonly number[], out: FormationPlace[]): number {
+  out.length = 0;
+  const regs = regimentIds.map((id) => findRegiment(world, id)).filter((r): r is Regiment => r !== null && r.aliveMen > 0);
+  if (regs.length === 0) return 0;
+  let cx = 0;
+  let cz = 0;
+  let sx = 0;
+  let sz = 0;
+  for (const r of regs) {
+    cx += r.anchorX;
+    cz += r.anchorZ;
+    sx += Math.sin(r.facingRad);
+    sz += Math.cos(r.facingRad);
+  }
+  cx /= regs.length;
+  cz /= regs.length;
+  const facing = Math.atan2(sx, sz);
+  const rx = Math.cos(facing);
+  const rz = -Math.sin(facing);
+  const fx = Math.sin(facing);
+  const fz = Math.cos(facing);
+  for (const r of regs) {
+    const dx = r.anchorX - cx;
+    const dz = r.anchorZ - cz;
+    let turn = r.facingRad - facing;
+    turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+    out.push({ id: r.id, right: dx * rx + dz * rz, back: -(dx * fx + dz * fz), turnRad: turn });
+  }
+  return facing;
+}
+
+/** Moves a kept formation: every regiment to its place in the same shape, all at the pace of the slowest. */
+export function cmdMoveFormation(world: World, places: readonly FormationPlace[], x: number, z: number, facingRad: number, run: boolean): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const spots: number[] = [];
+  formationSpots(places, x, z, facingRad, spots);
+  const moved: Regiment[] = [];
+  let last: CommandResult = 'noSuchRegiment';
+  places.forEach((p, i) => {
+    const result = cmdMove(world, p.id, spots[i * 3] as number, spots[i * 3 + 1] as number, spots[i * 3 + 2] as number, run);
+    if (result === 'ok') moved.push(findRegiment(world, p.id) as Regiment);
+    else last = result;
+  });
+  if (moved.length === 0) return last;
+  let pace = Number.POSITIVE_INFINITY;
+  for (const r of moved) pace = Math.min(pace, run ? r.def.runSpeedMs : r.def.walkSpeedMs);
+  if (moved.length > 1) for (const r of moved) r.paceCapMs = pace;
   return 'ok';
 }
 

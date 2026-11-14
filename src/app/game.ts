@@ -1,8 +1,8 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveFormation, cmdMoveGroup, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
-import type { Formation, Regiment, Stance } from '../sim/regiment.ts';
+import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
@@ -58,6 +58,11 @@ export class Game implements ControlTarget {
   private selectedPlot: number = NOWHERE;
   private tool: Tool | null = null;
   private readonly ghost: Ghost = { kind: 'house', x: 0, z: 0, yawRad: 0, allowed: false };
+  /** A right-button drag laying out the selected regiments' line, in screen points; null when there is none. */
+  private facingDrag: { x0: number; y0: number; x1: number; y1: number } | null = null;
+  private readonly spotScratch: number[] = [];
+  /** Kept formations of several regiments, by group number (Ctrl and a digit keeps one). */
+  private readonly formations = new Map<number, FormationPlace[]>();
   private readonly tiles: GroundTiles = { values: [], count: 0, allowed: true };
   private readonly cursor = { x: 0, y: 0 };
   private readonly roadScratch: number[] = [];
@@ -126,6 +131,20 @@ export class Game implements ControlTarget {
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),
       rearm: (id, kind) => this.report(cmdRearm(this.world, id, kind)),
       reinforce: (id) => this.report(cmdReinforce(this.world, id)),
+      upgradeTransport: () => this.report(cmdUpgradeTransport(this.world, PLAYER)),
+      setPriority: (good, priority) => this.report(cmdPriority(this.world, PLAYER, good, priority)),
+      setKindPriority: (kind, priority) => this.report(cmdKindPriority(this.world, PLAYER, kind, priority)),
+      setOrder: (good, amount) => this.report(cmdOrder(this.world, PLAYER, good, amount)),
+      toggleGrid: () => this.toggleGrid(),
+      orderRegiments: (kind, count) => this.report(cmdOrderRegiments(this.world, PLAYER, kind, count)),
+      selectPlot: (plot) => {
+        const b = this.world.towns[PLAYER].plots[plot];
+        if (!b) return;
+        this.selected.clear();
+        this.selectedPlot = plot;
+        this.camera.jumpTo(b.x, b.z);
+        this.sound.play('click');
+      },
       halt: () => this.haltSelected(),
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
@@ -138,6 +157,12 @@ export class Game implements ControlTarget {
     });
     this.controls = new Controls(view.stage.canvas, this.camera, this);
     this.controls.edgeScroll = options.edgeScroll;
+    try {
+      this.gridOn = localStorage.getItem('marchland.grid') === '1';
+    } catch {
+      this.gridOn = false;
+    }
+    this.hud.gridOn = this.gridOn;
     this.loop = new FixedLoop({ step: (dt) => this.step(dt), render: (frameSeconds) => this.render(frameSeconds) });
     view.stage.governor.enabled = options.governor;
     window.addEventListener('resize', () => view.stage.resize());
@@ -279,6 +304,12 @@ export class Game implements ControlTarget {
       case 'unpaid':
         if (mine) this.hud.toast(T.unpaid, 'bad', [townX(PLAYER), townZ(PLAYER)]);
         break;
+      case 'transportRaised':
+        if (mine) {
+          this.sound.play('build');
+          this.hud.toast(T.transportRaised, 'good');
+        }
+        break;
       case 'paid':
         if (mine) this.hud.toast(T.paid, 'good');
         break;
@@ -355,7 +386,8 @@ export class Game implements ControlTarget {
       }
     }
     town.plots.forEach((b, plot) => {
-      if (!b || workState(b) !== 'yardFull') {
+      const state = b ? workState(b) : 'waiting';
+      if (!b || (state !== 'yardFull' && state !== 'noTrees')) {
         this.fullSince.delete(plot);
         return;
       }
@@ -363,7 +395,7 @@ export class Game implements ControlTarget {
       this.fullSince.set(plot, since);
       if (now - since < YARD_FULL_ALARM_S || now - (this.fullWarned.get(plot) ?? -1e9) < YARD_FULL_ALARM_S * 3) return;
       this.fullWarned.set(plot, now);
-      this.hud.toast(`${T.yardFullAlarm} ${T.buildings[b.kind].name}`, 'plain', [b.x, b.z]);
+      this.hud.toast(`${state === 'noTrees' ? T.noTreesAlarm : T.yardFullAlarm} ${T.buildings[b.kind].name}`, 'plain', [b.x, b.z]);
     });
   }
 
@@ -476,7 +508,37 @@ export class Game implements ControlTarget {
   }
 
   private yawOf(tool: Tool & { kind: 'build' }, x: number, z: number): number {
-    return yawToKeep(PLAYER, x, z) + (tool.turns * Math.PI) / 4;
+    const toKeep = yawToKeep(PLAYER, x, z);
+    if (!this.gridOn) return toKeep + (tool.turns * Math.PI) / 4;
+    // On the grid: the door looks along one of the four axes, the one nearest the keep; R turns by quarters.
+    const quarter = Math.round(toKeep / (Math.PI / 2));
+    return (quarter + Math.floor(tool.turns / 2)) * (Math.PI / 2);
+  }
+
+  /** Buildings on the grid: TOWN.gridM squares, lined up with the road cells, one corner at the keep. */
+  private gridOn = false;
+
+  private snap(v: number, origin: number): number {
+    return origin + Math.round((v - origin) / TOWN.gridM) * TOWN.gridM;
+  }
+
+  private placeX(x: number): number {
+    return this.gridOn ? this.snap(x, Math.round(townX(PLAYER) / ROADS.cellM) * ROADS.cellM) : x;
+  }
+
+  private placeZ(z: number): number {
+    return this.gridOn ? this.snap(z, Math.round(townZ(PLAYER) / ROADS.cellM) * ROADS.cellM) : z;
+  }
+
+  private toggleGrid(): void {
+    this.gridOn = !this.gridOn;
+    this.hud.gridOn = this.gridOn;
+    try {
+      localStorage.setItem('marchland.grid', this.gridOn ? '1' : '0');
+    } catch {
+      // No storage (private window): the switch lasts this game only.
+    }
+    this.sound.play('click');
   }
 
   /** A click with a tool in hand: places the building, or sets the next point of the road. */
@@ -484,7 +546,9 @@ export class Game implements ControlTarget {
     const tool = this.tool;
     if (!tool) return;
     if (tool.kind === 'build') {
-      const result = cmdBuild(this.world, PLAYER, tool.building, x, z, this.yawOf(tool, x, z));
+      const bx = this.placeX(x);
+      const bz = this.placeZ(z);
+      const result = cmdBuild(this.world, PLAYER, tool.building, bx, bz, this.yawOf(tool, bx, bz));
       this.report(result);
       if (result === 'ok' && !keep) this.dropTool();
       return;
@@ -511,7 +575,11 @@ export class Game implements ControlTarget {
   /** Once a frame: where the cursor would put the tool. Fills the ghost and the tiles; says which of them to draw. */
   private updateTool(): 'none' | 'ghost' | 'tiles' {
     const tool = this.tool;
-    if (!tool) return 'none';
+    if (!tool) {
+      this.tiles.count = 0;
+      this.tiles.values.length = 0;
+      return this.previewFacing() ? 'tiles' : 'none';
+    }
     const pointing = this.controls.cursor(this.cursor) && this.ground(this.cursor.x, this.cursor.y, this.hit);
     this.tiles.count = 0;
     this.tiles.values.length = 0;
@@ -520,16 +588,28 @@ export class Game implements ControlTarget {
         this.setHint(`${T.buildings[tool.building].name}: ${T.hintBuild}`);
         return 'none';
       }
-      const yaw = this.yawOf(tool, this.hit.x, this.hit.z);
-      const check = checkSite(this.world, PLAYER, tool.building, this.hit.x, this.hit.z, yaw);
+      const gx = this.placeX(this.hit.x);
+      const gz = this.placeZ(this.hit.z);
+      const yaw = this.yawOf(tool, gx, gz);
+      const check = checkSite(this.world, PLAYER, tool.building, gx, gz, yaw);
       this.ghost.kind = tool.building;
-      this.ghost.x = this.hit.x;
-      this.ghost.z = this.hit.z;
+      this.ghost.x = gx;
+      this.ghost.z = gz;
       this.ghost.yawRad = yaw;
       this.ghost.allowed = check.result === 'ok';
       // A farm shows the fields it would take.
       for (const strip of check.site.strips) this.tiles.values.push(strip.x, strip.z, FIELDS.stripLengthM, FIELDS.stripWidthM, yaw);
       this.tiles.count = check.site.strips.length;
+      if (this.gridOn) {
+        // The neighbouring grid cells, faintly: where the next buildings of the block would go.
+        for (let i = -2; i <= 2; i++) {
+          for (let k = -2; k <= 2; k++) {
+            if (i === 0 && k === 0) continue;
+            this.tiles.values.push(gx + i * TOWN.gridM, gz + k * TOWN.gridM, 1.2, 1.2, 0);
+            this.tiles.count++;
+          }
+        }
+      }
       this.tiles.allowed = this.ghost.allowed;
       this.setHint(check.result === 'ok' ? `${T.buildings[tool.building].name}: ${T.hintBuild}` : `${T.buildings[tool.building].name}: ${T.results[check.result]}`);
       return 'ghost';
@@ -691,9 +771,11 @@ export class Game implements ControlTarget {
       return;
     }
     // A march: face the way the player dragged, or the way the troops will travel.
+    const kept = this.keptFormation(ids);
     let facing: number;
-    if (faceToX !== null && faceToZ !== null && Math.hypot(faceToX - x, faceToZ - z) > 1) {
-      facing = Math.atan2(faceToX - x, faceToZ - z);
+    const dragged = faceToX !== null && faceToZ !== null && Math.hypot(faceToX - x, faceToZ - z) > 1;
+    if (dragged) {
+      facing = this.dragFacing(x, z, faceToX as number, faceToZ as number);
     } else {
       let cx = 0;
       let cz = 0;
@@ -708,7 +790,81 @@ export class Game implements ControlTarget {
       if (n === 0) return;
       facing = Math.atan2(x - cx / n, z - cz / n);
     }
-    this.report(cmdMoveGroup(this.world, ids, x, z, facing, run));
+    // A kept formation moves whole, its shape turned to the new facing; otherwise one line.
+    if (kept) this.report(cmdMoveFormation(this.world, kept, x, z, facing, run));
+    else this.report(cmdMoveGroup(this.world, ids, x, z, facing, run));
+  }
+
+  /**
+   * The facing a right-button drag sets. Dragged sideways, the drag is the front itself (the line looks
+   * square to it, away from where the troops stand); dragged straight away, it points the way to look.
+   */
+  private dragFacing(x: number, z: number, toX: number, toZ: number): number {
+    const along = Math.atan2(toX - x, toZ - z);
+    // The two facings square to the drag: the one looking away from the troops' middle.
+    let cx = 0;
+    let cz = 0;
+    let n = 0;
+    for (const id of this.selected) {
+      const r = findRegiment(this.world, id);
+      if (!r) continue;
+      cx += r.centreX;
+      cz += r.centreZ;
+      n++;
+    }
+    if (n === 0) return along;
+    const a = along - Math.PI / 2;
+    const b = along + Math.PI / 2;
+    const awayX = x - cx / n;
+    const awayZ = z - cz / n;
+    return Math.sin(a) * awayX + Math.cos(a) * awayZ >= Math.sin(b) * awayX + Math.cos(b) * awayZ ? a : b;
+  }
+
+  /** The kept formation whose living regiments are exactly the ones selected, if any. */
+  private keptFormation(ids: readonly number[]): FormationPlace[] | null {
+    for (const places of this.formations.values()) {
+      const alive = places.filter((p) => (findRegiment(this.world, p.id)?.aliveMen ?? 0) > 0);
+      if (alive.length < 2 || alive.length !== ids.length) continue;
+      if (alive.every((p) => ids.includes(p.id))) return alive;
+    }
+    return null;
+  }
+
+  hasSelection(): boolean {
+    return this.selected.size > 0 && !this.tool;
+  }
+
+  showFacing(x0: number, y0: number, x1: number, y1: number, visible: boolean): void {
+    this.facingDrag = visible ? { x0, y0, x1, y1 } : null;
+  }
+
+  /** While a right-button drag lays out a line: where each selected regiment would stand, and which way it would look. */
+  private previewFacing(): boolean {
+    const drag = this.facingDrag;
+    if (!drag || this.selected.size === 0) return false;
+    const start = { x: 0, z: 0 };
+    const end = { x: 0, z: 0 };
+    if (!this.ground(drag.x0, drag.y0, start) || !this.ground(drag.x1, drag.y1, end) || Math.hypot(end.x - start.x, end.z - start.z) < 1) return false;
+    const ids = [...this.selected];
+    const facing = this.dragFacing(start.x, start.z, end.x, end.z);
+    const kept = this.keptFormation(ids);
+    const mark = (px: number, pz: number, frontage: number, look: number): void => {
+      this.tiles.values.push(px, pz, Math.max(2, frontage), 1.4, look);
+      // A small square ahead of the line: the way it will look.
+      this.tiles.values.push(px + Math.sin(look) * 2.2, pz + Math.cos(look) * 2.2, 0.9, 0.9, look);
+      this.tiles.count += 2;
+    };
+    if (kept) {
+      formationSpots(kept, start.x, start.z, facing, this.spotScratch);
+      kept.forEach((p, i) => {
+        const r = findRegiment(this.world, p.id);
+        mark(this.spotScratch[i * 3] as number, this.spotScratch[i * 3 + 1] as number, r ? frontageM(r) : 4, this.spotScratch[i * 3 + 2] as number);
+      });
+    } else if (groupLineSpots(this.world, ids, start.x, start.z, facing, this.spotScratch) === 'ok') {
+      for (let i = 0; i < this.spotScratch.length; i += 4) mark(this.spotScratch[i + 1] as number, this.spotScratch[i + 2] as number, this.spotScratch[i + 3] as number, facing);
+    }
+    this.tiles.allowed = true;
+    return this.tiles.count > 0;
   }
 
   tap(screenX: number, screenY: number, double: boolean): void {
@@ -753,7 +909,12 @@ export class Game implements ControlTarget {
     const kind = m[1];
     if (kind === 'setGroup') {
       this.groups.set(n, [...this.selected]);
-      this.hud.toast(`${T.groupKept} ${n}`, 'plain');
+      // Several regiments: their shape as they stand is kept with the group, and they march in it.
+      const places: FormationPlace[] = [];
+      captureFormation(this.world, [...this.selected], places);
+      if (places.length >= 2) this.formations.set(n, places);
+      else this.formations.delete(n);
+      this.hud.toast(`${places.length >= 2 ? T.formationKept : T.groupKept} ${n}`, 'plain');
     } else if (kind === 'group') {
       const ids = (this.groups.get(n) ?? []).filter((id) => (findRegiment(this.world, id)?.aliveMen ?? 0) > 0);
       if (ids.length === 0) return true;
@@ -811,8 +972,8 @@ export class Game implements ControlTarget {
     else if (action === 'selectAll') this.selectAll();
     else if (action === 'debug') this.hud.debugVisible = !this.hud.debugVisible;
     else if (action === 'turnBuilding') {
-      if (this.tool?.kind === 'build') this.tool.turns = (this.tool.turns + 1) % 8;
-    } else if (action === 'road') this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false });
+      if (this.tool?.kind === 'build') this.tool.turns = (this.tool.turns + (this.gridOn ? 2 : 1)) % 8;
+    } else if (action === 'grid') this.toggleGrid(); else if (action === 'road') this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false });
     else if (action === 'cancel') {
       if (this.tool) this.dropTool();
       else if (this.selected.size > 0 || this.selectedPlot !== NOWHERE) {

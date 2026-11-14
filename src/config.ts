@@ -83,12 +83,16 @@ export const TOWN = {
   /** Buildings a side may have at once. */
   maxBuildings: 48,
   /** A side builds within this distance of its own keep, and no nearer than this to the enemy's. */
-  territoryRadiusM: 230,
+  territoryRadiusM: 280,
+  /** Besides the keep's circle, a side may build this near any of its own finished buildings: the town grows outward. */
+  buildingReachM: 70,
   /** Farms and vineyards may go this far: the farmers walk further out to open land. Woodcutters, quarries and mines may go anywhere. */
-  fieldTerritoryRadiusM: 300,
+  fieldTerritoryRadiusM: 340,
   enemyKeepClearM: 90,
   /** Free ground kept between two buildings' footprints. */
   buildingGapM: 1.5,
+  /** The building grid's spacing (a multiple of the road cell): a building per cell leaves room for a street between rows. */
+  gridM: 16,
   /** A building needs ground this level: the most its footprint may rise from its lowest to its highest point. */
   maxFootprintRiseM: 2.2,
   /** How near a woodcutter must be to trees, a fisher to water, a quarry or mine to its rock. */
@@ -133,14 +137,14 @@ export const PEOPLE = {
   taxGoldPerSecond: 0.02,
   /** A person walks briskly; under a load the same (a sack, not a millstone). Tuned: at 1.4 the farms' corn did not reach the bakery in time. */
   walkSpeedMs: 2.0,
-  /** Units of one good a carrier takes at once. */
+  /** Units of one good a carrier takes at once on foot (TRANSPORT raises it). */
   carryCapacity: 8,
   /** Seconds to pick a load up or set it down. */
   handlingSeconds: 1,
   /** A building's stores: carriers fill inputs up to the target; work stops when an output reaches its cap. */
   inputTarget: 8,
-  outputCap: 14,
-  /** Outputs are carried to the keep once this many lie in the yard. */
+  outputCap: 24,
+  /** Outputs are carried to the keep once a full load lies in the yard; this few when the keep is short of the good or the yard nearly full. */
   clearOutputAt: 4,
   /** Rations a house likes to have in the larder. */
   houseFoodTarget: 5,
@@ -265,7 +269,9 @@ export const GATHER = {
  * when set) grows into a tree that can be felled again in `growS`.
  */
 export const FORESTRY = {
-  reachM: 48,
+  reachM: 55,
+  /** A woodcutter's hut may stand only where at least this many grown trees are in his reach. */
+  minTrees: 20,
   plantSeconds: 4,
   saplingShare: 0.15,
   growS: 600,
@@ -678,10 +684,24 @@ export const AI_TUNING: Record<Difficulty, AiTuning> = {
  */
 export const KEEP_LEVELS = [
   { hp: TOWN.keepHp, territoryM: TOWN.territoryRadiusM, fieldsM: TOWN.fieldTerritoryRadiusM, barracks: 1, shotIntervalS: TOWN.keepShotIntervalS, cost: {} },
-  { hp: 2600, territoryM: 260, fieldsM: 330, barracks: 2, shotIntervalS: 0.75, cost: { gold: 250, wood: 60, stone: 120 } },
-  { hp: 3600, territoryM: 290, fieldsM: 360, barracks: 3, shotIntervalS: 0.5, cost: { gold: 500, wood: 100, stone: 240 } },
+  { hp: 2600, territoryM: 330, fieldsM: 390, barracks: 2, shotIntervalS: 0.75, cost: { gold: 250, wood: 60, stone: 120 } },
+  { hp: 3600, territoryM: 380, fieldsM: 440, barracks: 3, shotIntervalS: 0.5, cost: { gold: 500, wood: 100, stone: 240 } },
 ] as const;
 export const KEEP_UPGRADE_SECONDS = 60;
+
+/**
+ * Transport, by level: what a carrier takes in one trip and how much faster he goes. Level 2 gives every
+ * carrier a handcart, level 3 a horse and wagon (it needs the keep at `keepLevel`). Raised at the keep, in
+ * `seconds`, for `cost`.
+ */
+export const TRANSPORT = [
+  { capacity: PEOPLE.carryCapacity, pace: 1, keepLevel: 1, seconds: 0, cost: {} },
+  { capacity: 14, pace: 1, keepLevel: 1, seconds: 45, cost: { gold: 120, wood: 60 } },
+  { capacity: 20, pace: 1.35, keepLevel: 2, seconds: 60, cost: { gold: 260, wood: 100, horse: 6 } },
+] as const;
+
+/** How much a carrier's choice of errand leans towards (or away from) a good the player marked high (or low). */
+export const PRIORITY = { high: 1500, low: -900 } as const;
 
 /**
  * Places in the middle worth holding: a rich mine and a quarry on the two knolls, a village in the middle

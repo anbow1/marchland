@@ -5,6 +5,35 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Gospodarka i dowodzenie: lista budynków, zamówienia, transport, siatka, szyki
+
+- **Drwal, który nie produkował**: gra pozwalała postawić chatę tam, gdzie w zasięgu stały
+  4 drzewa (po ich ścięciu czekał 10 min na sadzonki). Teraz potrzeba ≥ 20 dorosłych drzew w
+  zasięgu (55 m, było 48); nowy stan „brak dorosłych drzew” z alarmem „pokaż”.
+- **Zasięg budowy**: koło zamku 280 / 330 / 380 m (było 230 / 260 / 290), pola 340 / 390 / 440,
+  a do tego **70 m od każdego własnego, gotowego budynku** — miasto rośnie w dowolną stronę.
+- **Zakładka „Budynki”**: każdy rodzaj z liczbą, poziomami, zapasem na podwórzach, zużyciem na
+  minutę, liczbą stojących i w budowie; klik — kamera do kolejnego budynku tego rodzaju i jego
+  panel; ▲ · ▼ — który warsztat pierwszy dostaje surowiec, gdy kilka o niego konkuruje.
+- **Produkcja**: kolumny „na podwórzach”, priorytet towaru dla tragarzy (▲ · ▼) i **zamówienie**
+  (− / ∞ / +): warsztat robi zamówioną ilość i staje („zamówienie wykonane”), tragarze nie
+  noszą mu już surowców. W werbunku „Zamów uzbrojenie ×1 / ×2” dolicza broń, zbroje, łuki i
+  konie na tyle oddziałów.
+- **Transport**: pomiar w mieście komputera — tragarze zajęci w 97–99 %, to przepustowość, nie
+  brak ludzi. Teraz: noszą pełne ładunki (pół ładunku tylko gdy zamkowi brakuje towaru albo
+  podwórze prawie pełne), podwórza mieszczą 24; poziom 2 **wózki ręczne** (ładunek 14, 120 zł +
+  60 drewna), poziom 3 **wozy konne** (ładunek 20, ×1,35 szybciej, 260 zł + 100 drewna + 6 koni,
+  zamek poziomu 2). Widać je u tragarzy. Komputer też ulepsza transport.
+- **Siatka (T)**: budynki przyciągają się do siatki 16 m równoległej do dróg, drzwiami w czterech
+  kierunkach (R obraca o 90°), podgląd sąsiednich kratek.
+- **Kierunek i linia**: z zaznaczonymi oddziałami przytrzymanie prawego i przeciągnięcie ustawia
+  front i kierunek, z podglądem (belka na każdy oddział + znacznik kierunku); bez zaznaczenia
+  prawy nadal obraca kamerę.
+- **Zapisane szyki**: Ctrl+cyfra przy kilku oddziałach zapamiętuje ich ustawienie; zaznaczone
+  razem (cyfrą albo ramką) idą w tym kształcie, obróconym do nowego kierunku, w tempie
+  najwolniejszego.
+- Testy: 84 / 84. Tempo komputera 37,5 / 36,1 min (było 35,7 / 36,5).
+
 ## 2026-11-14 · M2, etap 3: weterani, kapitan, uzupełnianie, żołd
 
 - **Weterani**: każdy zabity (wręcz albo strzałą — strzała pamięta, kto ją wypuścił) to

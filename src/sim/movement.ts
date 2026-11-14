@@ -193,6 +193,8 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
     // Behind a shield wall the ranks shuffle forward.
     if (r.stance === 'shields') speed *= FORMATION.shieldSpeedFactor;
     if (r.lagM > ARMY.cohesionLagM) speed *= ARMY.cohesionSlowFactor;
+    // In a formation of several regiments: the pace of the slowest, so the formation keeps its shape.
+    if (r.paceCapMs > 0) speed = Math.min(speed, r.paceCapMs * terrainSpeedFactor(world, r, r.anchorX, r.anchorZ));
     // In melee the formation only leans on the enemy; a move order pulls it out of the fight.
     if (isEngaged(r) && r.order !== 'move') speed = Math.min(speed, 0.5);
     movedM = Math.min(speed * dtSeconds, distanceM - stopDistanceM);

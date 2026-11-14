@@ -1,5 +1,5 @@
-import { FIELDS, GATHER, KEEP_LEVELS, MAP, POINTS, TOWN } from '../config.ts';
-import { woodStands } from './trees.ts';
+import { FIELDS, FORESTRY, GATHER, KEEP_LEVELS, MAP, POINTS, TOWN } from '../config.ts';
+import { grownTreesNear, woodStands } from './trees.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
 import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
@@ -29,6 +29,20 @@ export function reachOf(kind: BuildingKind, keepLevel = 1): number {
   const rules = KEEP_LEVELS[keepLevel - 1] as (typeof KEEP_LEVELS)[number];
   if (need === 'fields') return rules.fieldsM;
   return rules.territoryM;
+}
+
+/** True when (x, z) lies within TOWN.buildingReachM of one of the side's finished buildings. */
+export function nearOwnBuilding(world: World, side: Side, x: number, z: number): boolean {
+  for (const b of world.towns[side].plots) {
+    if (b && b.constructionLeftS <= 0 && b.kind !== 'tower' && hypot2(x - b.x, z - b.z) <= TOWN.buildingReachM) return true;
+  }
+  return false;
+}
+
+/** True where a side may put a building of this kind as far as reach goes: the keep's circle, or by its own buildings. */
+export function withinReach(world: World, side: Side, kind: BuildingKind, x: number, z: number): boolean {
+  if (hypot2(x - townX(side), z - townZ(side)) <= reachOf(kind, world.towns[side].keepLevel)) return true;
+  return nearOwnBuilding(world, side, x, z);
 }
 
 /** True where a side may lay a road: anywhere on the map but close to the enemy's keep. */
@@ -75,7 +89,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const site: Site = { x, z, yawRad, spotX: x, spotZ: z, strips: [] };
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
-  if (hypot2(x - townX(side), z - townZ(side)) > reachOf(kind, world.towns[side].keepLevel)) return fail('tooFar');
+  if (!withinReach(world, side, kind, x, z)) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
   if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isImpassable(x + dx, z + dz)) return fail('blocked');
@@ -91,6 +105,8 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   if (need !== 'forest' && forestCoverAt(x, z) > 0.5 && woodStands(world.stand, x, z)) return fail('blocked');
   if (need === 'forest') {
     if (!findNearby(x, z, TOWN.forestReachM, (px, pz) => forestCoverAt(px, pz) > 0.6, found)) return fail('needsForest');
+    // Enough grown trees in his reach to keep him busy while the saplings he plants grow.
+    if (grownTreesNear(world.stand, x, z, FORESTRY.reachM, world.timeS) < FORESTRY.minTrees) return fail('needsForest');
     // A few steps into the trees from where they begin.
     const d = hypot2(found.x - x, found.z - z) || 1;
     site.spotX = found.x + ((found.x - x) / d) * (GATHER.woodcutter.reachM * 0.4);

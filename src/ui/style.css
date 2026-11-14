@@ -116,7 +116,22 @@ button.tab.on { background: #5a5f3c; border-color: #f0d67a; }
 
 /* The production screen: goods with their rates, and the hold-ups beside them. */
 .prod { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
-.prodTable { display: grid; grid-template-columns: 18px minmax(80px, auto) 52px 84px 76px; column-gap: 8px; row-gap: 1px; align-items: center; max-height: 168px; overflow-y: auto; }
+.prodTable { display: grid; grid-template-columns: 18px minmax(80px, auto) 44px 56px 64px 60px 30px auto; column-gap: 8px; row-gap: 1px; align-items: center; max-height: 168px; overflow-y: auto; }
+.prodTable .choice { padding: 0 6px; min-width: 22px; line-height: 18px; font-size: 12px; }
+.prodTable .choice.low { background: #2a2f36; border-color: #5a6670; color: #9fb0c0; }
+.prodTable .order { display: flex; gap: 2px; }
+.prodTable .order .choice:nth-child(2) { min-width: 34px; }
+.orderUnit { display: inline-flex; gap: 2px; align-items: center; margin-right: 8px; }
+.orderUnit .glyph { margin-right: 2px; }
+.orderUnit .choice { padding: 2px 7px; font-size: 12px; }
+.listTable { display: grid; grid-template-columns: minmax(110px, auto) 40px 90px minmax(110px, 1fr) minmax(110px, 1fr) 54px auto; column-gap: 10px; row-gap: 2px; align-items: center; max-height: 176px; overflow-y: auto; }
+.listRow { display: contents; cursor: pointer; }
+.listRow:not(.head):hover > * { color: #f2e2a8; }
+.listRow b { text-align: right; font-variant-numeric: tabular-nums; }
+.listRow .costs { display: flex; flex-wrap: wrap; gap: 6px; }
+.listRow .small.alarm { color: #f0a08a; }
+.listTable .choice { padding: 0 6px; min-width: 22px; line-height: 18px; font-size: 12px; }
+.listTable .choice.low, .prodTable .choice.low { background: #2a2f36; border-color: #5a6670; color: #9fb0c0; }
 .prodRow { display: contents; }
 .prodRow i.ico { width: 16px; height: 16px; display: inline-block; }
 .prodRow i.ico svg { width: 100%; height: 100%; display: block; }

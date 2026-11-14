@@ -290,6 +290,8 @@ export function stepWorld(world: World, dtSeconds: number): void {
       if (b) world.events.push('built', b.x, b.z, town.side);
       // The keep raised a level.
       else if (plot === -1) world.events.push('keepRaised', townX(town.side), townZ(town.side), town.side);
+      // Transport raised a level.
+      else if (plot === -2) world.events.push('transportRaised', townX(town.side), townZ(town.side), town.side);
     }
   }
   stepRearming(world, dtSeconds);

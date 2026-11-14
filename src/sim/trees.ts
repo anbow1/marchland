@@ -193,6 +193,26 @@ export function claimNearestTree(stand: Stand, x: number, z: number, reachM: num
   return best;
 }
 
+/** Grown trees within `reachM` of (x, z) now: what a woodcutter put there would have to fell. */
+export function grownTreesNear(stand: Stand, x: number, z: number, reachM: number, nowS: number): number {
+  let n = 0;
+  const c0x = Math.max(0, Math.floor((x - reachM) / CELL_M + CELLS / 2));
+  const c1x = Math.min(CELLS - 1, Math.floor((x + reachM) / CELL_M + CELLS / 2));
+  const c0z = Math.max(0, Math.floor((z - reachM) / CELL_M + CELLS / 2));
+  const c1z = Math.min(CELLS - 1, Math.floor((z + reachM) / CELL_M + CELLS / 2));
+  for (let cz = c0z; cz <= c1z; cz++) {
+    for (let cx = c0x; cx <= c1x; cx++) {
+      const c = cz * CELLS + cx;
+      for (let k = cellStart[c] as number; k < (cellStart[c + 1] as number); k++) {
+        const i = cellTrees[k] as number;
+        if (growthOf(stand, i, nowS) < 1) continue;
+        if (hypot2((TREES.x[i] as number) - x, (TREES.z[i] as number) - z) < reachM) n++;
+      }
+    }
+  }
+  return n;
+}
+
 /** Brings a tree down: a stump until the woodcutter plants by it. */
 export function fellTree(stand: Stand, i: number, nowS: number): void {
   stand.felledS[i] = nowS;

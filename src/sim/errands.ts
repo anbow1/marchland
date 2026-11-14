@@ -1,5 +1,5 @@
-import { BUILDINGS, FOOD, PEOPLE, WINE } from '../config.ts';
-import { type Building, isBuilt, outputFull, rationsIn, type Town } from './economy.ts';
+import { BUILDINGS, FOOD, PEOPLE, PRIORITY, WINE } from '../config.ts';
+import { type Building, carryCapacity, carryPace, isBuilt, outputFull, rationsIn, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo } from './people.ts';
 import { KEEP, NOWHERE } from './types.ts';
 import { type ResourceId, RESOURCE_IDS } from './types.ts';
@@ -86,8 +86,18 @@ function available(town: Town, src: number, good: ResourceId): number {
   return src === KEEP ? town.stock[good] : (town.plots[src] as Building).out[good];
 }
 
+/** The player's lean towards a good, as urgency. */
+function priorityOf(town: Town, good: ResourceId): number {
+  return leanOf(town.priority[good]);
+}
+
+function leanOf(p: number | undefined): number {
+  return (p ?? 0) > 0 ? PRIORITY.high : (p ?? 0) < 0 ? PRIORITY.low : 0;
+}
+
 /** Looks for an errand; true (and the errand is his) when there is one. */
 function findErrand(town: Town, p: Person): boolean {
+  const cap = carryCapacity(town);
   choice.score = Number.NEGATIVE_INFINITY;
   choice.errand = 'none';
   for (let plot = 0; plot < town.plots.length; plot++) {
@@ -95,7 +105,7 @@ function findErrand(town: Town, p: Person): boolean {
     if (!b) continue;
     if (!isBuilt(b)) {
       // Timber and stone for the builders: already paid for, waiting at the keep.
-      for (const good of ['wood', 'stone'] as const) offer(town, p, URGENCY.site, 'site', good, Math.min(PEOPLE.carryCapacity, b.matWaiting[good]), KEEP, plot);
+      for (const good of ['wood', 'stone'] as const) offer(town, p, URGENCY.site, 'site', good, Math.min(cap, b.matWaiting[good]), KEEP, plot);
       continue;
     }
     if (b.kind === 'house') {
@@ -103,7 +113,7 @@ function findErrand(town: Town, p: Person): boolean {
       const wineWanted = WINE.houseTarget - b.inp.wine - b.incoming.wine;
       if (wineWanted >= 1) {
         const src = findSource(town, p, 'wine', b.x, b.z, plot);
-        if (src !== NOWHERE) offer(town, p, URGENCY.wine, 'food', 'wine', Math.min(PEOPLE.carryCapacity, wineWanted, available(town, src, 'wine')), src, plot);
+        if (src !== NOWHERE) offer(town, p, URGENCY.wine, 'food', 'wine', Math.min(cap, wineWanted, available(town, src, 'wine')), src, plot);
       }
       let have = rationsIn(b.inp);
       for (const food of FOODS) have += b.incoming[food] * (FOOD_RATIONS[food] as number);
@@ -111,14 +121,14 @@ function findErrand(town: Town, p: Person): boolean {
       for (const food of FOODS) {
         const src = findSource(town, p, food, b.x, b.z, plot);
         if (src === NOWHERE) continue;
-        offer(town, p, have < 1 ? URGENCY.hungryHouse : URGENCY.food, 'food', food, Math.min(PEOPLE.carryCapacity, available(town, src, food)), src, plot);
+        offer(town, p, have < 1 ? URGENCY.hungryHouse : URGENCY.food, 'food', food, Math.min(cap, available(town, src, food)), src, plot);
         break;
       }
       continue;
     }
     const recipe = BUILDINGS[b.kind].recipe;
     // No more inputs for a workshop whose yard is full: it cannot use them.
-    if (recipe && !b.paused && !outputFull(b)) {
+    if (recipe && !b.paused && !b.held && !outputFull(b)) {
       for (const good of RESOURCE_IDS) {
         if ((recipe.inputs[good] ?? 0) === 0) continue;
         const want = PEOPLE.inputTarget - b.inp[good] - b.incoming[good];
@@ -126,14 +136,16 @@ function findErrand(town: Town, p: Person): boolean {
         const src = findSource(town, p, good, b.x, b.z, plot);
         if (src === NOWHERE) continue;
         // An empty input store is more pressing than a half-full one.
-        offer(town, p, URGENCY.input + (b.inp[good] + b.incoming[good] === 0 ? 500 : 0), 'input', good, Math.min(PEOPLE.carryCapacity, want, available(town, src, good)), src, plot);
+        offer(town, p, URGENCY.input + (b.inp[good] + b.incoming[good] === 0 ? 500 : 0) + priorityOf(town, good) + leanOf(town.kindPriority[b.kind]), 'input', good, Math.min(cap, want, available(town, src, good)), src, plot);
       }
     }
-    // What has piled up in the yard goes to the keep.
+    // What has piled up in the yard goes to the keep: a full load, unless the keep is short of it or the yard
+    // is nearly full (a long walk for half a load wastes the carrier).
     for (const good of RESOURCE_IDS) {
-      if (b.out[good] < PEOPLE.clearOutputAt) continue;
-      const urgency = town.stock[good] < SCARCE_BELOW ? URGENCY.clearScarce : URGENCY.clear;
-      offer(town, p, urgency + b.out[good] * 20, 'clear', good, Math.min(PEOPLE.carryCapacity, b.out[good]), plot, KEEP);
+      const scarce = town.stock[good] < SCARCE_BELOW;
+      if (b.out[good] < (scarce || b.out[good] >= PEOPLE.outputCap - 4 ? PEOPLE.clearOutputAt : Math.min(cap, PEOPLE.outputCap - 4))) continue;
+      const urgency = (scarce ? URGENCY.clearScarce : URGENCY.clear) + priorityOf(town, good);
+      offer(town, p, urgency + b.out[good] * 20, 'clear', good, Math.min(cap, b.out[good]), plot, KEEP);
     }
   }
   if (choice.errand === 'none') return false;
@@ -183,7 +195,7 @@ export function stepCarrier(world: World, town: Town, p: Person, dtSeconds: numb
     return;
   }
   const to = p.holding ? p.dst : p.src;
-  if (!walkTo(world, p, doorX(town, to), doorZ(town, to), dtSeconds)) {
+  if (!walkTo(world, p, doorX(town, to), doorZ(town, to), dtSeconds, carryPace(town))) {
     p.act = 'walk';
     return;
   }

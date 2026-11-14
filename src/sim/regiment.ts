@@ -108,6 +108,8 @@ export interface Regiment {
   sinceShotS: number;
   /** Experience: enemies brought down, per man of the regiment as raised (new men dilute it). */
   xp: number;
+  /** Marching in a formation of several regiments: no faster than this, so they keep together (0 = own pace). */
+  paceCapMs: number;
 }
 
 /** 0 green, 1 seasoned, 2 veterans. */
@@ -263,6 +265,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     fireAtWill: true,
     sinceShotS: 999,
     xp: 0,
+    paceCapMs: 0,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({

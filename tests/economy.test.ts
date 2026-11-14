@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, FORESTRY, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { ARMY, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
+import { carryCapacity, workState } from '../src/sim/economy.ts';
+import { grownTreesNear } from '../src/sim/trees.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
@@ -499,6 +501,82 @@ describe('reinforcements and pay', () => {
     run(world, 1);
     expect(town.unpaid).toBe(false);
     expect(town.stock.gold).toBeLessThan(100 - 28);
+  });
+});
+
+describe('orders, transport and reach', () => {
+  it('a workshop makes what is ordered and stops; arms are ordered by the regiment', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const plot = build(world, 'quarry');
+    runUntil(world, 300, () => finished(world, plot));
+    const quarry = town.plots[plot];
+    if (!quarry) throw new Error('no quarry');
+    expect(cmdOrder(world, PLAYER, 'stone', 3)).toBe('ok');
+    const before = town.made.stone;
+    runUntil(world, 300, () => workState(quarry) === 'orderDone');
+    expect(workState(quarry)).toBe('orderDone');
+    expect(town.orders.stone).toBe(0);
+    run(world, 60);
+    expect(quarry.out.stone + town.stock.stone).toBeGreaterThan(0);
+    expect(town.made.stone - before).toBeLessThanOrEqual(4);
+    // More ordered: it works again; the limit lifted: no stopping at all.
+    cmdOrder(world, PLAYER, 'stone', null);
+    run(world, 30);
+    expect(workState(quarry)).not.toBe('orderDone');
+    expect(cmdOrderRegiments(world, PLAYER, 'pikemen', 2)).toBe('ok');
+    expect(town.orders.weapon).toBe(2 * UNITS.pikemen.men);
+    expect(town.orders.leatherArmor).toBe(2 * UNITS.pikemen.men);
+    expect(town.orders.wood).toBeUndefined();
+  });
+
+  it('transport is raised a level at a time: handcarts, then wagons once the keep allows', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    town.stock.horse = 10;
+    expect(carryCapacity(town)).toBe(PEOPLE.carryCapacity);
+    expect(cmdUpgradeTransport(world, PLAYER)).toBe('ok');
+    expect(cmdUpgradeTransport(world, PLAYER)).toBe('underConstruction');
+    run(world, TRANSPORT[1].seconds + 1);
+    expect(town.transportLevel).toBe(2);
+    expect(carryCapacity(town)).toBe(TRANSPORT[1].capacity);
+    expect(cmdUpgradeTransport(world, PLAYER)).toBe('needsKeep');
+    expect(cmdUpgradeKeep(world, PLAYER)).toBe('ok');
+    run(world, KEEP_UPGRADE_SECONDS + 1);
+    expect(cmdUpgradeTransport(world, PLAYER)).toBe('ok');
+    expect(town.stock.horse).toBe(10 - (TRANSPORT[2].cost.horse ?? 0));
+  });
+
+  it('a woodcutter goes only where enough grown trees stand; the town reaches out from its buildings', () => {
+    const world = rich(quietWorld());
+    let checked = 0;
+    for (let x = -270; x <= 270 && checked < 40; x += 9) {
+      for (let z = -270; z <= 270 && checked < 40; z += 9) {
+        if (checkSite(world, PLAYER, 'woodcutter', x, z, 0).result !== 'ok') continue;
+        checked++;
+        expect(grownTreesNear(world.stand, x, z, FORESTRY.reachM, world.timeS)).toBeGreaterThanOrEqual(FORESTRY.minTrees);
+      }
+    }
+    expect(checked).toBeGreaterThan(10);
+    // Beyond the keep's circle: refused, until a building of ours stands near.
+    const kx = townX(PLAYER);
+    const kz = townZ(PLAYER);
+    const reach = KEEP_LEVELS[0].territoryM;
+    let probe: { x: number; z: number } | null = null;
+    for (let a = 0; a < Math.PI * 2 && !probe; a += 0.05) {
+      const x = kx + Math.sin(a) * (reach + 30);
+      const z = kz + Math.cos(a) * (reach + 30);
+      if (checkSite(world, PLAYER, 'house', x, z, 0).result !== 'tooFar') continue;
+      const bx = kx + Math.sin(a) * (reach - 15);
+      const bz = kz + Math.cos(a) * (reach - 15);
+      if (checkSite(world, PLAYER, 'house', bx, bz, 0).result === 'ok') probe = { x, z };
+      else continue;
+      expect(cmdBuild(world, PLAYER, 'house', bx, bz, 0)).toBe('ok');
+      const plot = world.towns[PLAYER].plots.findIndex((b) => b !== null && b.x === bx && b.z === bz);
+      runUntil(world, 300, () => finished(world, plot));
+    }
+    if (!probe) throw new Error('no open ground at the edge of the keep\'s reach');
+    expect(checkSite(world, PLAYER, 'house', probe.x, probe.z, 0).result).not.toBe('tooFar');
   });
 });
 

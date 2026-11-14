@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
+import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, TRANSPORT, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
 
 // A town's economy. The keep is the storehouse (`stock`); every building has
@@ -75,6 +75,10 @@ export interface Building {
   garrison: number;
   garrisonKind: UnitKind | null;
   shotS: number;
+  /** A woodcutter that found no grown tree in reach the last time he looked. */
+  noTrees: boolean;
+  /** Every good it makes has an order and every order is filled: it stands idle until more is ordered. */
+  held: boolean;
 }
 
 export interface RecruitOrder {
@@ -98,6 +102,15 @@ export interface Town {
   /** The keep's level (1…3) and the seconds left on raising it to the next (0 when no work is under way). */
   keepLevel: number;
   keepUpgradeLeftS: number;
+  /** Transport level (1…3: by hand, handcarts, wagons) and the seconds left on raising it (0 when no work is under way). */
+  transportLevel: number;
+  transportUpgradeLeftS: number;
+  /** Carriers' priority for each good: 1 high, 0 normal, −1 low. */
+  priority: Partial<Record<ResourceId, number>>;
+  /** Which workshops are served first when several want the same input: 1 high, 0 normal, −1 low. */
+  kindPriority: Partial<Record<BuildingKind, number>>;
+  /** Production orders: how much more of a good to make (absent = no limit, make as long as there is room). */
+  orders: Partial<Record<ResourceId, number>>;
   /** Rations owed by the keep's household and the army; one is eaten whenever this reaches 1. */
   rationDebt: number;
   starving: boolean;
@@ -172,7 +185,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.maxBuildings; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, keepLevel: 1, keepUpgradeLeftS: 0, rationDebt: 0, starving: false, recruitQueue: [], trained: [], reinforced: [], payOwed: 0, unpaid: false, finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, keepLevel: 1, keepUpgradeLeftS: 0, transportLevel: 1, transportUpgradeLeftS: 0, priority: {}, kindPriority: {}, orders: {}, rationDebt: 0, starving: false, recruitQueue: [], trained: [], reinforced: [], payOwed: 0, unpaid: false, finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -249,6 +262,8 @@ export function startBuilding(town: Town, kind: BuildingKind, site: Site): numbe
     garrison: 0,
     garrisonKind: null,
     shotS: 0,
+    noTrees: false,
+    held: false,
   };
   orderWork(town, b, 1, BUILDINGS[kind].buildSeconds);
   town.plots[plot] = b;
@@ -310,6 +325,46 @@ export function startKeepUpgrade(town: Town): CommandResult {
   for (const id of RESOURCE_IDS) town.stock[id] -= cost[id] ?? 0;
   town.keepUpgradeLeftS = KEEP_UPGRADE_SECONDS;
   return 'ok';
+}
+
+/** Starts raising the town's transport a level: paid now, done in that level's seconds. */
+export function startTransportUpgrade(town: Town): CommandResult {
+  if (town.transportUpgradeLeftS > 0) return 'underConstruction';
+  const next = TRANSPORT[town.transportLevel];
+  if (!next) return 'maxLevel';
+  if (town.keepLevel < next.keepLevel) return 'needsKeep';
+  const cost = next.cost as Partial<Record<ResourceId, number>>;
+  for (const id of RESOURCE_IDS) if (town.stock[id] < (cost[id] ?? 0)) return 'cannotAfford';
+  for (const id of RESOURCE_IDS) town.stock[id] -= cost[id] ?? 0;
+  town.transportUpgradeLeftS = next.seconds;
+  return 'ok';
+}
+
+/** What a carrier of this town takes in one trip, and how much faster than on foot he goes. */
+export function carryCapacity(town: Town): number {
+  return (TRANSPORT[town.transportLevel - 1] ?? TRANSPORT[0]).capacity;
+}
+
+export function carryPace(town: Town): number {
+  return (TRANSPORT[town.transportLevel - 1] ?? TRANSPORT[0]).pace;
+}
+
+/** True when every good in `outputs` has an order and none is left to make. */
+export function ordersFilled(town: Town, outputs: Cost): boolean {
+  let any = false;
+  for (const id of RESOURCE_IDS) {
+    if ((outputs[id] ?? 0) === 0) continue;
+    const left = town.orders[id];
+    if (left === undefined || left > 0) return false;
+    any = true;
+  }
+  return any;
+}
+
+/** Counts goods made against their order, if there is one. */
+export function fillOrder(town: Town, good: ResourceId, amount: number): void {
+  const left = town.orders[good];
+  if (left !== undefined && amount > 0) town.orders[good] = Math.max(0, left - amount);
 }
 
 /** Highest level among finished barracks; 0 without one. */
@@ -439,7 +494,8 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
   const recipe = BUILDINGS[b.kind].recipe;
   if (!recipe || b.paused || b.workRate <= 0) return;
   if (!b.cycleStarted) {
-    if (outputFull(b) || !hasInputs(b.inp, recipe.inputs)) return;
+    b.held = ordersFilled(town, recipe.outputs);
+    if (b.held || outputFull(b) || !hasInputs(b.inp, recipe.inputs)) return;
     for (const id of RESOURCE_IDS) b.inp[id] -= recipe.inputs[id] ?? 0;
     b.cycleStarted = true;
     b.cycleProgressS = 0;
@@ -449,6 +505,7 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
     for (const id of RESOURCE_IDS) {
       b.out[id] += recipe.outputs[id] ?? 0;
       town.made[id] += recipe.outputs[id] ?? 0;
+      fillOrder(town, id, recipe.outputs[id] ?? 0);
     }
     b.cycleStarted = false;
     b.cycleProgressS = 0;
@@ -487,6 +544,13 @@ function construct(town: Town, b: Building, plot: number, dtSeconds: number): vo
 
 /** One fixed step of a town. `soldiers` is the number of its men alive on the field. */
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
+  if (town.transportUpgradeLeftS > 0) {
+    town.transportUpgradeLeftS = Math.max(0, town.transportUpgradeLeftS - dtSeconds * town.productionFactor);
+    if (town.transportUpgradeLeftS === 0) {
+      town.transportLevel += 1;
+      town.finishedPlots.push(-2);
+    }
+  }
   if (town.keepUpgradeLeftS > 0) {
     town.keepUpgradeLeftS = Math.max(0, town.keepUpgradeLeftS - dtSeconds * town.productionFactor);
     if (town.keepUpgradeLeftS === 0) {
@@ -543,7 +607,7 @@ export function housingCapacity(town: Town): number {
 }
 
 /** Why a finished building is not working, for the HUD; 'working' if it is. */
-export type WorkState = 'working' | 'building' | 'paused' | 'noWorker' | 'noInput' | 'yardFull' | 'waiting';
+export type WorkState = 'working' | 'building' | 'paused' | 'noWorker' | 'noInput' | 'yardFull' | 'noTrees' | 'orderDone' | 'waiting';
 
 export function workState(b: Building): WorkState {
   if (b.constructionLeftS > 0) return 'building';
@@ -551,8 +615,17 @@ export function workState(b: Building): WorkState {
   if (b.kind === 'house' || b.kind === 'barracks' || b.kind === 'tower') return 'working';
   if (b.workRate <= 0) return 'noWorker';
   const recipe = BUILDINGS[b.kind].recipe;
-  if (!recipe) return 'working';
+  if (!recipe) {
+    if (b.kind === 'woodcutter' || b.kind === 'fisher') {
+      const good = b.kind === 'woodcutter' ? 'wood' : 'fish';
+      if (b.out[good] >= PEOPLE.outputCap) return 'yardFull';
+      if (b.held) return 'orderDone';
+      if (b.noTrees) return 'noTrees';
+    }
+    return 'working';
+  }
   if (b.cycleStarted) return 'working';
+  if (b.held) return 'orderDone';
   if (outputFull(b)) return 'yardFull';
   if (!hasInputs(b.inp, recipe.inputs)) return 'noInput';
   return 'waiting';

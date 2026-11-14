@@ -1,7 +1,7 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS } from '../config.ts';
 import { resourceIcon } from './icons.ts';
-import { canRearm, canReinforce, missingMen, rearmCost, reinforceCost } from '../sim/commands.ts';
-import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
+import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost } from '../sim/commands.ts';
+import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
 import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS } from '../sim/types.ts';
@@ -33,6 +33,16 @@ export interface HudActions {
   recruit(kind: UnitKind): void;
   rearm(regimentId: number, kind: UnitKind): void;
   reinforce(regimentId: number): void;
+  upgradeTransport(): void;
+  /** Carriers' priority for a good: 1 high, 0 normal, −1 low. */
+  setPriority(good: ResourceId, priority: number): void;
+  /** Which workshops are served first: 1 high, 0 normal, −1 low. */
+  setKindPriority(kind: BuildingKind, priority: number): void;
+  /** How much more of a good to make; null lifts the limit. */
+  setOrder(good: ResourceId, amount: number | null): void;
+  orderRegiments(kind: UnitKind, count: number): void;
+  toggleGrid(): void;
+  selectPlot(plot: number): void;
   halt(): void;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
@@ -131,6 +141,8 @@ export class Hud {
   private panelAge = PANEL_REFRESH_S;
   private mapAge = 1;
   debugVisible = false;
+  /** Buildings snap to the grid (the game sets it; the build tab shows the switch). */
+  gridOn = false;
 
   constructor(
     private readonly root: HTMLElement,
@@ -221,7 +233,9 @@ export class Hud {
   }
 
   private plotInPanel = -1;
-  private tab: 'build' | 'army' | 'prod' = 'build';
+  private tab: 'build' | 'army' | 'prod' | 'list' = 'build';
+  /** For the list of buildings: which of each kind the camera went to last. */
+  private readonly listCursor = new Map<BuildingKind, number>();
 
   private act(name: string, arg: string): void {
     switch (name) {
@@ -252,7 +266,7 @@ export class Hud {
         break;
       }
       case 'tab':
-        this.tab = arg === 'army' ? 'army' : arg === 'prod' ? 'prod' : 'build';
+        this.tab = arg === 'army' ? 'army' : arg === 'prod' ? 'prod' : arg === 'list' ? 'list' : 'build';
         break;
       case 'upgrade':
         this.actions.upgrade(this.plotInPanel);
@@ -277,6 +291,39 @@ export class Hud {
       case 'reinforce':
         this.actions.reinforce(Number(arg));
         break;
+      case 'grid':
+        this.actions.toggleGrid();
+        break;
+      case 'transport':
+        this.actions.upgradeTransport();
+        break;
+      case 'priority': {
+        const [good, p] = arg.split(':');
+        this.actions.setPriority(good as ResourceId, Number(p));
+        break;
+      }
+      case 'kindPrio': {
+        const [kind, p] = arg.split(':');
+        this.actions.setKindPriority(kind as BuildingKind, Number(p));
+        break;
+      }
+      case 'order': {
+        const [good, amount] = arg.split(':');
+        this.actions.setOrder(good as ResourceId, amount === 'inf' ? null : Number(amount));
+        break;
+      }
+      case 'orderUnit': {
+        const [kind, count] = arg.split(':');
+        this.actions.orderRegiments(kind as UnitKind, Number(count));
+        break;
+      }
+      case 'listGo': {
+        // The next building of that kind: the camera goes there and its panel opens.
+        const [kind, plot] = arg.split(':');
+        this.listCursor.set(kind as BuildingKind, Number(plot));
+        this.actions.selectPlot(Number(plot));
+        break;
+      }
       case 'halt':
         this.actions.halt();
         break;
@@ -345,6 +392,17 @@ export class Hud {
       html += `<button class="option${off}" data-act="recruit" data-arg="${kind}" data-tip="${T.units[kind].name}: ${T.units[kind].about} ${T.counters[kind]}${need}"><span class="glyph">${UNIT_GLYPH[kind]}</span><span class="name">${T.units[kind].name}</span><span class="costs">${locked ? need : unitCostHtml(town, kind)}</span></button>`;
     }
     html += '</div>';
+    // Ordering arms: the workshops make what so many regiments need and then stop.
+    html += `<div class="row wrap"><span class="label" data-tip="${T.orderTip}">${T.orderArms}</span>`;
+    for (const kind of UNIT_KINDS) {
+      const goods = orderedGoodsFor(kind);
+      if (!RESOURCE_IDS.some((id) => (goods[id] ?? 0) > 0) || UNITS[kind].engine) continue;
+      const list = RESOURCE_IDS.filter((id) => (goods[id] ?? 0) > 0)
+        .map((id) => `${T.resources[id].toLowerCase()} ${goods[id]}`)
+        .join(', ');
+      html += `<span class="orderUnit"><span class="glyph">${UNIT_GLYPH[kind]}</span>${[1, 2].map((n) => `<button class="choice" data-act="orderUnit" data-arg="${kind}:${n}" data-tip="${T.orderTip} ${T.units[kind].name} ×${n}: ${list}${n > 1 ? ` (×${n})` : ''}">×${n}</button>`).join('')}</span>`;
+    }
+    html += '</div>';
     if (town.recruitQueue.length > 0) {
       const first = town.recruitQueue[0];
       const names = town.recruitQueue.map((o) => T.units[o.kind].name).join(', ');
@@ -369,6 +427,7 @@ export class Hud {
     html += `<button class="option${tool === 'wall' ? ' on' : ''}" data-act="wall" data-tip="${T.wall}: ${T.wallAbout}"><span class="name">${T.wall}</span><span class="costs"><span class="cost"><i class=\"ico\">${resourceIcon('stone')}</i>${wallTen.toFixed(0)} / 10 m</span></span></button>`;
     const gateOff = town.stock.wood >= GATE.cost.wood && town.stock.stone >= GATE.cost.stone ? '' : ' off';
     html += `<button class="option${gateOff}${tool === 'gate' ? ' on' : ''}" data-act="gate" data-tip="${T.gate}: ${T.gateAbout}"><span class="name">${T.gate}</span><span class="costs"><span class="cost"><i class=\"ico\">${resourceIcon('wood')}</i>${GATE.cost.wood}</span><span class="cost"><i class=\"ico\">${resourceIcon('stone')}</i>${GATE.cost.stone}</span></span></button>`;
+    html += `<button class="option${this.gridOn ? ' on' : ''}" data-act="grid" data-tip="${T.gridTip}"><span class="name">${T.grid} (T)</span><span class="costs"><span class="small">${this.gridOn ? T.gridOn : T.gridOff}</span></span></button>`;
     return `${html}</div>`;
   }
 
@@ -384,13 +443,24 @@ export class Hud {
   private productionHtml(town: Town): string {
     const { made, net } = flowRates(town);
     const fmt = (v: number): string => (Math.abs(v) < 0.05 ? '·' : `${v > 0 ? '+' : '−'}${Math.abs(v) < 10 ? Math.abs(v).toFixed(1) : Math.round(Math.abs(v))}`);
+    const yards = emptyStock();
+    for (const b of town.plots) if (b) for (const id of RESOURCE_IDS) yards[id] += b.out[id];
     let rows = '';
     for (const id of RESOURCE_IDS) {
-      if (town.stock[id] < 0.5 && Math.abs(made[id]) < 0.05 && Math.abs(net[id]) < 0.05) continue;
+      const order = town.orders[id];
+      if (town.stock[id] < 0.5 && yards[id] < 0.5 && Math.abs(made[id]) < 0.05 && Math.abs(net[id]) < 0.05 && order === undefined) continue;
       const tone = net[id] < -0.05 ? ' short' : '';
-      rows += `<div class="prodRow"><i class="ico">${resourceIcon(id)}</i><span class="name">${T.resources[id]}</span><b>${Math.floor(town.stock[id])}</b><span>${fmt(made[id])}</span><span class="net${tone}">${fmt(net[id])}</span></div>`;
+      const p = town.priority[id] ?? 0;
+      const nextP = p === 0 ? 1 : p === 1 ? -1 : 0;
+      const prio = id === 'gold' ? '<span></span>' : `<button class="choice prio${p > 0 ? ' on' : p < 0 ? ' low' : ''}" data-act="priority" data-arg="${id}:${nextP}" data-tip="${T.priorityTip}">${p > 0 ? '▲' : p < 0 ? '▼' : '·'}</button>`;
+      const step = id === 'horse' ? 4 : 12;
+      const orderCell =
+        id === 'gold'
+          ? '<span></span>'
+          : `<span class="order"><button class="choice" data-act="order" data-arg="${id}:${order === undefined ? 0 : Math.max(0, order - step)}" data-tip="${T.orderLess}">−</button><button class="choice${order === undefined ? '' : ' on'}" data-act="order" data-arg="${id}:inf" data-tip="${T.orderInf}">${order === undefined ? '∞' : order}</button><button class="choice" data-act="order" data-arg="${id}:${(order ?? 0) + step}" data-tip="${T.orderMore}">+</button></span>`;
+      rows += `<div class="prodRow"><i class="ico">${resourceIcon(id)}</i><span class="name">${T.resources[id]}</span><b>${Math.floor(town.stock[id])}</b><span>${yards[id] > 0 ? Math.floor(yards[id]) : '·'}</span><span>${fmt(made[id])}</span><span class="net${tone}">${fmt(net[id])}</span>${prio}${orderCell}</div>`;
     }
-    const head = `<div class="prodRow head"><i></i><span class="name"></span><b>${T.prodStock}</b><span>${T.prodMade}</span><span>${T.prodNet}</span></div>`;
+    const head = `<div class="prodRow head"><i></i><span class="name"></span><b>${T.prodStock}</b><span>${T.prodYards}</span><span>${T.prodMade}</span><span>${T.prodNet}</span><span>${T.priority}</span><span>${T.orderHead}</span></div>`;
     // Hold-ups: workshops not working, gathered by kind and reason.
     const groups = new Map<string, { text: string; count: number; x: number; z: number }>();
     for (const b of town.plots) {
@@ -405,7 +475,78 @@ export class Hud {
     }
     let holdUps = '';
     for (const g of groups.values()) holdUps += `<div class="holdUp">${g.count > 1 ? `${g.count}× ` : ''}${g.text} <button class="link" data-act="show" data-arg="${g.x.toFixed(1)},${g.z.toFixed(1)}">${T.show}</button></div>`;
-    return `<div class="prod"><div class="prodTable">${head}${rows}</div><div class="holdUps"><div class="label">${T.holdUps}</div>${holdUps || `<div class="holdUp ok">${T.allWorking}</div>`}</div></div>`;
+    return `${this.transportHtml(town)}<div class="prod"><div class="prodTable">${head}${rows}</div><div class="holdUps"><div class="label">${T.holdUps}</div>${holdUps || `<div class="holdUp ok">${T.allWorking}</div>`}</div></div>`;
+  }
+
+  /** Transport: its level, what a carrier takes, and the way to the next level. */
+  private transportHtml(town: Town): string {
+    const now = TRANSPORT[town.transportLevel - 1] ?? TRANSPORT[0];
+    let html = `<div class="row"><span class="label" data-tip="${T.transportTip}">${T.transport}</span><span class="status">${T.transportLevels[town.transportLevel - 1]} · ${T.carries} ${now.capacity}${now.pace > 1 ? ` · ×${now.pace} ${T.faster}` : ''}</span>`;
+    const next = TRANSPORT[town.transportLevel];
+    if (town.transportUpgradeLeftS > 0 && next) {
+      html += `<span class="status">${T.transportRaising}: ${Math.round((1 - town.transportUpgradeLeftS / next.seconds) * 100)}%</span>`;
+    } else if (next) {
+      const cost = next.cost as Partial<Record<ResourceId, number>>;
+      let costs = '';
+      let short = town.keepLevel < next.keepLevel;
+      for (const id of RESOURCE_IDS) {
+        const amount = cost[id] ?? 0;
+        if (amount === 0) continue;
+        if (town.stock[id] < amount) short = true;
+        costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
+      }
+      const needKeep = town.keepLevel < next.keepLevel ? ` — ${T.needsKeepLevel} ${next.keepLevel}` : '';
+      html += `<button class="option${short ? ' off' : ''}" data-act="transport" data-tip="${T.transportLevels[town.transportLevel]}: ${T.carries} ${next.capacity}${next.pace > 1 ? `, ×${next.pace} ${T.faster}` : ''}${needKeep}"><span class="name">${T.transportLevels[town.transportLevel]}</span><span class="costs">${costs}</span></button>`;
+    }
+    return `${html}</div>`;
+  }
+
+  /** The ▲ · ▼ switch for which workshops are served first; an empty cell for those that take no inputs. */
+  private kindPrioHtml(town: Town, kind: BuildingKind, takesInputs: boolean): string {
+    if (!takesInputs) return '<span></span>';
+    const p = town.kindPriority[kind] ?? 0;
+    const next = p === 0 ? 1 : p === 1 ? -1 : 0;
+    return `<span><button class="choice prio${p > 0 ? ' on' : p < 0 ? ' low' : ''}" data-act="kindPrio" data-arg="${kind}:${next}" data-tip="${T.kindPriorityTip}">${p > 0 ? '▲' : p < 0 ? '▼' : '·'}</button></span>`;
+  }
+
+  /** Every building the town has, by kind: how many, of which levels, how many stand idle, and what lies in their yards. */
+  private listHtml(town: Town): string {
+    let rows = '';
+    for (const kind of BUILDING_KINDS) {
+      const plots: number[] = [];
+      town.plots.forEach((b, plot) => {
+        if (b && b.kind === kind) plots.push(plot);
+      });
+      if (plots.length === 0) continue;
+      const levels = [0, 0, 0];
+      const yard = emptyStock();
+      // What its workshops eat a minute at full work, at their levels.
+      const uses = emptyStock();
+      const recipe = BUILDINGS[kind].recipe;
+      let idle = 0;
+      let building = 0;
+      for (const plot of plots) {
+        const b = town.plots[plot] as Building;
+        levels[b.level - 1] = (levels[b.level - 1] as number) + 1;
+        for (const id of RESOURCE_IDS) yard[id] += b.out[id];
+        if (recipe && b.constructionLeftS <= 0) for (const id of RESOURCE_IDS) uses[id] += ((recipe.inputs[id] ?? 0) * 60 * (LEVEL_SPEED[b.level - 1] as number)) / recipe.cycleSeconds;
+        const state = workState(b);
+        if (state === 'building') building++;
+        else if (state !== 'working' && state !== 'waiting') idle++;
+      }
+      const lv = levels.map((n, i) => (n > 0 ? `${n}×${i + 1}` : '')).filter(Boolean).join(' ');
+      const goods = RESOURCE_IDS.filter((id) => yard[id] >= 1)
+        .map((id) => `<span class="cost"><i class="ico">${resourceIcon(id)}</i>${Math.floor(yard[id])}</span>`)
+        .join('');
+      const eats = RESOURCE_IDS.filter((id) => uses[id] > 0)
+        .map((id) => `<span class="cost"><i class="ico">${resourceIcon(id)}</i>${uses[id] < 10 ? uses[id].toFixed(1) : Math.round(uses[id])}</span>`)
+        .join('');
+      const last = this.listCursor.get(kind) ?? -1;
+      const next = plots.find((p) => p > last) ?? (plots[0] as number);
+      const notes = `<span>${building > 0 ? `<span class="small">${building} ${T.underConstructionShort} </span>` : ''}${idle > 0 ? `<span class="small alarm">${idle} ${T.idleShort}</span>` : ''}</span>`;
+      rows += `<div class="listRow" data-act="listGo" data-arg="${kind}:${next}" data-tip="${T.listTip}"><span class="name">${T.buildings[kind].name}</span><b>${plots.length}</b><span class="small">${T.level} ${lv}</span><span class="costs">${goods || '<span class="small">—</span>'}</span><span class="costs">${eats || '<span class="small">—</span>'}</span>${this.kindPrioHtml(town, kind, recipe !== null && RESOURCE_IDS.some((id) => (recipe.inputs[id] ?? 0) > 0))}${notes}</div>`;
+    }
+    return `<div class="listTable"><div class="listRow head"><span class="name"></span><b>${T.count}</b><span class="small">${T.levels}</span><span class="small">${T.inYards}</span><span class="small">${T.usesPerMin}</span><span class="small">${T.priority}</span><span></span></div>${rows || `<div class="status">${T.noBuildings}</div>`}</div>`;
   }
 
   /** The keep: its level, what the level gives, and the way to the next. */
@@ -442,7 +583,7 @@ export class Hud {
       status = `${T.underConstruction}: ${done}%${carried}`;
     } else if (b.kind === 'barracks') status = `${T.trains} ${T.level} ${b.level}`;
     else if (b.kind === 'house') status = `${b.residents}/${PEOPLE.houseResidents[b.level - 1]} ${T.residents}${b.starving ? ` · ${T.starving}` : ''}`;
-    let html = `<div class="heading">${T.buildings[b.kind].name} · ${T.level} ${b.level}/${MAX_LEVEL} <span class="status${state === 'noWorker' || state === 'yardFull' || b.starving ? ' alarm' : ''}">${status}</span></div>`;
+    let html = `<div class="heading">${T.buildings[b.kind].name} · ${T.level} ${b.level}/${MAX_LEVEL} <span class="status${state === 'noWorker' || state === 'yardFull' || state === 'noTrees' || b.starving ? ' alarm' : ''}">${status}</span></div>`;
     html += `<div class="status">${T.buildings[b.kind].about} ${recipeText(b.kind)}</div>`;
     if (b.kind === 'house') html += `<div class="status">${T.stores}: ${this.stockText(b.inp)}</div>`;
     else if (b.kind !== 'barracks') {
@@ -570,8 +711,8 @@ export class Hud {
 
   /** Nothing selected: the building list, or (on its tab, once there is a barracks) the recruiting list. */
   private idleHtml(world: World, town: Town, tool: string): string {
-    const tabs = `<div class="row tabs"><button class="tab${this.tab === 'build' ? ' on' : ''}" data-act="tab" data-arg="build">${T.build}</button><button class="tab${this.tab === 'army' ? ' on' : ''}" data-act="tab" data-arg="army">${T.recruit}</button><button class="tab${this.tab === 'prod' ? ' on' : ''}" data-act="tab" data-arg="prod">${T.production}</button></div>`;
-    return tabs + (this.tab === 'build' ? this.buildHtml(town, tool) : this.tab === 'army' ? this.recruitHtml(world, town) : this.productionHtml(town));
+    const tabs = `<div class="row tabs"><button class="tab${this.tab === 'build' ? ' on' : ''}" data-act="tab" data-arg="build">${T.build}</button><button class="tab${this.tab === 'army' ? ' on' : ''}" data-act="tab" data-arg="army">${T.recruit}</button><button class="tab${this.tab === 'prod' ? ' on' : ''}" data-act="tab" data-arg="prod">${T.production}</button><button class="tab${this.tab === 'list' ? ' on' : ''}" data-act="tab" data-arg="list">${T.buildingsTab}</button></div>`;
+    return tabs + (this.tab === 'build' ? this.buildHtml(town, tool) : this.tab === 'army' ? this.recruitHtml(world, town) : this.tab === 'prod' ? this.productionHtml(town) : this.listHtml(town));
   }
 
   private updateCards(world: World, selected: ReadonlySet<number>, project: Project, groundY: (x: number, z: number) => number): void {

@@ -151,8 +151,16 @@ function upgrade(world: World): World {
     town.reinforced ??= [];
     town.payOwed ??= 0;
     town.unpaid ??= false;
+    town.transportLevel ??= 1;
+    town.transportUpgradeLeftS ??= 0;
+    town.priority ??= {};
+    town.orders ??= {};
+    town.kindPriority ??= {};
   }
-  for (const r of world.regiments) r.xp ??= 0;
+  for (const r of world.regiments) {
+    r.xp ??= 0;
+    r.paceCapMs ??= 0;
+  }
   for (const a of world.arrows) a.shooterId ??= -1;
   return world;
 }

@@ -78,6 +78,40 @@ function sack(): MeshBuilder {
   return b;
 }
 
+const CART_WOOD = 0x7a5a3a;
+const CART_DARK = 0x4a3826;
+const HORSE_COAT = 0x6b4a34;
+
+/** A handcart pushed ahead of the carrier (level 2), or a horse and wagon he walks beside (level 3). Door of the figure is +Z. */
+function cart(wagon: boolean): MeshBuilder {
+  const b = new MeshBuilder(0, PLAIN);
+  if (!wagon) {
+    // Tray on one axle, two handles back to his hands.
+    b.box(0, 0.55, 1.15, 0.8, 0.12, 1.0, CART_WOOD);
+    b.box(-0.38, 0.62, 1.15, 0.05, 0.22, 1.0, CART_DARK);
+    b.box(0.38, 0.62, 1.15, 0.05, 0.22, 1.0, CART_DARK);
+    b.log(0, 0.32, 1.35, 0.32, 0.95, 8, CART_DARK);
+    b.strut([-0.28, 0.6, 0.65], [-0.3, 0.85, 0.25], 0.05, 0.05, CART_DARK);
+    b.strut([0.28, 0.6, 0.65], [0.3, 0.85, 0.25], 0.05, 0.05, CART_DARK);
+    return b;
+  }
+  // The wagon to his right, the horse ahead of it.
+  const x = 1.0;
+  b.box(x, 0.75, -0.1, 1.2, 0.14, 2.2, CART_WOOD);
+  b.box(x - 0.58, 0.85, -0.1, 0.06, 0.4, 2.2, CART_DARK);
+  b.box(x + 0.58, 0.85, -0.1, 0.06, 0.4, 2.2, CART_DARK);
+  b.log(x, 0.42, -0.85, 0.42, 1.35, 10, CART_DARK);
+  b.log(x, 0.42, 0.65, 0.42, 1.35, 10, CART_DARK);
+  b.strut([x, 0.7, 1.0], [x, 0.95, 1.6], 0.07, 0.07, CART_DARK);
+  // A plain horse: body, neck and head, four legs.
+  const hz = 2.6;
+  b.box(x, 0.9, hz, 0.5, 0.6, 1.6, HORSE_COAT);
+  b.box(x, 1.35, hz + 0.85, 0.26, 0.65, 0.36, HORSE_COAT);
+  b.box(x, 1.8, hz + 1.15, 0.22, 0.26, 0.55, HORSE_COAT);
+  for (const dx of [-0.17, 0.17]) for (const dz of [-0.6, 0.6]) b.box(x + dx, 0, hz + dz, 0.13, 0.95, 0.15, HORSE_COAT);
+  return b;
+}
+
 /** Colours of the goods as they look in a sack or a bundle (sRGB). */
 const GOOD_HEX: Record<ResourceId, number> = {
   gold: 0xd9b23c,
@@ -104,6 +138,8 @@ const GOOD_HEX: Record<ResourceId, number> = {
 export class PeopleView {
   private readonly poses: Record<Pose, InstancedMesh>[] = [];
   private readonly loads: InstancedMesh;
+  /** Handcarts and wagons, by transport level 2 and 3. */
+  private readonly carts: InstancedMesh[] = [];
   private readonly counts: Record<Pose, number>[] = [];
   private readonly m = new Matrix4();
   private readonly p = new Vector3();
@@ -140,6 +176,11 @@ export class PeopleView {
     }
     this.loads = prepare(new InstancedMesh(sack().build(), material, 2 * PEOPLE.maxPerSide));
     this.loads.name = 'loads';
+    for (const wagon of [false, true]) {
+      const mesh = prepare(new InstancedMesh(cart(wagon).build(), material, PEOPLE.maxPerSide));
+      mesh.name = wagon ? 'wagons' : 'handcarts';
+      this.carts.push(mesh);
+    }
     for (const id of Object.keys(GOOD_HEX) as ResourceId[]) this.goodColours.set(id, new Color(GOOD_HEX[id]));
   }
 
@@ -152,6 +193,7 @@ export class PeopleView {
   update(world: World): void {
     for (const counts of this.counts) for (const pose of POSES) counts[pose] = 0;
     let loads = 0;
+    const carts = [0, 0];
     for (let i = 0; i < world.people.length; i++) {
       const person = world.people[i] as Person;
       if (!person.alive) continue;
@@ -170,7 +212,29 @@ export class PeopleView {
       const shade = 0.82 + ((i * 37) % 11) * 0.03;
       mesh.setColorAt(at, this.tint.setRGB(shade, shade * (0.94 + ((i * 13) % 7) * 0.02), shade * 0.95));
       counts[pose] = at + 1;
+      // A carrier on an errand takes the town's cart along; the load rides in it.
+      const level = world.towns[person.side].transportLevel;
+      const carted = person.role === 'carrier' && person.errand !== 'none' && level >= 2;
+      if (carted) {
+        const k = level >= 3 ? 1 : 0;
+        const mesh = this.carts[k] as InstancedMesh;
+        if ((carts[k] as number) < mesh.instanceMatrix.count) {
+          mesh.setMatrixAt(carts[k] as number, this.m);
+          mesh.setColorAt(carts[k] as number, this.tint.setRGB(1, 1, 1));
+          carts[k] = (carts[k] as number) + 1;
+        }
+      }
       if (person.load && loads < this.loads.instanceMatrix.count) {
+        if (carted) {
+          // In the cart instead of on his shoulder.
+          const dx = level >= 3 ? 1.0 : 0;
+          const dz = level >= 3 ? -0.1 : 1.15;
+          const dy = level >= 3 ? -0.55 : -0.85;
+          const c = Math.cos(person.headingRad);
+          const sn = Math.sin(person.headingRad);
+          this.p.set(person.x + c * dx + sn * dz - 0.1 * c, heightAtM(person.x, person.z) + dy, person.z - sn * dx + c * dz + 0.1 * sn);
+          this.m.compose(this.p, this.q, this.s);
+        }
         this.loads.setMatrixAt(loads, this.m);
         this.loads.setColorAt(loads, this.goodColours.get(person.load) as Color);
         loads++;
@@ -184,6 +248,11 @@ export class PeopleView {
         if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
       }
     }
+    this.carts.forEach((mesh, k) => {
+      mesh.count = carts[k] as number;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
     this.loads.count = loads;
     this.loads.instanceMatrix.needsUpdate = true;
     if (this.loads.instanceColor) this.loads.instanceColor.needsUpdate = true;

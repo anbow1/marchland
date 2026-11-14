@@ -32,7 +32,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 ## 3. Logistyka
 
 - **Zamek jest magazynem.** Każdy budynek ma własne składy: wejściowy (tragarze uzupełniają
-  do 8 sztuk) i wyjściowy na podwórzu (do 14 sztuk; pełny zatrzymuje pracę).
+  do 8 sztuk) i wyjściowy na podwórzu (do 24 sztuk; pełny zatrzymuje pracę).
 - Tragarz niesie do 8 sztuk jednego towaru; podniesienie i odłożenie trwa 1 s.
 - Wolny tragarz bierze najpilniejsze zlecenie, a przy równej pilności najbliższe:
   1. jedzenie do chaty z pustą spiżarnią,
@@ -81,8 +81,8 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 7. Stawianie budynków i drogi
 
-- Budynek stawia się **w dowolnym miejscu** w promieniu 230 m od własnego zamku (zagrody i winnice do
-  300 m; drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy), ale nie bliżej niż
+- Budynek stawia się **w dowolnym miejscu** w promieniu 280 m od własnego zamku (zagrody i winnice do
+  340 m; drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy), ale nie bliżej niż
   90 m od wrogiego): teren pod nim może się wznosić najwyżej o 2.2 m, nie może to być woda,
   a od innych budynków i pól dzieli go co najmniej 1.5 m. Budynek można obrócić przed postawieniem;
   drzwi wyznaczają, gdzie podchodzą ludzie. Limit: 48 budynków na stronę.
