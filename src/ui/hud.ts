@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, GATE, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
 import { canRearm, rearmCost } from '../sim/commands.ts';
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
@@ -18,6 +18,7 @@ export interface HudActions {
   pickBuilding(kind: BuildingKind): void;
   pickRoad(): void;
   pickWall(): void;
+  pickGate(): void;
   /** Brings a tower's garrison out. */
   ungarrison(plot: number): void;
   /** Turns the map: −1 left, +1 right. */
@@ -246,6 +247,9 @@ export class Hud {
       case 'wall':
         this.actions.pickWall();
         break;
+      case 'gate':
+        this.actions.pickGate();
+        break;
       case 'ungarrison':
         this.actions.ungarrison(this.plotInPanel);
         break;
@@ -345,6 +349,8 @@ export class Hud {
     html += `<button class="option${tool === 'road' ? ' on' : ''}" data-act="road" data-tip="${T.road}: ${T.roadAbout}"><span class="name">${T.road}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${perTen.toFixed(1)} / 10 m</span></span></button>`;
     const wallTen = (WALLS.stonePerCell * 10) / ROADS.cellM;
     html += `<button class="option${tool === 'wall' ? ' on' : ''}" data-act="wall" data-tip="${T.wall}: ${T.wallAbout}"><span class="name">${T.wall}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${wallTen.toFixed(0)} / 10 m</span></span></button>`;
+    const gateOff = town.stock.wood >= GATE.cost.wood && town.stock.stone >= GATE.cost.stone ? '' : ' off';
+    html += `<button class="option${gateOff}${tool === 'gate' ? ' on' : ''}" data-act="gate" data-tip="${T.gate}: ${T.gateAbout}"><span class="name">${T.gate}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.wood}"></i>${GATE.cost.wood}</span><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${GATE.cost.stone}</span></span></button>`;
     return `${html}</div>`;
   }
 

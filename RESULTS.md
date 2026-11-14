@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Brama w murze
+
+- Mur zatrzymywał wszystkich, także własnych żołnierzy (wcześniej błędnie pisałem, że
+  przepuszcza swoich): jedyną drogą była zostawiona przerwa. Teraz **brama**: przycisk
+  „Brama” w menu budowy, kliknięcie we własny mur zamienia 3 komórki prostego odcinka
+  (6 m) w bramę za 20 drewna i 12 kamienia. Swoi ludzie (ścieżki A*) i żołnierze
+  przechodzą, wróg zatrzymuje się i musi ją rozbić (400 ciosów, zwykły mur 260).
+- Model z zestawu Tower and Castle Walls (LucasPresoto, CC BY 4.0): łuk z dwoma
+  skrzydłami; skrzydła otwierają się, gdy swój żołnierz albo mieszkaniec jest w 12 m.
+- Scena pokazowa: ciągły mur z bramą pośrodku zamiast przerwy.
+- Testy: 62 / 62 (nowy: brama tylko we własnym murze, ścieżka przez bramę, swoi
+  przechodzą, wróg stoi).
+
 ## 2026-11-14 · Drwal wycina las i sadzi nowy
 
 - Drzewa są teraz listą w symulacji (`src/sim/trees.ts`), tą samą, którą rysuje widok

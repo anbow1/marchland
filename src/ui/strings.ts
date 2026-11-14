@@ -99,6 +99,9 @@ interface Strings {
   wallAbout: string;
   hintWallStart: string;
   hintWallEnd: string;
+  gate: string;
+  gateAbout: string;
+  hintGate: string;
   garrison: string;
   ungarrison: string;
   garrisoned: string;
@@ -170,6 +173,7 @@ const pl: Strings = {
     rearming: 'Oddział jest właśnie przezbrajany.',
     cannotGarrison: 'Wieżę obsadzają tylko łucznicy albo kusznicy, jednego rodzaju naraz.',
     towerFull: 'Wieża ma już pełną załogę.',
+    needsWall: 'Bramę stawia się we własnym murze: wskaż prosty odcinek co najmniej 6 m.',
     defenceOnly: 'Milicja broni tylko miasta i okolic. Przezbrój ją przy koszarach, żeby ruszyła dalej.',
     gameOver: 'Gra skończona.',
   },
@@ -263,9 +267,12 @@ const pl: Strings = {
   rearmingState: 'przezbraja się',
   atKeep: 'w zamku, bez koszar',
   wall: 'Mur',
-  wallAbout: 'Kamienny mur rysowany od punktu do punktu. Zatrzymuje wszystkich; wróg go rozbija, machiny szybciej. Zostaw przerwę na bramę.',
+  wallAbout: 'Kamienny mur rysowany od punktu do punktu. Zatrzymuje wszystkich; wróg go rozbija, machiny szybciej. Twoi przechodzą przez bramy.',
   hintWallStart: 'Mur: wskaż początek. Prawy przycisk / Esc: koniec.',
   hintWallEnd: 'Mur: wskaż koniec odcinka.',
+  gate: 'Brama',
+  gateAbout: 'Brama w twoim murze (6 m): twoi ludzie i żołnierze przez nią przechodzą, dla wroga to mur — mocniejszy niż zwykły. Kliknij we własny mur.',
+  hintGate: 'Brama: kliknij we własny mur. Prawy przycisk / Esc: koniec.',
   garrison: 'Załoga',
   ungarrison: 'Wyprowadź załogę',
   garrisoned: 'Strzelcy weszli do wieży',
@@ -337,6 +344,7 @@ const en: Strings = {
     rearming: 'The regiment is being re-armed.',
     cannotGarrison: 'Only archers or crossbowmen man a tower, one kind at a time.',
     towerFull: 'The tower is fully manned.',
+    needsWall: 'A gate goes into your own wall: point at a straight stretch at least 6 m long.',
     defenceOnly: 'Militia only defends the town and its land. Re-arm it at the barracks to take it further.',
     gameOver: 'The game is over.',
   },
@@ -430,9 +438,12 @@ const en: Strings = {
   rearmingState: 're-arming',
   atKeep: 'at the keep, no barracks needed',
   wall: 'Wall',
-  wallAbout: 'A stone wall drawn from point to point. It stops everyone; the enemy batters it down, engines faster. Leave a gap for a gate.',
+  wallAbout: 'A stone wall drawn from point to point. It stops everyone; the enemy batters it down, engines faster. Your men pass through its gates.',
   hintWallStart: 'Wall: point at the start. Right button / Esc: done.',
   hintWallEnd: 'Wall: point at the end of the stretch.',
+  gate: 'Gate',
+  gateAbout: 'A gate in your wall (6 m): your people and soldiers pass through it; to the enemy it is wall, and stronger. Click your own wall.',
+  hintGate: 'Gate: click your own wall. Right button / Esc: done.',
   garrison: 'Garrison',
   ungarrison: 'Bring the garrison out',
   garrisoned: 'Shooters have manned the tower',

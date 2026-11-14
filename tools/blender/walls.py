@@ -8,7 +8,8 @@ turned along the line it was drawn on), and tower_1..3.glb, the watchtower by le
 the source keeps its shapes and loses its textures: its stone becomes the game's ashlar, so walls and
 towers weather and tint like the rest of the town. The wall stretch is one merlon's period of the
 source's plain wall, cut out and closed at both ends, stretched to the cell and sunk 2 m into the
-ground so it meets the slope. The tower is the source's, scaled so its fighting floor stands where
+ground so it meets the slope; gate.glb, the source's gate narrowed to three cells, its leaves apart
+so they can swing. The tower is the source's, scaled so its fighting floor stands where
 the archers stand (TOWER.topM in config.ts), with a door, the side's flag and, by level, a timber
 hoarding and a light roof over the top."""
 
@@ -33,6 +34,8 @@ DOOR = "boards#8a7360"
 # The nav grid's cell, and how far a stretch overlaps its neighbour so no seam shows.
 CELL_M = 2.0
 OVERLAP_M = 0.08
+# Cells a gate spans (GATE.cells in config.ts).
+GATE_CELLS = 3
 # Height of a tower's fighting floor (TOWER.topM is where the archers' feet are).
 FLOOR_M = 8.6
 
@@ -120,6 +123,58 @@ def wall(source: str, out: str) -> int:
     return tris
 
 
+def gate(source: str, out: str) -> int:
+    """The gate: the source's wall with its arch and its two leaves, narrowed to GATE.cells of the nav grid.
+    The leaves are meshes of their own, 'leaf_l' and 'leaf_r', their origins on their hinges, so the game
+    swings them open."""
+    found = load(source)
+    bm = baked(found["Wall01"])
+    ground = min(v.co.z for v in bm.verts)
+    top = max(v.co.z for v in bm.verts)
+    lo_x = min(v.co.x for v in bm.verts)
+    hi_x = max(v.co.x for v in bm.verts)
+    mid_x = (lo_x + hi_x) / 2
+    centre_y = (min(v.co.y for v in bm.verts) + max(v.co.y for v in bm.verts)) / 2
+    length = GATE_CELLS * CELL_M + OVERLAP_M
+    stretch = length / (hi_x - lo_x)
+    walk = max(v.co.z for v in bm.verts if v.co.z < top - 0.05)
+    raise_m = (top - walk) * MERLON_RAISE
+
+    def place(co):
+        z = co.z - ground + (raise_m if co.z > walk + 0.02 else 0)
+        return Vector(((co.x - mid_x) * stretch, co.y - centre_y, z if z > 0.01 else -2.0))
+
+    for v in bm.verts:
+        v.co = place(v.co)
+    leaves = {}
+    for side, key in (("leaf_l", "Door_L"), ("leaf_r", "Door_R")):
+        obj = next(o for o in bpy.context.scene.objects if o.type == "MESH" and o.name.startswith(key))
+        lb = baked(obj)
+        xs = [v.co.x for v in lb.verts]
+        # The hinge is the leaf's outer edge: the side away from the middle of the arch.
+        hinge_x = max(xs) if (sum(xs) / len(xs)) > mid_x else min(xs)
+        hinge = place(Vector((hinge_x, centre_y, ground + 0.02)))
+        hinge.y = sum(v.co.y for v in lb.verts) / len(lb.verts) - centre_y
+        for v in lb.verts:
+            v.co = place(v.co) - hinge
+        leaves[side] = (lb, hinge)
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    clear_scene_except()
+    body = object_from(bm, "gate", BODY)
+    body.data.materials.append(bpy.data.materials.get(STONE) or bpy.data.materials.new(STONE))
+    cap_from = walk - ground - 0.15
+    for p in body.data.polygons:
+        p.material_index = 1 if p.center.z > cap_from else 0
+    tris = len(body.data.polygons)
+    for side, (lb, hinge) in leaves.items():
+        leaf = object_from(lb, side, DOOR)
+        leaf.location = hinge
+        tris += len(leaf.data.polygons)
+    export_glb(os.path.join(out, "gate.glb"))
+    print(f"gate: {tris} triangles, {length:.2f} m long (stretch {stretch:.2f}), merlons raised {raise_m:.2f} m")
+    return tris
+
+
 def tower(source: str, out: str, level: int) -> int:
     found = load(source)
     bm = baked(found["Tower"])
@@ -177,6 +232,7 @@ def main() -> None:
     source, out = args[0], args[1]
     os.makedirs(out, exist_ok=True)
     wall(source, out)
+    gate(source, out)
     index_path = os.path.join(out, "index.json")
     index = json.load(open(index_path)) if os.path.exists(index_path) else {}
     for level in (1, 2, 3):

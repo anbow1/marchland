@@ -44,8 +44,11 @@ drzewka technologii, mikrotransakcji, krwi.
 - **Obrona**: **wieża strażnicza** (kamień) na najwyżej 4 łuczników albo
   kuszników jednego rodzaju — strzelają z góry o 12 m dalej; zaznacz strzelców
   i kliknij wieżę prawym przyciskiem. **Mur** rysowany jak droga, 3 kamienie za
-  2 m: zatrzymuje wszystkich, wróg go rozbija (machiny szybciej); przerwa w
-  murze to brama (prawdziwa brama w planie).
+  2 m: zatrzymuje wszystkich, także własnych; wróg go rozbija (machiny szybciej).
+  **Brama** (20 drewna, 12 kamienia) wstawiana kliknięciem we własny mur: zastępuje
+  6 m prostego odcinka; twoi ludzie i żołnierze przez nią przechodzą (skrzydła
+  otwierają się, gdy ktoś swój jest blisko), dla wroga to mur — mocniejszy niż
+  zwykły (400 ciosów zamiast 260).
 - **Zasięgi**: drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy
   (nie przy wrogim zamku); zagrody i winnice do 300 m od zamku; reszta 230 m.
 - **Mapa 560 m**, zamki bliżej rogów, 600 m od siebie, bez drogi między nimi.

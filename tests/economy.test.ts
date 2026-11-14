@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, FORESTRY, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { ARMY, FIELDS, FOOD, FORESTRY, GATE, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
@@ -457,6 +457,41 @@ describe('walls and watchtowers', () => {
     for (const s of enemy.soldiers) if (s.alive) expect(s.x).toBeGreaterThan(x - 1.5);
     const broke = runUntil(world, 240, () => enemy.centreX < x - 5);
     expect(broke).toBeLessThan(240);
+  });
+
+  it('a gate goes into its own wall: its side walks and marches through, the enemy is stopped', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const x = townX(PLAYER) + 40;
+    const gz = townZ(PLAYER) - 20;
+    // Not on open ground, and not in the enemy's wall.
+    expect(cmdBuildGate(world, PLAYER, x, gz)).toBe('needsWall');
+    expect(cmdBuildWall(world, PLAYER, x, townZ(PLAYER) - 60, x, townZ(PLAYER) + 20)).toBe('ok');
+    expect(cmdBuildGate(world, COMPUTER, x, gz)).toBe('needsWall');
+    const wood = town.stock.wood;
+    expect(cmdBuildGate(world, PLAYER, x, gz)).toBe('ok');
+    expect(town.stock.wood).toBe(wood - GATE.cost.wood);
+    expect(world.gates.length).toBe(1);
+    // Townspeople's ways go through it, not round the end of the wall.
+    const path = new Float32Array(ROADS.maxWaypoints * 2);
+    const n = findPath(world.nav, x - 10, gz, x + 10, gz, path);
+    let furthest = 0;
+    for (let i = 0; i < n; i++) furthest = Math.max(furthest, Math.abs((path[i * 2 + 1] as number) - gz));
+    expect(furthest).toBeLessThan(6);
+    // The side's own men march through in file.
+    const ours = spawnRegiment(world, PLAYER, 'pikemen', x + 12, gz, -Math.PI / 2);
+    cmdMove(world, ours.id, x - 20, gz, null, false);
+    runUntil(world, 120, () => ours.soldiers.filter((s) => s.alive && s.x < x - 2).length >= 6);
+    expect(ours.soldiers.filter((s) => s.alive && s.x < x - 2).length).toBeGreaterThanOrEqual(6);
+    // The enemy's are stopped at it.
+    const theirs = spawnRegiment(world, COMPUTER, 'swordsmen', x - 15, gz + 30, Math.PI / 2);
+    theirs.soldiers.forEach((s) => {
+      s.z = gz + (s.z - theirs.centreZ) * 0.3;
+      s.x = x + 12 + (s.x - theirs.centreX);
+    });
+    expect(cmdMove(world, theirs.id, x - 25, gz, null, false)).toBe('ok');
+    run(world, 4);
+    for (const s of theirs.soldiers) if (s.alive) expect(s.x).toBeGreaterThan(x - 1.5);
   });
 
   it('a watchtower takes up to four archers, shoots from its top, and lets them out again', () => {

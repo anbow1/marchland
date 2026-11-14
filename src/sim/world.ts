@@ -53,6 +53,17 @@ export interface World {
   stepCount: number;
   /** Which trees are felled, planted or growing back (trees.ts). */
   stand: Stand;
+  /** Gates set into walls, for the view (the rules read nav.wallGate). */
+  gates: Gate[];
+}
+
+/** A gate: its side, its wall cells, where its middle is and its line (as nav.wallDir). */
+export interface Gate {
+  side: Side;
+  cells: number[];
+  x: number;
+  z: number;
+  dir: number;
 }
 
 export interface WorldOptions {
@@ -73,6 +84,7 @@ export function createWorld(options: WorldOptions): World {
     rolesS: 0,
     nav: createNav(),
     stand: createStand(),
+    gates: [],
     arrows: createArrowPool(),
     events: new EventQueue(),
     winner: -1,

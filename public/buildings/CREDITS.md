@@ -13,7 +13,7 @@ Changes (`tools/blender/keep.py`): textures removed and every face given one of 
 scanned surfaces; the ground plate and the ivy removed; the densest meshes thinned (about 59 000 to
 22 000 triangles); scaled to 24 m; a flag in the team's colour added.
 
-## wall.glb, tower_1.glb, tower_2.glb, tower_3.glb — the wall and the watchtower
+## wall.glb, gate.glb, tower_1.glb, tower_2.glb, tower_3.glb — the wall, the gate and the watchtower
 
 From **Tower and Castle Walls** by **LucasPresoto** (https://sketchfab.com/LucasPresoto),
 https://sketchfab.com/3d-models/tower-and-castle-walls-fca85f8450604e6f98952a2739f92672,
@@ -21,7 +21,8 @@ licensed under **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/).
 
 Changes (`tools/blender/walls.py`): textures removed and the stone given the game's own rubble and
 ashlar; one merlon's period of the wall cut out, closed, stretched to the 2 m cell, its merlons made
-taller and its foot sunk into the ground; the tower scaled to a 8.6 m fighting floor, with a door, the
+taller and its foot sunk into the ground; the gate narrowed to three cells, its two leaves kept apart to
+swing open; the tower scaled to a 8.6 m fighting floor, with a door, the
 side's flag and, by level, a timber hoarding and a roof added.
 
 ## smithy_2.glb, smithy_3.glb — the smithy at levels 2 and 3

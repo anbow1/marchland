@@ -134,7 +134,7 @@ export class WorldView {
     this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
     this.people.update(world);
     this.vines.update(world);
-    this.walls.update(world);
+    this.walls.update(world, frameSeconds);
     this.forest.update(world.stand, world.timeS);
     this.smoke.update(this.smokeSources, this.town.smokeSources(world, this.smokeSources), frameSeconds);
     this.army.update(world);

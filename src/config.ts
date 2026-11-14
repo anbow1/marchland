@@ -168,6 +168,18 @@ export const WALLS = {
   siegeRadiusM: 2.5,
 } as const;
 
+/**
+ * A gate: set into the side's own wall over this many cells, at this price. The side's own people and
+ * soldiers pass through it; to the enemy it is wall, and takes this many blows to break.
+ */
+export const GATE = {
+  cells: 3,
+  cost: { wood: 20, stone: 12 },
+  hp: 400,
+  /** The leaves swing open while one of the side's own men is this close. */
+  openRadiusM: 12,
+} as const;
+
 /** A watchtower's garrison: archers or crossbowmen of one kind, shooting from the top. */
 export const TOWER = {
   maxGarrison: 4,

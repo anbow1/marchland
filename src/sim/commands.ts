@@ -1,6 +1,6 @@
-import { ARMY, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
+import { ARMY, GATE, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
-import { layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
+import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
@@ -252,6 +252,25 @@ export function cmdBuildWall(world: World, side: Side, x0: number, z0: number, x
   if (town.stock.stone < cells * WALLS.stonePerCell) return 'cannotAfford';
   town.stock.stone -= cells * WALLS.stonePerCell;
   layWall(world.nav, wallScratch, side, x0, z0, x1, z1, WALLS.hp);
+  return 'ok';
+}
+
+const gateScratch: number[] = [];
+
+/**
+ * Sets a gate into the side's own wall at (x, z): GATE.cells of a straight stretch become a gate their
+ * side's people and soldiers pass through, and the enemy must break.
+ */
+export function cmdBuildGate(world: World, side: Side, x: number, z: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  if (gateCells(world.nav, x, z, side, GATE.cells, gateScratch) < GATE.cells) return 'needsWall';
+  const town = world.towns[side];
+  if (town.stock.wood < GATE.cost.wood || town.stock.stone < GATE.cost.stone) return 'cannotAfford';
+  town.stock.wood -= GATE.cost.wood;
+  town.stock.stone -= GATE.cost.stone;
+  const middle = gateScratch[(GATE.cells - 1) >> 1] as number;
+  world.gates.push({ side, cells: [...gateScratch], x: cellX(middle), z: cellZ(middle), dir: world.nav.wallDir[middle] as number });
+  layGate(world.nav, gateScratch, GATE.hp);
   return 'ok';
 }
 

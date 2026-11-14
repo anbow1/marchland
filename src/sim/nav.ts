@@ -37,6 +37,8 @@ export interface Nav {
   wallHp: Uint16Array;
   wallSide: Uint8Array;
   wallDir: Uint8Array;
+  /** 1 where the wall is a gate: open to its own side's people and soldiers. */
+  wallGate: Uint8Array;
   /** Goes up whenever roads or buildings change: paths and the view's ground refresh on it. */
   version: number;
   /** Cells the path finder may still look at this step. */
@@ -44,7 +46,7 @@ export interface Nav {
 }
 
 export function createNav(): Nav {
-  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), wallHp: new Uint16Array(CELLS), wallSide: new Uint8Array(CELLS), wallDir: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
+  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), wallHp: new Uint16Array(CELLS), wallSide: new Uint8Array(CELLS), wallDir: new Uint8Array(CELLS), wallGate: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
 }
 
 export const NAV_CELLS_PER_SIDE = N;
@@ -201,7 +203,49 @@ function nearestOpen(nav: Nav, cell: number): number {
 }
 
 function passable(nav: Nav, i: number): boolean {
-  return nav.built[i] === 0 && WATER[i] === 0 && nav.wallHp[i] === 0;
+  // Townspeople only walk their own side's land, so any gate is theirs.
+  return nav.built[i] === 0 && WATER[i] === 0 && (nav.wallHp[i] === 0 || nav.wallGate[i] === 1);
+}
+
+/** True where a wall stops a soldier of `side`: any standing wall but his own side's gates. */
+export function wallStops(nav: Nav, cell: number, side: number): boolean {
+  return nav.wallHp[cell] > 0 && !(nav.wallGate[cell] === 1 && nav.wallSide[cell] === side);
+}
+
+/**
+ * The cells a gate set into the wall at (x, z) would take: the wall cell there and its neighbours along
+ * the wall's line, `count` in all. Writes them to `out`; returns how many (fewer than `count` if the wall
+ * is not long enough, or not all one side's, or a gate already).
+ */
+export function gateCells(nav: Nav, x: number, z: number, side: number, count: number, out: number[]): number {
+  out.length = 0;
+  if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) return 0;
+  const cx = cellOf(x);
+  const cz = cellOf(z);
+  const centre = cz * N + cx;
+  if (nav.wallHp[centre] === 0 || nav.wallSide[centre] !== side || nav.wallGate[centre] === 1) return 0;
+  // Steps along the wall's line: 0 along X, 1 along Z, 2 the diagonal (+X, +Z), 3 the other.
+  const dir = nav.wallDir[centre] as number;
+  const [sx, sz] = dir === 0 ? [1, 0] : dir === 1 ? [0, 1] : dir === 2 ? [1, 1] : [-1, 1];
+  const half = (count - 1) >> 1;
+  for (let k = -half; k <= count - 1 - half; k++) {
+    const ix = cx + k * sx;
+    const iz = cz + k * sz;
+    if (ix < 0 || iz < 0 || ix >= N || iz >= N) return out.length;
+    const i = iz * N + ix;
+    if (nav.wallHp[i] === 0 || nav.wallSide[i] !== side || nav.wallGate[i] === 1) return out.length;
+    out.push(i);
+  }
+  return out.length;
+}
+
+/** Makes the cells a gate of their wall's side, with `hp` blows to break. */
+export function layGate(nav: Nav, cells: readonly number[], hp: number): void {
+  for (const i of cells) {
+    nav.wallGate[i] = 1;
+    nav.wallHp[i] = Math.max(nav.wallHp[i] as number, hp);
+  }
+  if (cells.length > 0) nav.version += 1;
 }
 
 /** The wall cell at a point, or -1 where there is no wall. */
@@ -237,6 +281,7 @@ export function layWall(nav: Nav, cells: readonly number[], side: number, x0: nu
     nav.wallHp[i] = hp;
     nav.wallSide[i] = side;
     nav.wallDir[i] = dir;
+    nav.wallGate[i] = 0;
     nav.road[i] = 0;
   }
   if (cells.length > 0) nav.version += 1;

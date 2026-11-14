@@ -11,8 +11,8 @@ import { SURFACES, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
 // Moving parts are meshes with their own names (a mill's 'sails'), turned about their own origin;
 // empties named 'smoke_…' mark where smoke rises.
 
-/** Names of the parts that move; anything else in a model is the building itself. */
-export const MOVING_PARTS = ['sails'] as const;
+/** Names of the parts that move (a mill's sails, a gate's leaves); anything else in a model is the building itself. */
+export const MOVING_PARTS = ['sails', 'leaf_l', 'leaf_r'] as const;
 export type MovingPart = (typeof MOVING_PARTS)[number];
 
 const PLAIN_DEFAULT = 0x808080;

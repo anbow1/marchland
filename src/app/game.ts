@@ -1,9 +1,9 @@
-import { AI, CAMERA, FIELDS, MAP, ROADS, TOWN } from '../config.ts';
+import { AI, CAMERA, FIELDS, GATE, MAP, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
-import { cellX, cellZ, roadCells, wallCells } from '../sim/nav.ts';
+import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
@@ -32,7 +32,7 @@ export interface GameOptions {
 }
 
 /** What the player is placing on the map: a building (turned by `turns` eighths of a circle from facing the keep), or a road from a point. */
-type Tool = { kind: 'build'; building: BuildingKind; turns: number } | { kind: 'road' | 'wall'; fromX: number; fromZ: number; started: boolean };
+type Tool = { kind: 'build'; building: BuildingKind; turns: number } | { kind: 'road' | 'wall'; fromX: number; fromZ: number; started: boolean } | { kind: 'gate' };
 
 /** Least seconds between two "enemy at the town" warnings. */
 const WARNING_GAP_S = 45;
@@ -78,6 +78,7 @@ export class Game implements ControlTarget {
       pickBuilding: (kind) => this.pickTool({ kind: 'build', building: kind, turns: 0 }),
       pickRoad: () => this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false }),
       pickWall: () => this.pickTool({ kind: 'wall', fromX: 0, fromZ: 0, started: false }),
+      pickGate: () => this.pickTool({ kind: 'gate' }),
       ungarrison: (plot) => this.report(cmdUngarrison(this.world, PLAYER, plot)),
       rotateCamera: (direction) => this.camera.rotate(direction * CAMERA.rotateStepRad),
       upgrade: (plot) => this.report(cmdUpgrade(this.world, PLAYER, plot)),
@@ -317,7 +318,7 @@ export class Game implements ControlTarget {
 
   /** Puts down the tool; a road in the middle of a stretch first lets go of its start. */
   private dropTool(): void {
-    if (this.tool && this.tool.kind !== 'build' && this.tool.started) this.tool.started = false;
+    if (this.tool && (this.tool.kind === 'road' || this.tool.kind === 'wall') && this.tool.started) this.tool.started = false;
     else this.tool = null;
     if (!this.tool) this.setHint(T.hintIdle);
   }
@@ -332,6 +333,12 @@ export class Game implements ControlTarget {
     if (!tool) return;
     if (tool.kind === 'build') {
       const result = cmdBuild(this.world, PLAYER, tool.building, x, z, this.yawOf(tool, x, z));
+      this.report(result);
+      if (result === 'ok' && !keep) this.dropTool();
+      return;
+    }
+    if (tool.kind === 'gate') {
+      const result = cmdBuildGate(this.world, PLAYER, x, z);
       this.report(result);
       if (result === 'ok' && !keep) this.dropTool();
       return;
@@ -374,6 +381,16 @@ export class Game implements ControlTarget {
       this.tiles.allowed = this.ghost.allowed;
       this.setHint(check.result === 'ok' ? `${T.buildings[tool.building].name}: ${T.hintBuild}` : `${T.buildings[tool.building].name}: ${T.results[check.result]}`);
       return 'ghost';
+    }
+    if (tool.kind === 'gate') {
+      // The three cells of wall it would take, green where it may go.
+      const cells = pointing ? gateCells(this.world.nav, this.hit.x, this.hit.z, PLAYER, GATE.cells, this.roadScratch) : 0;
+      for (let i = 0; i < cells; i++) this.tiles.values.push(cellX(this.roadScratch[i] as number), cellZ(this.roadScratch[i] as number), ROADS.cellM, ROADS.cellM, 0);
+      this.tiles.count = cells;
+      const stock = this.world.towns[PLAYER].stock;
+      this.tiles.allowed = cells === GATE.cells && stock.wood >= GATE.cost.wood && stock.stone >= GATE.cost.stone;
+      this.setHint(pointing && cells > 0 && cells < GATE.cells ? `${T.gate}: ${T.results.needsWall}` : T.hintGate);
+      return cells > 0 ? 'tiles' : 'none';
     }
     const wall = tool.kind === 'wall';
     if (!tool.started || !pointing) {
