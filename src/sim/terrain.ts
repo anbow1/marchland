@@ -47,11 +47,20 @@ export function lakeZ(side: Side): number {
   return townZ(side) + turnOf(side) * (FORWARD_Z * TOWN.lakeForwardM - SIDE_Z * TOWN.lakeSideM);
 }
 
-/** Distance from the nearer lake's middle, in lake radii (below 1 = inside the bowl). */
-function lakeShare(x: number, z: number): number {
-  const d0 = hypot2(x - lakeX(0), z - lakeZ(0));
-  const d1 = hypot2(x - lakeX(1), z - lakeZ(1));
-  return Math.min(d0, d1) / TOWN.lakeRadiusM;
+/**
+ * The lake's radius in a direction from its middle: a few slow waves round the circle give it bays and
+ * points. The computer's lake is the player's turned half a circle, so the two are the same shape.
+ */
+export function lakeRadiusAt(side: Side, x: number, z: number): number {
+  const a = Math.atan2(z - lakeZ(side), x - lakeX(side)) + (side === 0 ? 0 : Math.PI);
+  return TOWN.lakeRadiusM * (1 + 0.2 * Math.sin(2 * a + 0.7) + 0.13 * Math.sin(3 * a + 2.1) + 0.08 * Math.sin(5 * a + 4.0) + 0.05 * Math.sin(8 * a + 1.3));
+}
+
+/** Distance from the nearer lake's middle, in that lake's radii in that direction (below 1 = inside the bowl). */
+export function lakeShare(x: number, z: number): number {
+  const s0 = hypot2(x - lakeX(0), z - lakeZ(0)) / lakeRadiusAt(0, x, z);
+  const s1 = hypot2(x - lakeX(1), z - lakeZ(1)) / lakeRadiusAt(1, x, z);
+  return Math.min(s0, s1);
 }
 
 /** True where the lake is too deep to wade. */

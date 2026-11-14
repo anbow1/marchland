@@ -1,7 +1,7 @@
 import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt } from './nav.ts';
 import { ARMY, COMBAT, FATIGUE, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, isWater, lakeX, lakeZ, townX, townZ } from './terrain.ts';
+import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -244,9 +244,10 @@ function avoidWater(s: Soldier): void {
     const dx = s.x - lakeX(side);
     const dz = s.z - lakeZ(side);
     const d = hypot2(dx, dz);
-    if (d >= TOWN.lakeRadiusM || d < 1e-6) continue;
-    s.x = lakeX(side) + (dx / d) * TOWN.lakeRadiusM * 0.94;
-    s.z = lakeZ(side) + (dz / d) * TOWN.lakeRadiusM * 0.94;
+    const shore = lakeRadiusAt(side, s.x, s.z);
+    if (d >= shore || d < 1e-6) continue;
+    s.x = lakeX(side) + (dx / d) * shore * 0.94;
+    s.z = lakeZ(side) + (dz / d) * shore * 0.94;
   }
 }
 

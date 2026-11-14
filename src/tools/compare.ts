@@ -113,7 +113,7 @@ const works = new GroundWorks();
 works.update(world, 1);
 stage.scene.add(buildTerrain(surfaces, works.texture));
 addHorizon(stage.scene);
-const land = buildLand(surfaces);
+const land = buildLand(surfaces, (AFTERNOON.skyIlluminanceLux / Math.PI) * lighting.exposure);
 for (const part of land.parts) stage.scene.add(part);
 const trees = buildForest('high', surfaces);
 for (const mesh of trees) stage.scene.add(mesh);

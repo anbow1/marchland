@@ -5,7 +5,7 @@ import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
 import { cellX, cellZ, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
-import { heightAtM, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
 import { CpuTimer } from '../render/perf.ts';
@@ -51,6 +51,7 @@ export class Game implements ControlTarget {
   private readonly cursor = { x: 0, y: 0 };
   private readonly roadScratch: number[] = [];
   private hint = '';
+  private hoverAgeS = 0;
   private readonly ray: Ray = { ox: 0, oy: 0, oz: 0, dx: 0, dy: -1, dz: 0 };
   private readonly hit = { x: 0, z: 0 };
   private readonly screen = { x: 0, y: 0 };
@@ -230,6 +231,7 @@ export class Game implements ControlTarget {
     this.updateCorners();
     const tool = this.tool === null ? '' : this.tool.kind === 'build' ? this.tool.building : this.tool.kind;
     this.hud.update(this.world, { regiments: this.selected, plot: this.selectedPlot, tool }, (x, y, z, out) => this.view.project(x, y, z, out), heightAtM, this.corners, frameSeconds);
+    this.updateHover(frameSeconds);
     this.timer.lap('hud');
     if (this.hud.debugVisible) this.hud.setDebugText(this.debugText());
     if (!this.loop.paused && this.world.winner === -1) this.view.stage.governor.update(frameSeconds);
@@ -265,6 +267,34 @@ export class Game implements ControlTarget {
       stage.passTimer.summary(),
       `soldiers ${men} · regiments ${this.world.regiments.length} · computer: ${this.world.ai?.mode ?? '-'} wave ${this.world.ai?.wave ?? 0}`,
     ].join('\n');
+  }
+
+  /** Names what is under the cursor (ten times a second): a building, a regiment, an outcrop, the forest, a lake. */
+  private updateHover(frameSeconds: number): void {
+    this.hoverAgeS += frameSeconds;
+    if (this.hoverAgeS < 0.1) return;
+    this.hoverAgeS = 0;
+    if (this.tool || !this.controls.cursor(this.cursor) || !this.ground(this.cursor.x, this.cursor.y, this.hit)) {
+      this.hud.hover('', 0, 0);
+      return;
+    }
+    this.hud.hover(this.describeGround(this.hit.x, this.hit.z), this.cursor.x, this.cursor.y);
+  }
+
+  private describeGround(x: number, z: number): string {
+    for (const side of [PLAYER, COMPUTER] as const) {
+      const whose = side === PLAYER ? T.hover.yours : T.hover.enemy;
+      if (Math.hypot(x - townX(side), z - townZ(side)) < TOWN.keepRadiusM) return `${T.keep} (${whose})`;
+      const plot = this.plotAt(x, z, side);
+      const b = plot >= 0 ? this.world.towns[side].plots[plot] : null;
+      if (b) return `${T.buildings[b.kind].name} · ${T.level} ${b.level} (${whose})`;
+      const r = this.regimentAt(x, z, side);
+      if (r) return `${T.units[r.kind].name} · ${r.aliveMen} ${T.men} (${whose})`;
+    }
+    for (const d of DEPOSITS) if (Math.hypot(x - d.x, z - d.z) < TOWN.depositRadiusM) return d.kind === 'stone' ? T.hover.stone : T.hover.ore;
+    if (isWater(x, z)) return T.hover.lake;
+    if (forestCoverAt(x, z) > 0.5) return T.hover.forest;
+    return '';
   }
 
   // ---- placing buildings and roads -----------------------------------------

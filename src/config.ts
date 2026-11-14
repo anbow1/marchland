@@ -534,6 +534,13 @@ export const CAMERA = {
   rotateSpeedRadS: 1.4,
   /** Turn for each pixel the mouse is dragged with the middle button held. */
   rotateDragRadPerPx: 0.006,
+  /** Tilt for each pixel the mouse is dragged forward or back with the right button held, and the bounds of the tilt the player may add to the pitch the zoom gives. */
+  tiltDragRadPerPx: 0.004,
+  minTiltRad: -0.55,
+  maxTiltRad: 0.5,
+  /** The pitch never goes flatter or steeper than these, however zoom and tilt add up. */
+  minPitchRad: 0.3,
+  maxPitchRad: 1.5,
   /** Turn of one press of the on-screen rotate buttons. */
   rotateStepRad: Math.PI / 4,
   zoomStepFactor: 1.18,

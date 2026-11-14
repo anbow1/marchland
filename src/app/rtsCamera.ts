@@ -12,6 +12,8 @@ export interface CameraPose {
   distanceM: number;
   /** Turn about the vertical axis; 0 looks along −Z (north). */
   yawRad: number;
+  /** The player's own tilt added to the pitch the zoom gives: below 0 flatter, above 0 steeper. */
+  tiltRad: number;
 }
 
 export function clampDistance(distanceM: number): number {
@@ -34,7 +36,7 @@ export class RtsCamera {
   readonly goal: CameraPose;
 
   constructor(targetX: number, targetZ: number, yawRad: number) {
-    this.goal = { targetX: clampTarget(targetX), targetZ: clampTarget(targetZ), distanceM: CAMERA.startDistanceM, yawRad };
+    this.goal = { targetX: clampTarget(targetX), targetZ: clampTarget(targetZ), distanceM: CAMERA.startDistanceM, yawRad, tiltRad: 0 };
     this.shown = { ...this.goal };
   }
 
@@ -49,6 +51,16 @@ export class RtsCamera {
 
   rotate(deltaRad: number): void {
     this.goal.yawRad += deltaRad;
+  }
+
+  /** Tilts the view: below 0 flatter (towards the horizon), above 0 steeper (towards looking straight down). */
+  tilt(deltaRad: number): void {
+    this.goal.tiltRad = Math.min(CAMERA.maxTiltRad, Math.max(CAMERA.minTiltRad, this.goal.tiltRad + deltaRad));
+  }
+
+  /** Pitch of the shown pose: the zoom's own pitch plus the player's tilt, within bounds. */
+  pitch(): number {
+    return Math.min(CAMERA.maxPitchRad, Math.max(CAMERA.minPitchRad, pitchForDistance(this.shown.distanceM) + this.shown.tiltRad));
   }
 
   /**
@@ -77,6 +89,7 @@ export class RtsCamera {
     this.shown.targetZ += (this.goal.targetZ - this.shown.targetZ) * k;
     this.shown.distanceM += (this.goal.distanceM - this.shown.distanceM) * k;
     this.shown.yawRad += (this.goal.yawRad - this.shown.yawRad) * k;
+    this.shown.tiltRad += (this.goal.tiltRad - this.shown.tiltRad) * k;
   }
 
   /** Makes the shown pose the goal at once (the first frame, a debug placement). */
@@ -86,7 +99,7 @@ export class RtsCamera {
 
   /** Offset of the camera from its target for the shown pose: x, y (up), z. */
   offset(out: { x: number; y: number; z: number }): void {
-    const pitch = pitchForDistance(this.shown.distanceM);
+    const pitch = this.pitch();
     const flat = Math.cos(pitch) * this.shown.distanceM;
     out.x = -Math.sin(this.shown.yawRad) * flat;
     out.y = Math.sin(pitch) * this.shown.distanceM;

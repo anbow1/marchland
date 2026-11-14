@@ -141,7 +141,11 @@ export class Controls {
     }
     if (!p.dragging) return;
     if (p.touch || p.button === 1) this.dragMap(prevX, prevY, p.x, p.y);
-    else if (p.button === 2 && !this.actions.isCtrlHeld()) this.camera.rotate((p.x - prevX) * CAMERA.rotateDragRadPerPx);
+    else if (p.button === 2 && !this.actions.isCtrlHeld()) {
+      // Sideways turns the map; forward flattens the view towards the horizon, back raises it towards straight down.
+      this.camera.rotate((p.x - prevX) * CAMERA.rotateDragRadPerPx);
+      this.camera.tilt((p.y - prevY) * CAMERA.tiltDragRadPerPx);
+    }
     else if (p.button === 0) this.target.showBox(p.startX, p.startY, p.x, p.y, true);
   };
 

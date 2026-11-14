@@ -1,6 +1,6 @@
 import { TOWN } from '../config.ts';
 import { checkSite, yawToKeep } from './placement.ts';
-import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
+import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeRadiusAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
 import { type BuildingKind, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -96,7 +96,10 @@ function planLake(world: World, side: Side, kind: BuildingKind): boolean {
   // Round the shore, starting from the side nearest the keep.
   for (let k = 0; k < 12; k++) {
     const angle = base + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * 0.5;
-    const r = TOWN.lakeRadiusM + 8;
+    // The shore in that direction (the lake is not round), and a few metres up the bank.
+    const probeX = lx + Math.sin(angle) * TOWN.lakeRadiusM;
+    const probeZ = lz + Math.cos(angle) * TOWN.lakeRadiusM;
+    const r = lakeRadiusAt(side, probeX, probeZ) + 8;
     const x = lx + Math.sin(angle) * r;
     const z = lz + Math.cos(angle) * r;
     if (tryAt(world, side, kind, x, z, yawToKeep(side, x, z))) return true;

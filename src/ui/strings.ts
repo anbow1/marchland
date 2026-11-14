@@ -101,6 +101,7 @@ interface Strings {
   ungarrison: string;
   garrisoned: string;
   wallBroken: string;
+  hover: { stone: string; ore: string; forest: string; lake: string; enemy: string; yours: string };
 }
 
 const pl: Strings = {
@@ -266,6 +267,7 @@ const pl: Strings = {
   ungarrison: 'Wyprowadź załogę',
   garrisoned: 'Strzelcy weszli do wieży',
   wallBroken: 'Mur przebity!',
+  hover: { stone: 'Wychodnia kamienia — postaw obok kamieniołom', ore: 'Ruda żelaza — postaw obok kopalnię', forest: 'Las — drwal przy jego skraju', lake: 'Jezioro — rybak na brzegu', enemy: 'wroga', yours: 'twój' },
 };
 
 const en: Strings = {
@@ -431,6 +433,7 @@ const en: Strings = {
   ungarrison: 'Bring the garrison out',
   garrisoned: 'Shooters have manned the tower',
   wallBroken: 'The wall is breached!',
+  hover: { stone: 'Stone outcrop — put a quarry beside it', ore: 'Iron ore — put a mine beside it', forest: 'Forest — a woodcutter at its edge', lake: 'Lake — a fisher on the bank', enemy: 'enemy', yours: 'yours' },
 };
 
 function pickLang(): Lang {

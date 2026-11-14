@@ -20,7 +20,7 @@ import { loadSurfaces, releaseCpuCopies } from '../render/surfaces.ts';
 import { buildTerrain } from '../render/terrainView.ts';
 import { TownView } from '../render/townView.ts';
 import { warmAllPipelines } from '../render/warmup.ts';
-import { pitchForDistance, type RtsCamera } from './rtsCamera.ts';
+import type { RtsCamera } from './rtsCamera.ts';
 
 // Everything drawn: builds the scene behind the loading screen, then each
 // frame reads the world and the camera and renders. Game logic never sees
@@ -75,7 +75,7 @@ export class WorldView {
     const surfaces = await loadSurfaces(quality, (share) => onProgress(0.15 + share * 0.25));
     t = logStage('textures', t);
     scene.add(buildTerrain(surfaces, this.works.texture));
-    const land = buildLand(surfaces);
+    const land = buildLand(surfaces, (AFTERNOON.skyIlluminanceLux / Math.PI) * this.lighting.exposure);
     for (const part of land.parts) scene.add(part);
     addHorizon(scene);
     t = logStage('terrain', t);
@@ -124,7 +124,7 @@ export class WorldView {
     cam.lookAt(pose.targetX, targetY, pose.targetZ);
     cam.updateMatrixWorld();
     // The view reaches further along the ground the flatter the camera looks.
-    const reachM = (pose.distanceM * 0.75) / Math.sin(pitchForDistance(pose.distanceM));
+    const reachM = (pose.distanceM * 0.75) / Math.sin(camera.pitch());
     this.lighting.update(cam, pose.targetX, targetY, pose.targetZ, reachM);
     this.works.update(world, frameSeconds);
     this.clearings.update(world);

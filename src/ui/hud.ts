@@ -137,6 +137,8 @@ export class Hud {
   private readonly cardKeys: string[] = [];
   private readonly debug: HTMLElement;
   private readonly box: HTMLElement;
+  private readonly hoverTip: HTMLElement;
+  private hoverText = '';
   private readonly minimap: Minimap;
   private readonly screen = { x: 0, y: 0 };
   private panelHtml = '';
@@ -226,6 +228,8 @@ export class Hud {
     this.debug.style.display = 'none';
     this.box = el('div', 'selectBox', root);
     this.box.style.display = 'none';
+    this.hoverTip = el('div', 'hoverTip', root);
+    this.hoverTip.style.display = 'none';
   }
 
   private plotInPanel = -1;
@@ -513,6 +517,16 @@ export class Hud {
       this.mapAge = 0;
       this.minimap.draw(world, selection.regiments, corners);
     }
+  }
+
+  /** The name of what is under the cursor, beside it; an empty text hides it. */
+  hover(text: string, x: number, y: number): void {
+    if (text !== this.hoverText) {
+      this.hoverText = text;
+      this.hoverTip.textContent = text;
+      this.hoverTip.style.display = text ? 'block' : 'none';
+    }
+    if (text) this.hoverTip.style.transform = `translate(${Math.round(x + 16)}px, ${Math.round(y + 18)}px)`;
   }
 
   /** The hint line under the panel. */
