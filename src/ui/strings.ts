@@ -91,6 +91,10 @@ interface Strings {
   attackWarning: string;
   state: { hold: string; move: string; attack: string; siege: string; routing: string; fighting: string };
   help: string[];
+  groupKept: string;
+  viewKept: string;
+  /** What each kind of regiment is good and poor against, shown when recruiting. */
+  counters: Record<UnitKind, string>;
   helpTitle: string;
   menu: string;
   speed: string;
@@ -290,8 +294,23 @@ const pl: Strings = {
     'Lewy przycisk: zaznacz · przeciągnij: ramka · Shift: dodaj',
     'Prawy przycisk (klik): marsz / atak · dwa kliknięcia: bieg · Ctrl + przeciągnięcie prawym: front',
     'H: stój · Ctrl+A: całe wojsko · Esc: odznacz / pauza · F3: pomiar',
+    'Ctrl+1…9: zapamiętaj grupę · 1…9: zaznacz (dwa razy: kamera do niej) · dwuklik oddziału: wszystkie tego rodzaju na ekranie · Ctrl+F5…F8: zapamiętaj widok, F5…F8: wróć',
     'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
   ],
+  groupKept: 'Zapamiętano grupę',
+  viewKept: 'Zapamiętano widok',
+  counters: {
+    militia: 'Tania obrona domu. Słaba na każde regularne wojsko.',
+    pikemen: 'Dobrzy na: jazdę. Słabi na: łuczników, kuszników, mieczników.',
+    archers: 'Dobrzy na: piechotę bez tarcz z daleka. Słabi na: jazdę, kuszników.',
+    swordsmen: 'Dobrzy na: pikinierów, łuczników wręcz. Słabi na: halabardników, kuszników.',
+    halberdiers: 'Dobrzy na: jazdę, mieczników. Słabi na: łuczników i kuszników.',
+    crossbowmen: 'Dobrzy na: opancerzonych (kolczuga). Słabi na: lekką jazdę.',
+    lightCavalry: 'Dobra na: strzelców, machiny, uciekających. Słaba na: pikinierów, halabardników.',
+    heavyCavalry: 'Dobra na: mieczników, strzelców. Słaba na: pikinierów, halabardników, kuszników.',
+    ballista: 'Dobra na: oddziały z daleka i budynki. Słaba na: każdego, kto podejdzie blisko.',
+    trebuchet: 'Dobry na: mury, budynki, zbite szyki. Słaby na: wszystko z bliska.',
+  },
   menu: 'Menu',
   speed: 'Tempo',
   makes: 'daje',
@@ -489,8 +508,23 @@ const en: Strings = {
     'Left button: select · drag: box · Shift: add',
     'Right click: march / attack · double click: run · Ctrl + right drag: set the front',
     'H: halt · Ctrl+A: whole army · Esc: deselect / pause · F3: measurements',
+    'Ctrl+1…9: keep a group · 1…9: select it (twice: camera to it) · double-click a regiment: all of its kind on screen · Ctrl+F5…F8: keep a view, F5…F8: go back to it',
     'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
   ],
+  groupKept: 'Group kept',
+  viewKept: 'View kept',
+  counters: {
+    militia: 'Cheap home defence. Poor against any regular troops.',
+    pikemen: 'Good against: horse. Poor against: archers, crossbowmen, swordsmen.',
+    archers: 'Good against: foot without shields, from afar. Poor against: horse, crossbowmen.',
+    swordsmen: 'Good against: pikemen, archers in melee. Poor against: halberdiers, crossbowmen.',
+    halberdiers: 'Good against: horse, swordsmen. Poor against: archers and crossbowmen.',
+    crossbowmen: 'Good against: armoured men (mail). Poor against: light horse.',
+    lightCavalry: 'Good against: shooters, engines, men running away. Poor against: pikemen, halberdiers.',
+    heavyCavalry: 'Good against: swordsmen, shooters. Poor against: pikemen, halberdiers, crossbowmen.',
+    ballista: 'Good against: regiments from afar, buildings. Poor against: anyone who comes close.',
+    trebuchet: 'Good against: walls, buildings, packed ranks. Poor against: anything close.',
+  },
   menu: 'Menu',
   speed: 'Speed',
   makes: 'makes',

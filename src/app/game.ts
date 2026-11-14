@@ -531,7 +531,11 @@ export class Game implements ControlTarget {
     }
     const r = this.regimentAt(this.hit.x, this.hit.z, PLAYER);
     if (r) {
-      this.selectRegiment(r.id, additive);
+      const now = performance.now();
+      const twice = this.lastPick.id === r.id && now - this.lastPick.atMs < 350;
+      this.lastPick = { id: r.id, atMs: now };
+      if (twice && !additive) this.selectKindOnScreen(r.kind);
+      else this.selectRegiment(r.id, additive);
       return;
     }
     if (additive) return;
@@ -633,8 +637,73 @@ export class Game implements ControlTarget {
     else this.select(screenX, screenY, false);
   }
 
+  /** Regiments kept under keys 1–9, and camera views under F5–F8. */
+  private readonly groups = new Map<number, number[]>();
+  private readonly views = new Map<number, { targetX: number; targetZ: number; distanceM: number; yawRad: number; tiltRad: number }>();
+  private lastGroupKey = { n: -1, atMs: 0 };
+
+  /** Keys 1–9 and F5–F8: keep or call up a group of regiments, or a view. True when the action was one of them. */
+  private groupKey(action: Action): boolean {
+    const m = /^(setGroup|group|setView|view)(\d)$/.exec(action);
+    if (!m) return false;
+    const n = Number(m[2]);
+    const kind = m[1];
+    if (kind === 'setGroup') {
+      this.groups.set(n, [...this.selected]);
+      this.hud.toast(`${T.groupKept} ${n}`, 'plain');
+    } else if (kind === 'group') {
+      const ids = (this.groups.get(n) ?? []).filter((id) => (findRegiment(this.world, id)?.aliveMen ?? 0) > 0);
+      if (ids.length === 0) return true;
+      const now = performance.now();
+      const again = this.lastGroupKey.n === n && now - this.lastGroupKey.atMs < 400;
+      this.lastGroupKey = { n, atMs: now };
+      this.selected.clear();
+      for (const id of ids) this.selected.add(id);
+      this.selectedPlot = NOWHERE;
+      this.setHint(T.hintArmy);
+      if (again) {
+        // Twice quickly: the camera goes to them.
+        let x = 0;
+        let z = 0;
+        for (const id of ids) {
+          const r = findRegiment(this.world, id);
+          if (r) {
+            x += r.centreX;
+            z += r.centreZ;
+          }
+        }
+        this.camera.jumpTo(x / ids.length, z / ids.length);
+      }
+    } else if (kind === 'setView') {
+      this.views.set(n, { ...this.camera.goal });
+      this.hud.toast(`${T.viewKept} F${n + 4}`, 'plain');
+    } else {
+      const v = this.views.get(n);
+      if (v) Object.assign(this.camera.goal, v);
+    }
+    return true;
+  }
+
+  /** A double click on a regiment: every regiment of that kind now on the screen. */
+  private selectKindOnScreen(kind: Regiment['kind']): void {
+    const w = this.view.stage.canvas.clientWidth;
+    const h = this.view.stage.canvas.clientHeight;
+    const p = { x: 0, y: 0 };
+    this.selected.clear();
+    for (const r of this.world.regiments) {
+      if (r.side !== PLAYER || r.aliveMen === 0 || r.kind !== kind) continue;
+      const seen = this.view.project(r.centreX, heightAtM(r.centreX, r.centreZ), r.centreZ, p);
+      if (seen && p.x >= 0 && p.y >= 0 && p.x <= w && p.y <= h) this.selected.add(r.id);
+    }
+    this.selectedPlot = NOWHERE;
+    this.setHint(T.hintArmy);
+  }
+
+  private lastPick = { id: -1, atMs: 0 };
+
   press(action: Action): void {
     this.sound.unlock();
+    if (this.groupKey(action)) return;
     if (action === 'halt') this.haltSelected();
     else if (action === 'selectAll') this.selectAll();
     else if (action === 'debug') this.hud.debugVisible = !this.hud.debugVisible;

@@ -317,7 +317,7 @@ export class Hud {
       const hands = free >= peopleFor(kind) + PEOPLE.minFreeAfterCallUp;
       const off = locked || full || !hands || !canAffordUnit(town.stock, kind) ? ' off' : '';
       const need = locked ? ` (${T.needsBarracksLevel} ${def.barracksLevel})` : def.barracksLevel === 0 ? ` (${T.atKeep})` : '';
-      html += `<button class="option${off}" data-act="recruit" data-arg="${kind}" data-tip="${T.units[kind].name}: ${T.units[kind].about}${need}"><span class="glyph">${UNIT_GLYPH[kind]}</span><span class="name">${T.units[kind].name}</span><span class="costs">${locked ? need : unitCostHtml(town, kind)}</span></button>`;
+      html += `<button class="option${off}" data-act="recruit" data-arg="${kind}" data-tip="${T.units[kind].name}: ${T.units[kind].about} ${T.counters[kind]}${need}"><span class="glyph">${UNIT_GLYPH[kind]}</span><span class="name">${T.units[kind].name}</span><span class="costs">${locked ? need : unitCostHtml(town, kind)}</span></button>`;
     }
     html += '</div>';
     if (town.recruitQueue.length > 0) {

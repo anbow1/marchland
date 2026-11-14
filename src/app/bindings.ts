@@ -2,7 +2,23 @@
 // game asks for actions, never for key codes. `BINDINGS` is the one place a
 // key is named; change it here (or load a player's own map into it) to rebind.
 
-export type Action = 'panLeft' | 'panRight' | 'panForward' | 'panBack' | 'rotateLeft' | 'rotateRight' | 'zoomIn' | 'zoomOut' | 'halt' | 'selectAll' | 'cancel' | 'debug' | 'add' | 'turnBuilding' | 'road';
+type GroupDigit = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
+type ViewKey = 1 | 2 | 3 | 4;
+/** `groupN` selects group N (twice quickly: the camera goes to it), `setGroupN` (with Ctrl) makes the selection group N; `viewN` and `setViewN` likewise for kept camera views. */
+export type GroupAction = `group${GroupDigit}` | `setGroup${GroupDigit}` | `view${ViewKey}` | `setView${ViewKey}`;
+
+export type Action = 'panLeft' | 'panRight' | 'panForward' | 'panBack' | 'rotateLeft' | 'rotateRight' | 'zoomIn' | 'zoomOut' | 'halt' | 'selectAll' | 'cancel' | 'debug' | 'add' | 'turnBuilding' | 'road' | GroupAction;
+
+const GROUP_KEYS: Record<string, readonly string[]> = {};
+for (let n = 1; n <= 9; n++) {
+  GROUP_KEYS[`group${n}`] = [`Digit${n}`, `Numpad${n}`];
+  GROUP_KEYS[`setGroup${n}`] = [`Digit${n}`, `Numpad${n}`];
+}
+// Kept views on F5–F8 (Ctrl to keep one): the browser's own F5 is held back while the game runs.
+for (let n = 1; n <= 4; n++) {
+  GROUP_KEYS[`view${n}`] = [`F${n + 4}`];
+  GROUP_KEYS[`setView${n}`] = [`F${n + 4}`];
+}
 
 export const BINDINGS: Record<Action, readonly string[]> = {
   panLeft: ['KeyA', 'ArrowLeft'],
@@ -20,10 +36,11 @@ export const BINDINGS: Record<Action, readonly string[]> = {
   cancel: ['Escape'],
   debug: ['F3'],
   add: ['ShiftLeft', 'ShiftRight'],
+  ...(GROUP_KEYS as Record<GroupAction, readonly string[]>),
 };
 
 /** Actions that need Ctrl held; the same key without it does something else (A pans, Ctrl+A selects). */
-const NEEDS_CTRL: ReadonlySet<Action> = new Set<Action>(['selectAll']);
+const NEEDS_CTRL: ReadonlySet<Action> = new Set<Action>(['selectAll', ...(Object.keys(GROUP_KEYS).filter((a) => a.startsWith('set')) as Action[])]);
 
 export class ActionState {
   private readonly held = new Set<string>();

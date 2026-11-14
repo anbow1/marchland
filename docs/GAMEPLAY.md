@@ -257,14 +257,15 @@ Zrobione: **zakładka Produkcja** — każdy towar: w zamku, wytwarza /min, bila
 dwóch minut); obok zatory warsztatów (brak surowca — którego, pełne podwórze, brak pracownika,
 wstrzymany) z „pokaż”. **Alarmy z „pokaż”**: wróg w osadzie, wróg przy zamku, głód, oddział
 ucieka lub rozbity, budynek stracony, mur przebity, podwórze pełne od minuty.
+**Grupy i widoki**: Ctrl+1…9 zapamiętuje zaznaczone oddziały, 1…9 je zaznacza (dwa razy szybko:
+kamera do nich), dwuklik oddziału zaznacza wszystkie tego rodzaju na ekranie, Ctrl+F5…F8
+zapamiętuje widok kamery, F5…F8 do niego wraca. **Kontry** w podpowiedzi przy werbunku
+(„Dobrzy na: jazdę. Słabi na: łuczników…”).
 
 Do zrobienia:
 
 - Dolny pasek kart oddziałów (jak dziś nad wojskiem, ale stały): siła, morale,
   stopień, postawa; klik zaznacza, dwuklik centruje kamerę.
-- Grupy 1–9, podwójny klik = wszystkie tego rodzaju na ekranie, zakładki
-  kamery F5–F8.
-- Podpowiedź kontr przy werbunku („dobre na: jazdę; słabe na: łuczników”).
 - Kształt, nie tylko kolor: chorągwie stron różnią się krojem, stan oddziału
   ikoną.
 

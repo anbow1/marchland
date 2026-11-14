@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Grupy 1–9, widoki F5–F8, dwuklik, kontry przy werbunku
+
+- Ctrl+1…9 zapamiętuje zaznaczenie, 1…9 je przywraca (dwa razy w 0,4 s: kamera do grupy);
+  Ctrl+F5…F8 zapamiętuje widok kamery, F5…F8 wraca (przeglądarka nie przeładowuje strony);
+  dwuklik w oddział: wszystkie tego rodzaju widoczne na ekranie. Przy werbunku podpowiedź
+  kontr. Sprawdzone w przeglądarce prawdziwymi klawiszami (10 oddziałów: zapis, czyszczenie,
+  przywrócenie; widok wraca po F5, strona się nie przeładowuje).
+
 ## 2026-11-14 · Trzy układy mapy (M3)
 
 - Wybór w menu „Mapa” (parametr `?map=`): **Otwarte pole**, **Przeprawa**, **Bór**; mapka w
