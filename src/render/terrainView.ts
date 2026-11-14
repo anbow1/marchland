@@ -64,7 +64,15 @@ function near(distanceM: number, radiusM: number, fadeM: number): number {
 function earthAt(x: number, z: number): number {
   let earth = 0;
   // The bank and the bed of the lake, following its bays.
-  earth = Math.max(earth, near(lakeShare(x, z) * TOWN.lakeRadiusM, TOWN.lakeRadiusM * 0.95, 3));
+  // The bed is mud; above the waterline only a strip a stride or two wide, broken where the turf runs
+  // down to the water and widening into trampled patches where beasts come to drink.
+  const share = lakeShare(x, z);
+  if (share > 1.25) return 0;
+  const bed = 1 - Math.min(1, Math.max(0, (share - 0.88) / 0.03));
+  const patches = fbm2(x / 5, z / 5, 3, MAP.terrainSeed + 67) * 0.5 + 0.5;
+  const reach = 0.9 + 0.13 * patches * patches;
+  const bank = 1 - Math.min(1, Math.max(0, (share - reach) / 0.04));
+  earth = Math.max(earth, bed, bank * (0.55 + 0.45 * patches));
   return earth;
 }
 

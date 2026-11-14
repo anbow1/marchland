@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Jezioro: postrzępiony brzeg, woda z Field Line
+
+- Brzeg: do kilku wolnych fal dołożony szum obiegający okrąg (zamyka się sam
+  na sobie), więc promień zmienia się od 18 do 36 m, z zatoczkami i cyplami.
+  Ten sam kształt mają symulacja (woda, omijanie, planowanie zabudowy) i widok.
+- Woda przeniesiona z Field Line: powierzchnia fizyczna (ior 1,333), odbicie
+  z Fresnela, dno widziane przez zmarszczki i barwione wodą wzdłuż drogi
+  światła (Beer–Lambert), torfowa zieleń w głębi.
+- Ziarno na płyciznach: było grudami skanu błota widzianymi przez wodę; dno
+  jest teraz rozmyte (cztery próbki, szerzej im głębiej), a zmarszczki
+  wygładzają się w ostatnich centymetrach wody i z odległością.
+- Brzeg z błota: zamiast równego pasa kilku metrów jest wąski, przerwany pas,
+  miejscami poszerzony w wydeptane placki; tam, gdzie go nie ma, trawa sięga wody.
+- Testy: 60 / 60.
+
 ## 2026-11-13 · Wieża i mur, większa mapa, żywsze kolory
 
 - **Wieża strażnicza** (40 zł, 15 drewna, 60 kamienia): do 4 łuczników albo kuszników

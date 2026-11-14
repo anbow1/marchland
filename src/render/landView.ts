@@ -82,13 +82,24 @@ function lakeMaterial(): MeshPhysicalNodeMaterial {
   const toEye = cameraPosition.sub(p);
   const dist = length(toEye);
   const V = toEye.div(dist);
-  const N = normalize(vec3(a.sub(b).mul(0.22), 1, c.sub(b).mul(0.22)));
+  // Ripples calm with distance and in the last hand's breadth of water, where a pixel would cover many of
+  // them and their sun glints would only shimmer as grain.
+  const calm = smoothstep(0.02, 0.35, depth).div(dist.mul(0.012).add(1));
+  const N = normalize(vec3(a.sub(b).mul(calm.mul(0.22)), 1, c.sub(b).mul(calm.mul(0.22))));
   m.normalNode = transformNormalToView(N);
   const NdotV = clamp(dot(N, V), 0.001, 1);
   const fresnel = float(0.02).add(float(0.98).mul(pow(float(1).sub(NdotV), float(5))));
   // The bed behind the surface, bent by the ripples, less where it is shallow.
   const distortion = N.xz.mul(0.04).mul(smoothstep(0.0, 0.8, depth)).div(dist.mul(0.02).add(1));
-  const behind = viewportSharedTexture(screenUV.add(vec2(distortion.x, distortion.y.negate()))).rgb;
+  // Silt and the ripples soften the bed: four taps spread wider the deeper it lies, so the clods of the
+  // mud scan do not show through as grain.
+  const seen = screenUV.add(vec2(distortion.x, distortion.y.negate()));
+  const spread = smoothstep(0.0, 0.6, depth).mul(0.0035).div(dist.mul(0.01).add(1));
+  const behind = viewportSharedTexture(seen.add(vec2(spread, spread.mul(0.4))))
+    .rgb.add(viewportSharedTexture(seen.add(vec2(spread.negate(), spread.mul(-0.4)))).rgb)
+    .add(viewportSharedTexture(seen.add(vec2(spread.mul(-0.4), spread))).rgb)
+    .add(viewportSharedTexture(seen.add(vec2(spread.mul(0.4), spread.negate()))).rgb)
+    .mul(0.25);
   const cosIn = sqrt(float(1).sub(float(1).sub(V.y.mul(V.y)).div(1.77)));
   const path = depth.div(max(cosIn, 0.15)).add(depth);
   // Peaty lowland water: red goes first, then green.
@@ -97,7 +108,7 @@ function lakeMaterial(): MeshPhysicalNodeMaterial {
   const deep = vec3(0.02, 0.05, 0.045);
   const scatter = mix(shallow, deep, smoothstep(0.3, 1.6, depth)).mul(skyRadiance).mul(float(1).sub(transmittance.g));
   m.colorNode = vec3(0);
-  m.roughnessNode = float(0.05).add(a.mul(0.06));
+  m.roughnessNode = float(0.05).add(a.mul(0.06)).add(smoothstep(30, 260, dist).mul(0.12));
   m.emissiveNode = behind.mul(transmittance).add(scatter).mul(float(1).sub(fresnel));
   // The water's edge thins into the wet bank behind it.
   m.opacityNode = smoothstep(0.0, 0.06, depth);

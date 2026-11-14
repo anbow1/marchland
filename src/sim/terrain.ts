@@ -49,11 +49,16 @@ export function lakeZ(side: Side): number {
 
 /**
  * The lake's radius in a direction from its middle: a few slow waves round the circle give it bays and
- * points. The computer's lake is the player's turned half a circle, so the two are the same shape.
+ * points, and a noise round the circle its coves. The computer's lake is the player's turned half a circle, so the two are the same shape.
  */
 export function lakeRadiusAt(side: Side, x: number, z: number): number {
   const a = Math.atan2(z - lakeZ(side), x - lakeX(side)) + (side === 0 ? 0 : Math.PI);
-  return TOWN.lakeRadiusM * (1 + 0.2 * Math.sin(2 * a + 0.7) + 0.13 * Math.sin(3 * a + 2.1) + 0.08 * Math.sin(5 * a + 4.0) + 0.05 * Math.sin(8 * a + 1.3));
+  // Slow waves for the bays and points, then a noise walked round the circle (so it closes on itself) for
+  // the coves and spits a real shore has: no two stretches alike.
+  const c = Math.cos(a);
+  const s = Math.sin(a);
+  const coves = fbm2(c * 1.9 + 4.3, s * 1.9 - 2.6, 4, MAP.terrainSeed + 61);
+  return TOWN.lakeRadiusM * (1 + 0.2 * Math.sin(2 * a + 0.7) + 0.13 * Math.sin(3 * a + 2.1) + 0.06 * Math.sin(5 * a + 4.0) + 0.24 * coves);
 }
 
 /** Distance from the nearer lake's middle, in that lake's radii in that direction (below 1 = inside the bowl). */
