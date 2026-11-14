@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Kuźnia z przesłanych modeli
+
+- **Medieval Blacksmith** (Daniel Andersson, CC BY 4.0) jako kuźnia na poziomach 2 i 3:
+  mur pruski, dachówka, palenisko pod daszkiem; 33 → 12 tys. trójkątów, 10,5 m; dym z
+  komina i z paleniska. Konwerter `tools/blender/convert.py` przypisuje powierzchnie
+  gry po nazwach materiałów.
+- Odrzucone: dom z winiarnią (rozsypuje się przy przerzedzaniu: 9 457 kawałków,
+  ściany pod materiałem bez nazwy), karczma i kuźnia stylizowana (bajkowe dioramy,
+  materiały spec-gloss), warsztat na skale (diorama).
+
 ## 2026-11-14 · Mapa: zamki bliżej rogów, większy zasięg, pagórki, góry i skały
 
 - Zamki 195 → 212 m od środka na każdej osi (600 m od siebie); jezioro i wychodnie

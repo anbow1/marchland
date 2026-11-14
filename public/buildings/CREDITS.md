@@ -1,7 +1,7 @@
 # Credits for the models in this folder
 
-Every building except the keep, the wall and the watchtower is made for Marchland in Blender
-(`tools/blender/build.py`).
+Every building except the keep, the wall, the watchtower and the smithy at levels 2 and 3 is made for
+Marchland in Blender (`tools/blender/build.py`).
 
 ## keep_1.glb — the keep
 
@@ -23,3 +23,13 @@ Changes (`tools/blender/walls.py`): textures removed and the stone given the gam
 ashlar; one merlon's period of the wall cut out, closed, stretched to the 2 m cell, its merlons made
 taller and its foot sunk into the ground; the tower scaled to a 8.6 m fighting floor, with a door, the
 side's flag and, by level, a timber hoarding and a roof added.
+
+## smithy_2.glb, smithy_3.glb — the smithy at levels 2 and 3
+
+From **Medieval Blacksmith** by **Daniel** (https://sketchfab.com/DanielAndersson),
+https://sketchfab.com/3d-models/medieval-blacksmith-2e4f2725963644c685419dea1e4430df,
+licensed under **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/).
+
+Changes (`tools/blender/convert.py`): textures removed and each material given one of the game's
+surfaces by its name; thinned from 33 000 to 12 000 triangles; scaled to 10.5 m; smoke points added
+at the chimney and the hearth.

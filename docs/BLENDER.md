@@ -74,6 +74,15 @@ o 80 % wyższe niż w źródle, żeby było je widać z góry. Wieża (5,1 m, ta
 stoją łucznicy) dostaje drzwi i flagę, od poziomu 2 drewniany ganek (hurdycje), na
 poziomie 3 lekki daszek na słupach.
 
+Kuźnia na poziomach 2 i 3: **Medieval Blacksmith** (Daniel Andersson, CC BY 4.0),
+przerobiona przez `tools/blender/convert.py`: konwerter dla pobranych budynków, który
+po słowach w nazwach materiałów (drewno, dachówka, tynk, kamień, żelazo, szkło…)
+przypisuje powierzchnie gry, wyrzuca liście i drobiazgi, scala płaskie ściany,
+przerzedza do budżetu, ustawia rozmiar i dym (komin, palenisko). Odrzucone z
+przesłanych: dom z winiarnią (670 tys. trójkątów w 9 457 kawałkach, nie da się go
+przerzedzić w całości), karczma i kuźnia stylizowana (bajkowe dioramy na śniegu),
+warsztat na skale (diorama).
+
 Do zrobienia: brama w murze (dziś własny mur przepuszcza swoich wszędzie), warianty (np. dwa wyglądy chaty
 na poziom), poziomy szczegółów dla widoku z daleka.
 

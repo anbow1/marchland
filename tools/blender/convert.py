@@ -50,18 +50,10 @@ DEFAULT = "plaster#d8cfc0"
 # game's metres) are left out, the bottles and pebbles a strategy camera never sees and that no
 # thinning can remove; `plate_m`: faces lying wholly this low are the source's ground plate, removed;
 # `smoke_from`: surfaces whose highest point smokes (a chimney's brick, a hearth's embers).
+# Tried and left out: Medieval house and wine shop (Don_Dzen): 670 000 triangles in 9 457 pieces, its
+# walls under a material named only 'material'; no thinning keeps it whole within a building's budget.
 MODELS = {
     "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke_from": ["rubble#b8a89a", "ember#ff7a2a"]},
-    "wineShop": {
-        "kind": "winery",
-        "levels": [3],
-        "fit_m": 11.0,
-        "turn_deg": 0,
-        "surfaces": [(r"^material$", None)],
-        "min_part_m": 0.6,
-        "plate_m": 0.45,
-        "smoke_from": ["rubble#b8a89a"],
-    },
 }
 
 

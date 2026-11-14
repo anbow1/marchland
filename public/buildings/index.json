@@ -153,11 +153,11 @@
  },
  "smithy:2": {
   "file": "smithy_2.glb",
-  "triangles": 2566
+  "triangles": 12000
  },
  "smithy:3": {
   "file": "smithy_3.glb",
-  "triangles": 2566
+  "triangles": 12000
  },
  "stable:1": {
   "file": "stable_1.glb",
