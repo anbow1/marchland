@@ -25,6 +25,10 @@ garbarnia 83 %, huta 92 % bez surowca, chlewnia zapchana mięsem. Drewna stale ~
 Wszystkie zmiany poza kolejnością budowy działają tak samo dla gracza. Test całej partii
 znów ma limit 38 min (było 48). Testy: 60 / 60.
 
+Przy okazji: wyższe pagórki zrobiły obok jezior niecki poniżej lustra wody i siatka
+jeziora zalewała je prostokątnymi płatami. Woda jest teraz rysowana tylko w misie jeziora,
+tak jak liczą ją reguły (isWater).
+
 ## 2026-11-14 · Kuźnia z przesłanych modeli
 
 - **Medieval Blacksmith** (Daniel Andersson, CC BY 4.0) jako kuźnia na poziomach 2 i 3:

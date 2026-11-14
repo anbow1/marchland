@@ -3,7 +3,7 @@ import { BufferAttribute, BufferGeometry, Color, DataTexture, InstancedMesh, Lin
 import { MAP, TOWN } from '../config.ts';
 import { fbm2, tileFbm } from '../core/noise.ts';
 import { Rng } from '../core/rng.ts';
-import { DEPOSITS, forestCoverAt, HEAPS, heapShare, heightAtM, isWater, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, HEAPS, heapShare, heightAtM, isWater, lakeShare, lakeX, lakeZ, WATER_LEVEL_M } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
 import { chunkedInstances } from './chunks.ts';
 import { MeshBuilder, type Paint, type Vec3 } from './meshBuilder.ts';
@@ -132,7 +132,9 @@ function lakeGrid(side: Side): BufferGeometry {
       positions[k * 3] = x;
       positions[k * 3 + 1] = WATER_LEVEL_M;
       positions[k * 3 + 2] = z;
-      depth[k] = WATER_LEVEL_M - heightAtM(x, z);
+      // Water only in the lake's own bowl: a hollow of the hills nearby that dips below the waterline is dry land
+      // to the rules (isWater), so it is drawn dry, not as a flooded square cut off at the grid's edge.
+      depth[k] = lakeShare(x, z) < 1 ? WATER_LEVEL_M - heightAtM(x, z) : -1;
     }
   }
   const index: number[] = [];
