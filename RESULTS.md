@@ -5,6 +5,23 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Drwal wycina las i sadzi nowy
+
+- Drzewa są teraz listą w symulacji (`src/sim/trees.ts`), tą samą, którą rysuje widok
+  (ten sam generator i ziarno, więc las wygląda jak przedtem). Stan wycinki (kiedy
+  ścięte, kiedy posadzone, kto po nie idzie) jest częścią świata: powtórka ziarna daje
+  tę samą partię.
+- Drwal: najbliższe dorosłe drzewo w 48 m od chaty → ścina (8 s) → sadzi sadzonkę przy
+  pniu (4 s), jedną za każde drzewo → niesie 8 drewna (było 6 z „wyprawy”). Sadzonka
+  rośnie 600 s (od 15 % wielkości). Widok: ścięte drzewo znika, zostaje pień, sadzonka
+  rośnie na jego miejscu (przerysowanie tylko zmienionych drzew, 2× na sekundę).
+- Drwal rusza po drzewo, dopóki podwórko nie jest pełne (wcześniej czekał, aż zmieści
+  się cały ładunek, i przy 8 sztukach stał z 8 w podwórku).
+- Tempo komputera po zmianie: 31,8 / 34,3 min (ziarna 5 / 6). Nowy test: drwal ścina
+  tylko w zasięgu, sadzi za każde drzewo, sadzonki odrastają.
+- Przy obecnej mapie drwal da się postawić w 87 % miejsc na skraju lasu wokół zamku
+  (290 z 332; reszta to strome stoki i okolice krawędzi mapy).
+
 ## 2026-11-14 · Tempo komputera: z 45 do 33–35 minut
 
 Pomiar (oś czasu i stan warsztatów co pół sekundy, minuty 12–30, ziarno 5): broni i złota

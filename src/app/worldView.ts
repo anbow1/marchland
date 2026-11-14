@@ -3,7 +3,7 @@ import { heightAtM } from '../sim/terrain.ts';
 import type { BuildingKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { ArmyView } from '../render/armyView.ts';
-import { buildForest } from '../render/forestView.ts';
+import { buildForest, type Forest } from '../render/forestView.ts';
 import { addHorizon } from '../render/horizonView.ts';
 import { shareStaticInstanceShaders } from '../render/instancing.ts';
 import { AFTERNOON, Lighting } from '../render/lighting.ts';
@@ -52,6 +52,7 @@ export class WorldView {
   private vines!: VinesView;
   private smoke!: SmokeView;
   private walls!: WallView;
+  private forest!: Forest;
   private readonly smokeSources = new Float32Array(220 * 3);
   private readonly works = new GroundWorks();
   private readonly clearings = new Clearings();
@@ -80,8 +81,8 @@ export class WorldView {
     addHorizon(scene);
     t = logStage('terrain', t);
     onProgress(0.45);
-    const trees = buildForest(quality, surfaces);
-    for (const mesh of trees) scene.add(mesh);
+    this.forest = buildForest(quality, surfaces);
+    for (const mesh of this.forest.meshes) scene.add(mesh);
     t = logStage('forest', t);
     onProgress(0.55);
     this.town = new TownView(scene, surfaces);
@@ -96,7 +97,7 @@ export class WorldView {
     this.markers = new Markers(scene);
     shareStaticInstanceShaders(this.stage.renderer, scene);
     for (const s of land.scattered) this.clearings.add(s.mesh, s.reachM);
-    for (const mesh of trees) this.clearings.add(mesh, 2.4);
+    for (const mesh of this.forest.meshes) if (mesh.name !== 'stumps') this.clearings.add(mesh, 2.4);
     t = logStage(`towns and armies (${models} building models)`, t);
     onProgress(0.7);
     await this.lighting.bakeProbe(this.stage.camera);
@@ -134,6 +135,7 @@ export class WorldView {
     this.people.update(world);
     this.vines.update(world);
     this.walls.update(world);
+    this.forest.update(world.stand, world.timeS);
     this.smoke.update(this.smokeSources, this.town.smokeSources(world, this.smokeSources), frameSeconds);
     this.army.update(world);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);

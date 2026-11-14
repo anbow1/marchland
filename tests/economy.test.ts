@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { ARMY, FIELDS, FOOD, FORESTRY, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
@@ -7,6 +7,7 @@ import { freePeople } from '../src/sim/people.ts';
 import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
 import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
+import { growthOf, TREES } from '../src/sim/trees.ts';
 import { type BuildingKind, COMPUTER, PLAYER } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
@@ -158,6 +159,33 @@ describe('a living town', () => {
     expect((town.plots[cutter]?.out.wood ?? 0) + 0).toBeGreaterThan(0);
     expect(town.stock.fish + (town.plots[fisher]?.out.fish ?? 0)).toBeGreaterThan(0);
   });
+
+  it('a woodcutter fells the trees round his hut, plants one for every tree, and the saplings grow back', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const cutter = build(world, 'woodcutter');
+    const felledBy = (): number[] => [...world.stand.changed];
+    runUntil(world, 900, () => felledBy().length >= 6);
+    const felled = felledBy();
+    expect(felled.length).toBeGreaterThanOrEqual(6);
+    const b = town.plots[cutter];
+    if (!b) throw new Error('no woodcutter');
+    for (const i of felled) {
+      // Only trees within his reach, and no tree twice while it grows back.
+      expect(Math.hypot((TREES.x[i] as number) - b.x, (TREES.z[i] as number) - b.z)).toBeLessThanOrEqual(FORESTRY.reachM + 0.01);
+    }
+    // One sapling for every tree he has carried home: all but perhaps the one he is at now are planted.
+    const planted = felled.filter((i) => (world.stand.plantedS[i] as number) >= (world.stand.felledS[i] as number));
+    expect(planted.length).toBeGreaterThanOrEqual(felled.length - 1);
+    expect(growthOf(world.stand, planted[0] as number, world.timeS)).toBeGreaterThan(0);
+    // In time the first sapling is a tree again: standing, or felled anew once it had grown (it is the nearest).
+    const first = planted[0] as number;
+    const firstFelledS = world.stand.felledS[first] as number;
+    run(world, FORESTRY.growS + 30);
+    const standing = !world.stand.changed.has(first) && growthOf(world.stand, first, world.timeS) === 1;
+    const felledAgain = (world.stand.felledS[first] as number) >= firstFelledS + FORESTRY.growS;
+    expect(standing || felledAgain).toBe(true);
+  }, 60_000);
 
   it('a fed house fills with people; an empty larder stops newcomers and tax', () => {
     const world = rich(quietWorld());

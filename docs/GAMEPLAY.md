@@ -49,6 +49,11 @@ drzewka technologii, mikrotransakcji, krwi.
 - **Zasięgi**: drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy
   (nie przy wrogim zamku); zagrody i winnice do 300 m od zamku; reszta 230 m.
 - **Mapa 560 m**, zamki bliżej rogów, 600 m od siebie, bez drogi między nimi.
+- **Wycinka lasu**: drwal ścina najbliższe dorosłe drzewo w promieniu 48 m od chaty
+  (8 drewna z drzewa), przy pniu sadzi sadzonkę — jedną za każde ścięte drzewo — i
+  dopiero wtedy niesie drewno do zagrody. Sadzonka rośnie 10 minut i znów jest drzewem
+  do ścięcia. Wokół drwala robi się widoczna przecinka; gdy w zasięgu nie ma dorosłych
+  drzew, drwal czeka na sadzonki albo trzeba postawić nowego.
 - **Góry i skały**: dwa szare masywy na flankach (w rogach bez zamków) i cztery
   skalne grzędy po bokach pola. Podnóża gór są do przejścia, rdzeń i grzędy —
   nie: nie da się tam wejść, budować ani prowadzić drogi; armie muszą je obejść.

@@ -1,20 +1,16 @@
-import { Color, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three/webgpu';
-import { MAP } from '../config.ts';
-import { Rng } from '../core/rng.ts';
-import { forestCoverAt, heightAtM } from '../sim/terrain.ts';
-import { chunkedInstances } from './chunks.ts';
+import { type BufferGeometry, Color, InstancedMesh, Matrix4, Quaternion, Vector3 } from 'three/webgpu';
+import { growthOf, type Stand, TREES } from '../sim/trees.ts';
+import { CHUNK_M } from './chunks.ts';
+import { markStaticInstances } from './instancing.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import type { Quality } from './stage.ts';
 import { layerOf, surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
-// Trees, placed where the simulation's cover function says there is forest, so
-// the woods the player sees are the woods that slow cavalry and stop arrows.
+// Trees, from the simulation's own list (sim/trees.ts), planted where its cover function says there is
+// forest, so the woods the player sees are the woods that slow cavalry, stop arrows and are felled; a
+// felled tree gives way to its stump and the sapling planted by it, which grows back.
 // Two species from code, one instanced mesh each; a few are scattered in the
 // open as lone trees. Scanned or modelled trees replace these in stage 5.
-
-/** Trees are planted on a jittered grid of this pitch, out to this far beyond the playable square. */
-const PITCH_M = 6.5;
-const DECOR_MARGIN_M = 170;
 
 const BARK = 0x4a3b30;
 const PINE = 0x33422a;
@@ -56,49 +52,120 @@ function broadleafGeometry(paints: Map<number, Paint>): MeshBuilder {
   return b;
 }
 
-export function buildForest(quality: Quality, lib: SurfaceLibrary): InstancedMesh[] {
+/** The woods as drawn: one instanced mesh per species and square of the map, and the stumps. */
+export interface Forest {
+  meshes: InstancedMesh[];
+  /** Redraws the trees that are felled, planted or growing back; cheap when nothing has changed. */
+  update(stand: Stand, nowS: number): void;
+}
+
+/** Most stumps shown at once (a woodcutter fells about two trees a minute). */
+const MAX_STUMPS = 1500;
+
+export function buildForest(quality: Quality, lib: SurfaceLibrary): Forest {
   // Scanned bark and leaves, times a tint per tree (the instance colour).
   const material = surfaceMaterial(lib, 'tree');
   const paints = paintsFor(lib);
-  const rng = new Rng(MAP.terrainSeed + 101);
-  const matrices: Matrix4[][] = [[], []];
-  const tints: Color[][] = [[], []];
-  const half = MAP.halfM + DECOR_MARGIN_M;
+  // Low: every other tree outside the playable square, where nobody fights.
+  const decorKeep = quality === 'high' ? 1 : 0.5;
+  const builders = [pineGeometry(paints), broadleafGeometry(paints)];
+  const geometries = builders.map((b) => b.build());
+  // Each tree's mesh (by species and square of the map) and its slot in it, so a felled one can be hidden.
+  const meshOf = new Int32Array(TREES.count).fill(-1);
+  const slotOf = new Int32Array(TREES.count);
+  const buckets = new Map<string, number[]>();
+  for (let i = 0; i < TREES.count; i++) {
+    if (!TREES.inside[i] && (TREES.decor[i] as number) >= decorKeep) continue;
+    const key = `${TREES.species[i]}:${Math.floor((TREES.x[i] as number) / CHUNK_M)}:${Math.floor((TREES.z[i] as number) / CHUNK_M)}`;
+    const list = buckets.get(key) ?? [];
+    list.push(i);
+    buckets.set(key, list);
+  }
+  const meshes: InstancedMesh[] = [];
+  const m = new Matrix4();
   const position = new Vector3();
   const scale = new Vector3();
   const turn = new Quaternion();
   const up = new Vector3(0, 1, 0);
-  // Low: every other tree outside the playable square, where nobody fights.
-  const decorKeep = quality === 'high' ? 1 : 0.5;
-  for (let gz = -half; gz < half; gz += PITCH_M) {
-    for (let gx = -half; gx < half; gx += PITCH_M) {
-      const x = gx + rng.range(0.1, 0.9) * PITCH_M;
-      const z = gz + rng.range(0.1, 0.9) * PITCH_M;
-      const roll = rng.next();
-      const pick = rng.next();
-      const size = rng.range(0.8, 1.35);
-      const yaw = rng.range(0, Math.PI * 2);
-      const shade = rng.range(0.82, 1.12);
-      const cover = forestCoverAt(x, z);
-      const inside = Math.abs(x) < MAP.halfM && Math.abs(z) < MAP.halfM;
-      // Dense where the rules say forest; a rare lone tree elsewhere away from the towns.
-      const chance = cover > 0.5 ? 0.9 : cover > 0.05 ? cover * 0.5 : 0;
-      if (roll >= chance) continue;
-      if (!inside && rng.next() >= decorKeep) continue;
-      // Pines gather on the higher ground.
-      const species = pick < 0.35 + heightAtM(x, z) * 0.06 ? 0 : 1;
-      position.set(x, heightAtM(x, z) - 0.15, z);
-      scale.set(size, size * rng.range(0.9, 1.2), size);
-      turn.setFromAxisAngle(up, yaw);
-      (matrices[species] as Matrix4[]).push(new Matrix4().compose(position, turn, scale));
-      (tints[species] as Color[]).push(new Color(shade, shade * rng.range(0.94, 1.06), shade * 0.95));
-    }
+  const colour = new Color();
+  const place = (i: number, grown: number): Matrix4 => {
+    const size = (TREES.size[i] as number) * grown;
+    position.set(TREES.x[i] as number, TREES.y[i] as number, TREES.z[i] as number);
+    scale.set(size, size * (TREES.tall[i] as number), size);
+    turn.setFromAxisAngle(up, TREES.yaw[i] as number);
+    return m.compose(position, turn, scale);
+  };
+  for (const [key, list] of buckets) {
+    const species = Number(key.split(':')[0]);
+    const mesh = new InstancedMesh(geometries[species] as BufferGeometry, material, list.length);
+    mesh.name = `${species === 0 ? 'pines' : 'broadleaves'} ${key}`;
+    list.forEach((i, slot) => {
+      mesh.setMatrixAt(slot, place(i, 1));
+      mesh.setColorAt(slot, colour.setRGB(TREES.r[i] as number, TREES.g[i] as number, TREES.b[i] as number));
+      meshOf[i] = meshes.length;
+      slotOf[i] = slot;
+    });
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    mesh.computeBoundingSphere();
+    meshes.push(markStaticInstances(mesh));
   }
-  const builders = [pineGeometry(paints), broadleafGeometry(paints)];
-  const meshes: InstancedMesh[] = [];
-  for (let species = 0; species < 2; species++) {
-    const scatter = { matrices: matrices[species] as Matrix4[], colours: tints[species] as Color[] };
-    meshes.push(...chunkedInstances((builders[species] as MeshBuilder).build(), material, scatter, species === 0 ? 'pines' : 'broadleaves'));
-  }
-  return meshes;
+  // Stumps: a short sawn trunk where a tree was felled, beside the sapling planted for it.
+  const stumpBuilder = new MeshBuilder(0, paints);
+  stumpBuilder.cylinder(0, 0, 0, 0.32, 0.28, 0.55, 7, BARK);
+  const stumps = new InstancedMesh(stumpBuilder.build(), material, MAX_STUMPS);
+  stumps.name = 'stumps';
+  stumps.count = 0;
+  stumps.frustumCulled = false;
+  stumps.castShadow = true;
+  stumps.receiveShadow = true;
+  stumps.setColorAt(0, colour.setRGB(1, 1, 1));
+  meshes.push(stumps);
+
+  let drawnVersion = -1;
+  let lastS = -1e9;
+  /** Trees drawn other than whole last time: to be put back when they stand again. */
+  const shown = new Set<number>();
+  return {
+    meshes,
+    update(stand: Stand, nowS: number): void {
+      // Saplings grow slowly: redrawing them twice a second is plenty.
+      if (stand.version === drawnVersion && (stand.changed.size === 0 || nowS - lastS < 0.5)) return;
+      drawnVersion = stand.version;
+      lastS = nowS;
+      const touched = new Set<number>();
+      for (const i of shown) {
+        if (stand.changed.has(i) || meshOf[i] < 0) continue;
+        // Grown back: whole again.
+        const mesh = meshes[meshOf[i] as number] as InstancedMesh;
+        mesh.setMatrixAt(slotOf[i] as number, place(i, 1));
+        touched.add(meshOf[i] as number);
+        shown.delete(i);
+      }
+      let n = 0;
+      for (const i of stand.changed) {
+        const grown = growthOf(stand, i, nowS);
+        if (meshOf[i] >= 0) {
+          const mesh = meshes[meshOf[i] as number] as InstancedMesh;
+          mesh.setMatrixAt(slotOf[i] as number, place(i, grown));
+          touched.add(meshOf[i] as number);
+          shown.add(i);
+        }
+        if (n < MAX_STUMPS) {
+          // The stump stands a little off the sapling, on the side the tree fell from.
+          position.set((TREES.x[i] as number) + 0.7, (TREES.y[i] as number) + 0.1, (TREES.z[i] as number) + 0.4);
+          scale.set(TREES.size[i] as number, 1, TREES.size[i] as number);
+          turn.setFromAxisAngle(up, TREES.yaw[i] as number);
+          stumps.setMatrixAt(n++, m.compose(position, turn, scale));
+        }
+      }
+      for (const k of touched) {
+        const mesh = meshes[k] as InstancedMesh;
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.computeBoundingSphere();
+      }
+      stumps.count = n;
+      stumps.instanceMatrix.needsUpdate = true;
+    },
+  };
 }

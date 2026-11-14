@@ -19,6 +19,8 @@ import { Sound } from './ui/sound.ts';
 interface DebugApi {
   place(view: { x?: number; z?: number; distance?: number; y?: number; yaw?: number }): void;
   spot(name: string): void;
+  /** Runs the simulation ahead this many seconds at once (screenshots of a town at work). */
+  step(seconds: number): void;
   game: Game;
 }
 
@@ -158,6 +160,9 @@ async function run(): Promise<void> {
     window.__debug = {
       place: (v) => game.place(v.x ?? game.camera.goal.targetX, v.z ?? game.camera.goal.targetZ, v.distance ?? v.y ?? game.camera.goal.distanceM, v.yaw ?? game.camera.goal.yawRad),
       spot: (name) => game.spot(name),
+      step: (seconds) => {
+        for (let i = 0; i < Math.round(seconds / SIM.stepSeconds); i++) stepWorld(game.world, SIM.stepSeconds);
+      },
       game,
     };
   }

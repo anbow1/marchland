@@ -1,16 +1,18 @@
-import { FIELDS, GATHER, LEVEL_SPEED, PEOPLE, VINES } from '../config.ts';
+import { FIELDS, FORESTRY, GATHER, LEVEL_SPEED, PEOPLE, VINES } from '../config.ts';
 import { type Building, isBuilt, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
 import { NOWHERE } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
+import { claimNearestTree, fellTree, plantTree, TREES } from './trees.ts';
 
 // What workers and builders do. Most trades are worked at the bench: the
 // worker stands in his building and the economy's clock runs while he is
 // there. Three go out to the land: the farmer breaks, sows and reaps the
 // strips behind his farm, so a farm takes up more ground as it grows; the
-// woodcutter walks into the trees and the fisher to the water's edge, and each
-// comes back with a load.
+// woodcutter walks to the nearest grown tree, fells it, plants a sapling by its
+// stump (one for every tree) and carries the wood home; the fisher walks to the
+// water's edge. Each comes back with a load.
 
 /** Job steps of the trades that walk out and back. */
 const AT_HOME = 0;
@@ -19,6 +21,8 @@ const WORKING = 2;
 const COMING_BACK = 3;
 /** The woodcutter, back with his load, splitting it at the block in his yard. */
 const SPLITTING = 4;
+/** The woodcutter setting a sapling by the stump of the tree he has just felled. */
+const PLANTING = 5;
 
 /** A point in a building's own space (door towards +Z) on the map. */
 function yardX(b: Building, lx: number, lz: number): number {
@@ -110,13 +114,30 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
       return;
     }
     p.act = 'stand';
-    // The yard is full: no point fetching more.
-    if (b.out[good] + trade.amount > PEOPLE.outputCap) return;
+    // The yard is full: no point fetching more. (A load that will not quite fit is still fetched: by the
+    // time it is felled and split the carriers have usually taken the last one away.)
+    if (b.out[good] >= PEOPLE.outputCap) return;
+    if (b.kind === 'woodcutter') {
+      // The nearest grown tree no one else is after; none left in reach, and he waits for the saplings.
+      p.strip = claimNearestTree(world.stand, b.x, b.z, FORESTRY.reachM, world.timeS);
+      if (p.strip < 0) return;
+    }
     p.phase = GOING_OUT;
     return;
   }
   if (p.phase === GOING_OUT) {
     p.act = 'walk';
+    if (b.kind === 'woodcutter' && p.strip >= 0) {
+      // To the near side of his tree.
+      const tx = TREES.x[p.strip] as number;
+      const tz = TREES.z[p.strip] as number;
+      const d = Math.max(0.01, hypot2(b.x - tx, b.z - tz));
+      if (!walkTo(world, p, tx + ((b.x - tx) / d) * 1.3, tz + ((b.z - tz) / d) * 1.3, dtSeconds)) return;
+      p.headingRad = Math.atan2(tx - p.x, tz - p.z);
+      p.timerS = trade.seconds;
+      p.phase = WORKING;
+      return;
+    }
     if (!walkTo(world, p, b.spotX, b.spotZ, dtSeconds)) return;
     p.timerS = trade.seconds;
     p.phase = WORKING;
@@ -126,6 +147,23 @@ function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: nu
     p.act = 'work';
     p.timerS -= dtSeconds * paceOf(town, b, p);
     if (p.timerS > 0) return;
+    if (b.kind === 'woodcutter' && p.strip >= 0) {
+      fellTree(world.stand, p.strip, world.timeS);
+      p.timerS = FORESTRY.plantSeconds;
+      p.phase = PLANTING;
+      return;
+    }
+    p.load = good;
+    p.phase = COMING_BACK;
+    return;
+  }
+  if (p.phase === PLANTING) {
+    // One sapling for every tree: set by the stump before the wood goes home.
+    p.act = 'work';
+    p.timerS -= dtSeconds * paceOf(town, b, p);
+    if (p.timerS > 0) return;
+    plantTree(world.stand, p.strip, world.timeS);
+    p.strip = -1;
     p.load = good;
     p.phase = COMING_BACK;
     return;

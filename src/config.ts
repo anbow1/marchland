@@ -219,8 +219,22 @@ export const WINE = {
 /** Trades whose worker goes out to the land and comes back with a load: seconds on the spot and what a trip brings. */
 export const GATHER = {
   /** The woodcutter also splits each load at the chopping block in his yard (`splitSeconds`, at `blockX/Z` in the lodge's own space, door towards +Z). */
-  woodcutter: { seconds: 8, amount: 6, reachM: 16, splitSeconds: 6, blockX: -1.0, blockZ: 1.8 },
+  woodcutter: { seconds: 8, amount: 8, reachM: 16, splitSeconds: 6, blockX: -1.0, blockZ: 1.8 },
   fisher: { seconds: 10, amount: 3, reachM: 9 },
+} as const;
+
+/**
+ * The woods: a woodcutter fells the nearest grown tree within `reachM` of his hut, and plants a sapling by
+ * its stump before carrying the wood home, one for every tree. The sapling (this share of a tree's size
+ * when set) grows into a tree that can be felled again in `growS`.
+ */
+export const FORESTRY = {
+  reachM: 48,
+  plantSeconds: 4,
+  saplingShare: 0.15,
+  growS: 600,
+  /** A woodcutter's claim on a tree lapses after this (he was called away). */
+  claimS: 120,
 } as const;
 
 export interface Recipe {

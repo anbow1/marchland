@@ -115,7 +115,7 @@ stage.scene.add(buildTerrain(surfaces, works.texture));
 addHorizon(stage.scene);
 const land = buildLand(surfaces, (AFTERNOON.skyIlluminanceLux / Math.PI) * lighting.exposure);
 for (const part of land.parts) stage.scene.add(part);
-const trees = buildForest('high', surfaces);
+const trees = buildForest('high', surfaces).meshes;
 for (const mesh of trees) stage.scene.add(mesh);
 const clearings = new Clearings();
 for (const s of land.scattered) clearings.add(s.mesh, s.reachM);

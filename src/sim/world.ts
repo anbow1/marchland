@@ -11,6 +11,7 @@ import { doorX, doorZ, KEEP, type Person, spawnPerson, stepPeople } from './peop
 import { createRegiment, type Regiment } from './regiment.ts';
 import { cmdMove, inHomeLand } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
+import { createStand, type Stand, stepStand } from './trees.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -50,6 +51,8 @@ export interface World {
   /** Men each side has brought down, for the end screen. */
   kills: [number, number];
   stepCount: number;
+  /** Which trees are felled, planted or growing back (trees.ts). */
+  stand: Stand;
 }
 
 export interface WorldOptions {
@@ -69,6 +72,7 @@ export function createWorld(options: WorldOptions): World {
     people: [],
     rolesS: 0,
     nav: createNav(),
+    stand: createStand(),
     arrows: createArrowPool(),
     events: new EventQueue(),
     winner: -1,
@@ -202,7 +206,10 @@ export function stepWorld(world: World, dtSeconds: number): void {
   stepRearming(world, dtSeconds);
   stepGarrisoning(world);
   // Once a second is enough to turn back a guard that has run too far.
-  if (world.stepCount % 60 === 0) leashHomeGuards(world);
+  if (world.stepCount % 60 === 0) {
+    leashHomeGuards(world);
+    stepStand(world.stand, world.timeS);
+  }
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);
   stepMelee(world);

@@ -9,7 +9,7 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 |---|---|---|---|---|---|---|
 | 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Lose it and the game is lost | — | 1800 |
 | 2 | **House** | 40 gold, 10 timber | any level ground | 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
-| 3 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 6 timber a trip (8 s of felling + the walk) | 1 | 250 |
+| 3 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 8 timber a trip (8 s of felling + the walk) | 1 | 250 |
 | 4 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
 | 5 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
 | 6 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
@@ -88,7 +88,7 @@ roads serve all of them.
 
 ### Building materials (Budulec)
 
-- **Woodcutter's Lodge** — 6 timber a trip (8 s of felling + the walk). *Model from Blender.*
+- **Woodcutter's Lodge** — 8 timber a trip (8 s of felling + the walk). *Model from Blender.*
 - **Quarry** — 1 stone. *Model from Blender.*
 - Sawmill — *planned (§4)*
 - Forester's Hut — *planned (§4)*
