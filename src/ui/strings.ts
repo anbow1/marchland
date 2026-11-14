@@ -35,6 +35,16 @@ interface Strings {
   difficultyLabel: string;
   /** The choice of where the keeps stand, and the names of the three places. */
   startLabel: string;
+  modeLabel: string;
+  modes: Record<'skirmish' | 'defence' | 'tutorial', string>;
+  characterLabel: string;
+  characters: Record<'balanced' | 'builder' | 'raider', string>;
+  tutorialTitle: string;
+  tutorialSteps: string[];
+  tutorialDone: string;
+  defenceLeft: string;
+  wave: string;
+  nextWave: string;
   startSites: readonly [string, string, string];
   mapLabel: string;
   layouts: Record<'field' | 'river' | 'forest', string>;
@@ -240,6 +250,24 @@ const pl: Strings = {
   qualityLow: 'Niska',
   difficultyLabel: 'Przeciwnik',
   startLabel: 'Zamek',
+  modeLabel: 'Tryb',
+  modes: { skirmish: 'Potyczka', defence: 'Obrona', tutorial: 'Samouczek' },
+  characterLabel: 'Przeciwnik gra',
+  characters: { balanced: 'z umiarem', builder: 'jak budowniczy', raider: 'jak najeźdźca' },
+  tutorialTitle: 'Samouczek',
+  tutorialSteps: [
+    'Postaw drwala przy skraju lasu: zakładka Buduj → Drwal, kliknij przy drzewach.',
+    'Postaw zagrodę (pola) i chatę (ludzie): zboże i nowi mieszkańcy.',
+    'Postaw młyn i piekarnię: zboże → mąka → chleb, którym żyje miasto.',
+    'Postaw kamieniołom przy szarej wychodni kamienia za zamkiem.',
+    'Zwerbuj milicję: zakładka Werbunek → Milicja (szkoli się przy zamku).',
+    'Zaznacz oddział lewym przyciskiem i kliknij prawym w teren, żeby go przesunąć.',
+    'Postaw koszary: tam szkolą się piechurzy, łucznicy i jazda.',
+  ],
+  tutorialDone: 'Gotowe! Teraz potyczka z komputerem albo obrona przed falami.',
+  defenceLeft: 'Obrona: do końca',
+  wave: 'fal',
+  nextWave: 'następna za',
   startSites: ['Róg', 'Zachód', 'Południe'],
   mapLabel: 'Mapa',
   layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór' },
@@ -462,6 +490,24 @@ const en: Strings = {
   qualityLow: 'Low',
   difficultyLabel: 'Opponent',
   startLabel: 'Keep',
+  modeLabel: 'Mode',
+  modes: { skirmish: 'Skirmish', defence: 'Defence', tutorial: 'Tutorial' },
+  characterLabel: 'The enemy plays',
+  characters: { balanced: 'steadily', builder: 'as a builder', raider: 'as a raider' },
+  tutorialTitle: 'Tutorial',
+  tutorialSteps: [
+    'Put a woodcutter by the edge of the forest: Build tab → Woodcutter, click by the trees.',
+    'Put down a farm (fields) and a house (people): grain and newcomers.',
+    'Put down a mill and a bakery: grain → flour → the bread the town lives on.',
+    'Put a quarry by the grey stone outcrop behind the keep.',
+    'Recruit militia: Recruit tab → Militia (it trains by the keep).',
+    'Select the regiment with the left button and right-click the ground to move it.',
+    'Put down barracks: foot, archers and horse are trained there.',
+  ],
+  tutorialDone: 'Done! Now a skirmish against the computer, or the defence against waves.',
+  defenceLeft: 'Defence: to go',
+  wave: 'waves',
+  nextWave: 'next in',
   startSites: ['Corner', 'West', 'South'],
   mapLabel: 'Map',
   layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road' },

@@ -262,6 +262,13 @@ kamera do nich), dwuklik oddziału zaznacza wszystkie tego rodzaju na ekranie, C
 zapamiętuje widok kamery, F5…F8 do niego wraca. **Kontry** w podpowiedzi przy werbunku
 („Dobrzy na: jazdę. Słabi na: łuczników…”).
 
+**Tryby** (menu „Tryb”): *Potyczka* z komputerem, który gra *z umiarem*, *jak budowniczy*
+(fale później, większe) albo *jak najeźdźca* (mniejsze fale wcześniej i co 2,5 min zagon
+szybkiego oddziału na zabudowania za miastem); *Obrona* — bez miasta wroga, fale spod jego
+zamku od 7. minuty co 4 min, większe co drugą, wygrana po 30 minutach; *Samouczek* — siedem
+kroków (drwal, zagroda i chata, młyn i piekarnia, kamieniołom, milicja, ruch oddziałem,
+koszary) z plakietką u góry, każdy zaliczany sam, gdy miasto go pokazuje.
+
 **Zapis gry** (menu pauzy) i **wczytanie** (menu startowe), **ustawienia** (głośność, krawędź
 ekranu) — zrobione.
 

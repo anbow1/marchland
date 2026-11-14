@@ -568,6 +568,31 @@ export interface AiTuning {
   waveTimeoutS: number;
 }
 
+/**
+ * The computer's character, on top of its difficulty. `waveMen` and `waveWait` scale the size of its
+ * attack waves and how long it waits for them; a raider also sends a regiment every `raidEveryS` to burn
+ * buildings out beyond the enemy's town.
+ */
+export const AI_CHARACTERS = {
+  balanced: { waveMen: 1, waveWait: 1, raidEveryS: 0 },
+  builder: { waveMen: 1.5, waveWait: 1.35, raidEveryS: 0 },
+  raider: { waveMen: 0.75, waveWait: 0.85, raidEveryS: 150 },
+} as const;
+export type AiCharacter = keyof typeof AI_CHARACTERS;
+
+/**
+ * The defence: the player's town alone, waves marching from the enemy's keep every `waveEveryS` from
+ * `firstWaveS`, each bigger than the last; standing at `lengthS` wins.
+ */
+export const DEFENCE = {
+  firstWaveS: 420,
+  waveEveryS: 240,
+  lengthS: 1800,
+  /** The regiments of each wave in turn, cycling, and how many the first wave has (one more every second wave). */
+  rota: ['pikemen', 'archers', 'swordsmen', 'lightCavalry', 'crossbowmen', 'halberdiers', 'heavyCavalry'],
+  firstWaveRegiments: 1,
+} as const;
+
 export const AI_TUNING: Record<Difficulty, AiTuning> = {
   easy: { productionFactor: 0.7, firstWaveMen: 36, waveGrowthMen: 8, waveTimeoutS: 420 },
   normal: { productionFactor: 1, firstWaveMen: 24, waveGrowthMen: 12, waveTimeoutS: 330 },

@@ -1,12 +1,12 @@
-import { AI, AI_TUNING, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
+import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, type Regiment } from './regiment.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
-import { type BuildingKind, enemyOf, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
-import { findRegiment, type World } from './world.ts';
+import { type BuildingKind, COMPUTER, enemyOf, PLAYER, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
+import { findRegiment, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
 // The computer player. It runs a town on the same economy and gives the same
@@ -18,6 +18,9 @@ type Mode = 'gather' | 'stage' | 'assault';
 
 export interface AiState {
   side: Side;
+  character: AiCharacter;
+  /** Clock to the raider's next raid. */
+  raidS: number;
   thinkS: number;
   /** Clock to the next look at the places in the middle. */
   pointsS: number;
@@ -35,8 +38,8 @@ export interface AiState {
   sinceRecruitS: number;
 }
 
-export function createAiState(side: Side): AiState {
-  return { side, thinkS: 0, pointsS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0 };
+export function createAiState(side: Side, character: AiCharacter = 'balanced'): AiState {
+  return { side, character, raidS: AI_CHARACTERS[character].raidEveryS, thinkS: 0, pointsS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0 };
 }
 
 /**
@@ -276,6 +279,37 @@ function seizePoints(world: World, ai: AiState, home: readonly Regiment[]): void
   }
 }
 
+/**
+ * The raider's habit: now and then one regiment (the fastest at home) rides out to burn a building of the
+ * enemy's that stands out beyond its town, a farm or a woodcutter's hut, and comes back with the next wave.
+ */
+function raid(world: World, ai: AiState, home: readonly Regiment[]): void {
+  const every = AI_CHARACTERS[ai.character].raidEveryS;
+  if (every <= 0) return;
+  ai.raidS -= AI.thinkIntervalS;
+  if (ai.raidS > 0) return;
+  ai.raidS = every;
+  const free = home.filter((r) => !r.def.defenceOnly && !r.def.engine && r.garrisonPlot < 0 && r.order !== 'attackBuilding');
+  if (free.length < 2) return;
+  const raider = free.reduce((a, b) => (b.def.runSpeedMs > a.def.runSpeedMs ? b : a));
+  const foe = enemyOf(ai.side);
+  const town = world.towns[foe];
+  let target = -1;
+  let best = Number.POSITIVE_INFINITY;
+  town.plots.forEach((b, plot) => {
+    if (!b) return;
+    const fromKeep = hypot2(b.x - townX(foe), b.z - townZ(foe));
+    // Out beyond the town, where help is slow to come.
+    if (fromKeep < 60) return;
+    const d = hypot2(b.x - raider.centreX, b.z - raider.centreZ);
+    if (d < best) {
+      best = d;
+      target = plot;
+    }
+  });
+  if (target >= 0) cmdAttackBuilding(world, raider.id, foe, target);
+}
+
 /** Archers or crossbowmen at home man the side's watchtowers with free places, one regiment a think. */
 function manTowers(world: World, ai: AiState, home: readonly Regiment[]): void {
   const town = world.towns[ai.side];
@@ -323,13 +357,15 @@ function command(world: World, ai: AiState): void {
     rearmGuards(world, ai, home);
     manTowers(world, ai, home);
     seizePoints(world, ai, home);
+    raid(world, ai, home);
   }
 
   if (ai.mode === 'gather') {
-    const needMen = Math.min(tuning.firstWaveMen + ai.wave * tuning.waveGrowthMen, 96);
+    const character = AI_CHARACTERS[ai.character];
+    const needMen = Math.min(Math.round((tuning.firstWaveMen + ai.wave * tuning.waveGrowthMen) * character.waveMen), 96);
     // Home guards stay behind, so only regiments that may march count towards a wave.
     const marching = home.filter((r) => !r.def.defenceOnly).length;
-    if (threatened || marching === 0 || (homeMen < needMen && !(ai.sinceWaveS >= tuning.waveTimeoutS && marching >= 2))) return;
+    if (threatened || marching === 0 || (homeMen < needMen && !(ai.sinceWaveS >= tuning.waveTimeoutS * character.waveWait && marching >= 2))) return;
     ai.mode = 'stage';
     ai.stageS = 0;
     ai.waveIds = home.filter((r) => !r.def.defenceOnly).map((r) => r.id);
@@ -363,6 +399,56 @@ function command(world: World, ai: AiState): void {
     return;
   }
   fight(world, wave, 110, true);
+}
+
+/** The defence's clock: when the next wave sets out, how many have, and the regiments now marching. */
+export interface DefenceState {
+  nextS: number;
+  wave: number;
+  ids: number[];
+  thinkS: number;
+}
+
+export function createDefence(): DefenceState {
+  return { nextS: DEFENCE.firstWaveS, wave: 0, ids: [], thinkS: 0 };
+}
+
+/**
+ * The defence: no town builds on the enemy's side; waves form by its keep, each a regiment more every
+ * second wave, and march on the player's keep, fighting whatever stands in the way. The player wins by
+ * standing until DEFENCE.lengthS.
+ */
+export function stepDefence(world: World, d: DefenceState, dtSeconds: number): void {
+  if (world.winner !== -1) return;
+  if (world.timeS >= DEFENCE.lengthS) {
+    world.winner = PLAYER;
+    world.events.push('gameOver', 0, 0, PLAYER);
+    return;
+  }
+  if (world.timeS >= d.nextS) {
+    d.nextS += DEFENCE.waveEveryS;
+    const count = DEFENCE.firstWaveRegiments + Math.floor(d.wave / 2);
+    for (let i = 0; i < count; i++) {
+      const kind = DEFENCE.rota[(d.wave + i) % DEFENCE.rota.length] as UnitKind;
+      const across = (i - (count - 1) / 2) * 18;
+      const facing = facingToEnemy(COMPUTER);
+      const x = rallyX(COMPUTER) + Math.cos(facing) * across;
+      const z = rallyZ(COMPUTER) - Math.sin(facing) * across;
+      d.ids.push(spawnRegiment(world, COMPUTER, kind, x, z, facing).id);
+    }
+    d.wave += 1;
+    world.events.push('recruited', rallyX(COMPUTER), rallyZ(COMPUTER), COMPUTER);
+  }
+  d.thinkS -= dtSeconds;
+  if (d.thinkS > 0) return;
+  d.thinkS = AI.thinkIntervalS;
+  const army: Regiment[] = [];
+  for (const id of d.ids) {
+    const r = findRegiment(world, id);
+    if (r && r.aliveMen > 0 && r.state === 'formed') army.push(r);
+  }
+  d.ids = d.ids.filter((id) => (findRegiment(world, id)?.aliveMen ?? 0) > 0);
+  if (army.length > 0) fight(world, army, 110, true);
 }
 
 export function stepAi(world: World, ai: AiState, dtSeconds: number): void {

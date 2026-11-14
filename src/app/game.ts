@@ -1,4 +1,4 @@
-import { AI, CAMERA, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
+import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
@@ -7,7 +7,7 @@ import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, type Side } from '../sim/types.ts';
-import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
+import { createWorld, findRegiment, type GameMode, stepWorld, type World } from '../sim/world.ts';
 import { workState } from '../sim/economy.ts';
 import { CpuTimer } from '../render/perf.ts';
 import { Hud } from '../ui/hud.ts';
@@ -27,6 +27,9 @@ import type { Ghost, WorldView } from './worldView.ts';
 export interface GameOptions {
   seed: number;
   difficulty: Difficulty;
+  /** The kind of game and (skirmish) the computer's character. */
+  mode?: GameMode;
+  character?: AiCharacter;
   /** Lets the frame governor trade resolution for frame rate. Off for measurements. */
   governor: boolean;
   edgeScroll: boolean;
@@ -79,7 +82,15 @@ export class Game implements ControlTarget {
     private readonly sound: Sound,
     options: GameOptions,
   ) {
-    this.world = createWorld({ seed: options.seed, difficulty: options.difficulty, computerPlays: true });
+    this.world = createWorld({ seed: options.seed, difficulty: options.difficulty, computerPlays: true, mode: options.mode ?? 'skirmish', character: options.character ?? 'balanced' });
+    if (this.world.mode === 'tutorial') {
+      // Enough in the keep to follow every step without waiting on the economy.
+      const stock = this.world.towns[PLAYER].stock;
+      stock.gold += 800;
+      stock.wood += 250;
+      stock.stone += 150;
+      stock.bread += 100;
+    }
     // Start over the player's town, looking towards the enemy (north-east).
     this.camera = new RtsCamera(townX(PLAYER) + 18, townZ(PLAYER) - 18, Math.PI / 4);
     this.hud = new Hud(hudRoot, {
@@ -140,6 +151,44 @@ export class Game implements ControlTarget {
     }
     this.warnOfAttack();
     this.watchTown();
+    this.watchMode();
+  }
+
+  private tutorialStep = 0;
+
+  /** The tutorial's steps, each done when the town shows it; the defence's clock. Once a second. */
+  private watchMode(): void {
+    if (this.world.stepCount % 60 !== 0) return;
+    const world = this.world;
+    if (world.mode === 'defence' && world.defence) {
+      const left = Math.max(0, DEFENCE.lengthS - world.timeS);
+      const next = Math.max(0, world.defence.nextS - world.timeS);
+      this.hud.setBanner(`<b>${T.defenceLeft} ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}</b> · ${T.wave} ${world.defence.wave} · ${T.nextWave} ${Math.ceil(next)} s`);
+      return;
+    }
+    if (world.mode !== 'tutorial') return;
+    const town = world.towns[PLAYER];
+    const has = (kind: BuildingKind): boolean => town.plots.some((b) => b !== null && b.kind === kind);
+    const mine = world.regiments.filter((r) => r.side === PLAYER && r.aliveMen > 0);
+    const done = [
+      () => has('woodcutter'),
+      () => has('farm') && has('house'),
+      () => has('windmill') && has('bakery'),
+      () => has('quarry'),
+      () => mine.length > 0 || town.recruitQueue.length > 0,
+      () => mine.some((r) => r.order === 'move' || Math.hypot(r.centreX - rallyX(PLAYER), r.centreZ - rallyZ(PLAYER)) > 25),
+      () => has('barracks'),
+    ];
+    while (this.tutorialStep < done.length && (done[this.tutorialStep] as () => boolean)()) {
+      this.tutorialStep++;
+      this.sound.play('build');
+    }
+    const steps = T.tutorialSteps;
+    this.hud.setBanner(
+      this.tutorialStep >= steps.length
+        ? `<b>${T.tutorialTitle}</b> · ${T.tutorialDone}`
+        : `<b>${T.tutorialTitle} ${this.tutorialStep + 1}/${steps.length}</b> · ${steps[this.tutorialStep]}`,
+    );
   }
 
   private distanceFromCamera(x: number, z: number): number {

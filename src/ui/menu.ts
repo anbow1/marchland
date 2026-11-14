@@ -8,6 +8,8 @@ import { MAP } from '../config.ts';
 import { HEAPS } from '../sim/terrain.ts';
 import { type Layout, LAYOUTS } from '../sim/layout.ts';
 import type { SaveHeader } from '../sim/save.ts';
+import type { GameMode } from '../sim/world.ts';
+import type { AiCharacter } from '../config.ts';
 import type { Settings } from './settings.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 
@@ -19,6 +21,8 @@ export interface StartChoice {
   /** Which of MAP.startSites the keeps stand on, and the lie of the land between them. */
   start: number;
   map: Layout;
+  mode: GameMode;
+  character: AiCharacter;
   /** True when the player chose to load the saved game instead. */
   load?: boolean;
 }
@@ -103,6 +107,8 @@ export class Menu {
       `<h1>${T.title}</h1><p class="sub">${T.subtitle}</p>` +
         choiceRow(T.difficultyLabel, 'difficulty', [['easy', T.difficulty.easy], ['normal', T.difficulty.normal], ['hard', T.difficulty.hard]], choice.difficulty) +
         choiceRow(T.quality, 'quality', [['high', T.qualityHigh], ['low', T.qualityLow]], choice.quality) +
+        choiceRow(T.modeLabel, 'mode', (['skirmish', 'defence', 'tutorial'] as const).map((m) => [m, T.modes[m]] as const), choice.mode) +
+        choiceRow(T.characterLabel, 'character', (['balanced', 'builder', 'raider'] as const).map((c) => [c, T.characters[c]] as const), choice.character) +
         choiceRow(T.mapLabel, 'map', LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
         choiceRow(T.startLabel, 'start', T.startSites.map((name, i) => [String(i), `${i + 1}. ${name}`] as const), String(choice.start)) +
         `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div>` +
@@ -118,6 +124,8 @@ export class Menu {
         if (name === 'quality') choice.quality = target.dataset['value'] as Quality;
         if (name === 'start') choice.start = Number(target.dataset['value']);
         if (name === 'map') choice.map = target.dataset['value'] as Layout;
+        if (name === 'mode') choice.mode = target.dataset['value'] as GameMode;
+        if (name === 'character') choice.character = target.dataset['value'] as AiCharacter;
         if (name === 'start' || name === 'map') (sheet.querySelector('.siteMapBox') as HTMLElement).innerHTML = siteMap(choice.start, choice.map);
         if (name) for (const other of sheet.querySelectorAll(`[data-name="${name}"]`)) other.classList.toggle('on', other === target);
         if (target.dataset['go']) resolve(choice);

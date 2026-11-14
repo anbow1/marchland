@@ -1,5 +1,7 @@
 import { townX, townZ } from './sim/terrain.ts';
 import { LAYOUT, START } from './sim/layout.ts';
+import type { GameMode } from './sim/world.ts';
+import type { AiCharacter } from './config.ts';
 import { loadWorld, saveHeader, saveWorld } from './sim/save.ts';
 import { loadSettings, readSave, storeSettings, writeSave } from './ui/settings.ts';
 import { T } from './ui/strings.ts';
@@ -129,14 +131,21 @@ async function run(): Promise<void> {
     params.delete('load');
     history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
   }
+  // The kind of game and the computer's character: from the menu, or kept in the address across a reload.
+  const askedMode = params.get('mode');
+  let mode: GameMode = askedMode === 'defence' || askedMode === 'tutorial' ? askedMode : 'skirmish';
+  const askedCharacter = params.get('ai');
+  let character: AiCharacter = askedCharacter === 'builder' || askedCharacter === 'raider' ? askedCharacter : 'balanced';
   const settings = loadSettings();
   sound.setVolume(settings.volume);
   const savedText = readSave();
   const saved = savedText ? saveHeader(savedText) : null;
   if (!autostart && !chosenAlready && !loadSave) {
-    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT }, saved);
+    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT, mode, character }, saved);
     difficulty = choice.difficulty;
     quality = askedQuality() ?? choice.quality;
+    mode = choice.mode;
+    character = choice.character;
     sound.unlock();
     if (choice.load && saved) {
       loadSave = true;
@@ -153,6 +162,8 @@ async function run(): Promise<void> {
       // The map is laid out from the keeps and the layout when the game loads: load it again with the new choice.
       params.set('start', String(choice.start));
       params.set('map', choice.map);
+      params.set('mode', mode);
+      params.set('ai', character);
       params.set('d', difficulty);
       params.set('q', quality);
       params.set('go', '1');
@@ -169,6 +180,8 @@ async function run(): Promise<void> {
   const game = new Game(view, hudRoot, sound, {
     seed: params.has('seed') && Number.isFinite(seedParam) ? seedParam : Math.floor(performance.now() * 1000) % 2147483647,
     difficulty,
+    mode,
+    character,
     // Measurements want the full picture at a fixed scale, and no map sliding under a parked cursor.
     governor: !autostart,
     edgeScroll: !autostart,

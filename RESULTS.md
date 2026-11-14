@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Charaktery komputera, tryb Obrona, samouczek (M5 bez taktyki oddziałów)
+
+- **Charaktery**: z umiarem (dotychczasowy), budowniczy (fale ×1,5 ludzi, czeka ×1,35),
+  najeźdźca (fale ×0,75, czeka ×0,85, co 150 s wysyła najszybszy wolny oddział na budynek
+  gracza dalej niż 60 m od zamku). Wybór w menu.
+- **Obrona**: komputer bez miasta; od 7. minuty co 4 min fala spod jego zamku (1 oddział, +1
+  co drugą falę, rodzaje kolejno od pikinierów po ciężką jazdę), maszeruje na zamek gracza i bije
+  wszystko po drodze; plakietka z czasem do końca i następną falą; 30 min = wygrana.
+- **Samouczek**: 7 kroków z plakietką, zaliczane samoczynnie; zapas w zamku na start.
+- Testy: 69 / 69 (nowe: fale Obrony rosną i idą na zamek, wygrana po czasie; najeźdźca wysyła
+  zagon). Sprawdzone w przeglądarce: plakietka Obrony.
+- Taktyka linii i flanki komputera — razem z mechaniką oddziałów (M2), na koniec.
+
 ## 2026-11-14 · Zapis gry i ustawienia (M6)
 
 - **Zapis**: cały świat jako tekst (`src/sim/save.ts`): graf obiektów z numerami (żołnierz →

@@ -113,6 +113,9 @@ export class Hud {
   private readonly panel: HTMLElement;
   private readonly tip: HTMLElement;
   private readonly toasts: HTMLElement;
+  /** A standing line at the top: the tutorial's step, or the defence's clock. */
+  private readonly banner: HTMLElement;
+  private bannerHtml = '';
   private readonly cards: HTMLElement[] = [];
   private readonly cardKeys: string[] = [];
   private readonly debug: HTMLElement;
@@ -168,6 +171,8 @@ export class Hud {
     menu.addEventListener('click', () => actions.openMenu());
 
     this.toasts = el('div', 'toasts', root);
+    this.banner = el('div', 'banner', root);
+    this.banner.style.display = 'none';
     const cardLayer = el('div', 'cards', root);
     for (let i = 0; i < MAX_CARDS; i++) {
       const card = el('div', 'card', cardLayer);
@@ -274,6 +279,14 @@ export class Hud {
     }
     // Show the result at once rather than at the next refresh.
     this.panelAge = PANEL_REFRESH_S;
+  }
+
+  /** Shows a standing line at the top (null hides it). */
+  setBanner(html: string | null): void {
+    if ((html ?? '') === this.bannerHtml) return;
+    this.bannerHtml = html ?? '';
+    this.banner.style.display = html ? 'block' : 'none';
+    this.banner.innerHTML = html ?? '';
   }
 
   /** A message for a few seconds; with a place, a "show" link that turns the camera there. */

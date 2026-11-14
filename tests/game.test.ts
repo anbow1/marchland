@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, SIM, UNITS } from '../src/config.ts';
+import { AI_CHARACTERS, ARMY, DEFENCE, SIM, UNITS } from '../src/config.ts';
 import { createAiState, stepAi } from '../src/sim/ai.ts';
-import { cmdAttackBuilding, cmdAttackRegiment } from '../src/sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild } from '../src/sim/commands.ts';
+import { townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, UNIT_KINDS } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, stepWorld, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
@@ -107,4 +108,41 @@ describe('budget', () => {
     // The budget is 2 ms on the target machine; a shared CI runner gets a wide margin.
     expect(msPerStep).toBeLessThan(2 * 2.5);
   });
+});
+
+describe('characters and modes', () => {
+  it('the defence sends bigger waves from the enemy keep, and standing to the end wins', () => {
+    const world = createWorld({ seed: 4, difficulty: 'normal', computerPlays: true, mode: 'defence' });
+    expect(world.ai).toBeNull();
+    // No defenders here: the keep is made to hold, so the waves can be counted.
+    world.towns[PLAYER].keepHp = 1e6;
+    run(world, DEFENCE.firstWaveS + 2);
+    const first = world.regiments.filter((r) => r.side === COMPUTER).length;
+    expect(first).toBe(DEFENCE.firstWaveRegiments);
+    run(world, DEFENCE.waveEveryS * 2);
+    // Three waves out, the third a regiment bigger (the keep's archers may have thinned the first ones).
+    expect(world.defence?.wave).toBe(3);
+    expect(world.defence?.ids.length).toBeGreaterThanOrEqual(DEFENCE.firstWaveRegiments + 1);
+    // Marching on the player's keep.
+    expect(world.regiments.some((r) => r.side === COMPUTER && r.order === 'attackBuilding')).toBe(true);
+    world.timeS = DEFENCE.lengthS - 0.5;
+    run(world, 1);
+    expect(world.winner).toBe(PLAYER);
+  }, 60_000);
+
+  it('a raider sends its fastest regiment to burn a building beyond the enemy town', () => {
+    const world = createWorld({ seed: 4, difficulty: 'normal', computerPlays: true, character: 'raider' });
+    // Two light horse at home: too few for a wave, enough to spare one for a raid.
+    const rider = spawnRegiment(world, COMPUTER, 'lightCavalry', 150, -150, 0);
+    spawnRegiment(world, COMPUTER, 'lightCavalry', 160, -160, 0);
+    const town = world.towns[PLAYER];
+    town.stock.gold = 500;
+    town.stock.wood = 200;
+    const x = townX(PLAYER) + 80;
+    const z = townZ(PLAYER) - 40;
+    expect(cmdBuild(world, PLAYER, 'house', x, z, 0)).toBe('ok');
+    run(world, AI_CHARACTERS.raider.raidEveryS + 5);
+    expect(world.regiments.some((r) => r.side === COMPUTER && r.order === 'attackBuilding')).toBe(true);
+    void rider;
+  }, 60_000);
 });

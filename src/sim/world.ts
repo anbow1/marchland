@@ -1,7 +1,7 @@
 import { doorOfX, doorOfZ } from './placement.ts';
-import { AI_TUNING, ARMY, MAP, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
+import { type AiCharacter, AI_TUNING, ARMY, MAP, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
-import { type AiState, createAiState, stepAi } from './ai.ts';
+import { type AiState, createAiState, createDefence, type DefenceState, stepAi, stepDefence } from './ai.ts';
 import { stepMelee, stepMorale } from './combat.ts';
 import { createTown, stepEconomy, type Town } from './economy.ts';
 import { EventQueue } from './events.ts';
@@ -58,6 +58,9 @@ export interface World {
   gates: Gate[];
   /** The places in the middle worth holding (points.ts). */
   points: Point[];
+  mode: GameMode;
+  /** The defence's waves; null in other games. */
+  defence: DefenceState | null;
 }
 
 /** A gate: its side, its wall cells, where its middle is and its line (as nav.wallDir). */
@@ -74,7 +77,12 @@ export interface WorldOptions {
   difficulty: Difficulty;
   /** False leaves the computer's town idle. */
   computerPlays: boolean;
+  /** The computer's character (skirmish), and the kind of game: a skirmish, the defence (waves), or the tutorial (alone). */
+  character?: AiCharacter;
+  mode?: GameMode;
 }
+
+export type GameMode = 'skirmish' | 'defence' | 'tutorial';
 
 export function createWorld(options: WorldOptions): World {
   const tuning = AI_TUNING[options.difficulty];
@@ -93,7 +101,9 @@ export function createWorld(options: WorldOptions): World {
     events: new EventQueue(),
     winner: -1,
     nextRegimentId: 1,
-    ai: options.computerPlays ? createAiState(COMPUTER) : null,
+    mode: options.mode ?? 'skirmish',
+    ai: options.computerPlays && (options.mode ?? 'skirmish') === 'skirmish' ? createAiState(COMPUTER, options.character ?? 'balanced') : null,
+    defence: options.mode === 'defence' ? createDefence() : null,
     grid: new SpatialGrid(MAP.halfM + 40, 2, 2 * ARMY.maxSoldiersPerSide + 64),
     keepShotCooldownS: [0, 0],
     difficulty: options.difficulty,
@@ -207,6 +217,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
   if (world.winner !== -1) return;
   world.timeS += dtSeconds;
   if (world.ai) stepAi(world, world.ai, dtSeconds);
+  if (world.defence) stepDefence(world, world.defence, dtSeconds);
   stepPeople(world, dtSeconds);
   for (const town of world.towns) {
     const wasStarving = town.starving;
