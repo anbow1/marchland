@@ -1,4 +1,5 @@
 import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt, wallStops } from './nav.ts';
+import { reachM } from './missiles.ts';
 import { woodStands } from './trees.ts';
 import { ARMY, COMBAT, FATIGUE, FORMATION, MAP, TOWN } from '../config.ts';
 import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
@@ -156,7 +157,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       const distanceM = hypot2(goalX - r.anchorX, goalZ - r.anchorZ);
       // Archers stop inside range and shoot; everyone else presses into the enemy's ranks.
       // Shooters stop inside their range and shoot: they never close to fight hand to hand (they defend themselves when caught).
-      stopDistanceM = isArcher(r) ? r.def.missileRangeM * 0.85 : target.radiusM * 0.4 + 1;
+      stopDistanceM = isArcher(r) ? reachM(r, target.centreX, target.centreZ) * 0.85 : target.radiusM * 0.4 + 1;
       // Sent to attack, they go at the run (engines cannot); shooters run only to their range.
       run = !r.def.engine;
       void distanceM;
@@ -171,7 +172,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       goalX = buildingX(world, r.targetSide, r.targetPlot);
       goalZ = buildingZ(world, r.targetSide, r.targetPlot);
       faceGoal = true;
-      stopDistanceM = isArcher(r) ? r.def.missileRangeM * 0.8 : buildingRadiusM(r.targetPlot) + 1.5;
+      stopDistanceM = isArcher(r) ? reachM(r, goalX, goalZ) * 0.8 : buildingRadiusM(r.targetPlot) + 1.5;
     }
   } else if (r.order === 'hold' && isEngaged(r)) {
     // Fighting without orders: turn to face whoever attacked first.
@@ -217,6 +218,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
 
 export function stepAnchors(world: World, dtSeconds: number): void {
   for (const r of world.regiments) {
+    r.sinceShotS += dtSeconds;
     if (r.aliveMen === 0 || r.state !== 'formed') continue;
     stepAnchor(world, r, dtSeconds);
   }

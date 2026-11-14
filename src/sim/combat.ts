@@ -1,9 +1,9 @@
-import { ARMY, COMBAT, FATIGUE, FOOD, FORMATION, MORALE, TOWN, WALLS } from '../config.ts';
+import { ARMY, COMBAT, ELEVATION, FATIGUE, FOOD, FORMATION, MORALE, TOWN, WALLS } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
 import { assignSlots, facingToward, forwardX, forwardZ, isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
 import { damageWall, stampBuilding } from './nav.ts';
 import { returnHome } from './people.ts';
-import { townX, townZ } from './terrain.ts';
+import { heightAtM, townX, townZ } from './terrain.ts';
 import { enemyOf, type Side } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -112,6 +112,10 @@ function strike(world: World, s: Soldier, t: Soldier): void {
     attack += a.def.chargeBonus * share;
     damageFactor += (COMBAT.chargeDamageFactor - 1) * share;
   }
+  // High ground: a charge down a slope strikes harder, a blow up it is weaker.
+  const slope = heightAtM(s.x, s.z) - heightAtM(t.x, t.z);
+  if (a.chargeLeftS > 0 && slope > ELEVATION.slopeM) attack += a.def.chargeBonus * chargeShare(b, frontal) * (ELEVATION.downhillCharge - 1);
+  if (slope < -ELEVATION.slopeM) attack -= ELEVATION.uphillAttack;
   let shape = 0;
   if (b.formation === 'loose') shape -= FORMATION.looseDefence;
   if (b.formation === 'wedge') shape -= FORMATION.wedgeDefence;

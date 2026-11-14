@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { MISSILE, POINTS, UNITS } from '../src/config.ts';
+import { ELEVATION, MAP, MISSILE, POINTS, UNITS } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdMove, cmdMoveGroup, cmdRanks, cmdStance } from '../src/sim/commands.ts';
-import { launchElevationRad } from '../src/sim/missiles.ts';
+import { launchElevationRad, reachM } from '../src/sim/missiles.ts';
 import { frontageM, type Regiment, slotX, slotZ } from '../src/sim/regiment.ts';
-import { townX, townZ } from '../src/sim/terrain.ts';
+import { heightAtM, SIDE_X, SIDE_Z, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
@@ -400,5 +400,34 @@ describe('formations and stances', () => {
     expect(Math.hypot(shooters.anchorX - wall.centreX, shooters.anchorZ - wall.centreZ)).toBeGreaterThan(UNITS.archers.missileRangeM * 0.7);
     // Hit: a pikeman in leather takes several arrows to fall, so the wounds tell, not the dead.
     expect(wall.soldiers.reduce((sum, man) => sum + man.hp, 0)).toBeLessThan(UNITS.pikemen.hp * wall.initialMen);
+  });
+});
+
+describe('high ground and the computer\'s formations', () => {
+  it('shooters on a knoll reach further down onto the field', () => {
+    const world = emptyWorld();
+    const kx = SIDE_X * MAP.knollOffsetM;
+    const kz = SIDE_Z * MAP.knollOffsetM;
+    const up = spawnRegiment(world, PLAYER, 'archers', kx, kz, 0);
+    const down = spawnRegiment(world, PLAYER, 'archers', 0, 0, 0);
+    expect(heightAtM(kx, kz) - heightAtM(0, 0)).toBeGreaterThan(ELEVATION.fullRiseM);
+    expect(reachM(up, 0, 0)).toBeCloseTo(UNITS.archers.missileRangeM * (1 + ELEVATION.rangeBonus), 5);
+    expect(reachM(down, kx, kz)).toBe(UNITS.archers.missileRangeM);
+  });
+
+  it('the computer\'s pikes form a wall when horse come near, and its horse charge in a wedge', () => {
+    const world = createWorld({ seed: 3, difficulty: 'normal', computerPlays: true });
+    // Its own errands (the village in the middle) aside for this test.
+    if (world.ai) world.ai.pointsS = 1e9;
+    const pikes = spawnRegiment(world, COMPUTER, 'pikemen', 0, -20, 0);
+    const horse = spawnRegiment(world, PLAYER, 'lightCavalry', 0, 60, Math.PI);
+    const theirHorse = spawnRegiment(world, COMPUTER, 'heavyCavalry', 40, -20, 0);
+    cmdAttackRegiment(world, theirHorse.id, horse.id);
+    run(world, 2);
+    expect(theirHorse.formation).toBe('wedge');
+    expect(pikes.stance).toBe('normal');
+    cmdMove(world, horse.id, 0, 20, null, false);
+    run(world, 12);
+    expect(pikes.stance).toBe('pikeWall');
   });
 });

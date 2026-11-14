@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · M2, etap 2: wzniesienia i szyki komputera
+
+- **Wzniesienia**: strzelcy sięgają do 15 % dalej na niższy teren (w pełni przy 8 m różnicy;
+  dotyczy wyboru celu, strzału i miejsca, gdzie stają); szarża w dół zbocza (> 1,5 m) uderza
+  ×1,25 mocniej; cios pod górę −1 do ataku.
+- **Komputer używa szyków**: jazda w ataku klinem, poza nim prostokątem; pikinierzy i
+  halabardnicy stawiają ścianę pik, gdy jazda wroga jest bliżej niż 55 m (zwijają za 88 m);
+  oddziały z tarczami podnoszą je przez 4 s po trafieniu strzałą, jeśli nie walczą wręcz.
+  Także fale trybu Obrona.
+- Testy: 76 / 76. Tempo komputera bez zmian (35,4 / 35,9 min).
+
 ## 2026-11-14 · M2, etap 1: szeregi, klin, szyk luźny, tarcze, ściana pik, strzelanie dowolne
 
 - **Szeregi**: piechota w prostokąt o 2 / 3 / 4 / 6 szeregach (front wynika z liczby ludzi).

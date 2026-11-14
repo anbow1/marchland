@@ -1,9 +1,9 @@
 import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost } from './commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdStance, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
-import { isArcher, type Regiment } from './regiment.ts';
+import { isArcher, isEngaged, type Regiment } from './regiment.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { type BuildingKind, COMPUTER, enemyOf, PLAYER, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, spawnRegiment, type World } from './world.ts';
@@ -324,7 +324,42 @@ function manTowers(world: World, ai: AiState, home: readonly Regiment[]): void {
   }
 }
 
+/** True when an enemy regiment of horse is within `radiusM` of a point. */
+function horseWithin(world: World, side: Side, x: number, z: number, radiusM: number): boolean {
+  for (const r of world.regiments) {
+    if (r.side === side || r.aliveMen === 0 || !r.def.cavalry) continue;
+    if (hypot2(r.centreX - x, r.centreZ - z) < radiusM) return true;
+  }
+  return false;
+}
+
+/**
+ * The computer's use of formations, every think: horse charge in a wedge and stand in a block; pikes form
+ * a wall when enemy horse come near, and break it when they are gone; men with shields raise them while
+ * arrows fall on them and nobody is at them hand to hand.
+ */
+function adjustStances(world: World, side: Side): void {
+  for (const r of world.regiments) {
+    if (r.side !== side || r.aliveMen === 0 || r.state !== 'formed' || r.def.engine || r.rearmTo !== null) continue;
+    if (r.def.cavalry) {
+      r.formation = r.order === 'attackRegiment' ? 'wedge' : 'line';
+      continue;
+    }
+    if (r.def.bonusVsCavalry > 0) {
+      if (r.stance !== 'pikeWall' && r.order !== 'move' && horseWithin(world, side, r.centreX, r.centreZ, AI.pikeWallAtM)) cmdStance(world, r.id, 'pikeWall');
+      else if (r.stance === 'pikeWall' && !horseWithin(world, side, r.centreX, r.centreZ, AI.pikeWallAtM * 1.6)) r.stance = 'normal';
+      continue;
+    }
+    if (r.def.missileBlock > 0) {
+      const underFire = r.sinceShotS < AI.shieldsUnderFireS && !isEngaged(r);
+      if (underFire && r.stance !== 'shields') cmdStance(world, r.id, 'shields');
+      else if (!underFire && r.stance === 'shields') r.stance = 'normal';
+    }
+  }
+}
+
 function command(world: World, ai: AiState): void {
+  adjustStances(world, ai.side);
   const side = ai.side;
   const foe = enemyOf(side);
   const tuning = AI_TUNING[world.difficulty];
@@ -448,6 +483,7 @@ export function stepDefence(world: World, d: DefenceState, dtSeconds: number): v
     if (r && r.aliveMen > 0 && r.state === 'formed') army.push(r);
   }
   d.ids = d.ids.filter((id) => (findRegiment(world, id)?.aliveMen ?? 0) > 0);
+  adjustStances(world, COMPUTER);
   if (army.length > 0) fight(world, army, 110, true);
 }
 

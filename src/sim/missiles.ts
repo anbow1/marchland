@@ -1,7 +1,7 @@
 import { damageWall, wallCellAt } from './nav.ts';
 import { keepRules } from './economy.ts';
 import { woodStands } from './trees.ts';
-import { FORMATION, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
+import { ELEVATION, FORMATION, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
 import { isArcher, isEngaged, type Regiment, type Soldier } from './regiment.ts';
@@ -192,19 +192,27 @@ function land(world: World, a: Arrow): void {
   const loose = r.formation === 'loose' ? FORMATION.looseHitFactor : 1;
   const chance = MISSILE.hitChance * loose * (isForest(x, z) && woodStands(world.stand, x, z) ? MISSILE.forestHitFactor : 1) * (1 - block);
   if (world.rng.next() >= chance) return;
+  r.sinceShotS = 0;
   r.morale -= MORALE.arrowHitShock;
   world.events.push('arrowHit', x, z, a.side);
   wound(world, victim, a.damage * (1 - r.def.armour * (1 - a.pierce)), a.side, null);
 }
 
+/** How far a regiment's shooters reach at a point: further down onto lower ground (ELEVATION). */
+export function reachM(r: Regiment, x: number, z: number): number {
+  const rise = heightAtM(r.centreX, r.centreZ) - heightAtM(x, z);
+  return r.def.missileRangeM * (1 + ELEVATION.rangeBonus * Math.min(1, Math.max(0, rise / ELEVATION.fullRiseM)));
+}
+
 /** Nearest enemy regiment whose centre is within range of this one; -1 if none. */
 function nearestInRange(world: World, r: Regiment): number {
   let best = -1;
-  let bestD2 = r.def.missileRangeM * r.def.missileRangeM;
+  let bestD2 = Number.POSITIVE_INFINITY;
   for (const other of world.regiments) {
     if (other.side === r.side || other.aliveMen === 0) continue;
     const d2 = (other.centreX - r.centreX) ** 2 + (other.centreZ - r.centreZ) ** 2;
-    if (d2 < bestD2 && d2 >= r.def.missileMinRangeM ** 2) {
+    const reach = reachM(r, other.centreX, other.centreZ);
+    if (d2 < bestD2 && d2 < reach * reach && d2 >= r.def.missileMinRangeM ** 2) {
       best = other.id;
       bestD2 = d2;
     }
@@ -224,7 +232,7 @@ function shootAtRegiment(world: World, r: Regiment, target: Regiment): void {
     }
     if (!victim) continue;
     const distanceM = hypot2(victim.x - s.x, victim.z - s.z);
-    if (distanceM > r.def.missileRangeM * 1.05 || distanceM < r.def.missileMinRangeM) {
+    if (distanceM > reachM(r, target.centreX, target.centreZ) * 1.05 || distanceM < r.def.missileMinRangeM) {
       s.attackCooldownS = 0.3;
       continue;
     }
@@ -252,7 +260,7 @@ function shootAtBuilding(world: World, r: Regiment): void {
   for (const s of r.soldiers) {
     if (!s.alive || s.target || s.attackCooldownS > 0) continue;
     const distanceM = hypot2(bx - s.x, bz - s.z);
-    if (distanceM > r.def.missileRangeM || distanceM < r.def.missileMinRangeM) continue;
+    if (distanceM > reachM(r, bx, bz) || distanceM < r.def.missileMinRangeM) continue;
     const y0 = heightAtM(s.x, s.z) + MISSILE.chestHeightM;
     if (launch(world, r.side, shot, s.x, y0, s.z, bx + world.rng.gauss(), heightAtM(bx, bz) + 3, bz + world.rng.gauss(), r.targetSide, r.targetPlot)) {
       s.sinceAttackS = 0;

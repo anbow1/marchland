@@ -104,6 +104,8 @@ export interface Regiment {
   stance: Stance;
   /** Shooters pick their own targets (true) or shoot only at what they are ordered to. */
   fireAtWill: boolean;
+  /** Seconds since an arrow or bolt last struck one of its men. */
+  sinceShotS: number;
 }
 
 export function forwardX(facingRad: number): number {
@@ -235,6 +237,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     formation: 'line',
     stance: 'normal',
     fireAtWill: true,
+    sinceShotS: 999,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({

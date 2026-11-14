@@ -594,6 +594,19 @@ export const FORMATION = {
 } as const;
 
 /**
+ * High ground: shooters reach up to `rangeBonus` further over ground this much lower (in full at
+ * `fullRiseM`); a charge down a slope of more than `slopeM` strikes `downhillCharge` times as hard; a
+ * man striking up such a slope does it `uphillAttack` points worse.
+ */
+export const ELEVATION = {
+  rangeBonus: 0.15,
+  fullRiseM: 8,
+  slopeM: 1.5,
+  downhillCharge: 1.25,
+  uphillAttack: 1,
+} as const;
+
+/**
  * The computer's character, on top of its difficulty. `waveMen` and `waveWait` scale the size of its
  * attack waves and how long it waits for them; a raider also sends a regiment every `raidEveryS` to burn
  * buildings out beyond the enemy's town.
@@ -655,6 +668,9 @@ export const POINTS = {
 
 export const AI = {
   thinkIntervalS: 1,
+  /** The computer forms a pike wall when enemy horse come this near, and raises shields for this long after an arrow strikes. */
+  pikeWallAtM: 55,
+  shieldsUnderFireS: 4,
   /** How often the computer looks for a place in the middle to take. */
   pointsLookS: 20,
   /** The computer turns its whole army on anything that comes this close to its keep. */
