@@ -1,4 +1,5 @@
 import { ARMY, BUILDINGS, FIELDS, FOOD, GATE, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
+import { resourceIcon } from './icons.ts';
 import { canRearm, rearmCost } from '../sim/commands.ts';
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
@@ -55,29 +56,6 @@ const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
   ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
 
-/** A swatch per resource (sRGB), to tell the chips apart at a glance. */
-const RESOURCE_CSS: Record<ResourceId, string> = {
-  gold: '#e3b93c',
-  wood: '#8a643c',
-  stone: '#9a9690',
-  grain: '#c9a94a',
-  flour: '#e8e0cc',
-  grapes: '#6a3a5a',
-  wine: '#8a2232',
-  bread: '#d9a25e',
-  fish: '#8fa3b0',
-  meat: '#b0564a',
-  sausage: '#8c3d33',
-  hide: '#b08d62',
-  leatherArmor: '#7a5232',
-  ironOre: '#6f6a78',
-  iron: '#5a6068',
-  weapon: '#c3c7cc',
-  mailArmor: '#9aa3ad',
-  bow: '#7d8a3c',
-  horse: '#6b4a34',
-};
-
 const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', ballista: '⇶', trebuchet: '☄' };
 
 const MAX_CARDS = 48;
@@ -97,18 +75,18 @@ function costHtml(town: Town, kind: BuildingKind, level: number): string {
     const amount = buildingCost(kind, level, id);
     if (amount === 0) continue;
     const short = town.stock[id] < amount ? ' short' : '';
-    html += `<span class="cost${short}"><i style="background:${RESOURCE_CSS[id]}"></i>${amount}</span>`;
+    html += `<span class="cost${short}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
   }
   return html;
 }
 
 function unitCostHtml(town: Town, kind: UnitKind): string {
   const def = UNITS[kind];
-  let html = `<span class="cost${town.stock.gold < def.goldCost ? ' short' : ''}"><i style="background:${RESOURCE_CSS.gold}"></i>${def.goldCost}</span>`;
+  let html = `<span class="cost${town.stock.gold < def.goldCost ? ' short' : ''}"><i class=\"ico\">${resourceIcon('gold')}</i>${def.goldCost}</span>`;
   for (const id of RESOURCE_IDS) {
     const amount = (def.equipment[id] ?? 0) * def.men;
     if (amount === 0) continue;
-    html += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i style="background:${RESOURCE_CSS[id]}"></i>${amount}</span>`;
+    html += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
   }
   return html;
 }
@@ -158,7 +136,7 @@ export class Hud {
       for (const id of group) {
         const chip = el('span', 'chip', box);
         chip.title = T.resources[id];
-        chip.innerHTML = `<i style="background:${RESOURCE_CSS[id]}"></i><em>${T.resources[id]}</em><b>0</b>`;
+        chip.innerHTML = `<i class="ico">${resourceIcon(id)}</i><em>${T.resources[id]}</em><b>0</b>`;
         this.chips.set(id, chip.querySelector('b') as HTMLElement);
       }
     }
@@ -346,11 +324,11 @@ export class Hud {
       html += `<button class="option${off}${on}" data-act="build" data-arg="${kind}" data-tip="${T.buildings[kind].name}: ${T.buildings[kind].about}${recipe ? ` (${recipe})` : ''}"><span class="name">${T.buildings[kind].name}</span><span class="costs">${costHtml(town, kind, 1)}</span></button>`;
     }
     const perTen = (ROADS.stonePerCell * 10) / ROADS.cellM;
-    html += `<button class="option${tool === 'road' ? ' on' : ''}" data-act="road" data-tip="${T.road}: ${T.roadAbout}"><span class="name">${T.road}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${perTen.toFixed(1)} / 10 m</span></span></button>`;
+    html += `<button class="option${tool === 'road' ? ' on' : ''}" data-act="road" data-tip="${T.road}: ${T.roadAbout}"><span class="name">${T.road}</span><span class="costs"><span class="cost"><i class=\"ico\">${resourceIcon('stone')}</i>${perTen.toFixed(1)} / 10 m</span></span></button>`;
     const wallTen = (WALLS.stonePerCell * 10) / ROADS.cellM;
-    html += `<button class="option${tool === 'wall' ? ' on' : ''}" data-act="wall" data-tip="${T.wall}: ${T.wallAbout}"><span class="name">${T.wall}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${wallTen.toFixed(0)} / 10 m</span></span></button>`;
+    html += `<button class="option${tool === 'wall' ? ' on' : ''}" data-act="wall" data-tip="${T.wall}: ${T.wallAbout}"><span class="name">${T.wall}</span><span class="costs"><span class="cost"><i class=\"ico\">${resourceIcon('stone')}</i>${wallTen.toFixed(0)} / 10 m</span></span></button>`;
     const gateOff = town.stock.wood >= GATE.cost.wood && town.stock.stone >= GATE.cost.stone ? '' : ' off';
-    html += `<button class="option${gateOff}${tool === 'gate' ? ' on' : ''}" data-act="gate" data-tip="${T.gate}: ${T.gateAbout}"><span class="name">${T.gate}</span><span class="costs"><span class="cost"><i style="background:${RESOURCE_CSS.wood}"></i>${GATE.cost.wood}</span><span class="cost"><i style="background:${RESOURCE_CSS.stone}"></i>${GATE.cost.stone}</span></span></button>`;
+    html += `<button class="option${gateOff}${tool === 'gate' ? ' on' : ''}" data-act="gate" data-tip="${T.gate}: ${T.gateAbout}"><span class="name">${T.gate}</span><span class="costs"><span class="cost"><i class=\"ico\">${resourceIcon('wood')}</i>${GATE.cost.wood}</span><span class="cost"><i class=\"ico\">${resourceIcon('stone')}</i>${GATE.cost.stone}</span></span></button>`;
     return `${html}</div>`;
   }
 
@@ -423,7 +401,7 @@ export class Hud {
       for (const id of RESOURCE_IDS) {
         const amount = cost[id] ?? 0;
         if (amount === 0) continue;
-        costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i style="background:${RESOURCE_CSS[id]}"></i>${amount}</span>`;
+        costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
       }
       const why = able === 'ok' ? '' : ` — ${T.results[able]}`;
       html += `<button class="option${able === 'ok' ? '' : ' off'}" data-act="rearm" data-arg="${r.id}:${to}" data-tip="${T.rearm}: ${T.units[to].name}. ${T.units[to].about}${why}"><span class="glyph">${UNIT_GLYPH[to]}</span><span class="name">${T.units[to].name}</span><span class="costs">${costs || '—'}</span></button>`;

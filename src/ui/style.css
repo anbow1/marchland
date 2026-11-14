@@ -9,7 +9,8 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .chips { display: flex; flex-wrap: wrap; gap: 3px 6px; align-items: center; }
 .chips.right { margin-left: auto; }
 .chip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 5px; font-size: 12px; background: #2b2d24; border: 1px solid #47432f; border-radius: 3px; white-space: nowrap; }
-.chip i { width: 9px; height: 9px; border-radius: 2px; display: inline-block; border: 1px solid #0006; }
+.chip i { width: 18px; height: 18px; display: inline-block; vertical-align: -4px; margin-right: 1px; }
+.chip i svg, .cost i svg { width: 100%; height: 100%; display: block; filter: drop-shadow(0 1px 0 #0005); }
 .chip em { font-style: normal; color: #b9b29c; font-size: 11px; }
 .chip b { min-width: 1.6em; text-align: right; font-variant-numeric: tabular-nums; }
 .chip.alarm { background: #6e2a22; border-color: #c2584a; }
@@ -53,7 +54,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .option .name { font-weight: 600; }
 .costs { display: flex; flex-wrap: wrap; gap: 2px 6px; font-size: 11px; color: #d8d1bb; }
 .cost { display: inline-flex; align-items: center; gap: 3px; }
-.cost i { width: 8px; height: 8px; border-radius: 2px; display: inline-block; border: 1px solid #0006; }
+.cost i { width: 14px; height: 14px; display: inline-block; vertical-align: -3px; }
 .cost.short { color: #ff9a88; }
 .unit { display: flex; flex-direction: column; gap: 2px; width: 150px; padding: 4px 7px; background: #33362a; border: 1px solid #5d5843; border-radius: 3px; cursor: pointer; }
 .unit .glyph { font-size: 16px; line-height: 16px; }
