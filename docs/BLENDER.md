@@ -66,7 +66,15 @@ według miejsca w atlasie, z którego ściana brała kolor); bez płyty gruntu i
 przerzedzony z 59 do 22 tys. trójkątów, 24 m długości, flaga w barwie strony na
 najwyższej iglicy. Kształt z kodu (`keepGeometry`) zostaje, gdy model się nie wczyta.
 
-Do zrobienia: warianty (np. dwa wyglądy chaty
+Mur i wieża strażnicza: **Tower and Castle Walls** (LucasPresoto, CC BY 4.0),
+przerobione przez `tools/blender/walls.py`. Mur to jeden okres blanek wycięty ze źródła,
+domknięty na końcach i rozciągnięty na komórkę 2 m (`wall.glb`, 204 trójkąty, rysowany
+instancjami w `wallView.ts`); korpus z kamienia łamanego, korona i blanki z ciosu, blanki
+o 80 % wyższe niż w źródle, żeby było je widać z góry. Wieża (5,1 m, taras na 8,6 m, gdzie
+stoją łucznicy) dostaje drzwi i flagę, od poziomu 2 drewniany ganek (hurdycje), na
+poziomie 3 lekki daszek na słupach.
+
+Do zrobienia: brama w murze (dziś własny mur przepuszcza swoich wszędzie), warianty (np. dwa wyglądy chaty
 na poziom), poziomy szczegółów dla widoku z daleka.
 
 Budżet budynku na poziom: do **12 tys. trójkątów** (koszary i zamek do 25

@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Mur i wieża strażnicza z przesłanego zestawu
+
+- **Tower and Castle Walls** (LucasPresoto, CC BY 4.0) przerobione na powierzchnie gry
+  przez `tools/blender/walls.py`.
+- Mur: jeden okres blanek (1,41 m) wycięty, domknięty i rozciągnięty na komórkę 2 m;
+  204 trójkąty na komórkę (instancje), 4,7 m wysokości, korpus z kamienia łamanego,
+  korona z ciosu, wyższe blanki.
+- Wieża: kamienna baszta 5,1 m, taras na 8,6 m; drzwi, flaga strony; poziom 2 z gankiem,
+  poziom 3 z daszkiem; 6,6–7 tys. trójkątów (wcześniej z kodu w Blenderze).
+
 ## 2026-11-14 · Nowy zamek główny: Buckstone
 
 - Z dziewięciu przesłanych zamków wybrany **Buckstone Castle** (Peter Leban, CC BY 4.0):

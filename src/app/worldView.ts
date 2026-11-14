@@ -91,6 +91,7 @@ export class WorldView {
     this.vines = new VinesView(scene, surfaces);
     this.smoke = new SmokeView(scene);
     this.walls = new WallView(scene, surfaces);
+    await this.walls.loadModel(import.meta.env.BASE_URL);
     this.army = new ArmyView(scene);
     this.markers = new Markers(scene);
     shareStaticInstanceShaders(this.stage.renderer, scene);

@@ -1,3 +1,4 @@
+import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Color, DynamicDrawUsage, InstancedMesh, Matrix4, Quaternion, type Scene, Vector3 } from 'three/webgpu';
 import { WALLS } from '../config.ts';
 import { cellX, cellZ } from '../sim/nav.ts';
@@ -5,10 +6,13 @@ import { heightAtM } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
 import { surfacePaint } from './buildingParts.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
+import { surfaceGeometry } from './surfaceModel.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
-// The walls: a stretch of masonry with two merlons for every 2 m cell, turned along the line it was
+// The walls: a stretch of masonry with a merlon for every 2 m cell, turned along the line it was
 // drawn on (diagonal cells are stretched to meet). Battered stretches darken; fallen ones are gone.
+// The stretch is public/buildings/wall.glb (tools/blender/walls.py, from LucasPresoto's Tower and
+// Castle Walls); until it loads, or if it does not, a plainer one from code.
 
 const MAX_CELLS = 3000;
 const BODY = 0x8f8a80;
@@ -35,7 +39,10 @@ export class WallView {
   private readonly c = new Color();
   private version = -1;
 
-  constructor(scene: Scene, lib: SurfaceLibrary) {
+  constructor(
+    scene: Scene,
+    private readonly lib: SurfaceLibrary,
+  ) {
     const paints = new Map<number, Paint>([
       [BODY, surfacePaint(lib, 'rubble')],
       [CAP, surfacePaint(lib, 'ashlar', 0xf2efe8)],
@@ -49,6 +56,18 @@ export class WallView {
     this.mesh.receiveShadow = true;
     this.mesh.setColorAt(0, new Color(1, 1, 1));
     scene.add(this.mesh);
+  }
+
+  /** Swaps the stretch from code for the modelled one; keeps the former if the file does not load. */
+  async loadModel(base: string): Promise<void> {
+    try {
+      const gltf = await new GLTFLoader().loadAsync(`${base}buildings/wall.glb`);
+      const old = this.mesh.geometry;
+      this.mesh.geometry = surfaceGeometry(gltf.scene, this.lib);
+      old.dispose();
+    } catch (error) {
+      console.warn(`[models] wall.glb did not load: ${String(error)}`);
+    }
   }
 
   update(world: World): void {
