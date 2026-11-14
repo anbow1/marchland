@@ -158,9 +158,13 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
   i kamieniu.
 - **Budynki za miastem** (wieś, kamieniołom, kopalnia, drwal) są celem
   zagonów: to tam lekka jazda ma co robić.
-- **Punkty na środku mapy** (zajmuje je oddział, który stoi przy nich 20 s bez
-  wroga w pobliżu): bogata kopalnia (ruda bez kopalni własnej), kamieniołom,
-  wieś (6 osób i ich podatek). Punkt daje dochód, dopóki jest trzymany.
+- **Punkty na środku mapy** (zrobione): na linii w połowie drogi między zamkami — bogata
+  kopalnia na jednym wzgórzu (8 rudy/min), kamieniołom w polu na drugim (10 kamienia/min),
+  wieś na środku pola (15 złota i 6 zboża/min). Zajmuje je oddział, który stoi przy punkcie
+  20 s bez wroga w promieniu 30 m; dwie strony naraz — nikt. Dochód idzie do zamku
+  właściciela, dopóki wróg nie zajmie punktu. Komputer wysyła wolny oddział po punkt.
+  Widać: maszt z chorągwią w barwie właściciela, pierścień na ziemi, zabudowa, romb na
+  minimapie, postęp zajmowania pod kursorem, komunikat z „pokaż”.
 - **Trzy układy mapy**, każdy z ziarnem losowym: *Otwarte pole* (dzisiejsza),
   *Przeprawa* (rzeka z mostem i dwoma brodami — wąskie gardła), *Trakt przez
   bór* (dwie polany połączone drogą przez las — zasadzki piechoty, jazda

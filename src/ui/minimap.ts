@@ -126,6 +126,23 @@ export class Minimap {
         ctx.strokeRect(this.toPx(townX(town.side)) - 4 * unit, this.toPx(townZ(town.side)) - 4 * unit, 8 * unit, 8 * unit);
       }
     }
+    // The places in the middle: a diamond in the holder's colour, pale while no one's.
+    for (const p of world.points) {
+      const x = this.toPx(p.x);
+      const y = this.toPx(p.z);
+      const h = 4 * unit;
+      ctx.fillStyle = p.owner === -1 ? '#d8d0b8' : TEAM_CSS[p.owner];
+      ctx.strokeStyle = '#1a120c';
+      ctx.lineWidth = unit;
+      ctx.beginPath();
+      ctx.moveTo(x, y - h);
+      ctx.lineTo(x + h, y);
+      ctx.lineTo(x, y + h);
+      ctx.lineTo(x - h, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+    }
     for (const r of world.regiments) {
       if (r.aliveMen === 0) continue;
       const x = this.toPx(r.centreX);

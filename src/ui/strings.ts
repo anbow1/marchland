@@ -120,6 +120,13 @@ interface Strings {
   ungarrison: string;
   garrisoned: string;
   wallBroken: string;
+  /** The places in the middle: names, and what is said when one changes hands. */
+  points: Record<'mine' | 'quarry' | 'village', string>;
+  pointAbout: string;
+  pointTaken: string;
+  pointLost: string;
+  nobodys: string;
+  taking: string;
   hover: { stone: string; ore: string; forest: string; lake: string; mountain: string; crag: string; enemy: string; yours: string };
 }
 
@@ -303,6 +310,12 @@ const pl: Strings = {
   ungarrison: 'Wyprowadź załogę',
   garrisoned: 'Strzelcy weszli do wieży',
   wallBroken: 'Mur przebity!',
+  points: { mine: 'Bogata kopalnia', quarry: 'Kamieniołom w polu', village: 'Wieś' },
+  pointAbout: 'postaw przy niej oddział na 20 s bez wroga w pobliżu, a da dochód',
+  pointTaken: 'Zajęliśmy:',
+  pointLost: 'Wróg zajął:',
+  nobodys: 'niczyja',
+  taking: 'zajmuje',
   hover: { stone: 'Wychodnia kamienia — postaw obok kamieniołom', ore: 'Ruda żelaza — postaw obok kopalnię', forest: 'Las — drwal przy jego skraju', lake: 'Jezioro — rybak na brzegu', mountain: 'Góry — nie do przejścia', crag: 'Skały — trzeba je obejść', enemy: 'wroga', yours: 'twój' },
 };
 
@@ -486,6 +499,12 @@ const en: Strings = {
   ungarrison: 'Bring the garrison out',
   garrisoned: 'Shooters have manned the tower',
   wallBroken: 'The wall is breached!',
+  points: { mine: 'Rich mine', quarry: 'Field quarry', village: 'Village' },
+  pointAbout: 'stand a regiment by it for 20 s with no enemy near and it pays',
+  pointTaken: 'We took:',
+  pointLost: 'The enemy took:',
+  nobodys: 'no one\'s',
+  taking: 'taking',
   hover: { stone: 'Stone outcrop — put a quarry beside it', ore: 'Iron ore — put a mine beside it', forest: 'Forest — a woodcutter at its edge', lake: 'Lake — a fisher on the bank', mountain: 'Mountains — impassable', crag: 'Crags — go round them', enemy: 'enemy', yours: 'yours' },
 };
 

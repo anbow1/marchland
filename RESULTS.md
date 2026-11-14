@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Punkty do zajęcia na środku mapy (M3)
+
+- Trzy punkty na prostej w połowie drogi między zamkami (równo daleko od obu): kopalnia
+  (wzgórze, 8 rudy/min), kamieniołom (drugie wzgórze, 10 kamienia/min), wieś (środek pola,
+  15 złota + 6 zboża/min). Zajęcie: oddział w szyku przy punkcie 20 s, bez wroga w 30 m.
+- Komputer co 20 s wysyła wolny oddział (zostawia jeden w domu) na punkt, którego nie
+  trzyma; w pomiarze bierze wieś, przez którą idą jego fale; tempo bez zmian (35,4 / 35,9).
+- Polany wokół punktów (las ustępuje), zakaz budowy przy punkcie. Test: zajęcie po 20 s,
+  dochód, wróg w pobliżu blokuje zajęcie.
+
 ## 2026-11-14 · Zakładka Produkcja i alarmy z „pokaż”
 
 - Gospodarka liczy, ile czego wytworzono (warsztaty, zbieracze, pola, podatki), i co 15 s

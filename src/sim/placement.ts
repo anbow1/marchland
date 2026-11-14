@@ -1,4 +1,4 @@
-import { FIELDS, GATHER, MAP, TOWN } from '../config.ts';
+import { FIELDS, GATHER, MAP, POINTS, TOWN } from '../config.ts';
 import { woodStands } from './trees.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
 import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
@@ -78,6 +78,8 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isImpassable(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');
+  // The places in the middle are no one's to build on.
+  for (const p of world.points) if (hypot2(x - p.x, z - p.z) < POINTS.radiusM + r + 6) return fail('blocked');
   // Not on the crag itself: beside it.
   for (const d of DEPOSITS) if (hypot2(x - d.x, z - d.z) < TOWN.depositRadiusM + 3) return fail('blocked');
   if (riseAcrossM(x, z, r) > TOWN.maxFootprintRiseM) return fail('tooSteep');

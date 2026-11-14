@@ -1,4 +1,4 @@
-import { AI, CAMERA, FIELDS, GATE, MAP, ROADS, TOWN } from '../config.ts';
+import { AI, CAMERA, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
@@ -208,6 +208,11 @@ export class Game implements ControlTarget {
       case 'fed':
         if (mine) this.hud.toast(T.fed, 'good');
         break;
+      case 'pointTaken': {
+        const p = this.world.points.find((q) => Math.hypot(q.x - e.x, q.z - e.z) < 1);
+        if (p) this.hud.toast(`${mine ? T.pointTaken : T.pointLost} ${T.points[p.kind]}`, mine ? 'good' : 'bad', [p.x, p.z]);
+        break;
+      }
       case 'gameOver':
         // The event's side is the winner.
         this.sound.play(mine ? 'fanfare' : 'hornLow');
@@ -336,6 +341,12 @@ export class Game implements ControlTarget {
       if (b) return `${T.buildings[b.kind].name} · ${T.level} ${b.level} (${whose})`;
       const r = this.regimentAt(x, z, side);
       if (r) return `${T.units[r.kind].name} · ${r.aliveMen} ${T.men} (${whose})`;
+    }
+    for (const p of this.world.points) {
+      if (Math.hypot(x - p.x, z - p.z) > POINTS.radiusM) continue;
+      const holder = p.owner === -1 ? T.nobodys : p.owner === PLAYER ? T.hover.yours : T.hover.enemy;
+      const taking = p.taker === -1 ? '' : ` · ${T.taking}: ${p.taker === PLAYER ? T.hover.yours : T.hover.enemy} ${Math.floor((p.progressS / POINTS.holdS) * 100)}%`;
+      return `${T.points[p.kind]} (${holder})${taking} — ${T.pointAbout}`;
     }
     for (const d of DEPOSITS) if (Math.hypot(x - d.x, z - d.z) < TOWN.depositRadiusM) return d.kind === 'stone' ? T.hover.stone : T.hover.ore;
     if (isWater(x, z)) return T.hover.lake;

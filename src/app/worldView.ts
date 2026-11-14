@@ -4,6 +4,8 @@ import type { BuildingKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { ArmyView } from '../render/armyView.ts';
 import { buildForest, type Forest } from '../render/forestView.ts';
+import { PointsView } from '../render/pointsView.ts';
+import { createPoints } from '../sim/points.ts';
 import { addHorizon } from '../render/horizonView.ts';
 import { shareStaticInstanceShaders } from '../render/instancing.ts';
 import { AFTERNOON, Lighting } from '../render/lighting.ts';
@@ -53,6 +55,7 @@ export class WorldView {
   private smoke!: SmokeView;
   private walls!: WallView;
   private forest!: Forest;
+  private points!: PointsView;
   private readonly smokeSources = new Float32Array(220 * 3);
   private readonly works = new GroundWorks();
   private readonly clearings = new Clearings();
@@ -91,6 +94,8 @@ export class WorldView {
     this.people = new PeopleView(scene, surfaces);
     this.vines = new VinesView(scene, surfaces);
     this.smoke = new SmokeView(scene);
+    this.points = new PointsView(scene, surfaces, createPoints());
+    await this.points.load(import.meta.env.BASE_URL);
     this.walls = new WallView(scene, surfaces);
     await this.walls.loadModel(import.meta.env.BASE_URL);
     this.army = new ArmyView(scene);
@@ -136,6 +141,7 @@ export class WorldView {
     this.vines.update(world);
     this.walls.update(world, frameSeconds);
     this.forest.update(world.stand, world.timeS);
+    this.points.update(world, world.timeS);
     this.smoke.update(this.smokeSources, this.town.smokeSources(world, this.smokeSources), frameSeconds);
     this.army.update(world);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);

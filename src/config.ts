@@ -560,8 +560,27 @@ export const AI_TUNING: Record<Difficulty, AiTuning> = {
   hard: { productionFactor: 1.35, firstWaveMen: 48, waveGrowthMen: 16, waveTimeoutS: 260 },
 };
 
+/**
+ * Places in the middle worth holding: a rich mine and a quarry on the two knolls, a village in the middle
+ * of the field. All lie on the line halfway between the keeps, as far from one as from the other. A side
+ * takes one by standing a regiment by it for `holdS` with no enemy within `clearM`; while it holds it, the
+ * goods come to its keep (a minute's worth below).
+ */
+export const POINTS = {
+  holdS: 20,
+  radiusM: 16,
+  clearM: 30,
+  list: [
+    { kind: 'mine', sideM: 105, perMinute: { ironOre: 8 } },
+    { kind: 'quarry', sideM: -105, perMinute: { stone: 10 } },
+    { kind: 'village', sideM: 0, perMinute: { gold: 15, grain: 6 } },
+  ],
+} as const;
+
 export const AI = {
   thinkIntervalS: 1,
+  /** How often the computer looks for a place in the middle to take. */
+  pointsLookS: 20,
   /** The computer turns its whole army on anything that comes this close to its keep. */
   defendRadiusM: 95,
   /** A wave that has lost this share of its men goes home. */

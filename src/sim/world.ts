@@ -12,6 +12,7 @@ import { createRegiment, type Regiment } from './regiment.ts';
 import { cmdMove, inHomeLand } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { createStand, type Stand, stepStand } from './trees.ts';
+import { createPoints, type Point, stepPoints } from './points.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
 import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -55,6 +56,8 @@ export interface World {
   stand: Stand;
   /** Gates set into walls, for the view (the rules read nav.wallGate). */
   gates: Gate[];
+  /** The places in the middle worth holding (points.ts). */
+  points: Point[];
 }
 
 /** A gate: its side, its wall cells, where its middle is and its line (as nav.wallDir). */
@@ -85,6 +88,7 @@ export function createWorld(options: WorldOptions): World {
     nav: createNav(),
     stand: createStand(),
     gates: [],
+    points: createPoints(),
     arrows: createArrowPool(),
     events: new EventQueue(),
     winner: -1,
@@ -221,6 +225,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
   if (world.stepCount % 60 === 0) {
     leashHomeGuards(world);
     stepStand(world.stand, world.timeS);
+    stepPoints(world, 1);
   }
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);

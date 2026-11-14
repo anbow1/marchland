@@ -1,4 +1,4 @@
-import { MAP, TOWN } from '../config.ts';
+import { MAP, POINTS, TOWN } from '../config.ts';
 import { fbm2 } from '../core/noise.ts';
 import type { Side } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -309,7 +309,10 @@ export function forestCoverAt(x: number, z: number): number {
   const offRock = smoothstep(TOWN.depositRadiusM + 4, TOWN.depositRadiusM + 14, distanceToNearestDepositM(x, z));
   // Trees climb the foothills but not the rock above them.
   const offHeap = smoothstep(0.85, 1.15, heapShare(x, z));
-  return smoothstep(0.02, 0.22, patches) * nearTown * offField * offLake * offRock * offHeap;
+  // A glade round each place in the middle, where the regiment that takes it stands.
+  let offPlace = 1;
+  for (const p of POINTS.list) offPlace = Math.min(offPlace, smoothstep(POINTS.radiusM + 14, POINTS.radiusM + 34, hypot2(x - SIDE_X * p.sideM, z - SIDE_Z * p.sideM)));
+  return smoothstep(0.02, 0.22, patches) * nearTown * offField * offLake * offRock * offHeap * offPlace;
 }
 
 export function isForest(x: number, z: number): boolean {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MISSILE, UNITS } from '../src/config.ts';
+import { MISSILE, POINTS, UNITS } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdMove, cmdMoveGroup } from '../src/sim/commands.ts';
 import { launchElevationRad } from '../src/sim/missiles.ts';
 import { type Regiment, slotX, slotZ } from '../src/sim/regiment.ts';
@@ -285,3 +285,26 @@ describe('the wider roster', () => {
   });
 });
 
+describe('places in the middle', () => {
+  it('a regiment standing by a place for a while takes it; it brings goods; two sides there and nobody takes it', () => {
+    const world = createWorld({ seed: 3, difficulty: 'normal', computerPlays: false });
+    const mine = world.points.find((p) => p.kind === 'mine');
+    if (!mine) throw new Error('no mine');
+    const ours = spawnRegiment(world, PLAYER, 'pikemen', mine.x, mine.z, 0);
+    run(world, POINTS.holdS - 5);
+    expect(mine.owner).toBe(-1);
+    run(world, 8);
+    expect(mine.owner).toBe(PLAYER);
+    const ore = world.towns[PLAYER].stock.ironOre;
+    run(world, 60);
+    expect(world.towns[PLAYER].stock.ironOre - ore).toBeGreaterThanOrEqual(POINTS.list[0].perMinute.ironOre - 1);
+    // An enemy regiment near a place stops anyone taking it: ours by the quarry, theirs within reach.
+    const quarry = world.points.find((p) => p.kind === 'quarry');
+    if (!quarry) throw new Error('no quarry');
+    spawnRegiment(world, PLAYER, 'archers', quarry.x, quarry.z, 0);
+    spawnRegiment(world, COMPUTER, 'archers', quarry.x + POINTS.clearM * 0.6, quarry.z, Math.PI / 2);
+    run(world, POINTS.holdS + 5);
+    expect(quarry.owner).toBe(-1);
+    void ours;
+  }, 30_000);
+});

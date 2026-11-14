@@ -1,4 +1,4 @@
-import { AI, AI_TUNING, REARM, TOWER, TOWN, UNITS } from '../config.ts';
+import { AI, AI_TUNING, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
@@ -19,6 +19,8 @@ type Mode = 'gather' | 'stage' | 'assault';
 export interface AiState {
   side: Side;
   thinkS: number;
+  /** Clock to the next look at the places in the middle. */
+  pointsS: number;
   mode: Mode;
   wave: number;
   sinceWaveS: number;
@@ -34,7 +36,7 @@ export interface AiState {
 }
 
 export function createAiState(side: Side): AiState {
-  return { side, thinkS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0 };
+  return { side, thinkS: 0, pointsS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0 };
 }
 
 /**
@@ -242,6 +244,35 @@ function rearmGuards(world: World, ai: AiState, home: readonly Regiment[]): void
   }
 }
 
+/**
+ * Sends a regiment to take a place in the middle the side does not hold and no enemy stands by, the
+ * nearest of those at home that may march; one at least stays home. It counts as home: the next wave
+ * takes it along, and the place stays the side's until the enemy takes it back.
+ */
+function seizePoints(world: World, ai: AiState, home: readonly Regiment[]): void {
+  ai.pointsS -= AI.thinkIntervalS;
+  if (ai.pointsS > 0) return;
+  ai.pointsS = AI.pointsLookS;
+  const free = home.filter((r) => !r.def.defenceOnly && !r.def.engine && r.garrisonPlot < 0);
+  if (free.length < 2) return;
+  for (const p of world.points) {
+    if (p.owner === ai.side) continue;
+    // Someone already on the way, or there.
+    if (free.some((r) => hypot2(r.destX - p.x, r.destZ - p.z) < POINTS.radiusM * 2)) continue;
+    if (enemyWithin(world, ai.side, p.x, p.z, POINTS.clearM * 2)) continue;
+    let best: Regiment | null = null;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const r of free) {
+      const d = hypot2(r.centreX - p.x, r.centreZ - p.z);
+      if (d < bestD) {
+        best = r;
+        bestD = d;
+      }
+    }
+    if (best && cmdMove(world, best.id, p.x, p.z, null, false) === 'ok') return;
+  }
+}
+
 /** Archers or crossbowmen at home man the side's watchtowers with free places, one regiment a think. */
 function manTowers(world: World, ai: AiState, home: readonly Regiment[]): void {
   const town = world.towns[ai.side];
@@ -288,6 +319,7 @@ function command(world: World, ai: AiState): void {
   } else {
     rearmGuards(world, ai, home);
     manTowers(world, ai, home);
+    seizePoints(world, ai, home);
   }
 
   if (ai.mode === 'gather') {
