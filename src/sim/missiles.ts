@@ -1,4 +1,5 @@
 import { damageWall, wallCellAt } from './nav.ts';
+import { keepRules } from './economy.ts';
 import { woodStands } from './trees.ts';
 import { MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
@@ -349,7 +350,7 @@ function stepKeep(world: World, side: Side, dtSeconds: number): void {
   const tx = victim.x + victim.vx * flightS + world.rng.gauss() * 0.8;
   const tz = victim.z + victim.vz * flightS + world.rng.gauss() * 0.8;
   launch(world, side, KEEP_SHOT, kx, TOWN.keepTopM, kz, tx, heightAtM(tx, tz) + MISSILE.chestHeightM, tz, side, AT_SOLDIERS);
-  world.keepShotCooldownS[side] = TOWN.keepShotIntervalS;
+  world.keepShotCooldownS[side] = keepRules(world.towns[side]).shotIntervalS;
 }
 
 export function stepMissiles(world: World, dtSeconds: number): void {

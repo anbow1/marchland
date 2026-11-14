@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-14 · Trzy poziomy zamku (M3)
+
+- Poziom zamku wyznacza zasięg budowy (230 / 260 / 290 m, pola 300 / 330 / 360 m), najwyższy
+  poziom koszar (1 / 2 / 3), wytrzymałość (1800 / 2600 / 3600) i strzały zamku (co 1 / 0,75 /
+  0,5 s). Rozbudowa: 250 złota, 60 drewna, 120 kamienia, potem 500 / 100 / 240; minuta pracy.
+- Zamek da się kliknąć: panel z poziomem, tym, co daje, i przyciskiem rozbudowy; zamek rośnie
+  (0,8 / 0,9 / 1 wielkości), komunikat po rozbudowie. Komputer podnosi zamek przed koszarami.
+- Testy: 66 / 66 (nowy: koszt, minuta, zasięg i wytrzymałość po rozbudowie, poziom 3 to szczyt;
+  test przezbrojenia sprawdza, że koszary 2 wymagają zamku 2).
+
 ## 2026-11-14 · Punkty do zajęcia na środku mapy (M3)
 
 - Trzy punkty na prostej w połowie drogi między zamkami (równo daleko od obu): kopalnia

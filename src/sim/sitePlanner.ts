@@ -1,4 +1,5 @@
 import { TOWN } from '../config.ts';
+import { keepRules } from './economy.ts';
 import { checkSite, yawToKeep } from './placement.ts';
 import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeRadiusAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
 import { type BuildingKind, type Side, SITE_NEED } from './types.ts';
@@ -88,7 +89,8 @@ function planTown(world: World, side: Side, kind: BuildingKind): boolean {
 function planForest(world: World, side: Side, kind: BuildingKind): boolean {
   const tx = townX(side);
   const tz = townZ(side);
-  for (let d = 60; d <= TOWN.territoryRadiusM - 8; d += 4) {
+  // Woodcutters may stand anywhere; the computer looks within its town's reach.
+  for (let d = 60; d <= keepRules(world.towns[side]).territoryM - 8; d += 4) {
     for (let degrees = 0; degrees < 360; degrees += 8) {
       const dx = Math.sin((degrees * Math.PI) / 180);
       const dz = Math.cos((degrees * Math.PI) / 180);

@@ -26,6 +26,8 @@ const GHOST_OK = new Color(0x8fe07a);
 /** A post mill's sails at work: about one turn every seven seconds. */
 const SAIL_TURN_RAD_S = 0.9;
 const GHOST_BAD = new Color(0xe0604a);
+/** The keep's size at levels 1…3: the same castle, its walls and towers taller and wider as it is raised. */
+const KEEP_SCALE = [0.8, 0.9, 1];
 
 export class TownView {
   private readonly material: MeshStandardNodeMaterial;
@@ -183,8 +185,9 @@ export class TownView {
     for (const town of world.towns) {
       const side = town.side;
       const keep = this.keeps[side] as Mesh;
-      // A fallen keep is a stump of its walls.
-      keep.scale.y = town.keepHp > 0 ? 1 : 0.22;
+      // The keep grows with its level; a fallen one is a stump of its walls.
+      const size = KEEP_SCALE[town.keepLevel - 1] ?? 1;
+      keep.scale.set(size, town.keepHp > 0 ? size : 0.22, size);
       for (let slot = 0; slot < TOWN.maxBuildings; slot++) {
         const b: Building | null = town.plots[slot] ?? null;
         const mesh = (this.slots[side] as Mesh[])[slot] as Mesh;

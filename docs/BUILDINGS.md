@@ -7,7 +7,7 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 
 | # | Building | Price (level 1) | Ground it needs | What it gives | Workers | Hit points |
 |---|---|---|---|---|---|---|
-| 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Lose it and the game is lost | — | 1800 |
+| 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Three levels (below). Lose it and the game is lost | — | 1800 / 2600 / 3600 |
 | 2 | **House** | 40 gold, 10 timber | any level ground | 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
 | 3 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 8 timber a trip (8 s of felling + the walk) | 1 | 250 |
 | 4 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
@@ -59,6 +59,7 @@ What each is for:
 
 Rules common to all buildings:
 
+- **The keep's levels.** Level 1: reach 230 m (farms 300 m), barracks up to level 1, 1800 hit points, an arrow every 1 s. Level 2: reach 260 m (farms 330 m), barracks up to level 2, 2600 hit points, an arrow every 0.75 s; costs 250 gold, 60 wood, 120 stone. Level 3: reach 290 m (farms 360 m), barracks up to level 3, 3600 hit points, an arrow every 0.5 s; costs 500 gold, 100 wood, 240 stone. Raising it takes 60 s.
 - **Free placement.** A building goes anywhere within 230 m of its side's keep (farms and vineyards
   300 m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than 90 m to the enemy's) where the ground under it rises no more than 2.2 m, is not

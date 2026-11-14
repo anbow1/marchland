@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, FORESTRY, GATE, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { ARMY, FIELDS, FOOD, FORESTRY, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
@@ -330,6 +330,27 @@ describe('recruiting', () => {
     expect(world.people.filter((p) => p.alive && p.side === PLAYER).length).toBeLessThanOrEqual(living - UNITS.militia.men + 2);
   });
 
+  it('raising the keep costs, takes a minute, and widens the town, hardens the keep and lets the barracks rise', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const far = KEEP_LEVELS[0].territoryM + 15;
+    expect(checkSite(world, PLAYER, 'house', townX(PLAYER) + far, townZ(PLAYER) - 20, 0).result).toBe('tooFar');
+    const stone = town.stock.stone;
+    expect(cmdUpgradeKeep(world, PLAYER)).toBe('ok');
+    expect(town.stock.stone).toBe(stone - KEEP_LEVELS[1].cost.stone);
+    expect(cmdUpgradeKeep(world, PLAYER)).toBe('underConstruction');
+    run(world, KEEP_UPGRADE_SECONDS / 2);
+    expect(town.keepLevel).toBe(1);
+    run(world, KEEP_UPGRADE_SECONDS / 2 + 1);
+    expect(town.keepLevel).toBe(2);
+    expect(town.keepHp).toBe(KEEP_LEVELS[1].hp);
+    expect(checkSite(world, PLAYER, 'house', townX(PLAYER) + far, townZ(PLAYER) - 20, 0).result).not.toBe('tooFar');
+    expect(cmdUpgradeKeep(world, PLAYER)).toBe('ok');
+    run(world, KEEP_UPGRADE_SECONDS + 1);
+    expect(town.keepLevel).toBe(3);
+    expect(cmdUpgradeKeep(world, PLAYER)).toBe('maxLevel');
+  });
+
   it('upgrading costs more and makes a workshop work faster', () => {
     const world = rich(quietWorld());
     const plot = build(world, 'quarry');
@@ -388,6 +409,10 @@ describe('militia and re-arming', () => {
     // Swordsmen need a barracks of level 2; pikemen cannot become archers at all.
     expect(cmdRearm(world, r.id, 'swordsmen')).toBe('needsBarracks');
     expect(cmdRearm(world, r.id, 'archers')).toBe('cannotRearm');
+    // The barracks rises no higher than the keep allows: the keep first.
+    expect(cmdUpgrade(world, PLAYER, plot)).toBe('needsKeep');
+    expect(cmdUpgradeKeep(world, PLAYER)).toBe('ok');
+    run(world, KEEP_UPGRADE_SECONDS + 1);
     expect(cmdUpgrade(world, PLAYER, plot)).toBe('ok');
     runUntil(world, 300, () => finished(world, plot));
     // Too far from the barracks, then near enough.

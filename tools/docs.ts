@@ -9,7 +9,7 @@
 //
 // tests/docs.test.ts fails while a document on disk is not what this produces.
 import { existsSync } from 'node:fs';
-import { AI, ARMY, BUILDINGS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WALLS, WINE } from '../src/config.ts';
+import { AI, ARMY, BUILDINGS, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WALLS, WINE } from '../src/config.ts';
 import { BUILDING_KINDS, type BuildingKind, type Cost, RESOURCE_IDS, type ResourceId, SITE_NEED, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 
 const GOOD_EN: Record<ResourceId, string> = {
@@ -165,7 +165,7 @@ config (or the text in \`tools/docs.ts\`) and regenerate.*
 
 | # | Building | Price (level 1) | Ground it needs | What it gives | Workers | Hit points |
 |---|---|---|---|---|---|---|
-| 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; ${PEOPLE.keepResidents} residents; ${fixed(TOWN.keepGoldPerSecond * 60)} gold a minute; archers who shoot ${TOWN.keepRangeM} m. Lose it and the game is lost | — | ${TOWN.keepHp} |
+| 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; ${PEOPLE.keepResidents} residents; ${fixed(TOWN.keepGoldPerSecond * 60)} gold a minute; archers who shoot ${TOWN.keepRangeM} m. Three levels (below). Lose it and the game is lost | — | ${KEEP_LEVELS.map((l) => l.hp).join(' / ')} |
 ${rows.join('\n')}
 | ${BUILDING_KINDS.length + 2} | **Road** | ${fixed(ROADS.stonePerCell * (10 / ROADS.cellM), 1)} stone for 10 m | own land, not water | people walk ${fixed(ROADS.roadSpeedFactor)}× as fast on it and prefer it when finding their way | — | — |
 | ${BUILDING_KINDS.length + 3} | **Wall** | ${WALLS.stonePerCell * Math.round(10 / ROADS.cellM)} stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; ${WALLS.hp} blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | ${WALLS.hp} per 2 m |
@@ -179,6 +179,7 @@ ${roles.join('\n')}
 
 Rules common to all buildings:
 
+- **The keep's levels.** ${KEEP_LEVELS.map((l, i) => `Level ${i + 1}: reach ${l.territoryM} m (farms ${l.fieldsM} m), barracks up to level ${l.barracks}, ${l.hp} hit points, an arrow every ${l.shotIntervalS} s${i > 0 ? `; costs ${Object.entries(l.cost).map(([id, n]) => `${n} ${id}`).join(', ')}` : ''}`).join('. ')}. Raising it takes ${KEEP_UPGRADE_SECONDS} s.
 - **Free placement.** A building goes anywhere within ${TOWN.territoryRadiusM} m of its side's keep (farms and vineyards
   ${TOWN.fieldTerritoryRadiusM} m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than ${TOWN.enemyKeepClearM} m to the enemy's) where the ground under it rises no more than ${TOWN.maxFootprintRiseM} m, is not

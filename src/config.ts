@@ -561,6 +561,18 @@ export const AI_TUNING: Record<Difficulty, AiTuning> = {
 };
 
 /**
+ * The keep's three levels. Each lets the barracks rise as far as `barracks`, lets the town build as far as
+ * `territoryM` (farms and vineyards `fieldsM`), takes `hp` blows and shoots every `shotIntervalS`; `cost`
+ * is the price of rising to it, the work taking KEEP_UPGRADE_SECONDS. A game starts at the first.
+ */
+export const KEEP_LEVELS = [
+  { hp: TOWN.keepHp, territoryM: TOWN.territoryRadiusM, fieldsM: TOWN.fieldTerritoryRadiusM, barracks: 1, shotIntervalS: TOWN.keepShotIntervalS, cost: {} },
+  { hp: 2600, territoryM: 260, fieldsM: 330, barracks: 2, shotIntervalS: 0.75, cost: { gold: 250, wood: 60, stone: 120 } },
+  { hp: 3600, territoryM: 290, fieldsM: 360, barracks: 3, shotIntervalS: 0.5, cost: { gold: 500, wood: 100, stone: 240 } },
+] as const;
+export const KEEP_UPGRADE_SECONDS = 60;
+
+/**
  * Places in the middle worth holding: a rich mine and a quarry on the two knolls, a village in the middle
  * of the field. All lie on the line halfway between the keeps, as far from one as from the other. A side
  * takes one by standing a regiment by it for `holdS` with no enemy within `clearM`; while it holds it, the

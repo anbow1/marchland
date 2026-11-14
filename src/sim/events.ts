@@ -4,7 +4,7 @@ import type { Side } from './types.ts';
 // the simulation allocates nothing while it runs. The app reads the queue after
 // stepping and clears it.
 
-export type EventKind = 'death' | 'meleeHit' | 'arrowShot' | 'arrowHit' | 'stoneFall' | 'charge' | 'rout' | 'rally' | 'shattered' | 'built' | 'destroyed' | 'recruited' | 'rearmed' | 'garrisoned' | 'wallBroken' | 'starving' | 'fed' | 'pointTaken' | 'gameOver';
+export type EventKind = 'death' | 'meleeHit' | 'arrowShot' | 'arrowHit' | 'stoneFall' | 'charge' | 'rout' | 'rally' | 'shattered' | 'built' | 'destroyed' | 'recruited' | 'rearmed' | 'garrisoned' | 'wallBroken' | 'starving' | 'fed' | 'pointTaken' | 'keepRaised' | 'gameOver';
 
 export interface GameEvent {
   kind: EventKind;

@@ -1,5 +1,5 @@
 import { AI, AI_TUNING, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, rearmCost, roadCost } from './commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
@@ -119,6 +119,8 @@ function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 
 function runTown(world: World, ai: AiState): void {
   const town = world.towns[ai.side];
   if (ai.buildIndex >= BARRACKS_UPGRADE_AFTER) {
+    // The barracks rises no higher than the keep: the keep first.
+    if (town.keepLevel < 2 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
     const plot = town.plots.findIndex((b) => b !== null && b.kind === 'barracks' && b.level === 1 && b.constructionLeftS <= 0);
     if (plot >= 0 && cmdUpgrade(world, ai.side, plot) === 'ok') return;
   }
@@ -137,6 +139,7 @@ function runTown(world: World, ai: AiState): void {
     if (have < want && buildPlanned(world, ai, kind) !== 'noGround') return;
   }
   if (town.stock.gold < AI.upgradeReserveGold) return;
+  if (town.keepLevel < 3 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
   for (const kind of UPGRADE_ORDER) {
     for (let plot = 0; plot < town.plots.length; plot++) {
       const b = town.plots[plot];

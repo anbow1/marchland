@@ -1,4 +1,4 @@
-import { FIELDS, GATHER, MAP, POINTS, TOWN } from '../config.ts';
+import { FIELDS, GATHER, KEEP_LEVELS, MAP, POINTS, TOWN } from '../config.ts';
 import { woodStands } from './trees.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
 import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
@@ -21,12 +21,14 @@ export interface SiteCheck {
  * How far from its keep a building of this kind may stand. The trades that go where the land is (wood,
  * stone, ore) may go anywhere; farms and vineyards further than the town's own buildings.
  */
-export function reachOf(kind: BuildingKind): number {
+export function reachOf(kind: BuildingKind, keepLevel = 1): number {
   const need = SITE_NEED[kind];
   // A watchtower guards whatever needs guarding: an outlying mine as well as the town.
   if (need === 'forest' || need === 'stone' || need === 'ore' || kind === 'tower') return Number.POSITIVE_INFINITY;
-  if (need === 'fields') return TOWN.fieldTerritoryRadiusM;
-  return TOWN.territoryRadiusM;
+  // The keep's level sets the town's reach (KEEP_LEVELS).
+  const rules = KEEP_LEVELS[keepLevel - 1] as (typeof KEEP_LEVELS)[number];
+  if (need === 'fields') return rules.fieldsM;
+  return rules.territoryM;
 }
 
 /** True where a side may lay a road: anywhere on the map but close to the enemy's keep. */
@@ -73,7 +75,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const site: Site = { x, z, yawRad, spotX: x, spotZ: z, strips: [] };
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
-  if (hypot2(x - townX(side), z - townZ(side)) > reachOf(kind)) return fail('tooFar');
+  if (hypot2(x - townX(side), z - townZ(side)) > reachOf(kind, world.towns[side].keepLevel)) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
   if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isImpassable(x + dx, z + dz)) return fail('blocked');

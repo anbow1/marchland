@@ -1,5 +1,5 @@
 import { ARMY, GATE, PEOPLE, REARM, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
-import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startRecruit, startUpgrade, togglePaused } from './economy.ts';
+import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
@@ -46,6 +46,12 @@ export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x
 export function cmdUpgrade(world: World, side: Side, plot: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   return startUpgrade(world.towns[side], plot);
+}
+
+/** Starts raising the side's keep a level (KEEP_LEVELS). */
+export function cmdUpgradeKeep(world: World, side: Side): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  return startKeepUpgrade(world.towns[side]);
 }
 
 export function cmdDemolish(world: World, side: Side, plot: number): CommandResult {

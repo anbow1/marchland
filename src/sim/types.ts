@@ -99,6 +99,7 @@ export type CommandResult =
   | 'cannotGarrison'
   | 'towerFull'
   | 'needsWall'
+  | 'needsKeep'
   | 'gameOver';
 
 export type Difficulty = 'easy' | 'normal' | 'hard';

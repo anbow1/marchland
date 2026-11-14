@@ -152,10 +152,12 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
   w menu budowy), kosztują kamień. Ludzie sami wybierają najszybszą trasę:
   drogą idą 1,4× szybciej, w lesie wolniej, budynki i wodę omijają. Gdzie drogi
   nie ma, wydeptują ścieżki (na razie tylko pod budynkami i przy drzwiach).
-- **Zamek ma trzy poziomy** (plan): 1 — dwór z palisadą, koszary do poziomu 1;
-  2 — kamienna wieża, koszary do poziomu 2, brama, szerszy zasięg ziem;
-  3 — zamek, koszary do poziomu 3, mocniejszy garnizon. Koszt rośnie w złocie
-  i kamieniu.
+- **Zamek ma trzy poziomy** (zrobione): kliknij zamek, w panelu „Rozbuduj zamek”.
+  1 — start: zasięg budowy 230 m (pola 300 m), koszary do poziomu 1, 1800 wytrzymałości,
+  strzała co 1 s; 2 — 250 złota, 60 drewna, 120 kamienia: zasięg 260 m (330), koszary do 2,
+  2600, strzała co 0,75 s; 3 — 500 / 100 / 240: zasięg 290 m (360), koszary do 3, 3600,
+  strzała co 0,5 s. Rozbudowa trwa minutę; zamek rośnie z poziomem. Komputer rozbudowuje
+  zamek, zanim podniesie koszary.
 - **Budynki za miastem** (wieś, kamieniołom, kopalnia, drwal) są celem
   zagonów: to tam lekka jazda ma co robić.
 - **Punkty na środku mapy** (zrobione): na linii w połowie drogi między zamkami — bogata

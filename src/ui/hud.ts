@@ -1,10 +1,10 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, GATE, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MAX_LEVEL, PEOPLE, REARM, ROADS, TOWER, UNITS, WALLS } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, rearmCost } from '../sim/commands.ts';
-import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, flowRates, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
+import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { isEngaged, type Regiment } from '../sim/regiment.ts';
-import { BUILDING_KINDS, type BuildingKind, PLAYER, RESOURCE_IDS, type ResourceId, UNIT_KINDS, type UnitKind } from '../sim/types.ts';
+import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS } from '../sim/types.ts';
 import { menAlive, type World } from '../sim/world.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 import { Minimap } from './minimap.ts';
@@ -25,6 +25,7 @@ export interface HudActions {
   /** Turns the map: −1 left, +1 right. */
   rotateCamera(direction: number): void;
   upgrade(plot: number): void;
+  upgradeKeep(): void;
   demolish(plot: number): void;
   togglePaused(plot: number): void;
   recruit(kind: UnitKind): void;
@@ -242,6 +243,9 @@ export class Hud {
       case 'upgrade':
         this.actions.upgrade(this.plotInPanel);
         break;
+      case 'upgradeKeep':
+        this.actions.upgradeKeep();
+        break;
       case 'demolish':
         this.actions.demolish(this.plotInPanel);
         break;
@@ -377,6 +381,28 @@ export class Hud {
     let holdUps = '';
     for (const g of groups.values()) holdUps += `<div class="holdUp">${g.count > 1 ? `${g.count}× ` : ''}${g.text} <button class="link" data-act="show" data-arg="${g.x.toFixed(1)},${g.z.toFixed(1)}">${T.show}</button></div>`;
     return `<div class="prod"><div class="prodTable">${head}${rows}</div><div class="holdUps"><div class="label">${T.holdUps}</div>${holdUps || `<div class="holdUp ok">${T.allWorking}</div>`}</div></div>`;
+  }
+
+  /** The keep: its level, what the level gives, and the way to the next. */
+  private keepHtml(town: Town): string {
+    const rules = keepRules(town);
+    let status = `${T.keepHp} ${Math.ceil(town.keepHp)}/${rules.hp} · ${T.keepReach} ${rules.territoryM} m · ${T.barracksUpTo} ${rules.barracks}`;
+    if (town.keepUpgradeLeftS > 0) status += ` · ${T.keepRaising}: ${Math.round((1 - town.keepUpgradeLeftS / KEEP_UPGRADE_SECONDS) * 100)}%`;
+    let html = `<div class="heading">${T.keep} · ${T.level} ${town.keepLevel}/${KEEP_LEVELS.length} <span class="status">${status}</span></div><div class="status">${T.keepAbout}</div>`;
+    const next = KEEP_LEVELS[town.keepLevel];
+    if (next && town.keepUpgradeLeftS === 0) {
+      const cost = next.cost as Partial<Record<ResourceId, number>>;
+      let costs = '';
+      let short = false;
+      for (const id of RESOURCE_IDS) {
+        const amount = cost[id] ?? 0;
+        if (amount === 0) continue;
+        if (town.stock[id] < amount) short = true;
+        costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
+      }
+      html += `<div class="row"><button class="option${short ? ' off' : ''}" data-act="upgradeKeep" data-tip="${T.keepUpgrade}: ${T.level} ${town.keepLevel + 1} · ${T.keepReach} ${next.territoryM} m · ${T.barracksUpTo} ${next.barracks}"><span class="name">${T.keepUpgrade}</span><span class="costs">${costs}</span></button></div>`;
+    }
+    return html;
   }
 
   private plotHtml(world: World, town: Town, plot: number): string {
@@ -532,6 +558,7 @@ export class Hud {
       let html: string;
       if (selection.regiments.size > 0) html = this.armyHtml(world, selection.regiments);
       else if (selection.plot >= 0) html = this.plotHtml(world, town, selection.plot);
+      else if (selection.plot === KEEP) html = this.keepHtml(town);
       else html = this.idleHtml(world, town, selection.tool);
       if (html !== this.panelHtml) {
         this.panelHtml = html;

@@ -15,6 +15,14 @@ interface Strings {
   results: Record<Exclude<CommandResult, 'ok'>, string>;
   difficulty: Record<Difficulty, string>;
   keep: string;
+  /** The keep's panel. */
+  keepAbout: string;
+  keepUpgrade: string;
+  keepRaising: string;
+  keepHp: string;
+  keepReach: string;
+  barracksUpTo: string;
+  keepRaised: string;
   play: string;
   /** Before the build stamp in the menus. */
   version: string;
@@ -194,12 +202,20 @@ const pl: Strings = {
     rearming: 'Oddział jest właśnie przezbrajany.',
     cannotGarrison: 'Wieżę obsadzają tylko łucznicy albo kusznicy, jednego rodzaju naraz.',
     towerFull: 'Wieża ma już pełną załogę.',
+    needsKeep: 'Najpierw rozbuduj zamek: koszary nie mogą być wyższe niż on pozwala.',
     needsWall: 'Bramę stawia się we własnym murze: wskaż prosty odcinek co najmniej 6 m.',
     defenceOnly: 'Milicja broni tylko miasta i okolic. Przezbrój ją przy koszarach, żeby ruszyła dalej.',
     gameOver: 'Gra skończona.',
   },
   difficulty: { easy: 'Łatwy', normal: 'Normalny', hard: 'Trudny' },
   keep: 'Zamek',
+  keepAbout: 'Serce miasta: skład, łucznicy na murach. Wyższy poziom: dalszy zasięg budowy, mocniejsze mury, szybsze strzały i wyższe koszary.',
+  keepUpgrade: 'Rozbuduj zamek',
+  keepRaising: 'Rozbudowa',
+  keepHp: 'wytrzymałość',
+  keepReach: 'zasięg budowy',
+  barracksUpTo: 'koszary do poziomu',
+  keepRaised: 'Zamek rozbudowany!',
   play: 'Graj',
   version: 'Wersja',
   resume: 'Wróć do gry',
@@ -383,12 +399,20 @@ const en: Strings = {
     rearming: 'The regiment is being re-armed.',
     cannotGarrison: 'Only archers or crossbowmen man a tower, one kind at a time.',
     towerFull: 'The tower is fully manned.',
+    needsKeep: 'Raise the keep first: the barracks may rise no higher than it allows.',
     needsWall: 'A gate goes into your own wall: point at a straight stretch at least 6 m long.',
     defenceOnly: 'Militia only defends the town and its land. Re-arm it at the barracks to take it further.',
     gameOver: 'The game is over.',
   },
   difficulty: { easy: 'Easy', normal: 'Normal', hard: 'Hard' },
   keep: 'Keep',
+  keepAbout: 'The heart of the town: its store, archers on its walls. A higher level: a wider reach to build in, stronger walls, quicker arrows and taller barracks.',
+  keepUpgrade: 'Raise the keep',
+  keepRaising: 'Raising',
+  keepHp: 'strength',
+  keepReach: 'building reach',
+  barracksUpTo: 'barracks up to level',
+  keepRaised: 'The keep is raised!',
   play: 'Play',
   version: 'Build',
   resume: 'Back to the game',

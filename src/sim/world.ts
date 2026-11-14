@@ -215,8 +215,10 @@ export function stepWorld(world: World, dtSeconds: number): void {
     fieldTrained(world, town);
     while (town.finishedPlots.length > 0) {
       const plot = town.finishedPlots.pop() as number;
-      const b = town.plots[plot];
+      const b = plot >= 0 ? town.plots[plot] : null;
       if (b) world.events.push('built', b.x, b.z, town.side);
+      // The keep raised a level.
+      else if (plot === -1) world.events.push('keepRaised', townX(town.side), townZ(town.side), town.side);
     }
   }
   stepRearming(world, dtSeconds);

@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
+import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
 
 // A town's economy. The keep is the storehouse (`stock`); every building has
@@ -92,6 +92,9 @@ export interface Town {
   /** The town's buildings; a building keeps its place in the list for as long as it stands (null = free). */
   plots: (Building | null)[];
   keepHp: number;
+  /** The keep's level (1…3) and the seconds left on raising it to the next (0 when no work is under way). */
+  keepLevel: number;
+  keepUpgradeLeftS: number;
   /** Rations owed by the keep's household and the army; one is eaten whenever this reaches 1. */
   rationDebt: number;
   starving: boolean;
@@ -161,7 +164,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.maxBuildings; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, keepLevel: 1, keepUpgradeLeftS: 0, rationDebt: 0, starving: false, recruitQueue: [], trained: [], finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -250,6 +253,8 @@ export function startUpgrade(town: Town, plot: number): CommandResult {
   if (!b) return 'plotEmpty';
   if (b.constructionLeftS > 0) return 'underConstruction';
   if (b.level >= MAX_LEVEL) return 'maxLevel';
+  // The barracks rises no higher than the keep allows.
+  if (b.kind === 'barracks' && b.level + 1 > keepRules(town).barracks) return 'needsKeep';
   if (!canAffordBuilding(town.stock, b.kind, b.level + 1)) return 'cannotAfford';
   // The level counts from the moment the work is paid for; the building stands idle until it is done.
   orderWork(town, b, b.level + 1, UPGRADE_SECONDS);
@@ -280,6 +285,23 @@ export function togglePaused(town: Town, plot: number): CommandResult {
 /** True for a building that is finished and not being upgraded. */
 export function isBuilt(b: Building): boolean {
   return b.constructionLeftS <= 0;
+}
+
+/** What the keep's present level allows (KEEP_LEVELS). */
+export function keepRules(town: Town): (typeof KEEP_LEVELS)[number] {
+  return KEEP_LEVELS[town.keepLevel - 1] as (typeof KEEP_LEVELS)[number];
+}
+
+/** Starts raising the keep a level: paid now, done in KEEP_UPGRADE_SECONDS. */
+export function startKeepUpgrade(town: Town): CommandResult {
+  if (town.keepHp <= 0) return 'plotEmpty';
+  if (town.keepUpgradeLeftS > 0) return 'underConstruction';
+  if (town.keepLevel >= KEEP_LEVELS.length) return 'maxLevel';
+  const cost = (KEEP_LEVELS[town.keepLevel] as (typeof KEEP_LEVELS)[number]).cost as Partial<Record<ResourceId, number>>;
+  for (const id of RESOURCE_IDS) if (town.stock[id] < (cost[id] ?? 0)) return 'cannotAfford';
+  for (const id of RESOURCE_IDS) town.stock[id] -= cost[id] ?? 0;
+  town.keepUpgradeLeftS = KEEP_UPGRADE_SECONDS;
+  return 'ok';
 }
 
 /** Highest level among finished barracks; 0 without one. */
@@ -457,6 +479,16 @@ function construct(town: Town, b: Building, plot: number, dtSeconds: number): vo
 
 /** One fixed step of a town. `soldiers` is the number of its men alive on the field. */
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
+  if (town.keepUpgradeLeftS > 0) {
+    town.keepUpgradeLeftS = Math.max(0, town.keepUpgradeLeftS - dtSeconds * town.productionFactor);
+    if (town.keepUpgradeLeftS === 0) {
+      // The new walls stand: the keep takes more, and what it had taken stays taken.
+      const before = keepRules(town).hp;
+      town.keepLevel += 1;
+      if (town.keepHp > 0) town.keepHp += keepRules(town).hp - before;
+      town.finishedPlots.push(-1);
+    }
+  }
   town.flowS -= dtSeconds;
   if (town.flowS <= 0) {
     town.flowS += FLOW_SAMPLE_S;

@@ -1,12 +1,12 @@
 import { AI, CAMERA, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveGroup, cmdRearm, cmdRecruit, cmdTogglePaused, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import type { Regiment } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
-import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, PLAYER, type Side } from '../sim/types.ts';
+import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, type Side } from '../sim/types.ts';
 import { createWorld, findRegiment, stepWorld, type World } from '../sim/world.ts';
 import { workState } from '../sim/economy.ts';
 import { CpuTimer } from '../render/perf.ts';
@@ -50,7 +50,8 @@ export class Game implements ControlTarget {
   readonly hud: Hud;
   private readonly controls: Controls;
   private readonly selected = new Set<number>();
-  private selectedPlot = -1;
+  /** The selected building's plot, KEEP for the keep, NOWHERE for none. */
+  private selectedPlot: number = NOWHERE;
   private tool: Tool | null = null;
   private readonly ghost: Ghost = { kind: 'house', x: 0, z: 0, yawRad: 0, allowed: false };
   private readonly tiles: GroundTiles = { values: [], count: 0, allowed: true };
@@ -88,6 +89,7 @@ export class Game implements ControlTarget {
       ungarrison: (plot) => this.report(cmdUngarrison(this.world, PLAYER, plot)),
       rotateCamera: (direction) => this.camera.rotate(direction * CAMERA.rotateStepRad),
       upgrade: (plot) => this.report(cmdUpgrade(this.world, PLAYER, plot)),
+      upgradeKeep: () => this.report(cmdUpgradeKeep(this.world, PLAYER)),
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),
@@ -208,6 +210,12 @@ export class Game implements ControlTarget {
       case 'fed':
         if (mine) this.hud.toast(T.fed, 'good');
         break;
+      case 'keepRaised':
+        if (mine) {
+          this.sound.play('build');
+          this.hud.toast(T.keepRaised, 'good', [e.x, e.z]);
+        }
+        break;
       case 'pointTaken': {
         const p = this.world.points.find((q) => Math.hypot(q.x - e.x, q.z - e.z) < 1);
         if (p) this.hud.toast(`${mine ? T.pointTaken : T.pointLost} ${T.points[p.kind]}`, mine ? 'good' : 'bad', [p.x, p.z]);
@@ -277,7 +285,7 @@ export class Game implements ControlTarget {
     this.camera.update(frameSeconds);
     this.timer.begin();
     const placing = this.updateTool();
-    this.view.render(this.world, this.camera, this.selected, this.selectedPlot >= 0 ? this.selectedPlot : -2, placing === 'ghost' ? this.ghost : null, placing === 'none' ? null : this.tiles, frameSeconds);
+    this.view.render(this.world, this.camera, this.selected, this.selectedPlot, placing === 'ghost' ? this.ghost : null, placing === 'none' ? null : this.tiles, frameSeconds);
     this.timer.lap('draw');
     this.updateCorners();
     const tool = this.tool === null ? '' : this.tool.kind === 'build' ? this.tool.building : this.tool.kind;
@@ -369,7 +377,7 @@ export class Game implements ControlTarget {
     this.sound.play('click');
     this.tool = tool;
     this.selected.clear();
-    this.selectedPlot = -1;
+    this.selectedPlot = NOWHERE;
   }
 
   /** Puts down the tool; a road in the middle of a stretch first lets go of its start. */
@@ -509,7 +517,7 @@ export class Game implements ControlTarget {
       return;
     }
     this.selected.add(id);
-    this.selectedPlot = -1;
+    this.selectedPlot = NOWHERE;
     this.setHint(T.hintArmy);
     this.sound.play('click');
   }
@@ -529,8 +537,9 @@ export class Game implements ControlTarget {
     if (additive) return;
     this.selected.clear();
     const plot = this.plotAt(this.hit.x, this.hit.z, PLAYER);
-    this.selectedPlot = plot >= 0 ? plot : -1;
-    if (plot >= 0) this.sound.play('click');
+    // A building, the keep (KEEP), or nothing (NOWHERE).
+    this.selectedPlot = plot;
+    if (plot !== NOWHERE) this.sound.play('click');
     this.setHint(T.hintIdle);
   }
 
@@ -546,7 +555,7 @@ export class Game implements ControlTarget {
       if (this.screen.x >= left && this.screen.x <= right && this.screen.y >= top && this.screen.y <= bottom) this.selected.add(r.id);
     }
     if (this.selected.size > 0) {
-      this.selectedPlot = -1;
+      this.selectedPlot = NOWHERE;
       this.setHint(T.hintArmy);
     }
   }
@@ -634,9 +643,9 @@ export class Game implements ControlTarget {
     } else if (action === 'road') this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false });
     else if (action === 'cancel') {
       if (this.tool) this.dropTool();
-      else if (this.selected.size > 0 || this.selectedPlot >= 0) {
+      else if (this.selected.size > 0 || this.selectedPlot !== NOWHERE) {
         this.selected.clear();
-        this.selectedPlot = -1;
+        this.selectedPlot = NOWHERE;
         this.setHint(T.hintIdle);
       } else {
         this.onMenu?.();
@@ -663,7 +672,7 @@ export class Game implements ControlTarget {
     this.selected.clear();
     for (const r of this.world.regiments) if (r.side === PLAYER && r.aliveMen > 0 && r.state === 'formed') this.selected.add(r.id);
     if (this.selected.size > 0) {
-      this.selectedPlot = -1;
+      this.selectedPlot = NOWHERE;
       this.setHint(T.hintArmy);
     }
   }
