@@ -48,9 +48,10 @@ DEFAULT = "plaster#d8cfc0"
 # so the door faces -Y; `drop`: a regex over mesh (object) names to leave out; `surfaces`: rules
 # (regex, surface or None) tried before RULES; `min_part_m`: meshes smaller than this across (in the
 # game's metres) are left out, the bottles and pebbles a strategy camera never sees and that no
-# thinning can remove; `plate_m`: faces lying wholly this low are the source's ground plate, removed.
+# thinning can remove; `plate_m`: faces lying wholly this low are the source's ground plate, removed;
+# `smoke_from`: surfaces whose highest point smokes (a chimney's brick, a hearth's embers).
 MODELS = {
-    "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke": [(0.0, 0.0, 1.0)]},
+    "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke_from": ["rubble#b8a89a", "ember#ff7a2a"]},
     "wineShop": {
         "kind": "winery",
         "levels": [3],
@@ -59,7 +60,7 @@ MODELS = {
         "surfaces": [(r"^material$", None)],
         "min_part_m": 0.6,
         "plate_m": 0.45,
-        "smoke": [],
+        "smoke_from": ["rubble#b8a89a"],
     },
 }
 
@@ -180,16 +181,28 @@ def main() -> None:
         v.co = Vector((p.x * c - p.y * s, p.x * s + p.y * c, p.z))
     height = (hi.z - lo.z) * scale
     tris = sum(len(p.vertices) - 2 for p in body.data.polygons)
-    smoke = spec.get("smoke", [])
+    # Smoke rises from the top of each named surface: the chimney's crown, the hearth's coals.
+    smoke = []
+    names = [m.name for m in body.data.materials]
+    for surface in spec.get("smoke_from", []):
+        if surface not in names:
+            continue
+        slot = names.index(surface)
+        pts = [body.data.vertices[i].co for p in body.data.polygons if p.material_index == slot for i in p.vertices]
+        top = max(pts, key=lambda v: v.z)
+        near = [v for v in pts if v.z > top.z - 0.3 and (v.xy - top.xy).length < 1.5]
+        cx = sum(v.x for v in near) / len(near)
+        cy = sum(v.y for v in near) / len(near)
+        smoke.append((cx, cy, top.z + 0.2))
     index_path = os.path.join(out, "index.json")
     index = json.load(open(index_path)) if os.path.exists(index_path) else {}
     for level in spec["levels"]:
         body.name = f"{spec['kind']}_{level}"
         for o in [o for o in bpy.context.scene.objects if o.type == "EMPTY"]:
             bpy.data.objects.remove(o)
-        for i, (x, y, zf) in enumerate(smoke):
+        for i, (x, y, z) in enumerate(smoke):
             empty = bpy.data.objects.new(f"smoke_{i}", None)
-            empty.location = (x, y, zf * height)
+            empty.location = (x, y, z)
             bpy.context.scene.collection.objects.link(empty)
         file = f"{spec['kind']}_{level}.glb"
         export_glb(os.path.join(out, file))
@@ -197,7 +210,7 @@ def main() -> None:
     with open(index_path, "w") as f:
         json.dump(dict(sorted(index.items())), f, indent=1)
     size = [round((hi.x - lo.x) * scale, 1), round((hi.y - lo.y) * scale, 1), round(height, 1)]
-    print(f"{name}: {tris_in} -> {tris} triangles, {size} m, levels {spec['levels']} of {spec['kind']}, {small} small parts left out")
+    print(f"{name}: {tris_in} -> {tris} triangles, {size} m, levels {spec['levels']} of {spec['kind']}, {small} small parts left out, smoke at {[tuple(round(c, 1) for c in p) for p in smoke]}")
     for n, s in sorted(report.items()):
         print(f"   {n:28s} -> {s}")
 
