@@ -22,6 +22,24 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
 | Stabbing, Double Dagger Stab, Standing Aim Walk Forward/Right, Idle 1–2, Block (drugi) | Mixamo | Mixamo | w zapasie (pikinierzy, łucznicy) |
 
+### Dostarczone 16.11 — do wpięcia (licencje sprawdzone)
+
+| Co | Źródło | Licencja | Plan |
+|---|---|---|---|
+| „.Fuse Civilian 2” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | łucznicy / kusznicy, tragarze |
+| Longbow Aiming Pack (naciąganie, celowanie, chód z celowaniem ×4, idle) | Mixamo | Mixamo | łucznicy |
+| Walk With Rifle, Rifle Walk | Mixamo | Mixamo | marsz z drzewcem (pikinierzy) |
+| „Archer Shooting Arrow from Bow in Battle” (szkielet + animacja) | LasquetiSpice, Sketchfab | CC BY 4.0 | łucznik, porównanie |
+| „Archer's clothes”, „English archer” | ArtLeaving / count_zero, Sketchfab | CC BY 4.0 | ubiór łucznika |
+| „Peasant”, „Farmer”, „Medieval Villager Render”, „Medieval woman figure” (bez szkieletu) | jubabuba2512 / samsikua / Quatrilion / mikurban, Sketchfab | CC BY 4.0 | ludzie w mieście (po dopięciu szkieletu) |
+| „Blacksmith” (szkielet, animacja pracy) | celestin.bitternose, Sketchfab | CC BY 4.0 | kowal przy kuźni |
+| „Blacksmith” (bez szkieletu) | XiaoBuBu80, Sketchfab | CC BY 4.0 | rzemieślnik |
+| Wózek ręczny, 4 wozy | 3dAssetsForGames, AspectStudios, rakutin, NoodlePoodle, Cinnamine3D (Sketchfab) | CC BY 4.0 | transport poziom 2–3 |
+| Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | jeśli armaty zamiast balist |
+| Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
+| Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | chlewnia |
+| Medieval Gatehouse, Medieval castle (wieża), Saxon warrior | Daniel74 i in., Blendswap | CC0 | brama zamku, wieże, milicja |
+
 Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjnej), „Knight Face Reval”
 (postać Paladin z Mixamo wrzucona ponownie przez kogoś innego), „Knight medieval no textures”
 (zostaje w zapasie: bez szkieletu, 38 tys. tr.).
