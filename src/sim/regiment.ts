@@ -110,6 +110,21 @@ export interface Regiment {
   xp: number;
   /** Marching in a formation of several regiments: no faster than this, so they keep together (0 = own pace). */
   paceCapMs: number;
+  /** A way round walls to its goal: way points (x, z pairs), the next one, the goal it leads to, the map's version it was found on, and the clock to the next look. */
+  route: number[];
+  routeAt: number;
+  routeGoalX: number;
+  routeGoalZ: number;
+  routeVersion: number;
+  routeCheckS: number;
+  /** Files while it marches in column round walls and through gates (0 = as ordered). */
+  marchFiles: number;
+}
+
+/** Men in the front rank now: as ordered, or fewer while it marches in column. */
+export function filesOf(r: Regiment): number {
+  const files = r.marchFiles > 0 ? Math.min(r.files, r.marchFiles) : r.files;
+  return Math.min(files, Math.max(1, r.aliveMen));
 }
 
 /** 0 green, 1 seasoned, 2 veterans. */
@@ -163,7 +178,7 @@ function slotFile(r: Regiment, slot: number): number {
     const inRank = Math.min(2 * rank + 1, r.aliveMen - first);
     return slot - first - (inRank - 1) / 2;
   }
-  const files = Math.min(r.files, Math.max(1, r.aliveMen));
+  const files = filesOf(r);
   const rank = Math.floor(slot / files);
   const inRank = Math.min(files, r.aliveMen - rank * files);
   return slot - rank * files - (inRank - 1) / 2;
@@ -171,7 +186,7 @@ function slotFile(r: Regiment, slot: number): number {
 
 function slotRank(r: Regiment, slot: number): number {
   if (r.formation === 'wedge') return wedgeRank(slot);
-  return Math.floor(slot / Math.min(r.files, Math.max(1, r.aliveMen)));
+  return Math.floor(slot / filesOf(r));
 }
 
 /** Open order stands the men further apart. */
@@ -203,7 +218,7 @@ export function slotZ(r: Regiment, slot: number): number {
 /** Width of the front rank in metres. */
 export function frontageM(r: Regiment): number {
   if (r.formation === 'wedge') return 2 * Math.floor(Math.sqrt(Math.max(0, r.aliveMen - 1))) * r.def.fileSpacingM;
-  return (Math.min(r.files, Math.max(1, r.aliveMen)) - 1) * r.def.fileSpacingM * spread(r);
+  return (filesOf(r) - 1) * r.def.fileSpacingM * spread(r);
 }
 
 /** Gives the living their places again, front rank first, after a death or a rally. The captain takes the last place: behind his men. */
@@ -266,6 +281,13 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     sinceShotS: 999,
     xp: 0,
     paceCapMs: 0,
+    route: [],
+    routeAt: 0,
+    routeGoalX: x,
+    routeGoalZ: z,
+    routeVersion: -1,
+    routeCheckS: 0,
+    marchFiles: 0,
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({

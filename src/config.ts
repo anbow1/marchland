@@ -509,6 +509,12 @@ export const ARMY = {
   /** …but never strays further than this from his place in the formation. */
   leashM: 8,
   targetSearchIntervalS: 0.2,
+  /** Round walls: files while marching in column, how near a way point counts as reached, how far the goal may move before the way is found again, and how often it is looked at (on failure, retried after `routeRetryS`). */
+  columnFiles: 3,
+  routeReachM: 3,
+  routeGoalSlackM: 6,
+  routeCheckS: 1,
+  routeRetryS: 6,
   /** Regiments run for the last stretch of an attack. */
   runWithinM: 55,
   /** A regiment in melee turns towards its enemy this slowly: a second attacker keeps a flank for a while. */

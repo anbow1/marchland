@@ -202,9 +202,39 @@ function nearestOpen(nav: Nav, cell: number): number {
   return cell;
 }
 
+/** Whose way is being found: -1 townspeople (any gate is theirs), else a regiment's side (only its own gates open). */
+let passSide = -1;
+
 function passable(nav: Nav, i: number): boolean {
-  // Townspeople only walk their own side's land, so any gate is theirs.
-  return nav.built[i] === 0 && WATER[i] === 0 && (nav.wallHp[i] === 0 || nav.wallGate[i] === 1);
+  if (nav.built[i] !== 0 || WATER[i] !== 0) return false;
+  if (passSide < 0) return nav.wallHp[i] === 0 || nav.wallGate[i] === 1;
+  return !wallStops(nav, i, passSide);
+}
+
+/** True when a straight line between two points crosses water, sheer rock or a wall that stops soldiers of `side` (checked every metre). */
+export function blockedBetween(nav: Nav, side: number, x0: number, z0: number, x1: number, z1: number): boolean {
+  const steps = Math.ceil(hypot2(x1 - x0, z1 - z0));
+  for (let k = 1; k < steps; k++) {
+    const x = x0 + ((x1 - x0) * k) / steps;
+    const z = z0 + ((z1 - z0) * k) / steps;
+    if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) continue;
+    const i = cellOf(z) * N + cellOf(x);
+    if (WATER[i] === 1 || (nav.wallHp[i] > 0 && wallStops(nav, i, side))) return true;
+  }
+  return false;
+}
+
+/**
+ * A regiment's way round walls, water and rock: as findPath, but through its own side's gates only, and round buildings and
+ * water. Returns the number of way points (0 when there is none within the search's reach).
+ */
+export function findRoute(nav: Nav, side: number, sx: number, sz: number, tx: number, tz: number, out: Float32Array): number {
+  passSide = side;
+  try {
+    return findPath(nav, sx, sz, tx, tz, out);
+  } finally {
+    passSide = -1;
+  }
 }
 
 /** True where a wall stops a soldier of `side`: any standing wall but his own side's gates. */

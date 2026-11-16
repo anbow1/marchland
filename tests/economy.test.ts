@@ -665,6 +665,33 @@ describe('walls and watchtowers', () => {
     expect(broke).toBeLessThan(240);
   });
 
+  it('a regiment marches round a wall and round a lake instead of sticking at them', () => {
+    const world = rich(quietWorld());
+    const x = townX(PLAYER) + 40;
+    const z = townZ(PLAYER) - 20;
+    expect(cmdBuildWall(world, PLAYER, x, z - 30, x, z + 30)).toBe('ok');
+    const r = spawnRegiment(world, PLAYER, 'pikemen', x + 15, z, -Math.PI / 2);
+    expect(cmdMove(world, r.id, x - 20, z, null, false)).toBe('ok');
+    const t = runUntil(world, 150, () => r.order === 'hold' && Math.hypot(r.anchorX - (x - 20), r.anchorZ - z) < 3);
+    expect(t).toBeLessThan(150);
+    // Across the lake: round its shore.
+    const lx = lakeX(PLAYER);
+    const lz = lakeZ(PLAYER);
+    const reach = TOWN.lakeRadiusM + 30;
+    // From the side towards the keep to the far side, along the line across the map (both on the map).
+    const d = Math.hypot(lx, lz) || 1;
+    const ux = -lz / d;
+    const uz = lx / d;
+    const boat = spawnRegiment(world, PLAYER, 'swordsmen', lx + ux * reach, lz + uz * reach, 0);
+    const gx = lx - ux * reach;
+    const gz = lz - uz * reach;
+    expect(cmdMove(world, boat.id, gx, gz, null, false)).toBe('ok');
+    const t2 = runUntil(world, 200, () => boat.order === 'hold' && Math.hypot(boat.anchorX - gx, boat.anchorZ - gz) < 3);
+    expect(t2).toBeLessThan(200);
+    // Nobody stood in the water on the way.
+    for (const s of boat.soldiers) if (s.alive) expect(isWater(s.x, s.z)).toBe(false);
+  });
+
   it('a gate goes into its own wall: its side walks and marches through, the enemy is stopped', () => {
     const world = rich(quietWorld());
     const town = world.towns[PLAYER];

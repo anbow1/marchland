@@ -1,9 +1,11 @@
 import { abs, attribute, cos, Fn, mix, normalLocal, sin, vec3 } from 'three/tsl';
 import { Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
-import { ARMY, MISSILE, UNITS } from '../config.ts';
+import { ARMY, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
-import { heightAtM } from '../sim/terrain.ts';
+import { heightAtM, townX, townZ } from '../sim/terrain.ts';
+import { enemyOf } from '../sim/types.ts';
+import { groundUnder } from './townView.ts';
 import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
@@ -177,12 +179,49 @@ export class ArmyView {
         this.write(k, k.mesh.count++, s);
       }
     }
+    this.writeGarrisons(world);
     for (const k of this.kinds.values()) {
       k.place.needsUpdate = true;
       k.anim.needsUpdate = true;
       k.side.needsUpdate = true;
     }
     this.updateArrows(world);
+  }
+
+  /** The men manning each watchtower, on its top: one at each corner, looking out towards the enemy's keep. */
+  private writeGarrisons(world: World): void {
+    for (const town of world.towns) {
+      const foe = enemyOf(town.side);
+      for (const b of town.plots) {
+        if (!b || b.kind !== 'tower' || b.garrison <= 0 || b.garrisonKind === null || b.constructionLeftS > 0) continue;
+        const k = this.kinds.get(b.garrisonKind) as KindMesh;
+        const top = groundUnder(b.x, b.z, b.yawRad)[1] + TOWER.topM;
+        const look = Math.atan2(townX(foe) - b.x, townZ(foe) - b.z);
+        // Drawing and loosing while the tower shoots: a man's arms come up for the first part of each reload.
+        const reload = UNITS[b.garrisonKind].reloadS / Math.max(1, b.garrison);
+        const strike = b.shotS > reload * 0.6 ? Math.sin(((reload - b.shotS) / (reload * 0.4)) * Math.PI) : 0;
+        const c = Math.cos(b.yawRad);
+        const sn = Math.sin(b.yawRad);
+        for (let m = 0; m < Math.min(b.garrison, TOWER.maxGarrison); m++) {
+          if (k.mesh.count >= CAPACITY) break;
+          const i = k.mesh.count++;
+          // The corners of the platform, turned with the tower.
+          const ax = (m % 2 === 0 ? -1 : 1) * 1.3;
+          const az = (m < 2 ? -1 : 1) * 1.3;
+          const p = k.place.array as Float32Array;
+          p[i * 4] = b.x + ax * c + az * sn;
+          p[i * 4 + 1] = top;
+          p[i * 4 + 2] = b.z - ax * sn + az * c;
+          p[i * 4 + 3] = look + Math.PI;
+          const a = k.anim.array as Float32Array;
+          a[i * 4] = 0;
+          a[i * 4 + 1] = 0;
+          a[i * 4 + 2] = m === 0 ? strike * STRIKE_RAD : 0;
+          a[i * 4 + 3] = 0;
+          (k.side.array as Float32Array)[i] = town.side;
+        }
+      }
+    }
   }
 
   private updateArrows(world: World): void {

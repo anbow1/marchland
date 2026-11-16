@@ -400,7 +400,7 @@ export class Hud {
       const list = RESOURCE_IDS.filter((id) => (goods[id] ?? 0) > 0)
         .map((id) => `${T.resources[id].toLowerCase()} ${goods[id]}`)
         .join(', ');
-      html += `<span class="orderUnit"><span class="glyph">${UNIT_GLYPH[kind]}</span>${[1, 2].map((n) => `<button class="choice" data-act="orderUnit" data-arg="${kind}:${n}" data-tip="${T.orderTip} ${T.units[kind].name} ×${n}: ${list}${n > 1 ? ` (×${n})` : ''}">×${n}</button>`).join('')}</span>`;
+      html += `<span class="orderUnit"><span class="glyph">${UNIT_GLYPH[kind]}</span>${[1, 2, 5].map((n) => `<button class="choice" data-act="orderUnit" data-arg="${kind}:${n}" data-tip="${T.orderTip} ${T.units[kind].name} ×${n}: ${list}${n > 1 ? ` (×${n})` : ''}">×${n}</button>`).join('')}</span>`;
     }
     html += '</div>';
     if (town.recruitQueue.length > 0) {

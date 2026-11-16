@@ -1,4 +1,4 @@
-import { cameraPosition, float, int, max, mix, normalWorld, positionWorld, smoothstep, texture, transformNormalToView, vec2, vec3 } from 'three/tsl';
+import { cameraPosition, float, int, max, min, mix, normalWorld, positionWorld, smoothstep, texture, transformNormalToView, vec2, vec3 } from 'three/tsl';
 import { type BufferAttribute, ClampToEdgeWrapping, DataTexture, LinearFilter, LinearMipmapLinearFilter, Mesh, MeshStandardNodeMaterial, type Node, NoColorSpace, PlaneGeometry, RedFormat, RepeatWrapping, RGBAFormat, type Texture, UnsignedByteType } from 'three/webgpu';
 import { MAP, TOWN } from '../config.ts';
 import { fbm2, tileFbm } from '../core/noise.ts';
@@ -53,6 +53,8 @@ const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>>
   rock: [0.62, 0.64, 0.56],
   // Trodden earth in a wet country is grey-brown, not the scan's ochre.
   dirt: [0.72, 0.7, 0.68],
+  // Road setts: a light, weathered grey-beige stone, as country roads read from the air.
+  rubble: [1.0, 1.0, 1.0],
 };
 
 /** 1 inside `radiusM` of a point, falling to 0 over `fadeM` beyond it. */
@@ -177,6 +179,8 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const earth = smoothstep(0.44, 0.56, max(what.g, made.r).add(ragged.mul(0.55)));
   const rock = smoothstep(0.38, 0.62, what.a.add(ragged.mul(0.7)));
   const soil = smoothstep(0.4, 0.6, made.g.add(ragged.mul(0.2)));
+  // Roads are paved: setts over the trodden earth, worn ragged at the edges.
+  const paved = smoothstep(0.35, 0.65, made.a.add(ragged.mul(0.3)));
   // v runs against z so the scans' normals keep their handedness on the ground (tangent +X, bitangent −Z).
   const ground = vec2(positionWorld.x, positionWorld.z.negate());
   const far = smoothstep(FAR_FROM_M, FAR_FULL_M, positionWorld.sub(cameraPosition).length()).mul(0.8);
@@ -204,14 +208,14 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
     const grass = mix(sample('meadow'), sample('dry_grass'), dry);
     const turf = wildTint ? grass.mul(wildTint) : grass;
     const wild = mix(mix(turf, sample('forest_floor'), forest), sample('rock'), rock);
-    return mix(mix(wild, sample('dirt'), earth), sample('farm_soil'), soil);
+    return mix(mix(mix(wild, sample('dirt'), earth), sample('farm_soil'), soil), sample('rubble'), paved);
   };
   // No meadow is one green: lush dark patches in the hollows of the noise, sere yellow ones on its crests,
   // and a scatter of flowering weeds a few metres across.
   const lush = smoothstep(0.42, 0.66, noiseAt(57, 0.13, 0.81));
   const sere = smoothstep(0.52, 0.76, noiseAt(33, 0.63, 0.27));
   const weeds = smoothstep(0.66, 0.78, noiseAt(6.5, 0.41, 0.07)).mul(smoothstep(0.45, 0.6, coarse));
-  const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.25)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.15)));
+  const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.12)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.08)));
   const distanceM = positionWorld.sub(cameraPosition).length();
   /** How much the fine scans still add on top of the aerial photograph: all of it near, a little far away. */
   const detailShare = float(1).sub(smoothstep(DETAIL_NEAR_M, DETAIL_FAR_M, distanceM)).mul(0.7).add(0.2);
@@ -230,11 +234,20 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const pastureRaw = untiled('pasture', 1, 0.17);
   // A little of the photograph's contrast taken back: its bare spots are glaring under a strong sun.
   const pastureMean = texture(lib.colour, uvOf('pasture', 1)).depth(int(layerOf('pasture'))).level(float(FLAT_MIP)).rgb;
-  const pasture = mix(pastureMean, pastureRaw, 0.78).mul(vec3(pastureTint[0], pastureTint[1], pastureTint[2]));
+  const pastureMix = mix(pastureMean, pastureRaw, 0.6);
+  // The photograph's bare, sun-burnt spots read as yellow blotches from a strategy camera: keep their
+  // brightness, take their yellow (no more red than four fifths of the green, little blue).
+  const pastureGreen = vec3(min(pastureMix.x, pastureMix.y.mul(0.78)), pastureMix.y, min(pastureMix.z, pastureMix.y.mul(0.55)));
+  const pasture = pastureGreen.mul(vec3(pastureTint[0], pastureTint[1], pastureTint[2]));
   const scanned = blend((id) => {
     if (id === 'meadow') return pasture.mul(mix(vec3(1), detailOf('meadow'), detailShare));
     // Dry grass on the crests: the same land gone straw-coloured, with the dry scan's grain.
     if (id === 'dry_grass') return pasture.mul(vec3(DRY_TINT[0], DRY_TINT[1], DRY_TINT[2])).mul(mix(vec3(1), detailOf('dry_grass'), detailShare));
+    // Road setts: the rubble scan at half size, its ochre washed out to a weathered grey.
+    if (id === 'rubble') {
+      const setts = untiled(id, 0.5, 0.11);
+      return mix(vec3(setts.dot(luminance)), setts, 0.3).mul(1.15);
+    }
     const near = untiled(id, 1, 0);
     const wide = untiled(id, FAR_SCALE, 0.31);
     const season = SEASON_TINT[id];

@@ -230,10 +230,12 @@ export class TownView {
             mesh.position.set(b.x, high, b.z);
             mesh.rotation.y = b.yawRad;
             const plinth = (this.plinths[side] as Mesh[])[slot] as Mesh;
-            plinth.visible = high - low > 0.25;
+            plinth.visible = high - low > 0.4;
             plinth.position.set(b.x, high + 0.02, b.z);
             plinth.rotation.y = b.yawRad;
-            plinth.scale.set(1, high - low + 0.4, 1);
+            // A watchtower stands on a narrower footing than a house.
+            const wide = b.kind === 'tower' ? 0.62 : 1;
+            plinth.scale.set(wide, high - low + 0.4, wide);
             const part = this.models.get(`${b.kind}:${b.level}:${side}`)?.parts[0];
             if (part) {
               mover.geometry = part.geometry;

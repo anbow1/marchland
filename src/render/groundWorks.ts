@@ -6,7 +6,7 @@ import type { World } from '../sim/world.ts';
 
 // What people have done to the ground, as a texture the terrain shader reads:
 // R = trodden earth (roads, the yards round buildings), G = ploughed soil,
-// B = the corn on it (0 none, rising as it grows, 1 ripe). It covers the
+// B = the corn on it (0 none, rising as it grows, 1 ripe), A = paving (the roads). It covers the
 // playable square and is redrawn when a road, a building or a field changes;
 // so a road is a road on any slope, with no geometry to float or sink.
 
@@ -97,12 +97,12 @@ export class GroundWorks {
     this.signature = signature;
     this.ageS = 0;
     this.data.fill(0);
-    for (let i = 3; i < this.data.length; i += 4) this.data[i] = 255;
     // Roads.
     const road = world.nav.road;
     for (let cell = 0; cell < road.length; cell++) {
       if (road[cell] === 0) continue;
       this.disc(cellX(cell), cellZ(cell), ROADS.cellM * 0.95, 0.9, 0, 1);
+      this.disc(cellX(cell), cellZ(cell), ROADS.cellM * 0.85, 0.7, 3, 1);
     }
     for (const town of world.towns) {
       // The keep's yard.

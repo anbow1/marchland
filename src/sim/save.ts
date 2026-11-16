@@ -160,6 +160,13 @@ function upgrade(world: World): World {
   for (const r of world.regiments) {
     r.xp ??= 0;
     r.paceCapMs ??= 0;
+    r.route ??= [];
+    r.routeAt ??= 0;
+    r.routeGoalX ??= r.anchorX;
+    r.routeGoalZ ??= r.anchorZ;
+    r.routeVersion ??= -1;
+    r.routeCheckS ??= 0;
+    r.marchFiles ??= 0;
   }
   for (const a of world.arrows) a.shooterId ??= -1;
   return world;

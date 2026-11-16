@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Wojsko omija mury i wodę, załogi na wieżach, łąka bez plam, bruk na drogach
+
+- **Trasy oddziałów**: gdy między oddziałem a celem leży mur (cudzy albo własny bez bramy), woda
+  lub skała, oddział szuka drogi przez przerwę, bród albo własną bramę (A* na siatce 2 m, jak
+  ludzie, ale przez bramy tylko swojej strony) i idzie nią kolumną po 3, na ostatnim odcinku wraca
+  do szyku. Gdy drogi nie ma (miasto zamknięte murem), idzie prosto i szturmuje mur. Trasa
+  odświeżana co sekundę, od razu po zmianie celu lub murów. Test: marsz za własny mur bez bramy i
+  na drugi brzeg jeziora — dochodzi, nikt nie stoi w wodzie.
+- **Załoga wieży widoczna**: łucznicy albo kusznicy na rogach szczytu, patrzą w stronę wroga,
+  jeden napina łuk, gdy wieża strzela.
+- **Łąka**: wycięte żółte plamy zdjęcia (jasność zostaje, żółć znika), słabsze przebarwienia.
+- **Drogi brukowane**: osobny kanał „bruku” w mapie robót; drogi to jasnoszare kamienie, podwórza
+  zostają ubitą ziemią.
+- **Zamówienia**: „Zamów uzbrojenie” ×1 / ×2 / ×5; zamówienia różnych oddziałów się sumują.
+- Testy: 85 / 85.
+
 ## 2026-11-14 · Roślinność w stronę docelowego wyglądu, zboże w 3D, chaty na zboczach, poprawki
 
 - **Drzewa z kart liści** (`render/foliage.ts`): korona to kilkadziesiąt kart z teksturą liści

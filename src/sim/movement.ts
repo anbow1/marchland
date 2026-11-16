@@ -1,4 +1,4 @@
-import { cellX, cellZ, freeCellBeside, nearBuilt, wallCellAt, wallStops } from './nav.ts';
+import { cellX, cellZ, findRoute, freeCellBeside, nearBuilt, blockedBetween, wallCellAt, wallStops } from './nav.ts';
 import { reachM } from './missiles.ts';
 import { woodStands } from './trees.ts';
 import { ARMY, COMBAT, FATIGUE, FORMATION, MAP, TOWN } from '../config.ts';
@@ -180,6 +180,15 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
     if (threat && threat.aliveMen > 0) goalFacing = Math.atan2(threat.centreX - r.anchorX, threat.centreZ - r.anchorZ);
   }
 
+  // Water, rock or a wall in the way: the way round it (a ford, a gap, one of its own gates), one leg at a time, in column.
+  const leg = r.order === 'hold' ? null : followRoute(world, r, goalX, goalZ, dtSeconds);
+  r.marchFiles = leg ? ARMY.columnFiles : 0;
+  if (leg) {
+    goalX = leg.x;
+    goalZ = leg.z;
+    stopDistanceM = 0;
+    faceGoal = false;
+  }
   const dx = goalX - r.anchorX;
   const dz = goalZ - r.anchorZ;
   const distanceM = hypot2(dx, dz);
@@ -204,7 +213,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
     if (faceGoal || distanceM - stopDistanceM > 2) desiredFacing = Math.atan2(dx, dz);
   } else {
     if (faceGoal && distanceM > 0.01) desiredFacing = Math.atan2(dx, dz);
-    if (r.order === 'move') {
+    if (r.order === 'move' && !leg) {
       r.order = 'hold';
       r.run = false;
     }
@@ -216,6 +225,69 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
   const maxTurn = turnRate * dtSeconds;
   r.facingRad += Math.min(maxTurn, Math.max(-maxTurn, turn));
   updateFatigue(r, running, dtSeconds);
+}
+
+const routeScratch = new Float32Array(2 * 64);
+const LEG = { x: 0, z: 0 };
+
+/**
+ * The next point on a regiment's way to (goalX, goalZ) when water, rock or a wall that stops it lies across
+ * the straight line; null when the way is straight (or no way round was found: then it goes straight and batters the
+ * wall). Looked at again once a second, at once when the goal moves or the walls change.
+ */
+function followRoute(world: World, r: Regiment, goalX: number, goalZ: number, dtSeconds: number): { x: number; z: number } | null {
+  const nav = world.nav;
+  r.routeCheckS -= dtSeconds;
+  const moved = hypot2(goalX - r.routeGoalX, goalZ - r.routeGoalZ) > ARMY.routeGoalSlackM;
+  const changed = r.routeVersion !== nav.version;
+  if (r.routeCheckS <= 0 || moved || changed) {
+    if (!blockedBetween(nav, r.side, r.anchorX, r.anchorZ, goalX, goalZ)) {
+      r.route.length = 0;
+      r.routeCheckS = ARMY.routeCheckS;
+      r.routeGoalX = goalX;
+      r.routeGoalZ = goalZ;
+      r.routeVersion = nav.version;
+    } else if (r.route.length === 0 || moved || changed) {
+      // The search shares the step's budget with the townspeople: without any left, try again next step.
+      if (nav.budget <= 0) return null;
+      const n = findRoute(nav, r.side, r.anchorX, r.anchorZ, goalX, goalZ, routeScratch);
+      r.route.length = 0;
+      // Every way point but the last (the goal itself, reached by the ordinary approach).
+      for (let k = 0; k < n - 1; k++) r.route.push(routeScratch[k * 2] as number, routeScratch[k * 2 + 1] as number);
+      r.routeAt = 0;
+      r.routeGoalX = goalX;
+      r.routeGoalZ = goalZ;
+      r.routeVersion = nav.version;
+      // No way round (walled in, or too far to search): straight at it, and do not search again for a while.
+      r.routeCheckS = n === 0 ? ARMY.routeRetryS : ARMY.routeCheckS;
+    } else {
+      r.routeCheckS = ARMY.routeCheckS;
+    }
+  }
+  const points = r.route.length / 2;
+  // Past the way points it has reached, and those it can already see past.
+  while (r.routeAt < points) {
+    const x = r.route[r.routeAt * 2] as number;
+    const z = r.route[r.routeAt * 2 + 1] as number;
+    if (hypot2(x - r.anchorX, z - r.anchorZ) < ARMY.routeReachM) {
+      r.routeAt++;
+      continue;
+    }
+    const nx = r.routeAt + 1 < points ? (r.route[(r.routeAt + 1) * 2] as number) : goalX;
+    const nz = r.routeAt + 1 < points ? (r.route[(r.routeAt + 1) * 2 + 1] as number) : goalZ;
+    if (!blockedBetween(nav, r.side, r.anchorX, r.anchorZ, nx, nz) && !blockedBetween(nav, r.side, x, z, nx, nz) && hypot2(x - r.anchorX, z - r.anchorZ) < 6) {
+      r.routeAt++;
+      continue;
+    }
+    break;
+  }
+  if (r.routeAt >= points) {
+    if (points > 0) r.route.length = 0;
+    return null;
+  }
+  LEG.x = r.route[r.routeAt * 2] as number;
+  LEG.z = r.route[r.routeAt * 2 + 1] as number;
+  return LEG;
 }
 
 export function stepAnchors(world: World, dtSeconds: number): void {
