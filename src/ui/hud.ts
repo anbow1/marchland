@@ -68,7 +68,7 @@ export interface Selection {
 export type Project = (x: number, y: number, z: number, out: { x: number; y: number }) => boolean;
 
 const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
-  ['gold', 'wood', 'stone'],
+  ['gold', 'wood', 'planks', 'stone'],
   ['grain', 'flour', 'bread', 'fish', 'meat', 'sausage', 'grapes', 'wine'],
   ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
@@ -781,7 +781,9 @@ export class Hud {
       const value = town.stock[id];
       if (this.chipValues.get(id) === value) continue;
       this.chipValues.set(id, value);
-      (this.chips.get(id) as HTMLElement).textContent = String(value);
+      // A good not on the bar (none should be: RESOURCE_GROUPS lists them all) is skipped, not fatal.
+      const chip = this.chips.get(id);
+      if (chip) chip.textContent = String(value);
     }
     this.updateCards(world, selection.regiments, project, groundY);
     this.panelAge += frameSeconds;

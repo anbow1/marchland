@@ -14,6 +14,8 @@ jeszcze nie mierzyłem.
 - Komputer: tartak na końcu listy budowy, przed fazą ulepszeń. Postawiony wcześnie (zaraz po
   koszarach) zjadał rzadkie drewno, pracownika i tragarzy na deski, których nikt jeszcze nie
   potrzebował — komputer wygrywał dopiero w 47,6 min. Po przesunięciu: 36,6 / 40,3 min jak wcześniej.
+- Poprawka po pomiarze: pasek zasobów ma stałe grupy i deski do nich nie trafiły — strona rzucała
+  błąd przy każdej klatce. Deski są teraz obok drewna, a towar spoza grup jest pomijany, nie fatalny.
 - Test: deski z drewna; koszt poziomu 2 dzieli drewno pół na pół. Testy 91/91; WebGPU 0 błędów.
 
 ## 2026-11-16 · Myśliwy i leśnik
