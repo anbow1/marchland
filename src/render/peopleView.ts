@@ -1,4 +1,4 @@
-import { Color, DynamicDrawUsage, InstancedMesh, Matrix4, type MeshStandardNodeMaterial, Quaternion, type Scene, Vector3 } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, InstancedMesh, Matrix4, type MeshStandardNodeMaterial, Quaternion, type Scene, Vector3 } from 'three/webgpu';
 import { PEOPLE } from '../config.ts';
 import type { Person } from '../sim/people.ts';
 import { heightAtM } from '../sim/terrain.ts';
@@ -112,6 +112,70 @@ function cart(wagon: boolean): MeshBuilder {
   return b;
 }
 
+/** A modelled prop as tools/blender/prop.py writes it (game space, linear colours). */
+interface PropModel {
+  size: number[];
+  positions: number[];
+  normals: number[];
+  colours: number[];
+  triangles: number[];
+}
+
+/** Where the models sit about the carrier (who looks along +Z): the barrow ahead of his hands; the wagon
+ * at his right, its shafts ahead, the horse between and beyond them. */
+const BARROW_Z = 1.1;
+const WAGON_X = 1.0;
+const WAGON_Z = -0.3;
+const WAGON_HORSE_Z = 1.15;
+
+/** A prop moved by (dx, dz), unindexed, with the plain-colour layer the people's material expects, and
+ * optionally a built shape alongside (the wagon's horse). */
+function propGeometry(model: PropModel, dx: number, dz: number, extra: BufferGeometry | null): BufferGeometry {
+  const n = model.triangles.length;
+  const more = extra ? (extra.getAttribute('position').count as number) : 0;
+  const pos = new Float32Array((n + more) * 3);
+  const nor = new Float32Array((n + more) * 3);
+  const col = new Float32Array((n + more) * 3);
+  const layer = new Float32Array((n + more) * 2);
+  for (let k = 0; k < n; k++) {
+    const v = model.triangles[k] as number;
+    pos[k * 3] = (model.positions[v * 3] as number) + dx;
+    pos[k * 3 + 1] = model.positions[v * 3 + 1] as number;
+    pos[k * 3 + 2] = (model.positions[v * 3 + 2] as number) + dz;
+    for (let c = 0; c < 3; c++) {
+      nor[k * 3 + c] = model.normals[v * 3 + c] as number;
+      col[k * 3 + c] = model.colours[v * 3 + c] as number;
+    }
+    layer[k * 2] = -1;
+    layer[k * 2 + 1] = 1;
+  }
+  if (extra) {
+    pos.set(extra.getAttribute('position').array as Float32Array, n * 3);
+    nor.set(extra.getAttribute('normal').array as Float32Array, n * 3);
+    col.set(extra.getAttribute('color').array as Float32Array, n * 3);
+    layer.set(extra.getAttribute('aLayer').array as Float32Array, n * 2);
+  }
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(pos, 3));
+  g.setAttribute('normal', new BufferAttribute(nor, 3));
+  g.setAttribute('color', new BufferAttribute(col, 3));
+  g.setAttribute('aLayer', new BufferAttribute(layer, 2));
+  g.computeBoundingSphere();
+  return g;
+}
+
+/** The plain horse of the wagon, standing between the shafts. */
+function wagonHorse(): BufferGeometry {
+  const b = new MeshBuilder(0, PLAIN);
+  const x = WAGON_X;
+  const hz = WAGON_HORSE_Z;
+  b.box(x, 0.9, hz, 0.5, 0.6, 1.6, HORSE_COAT);
+  b.box(x, 1.35, hz + 0.85, 0.26, 0.65, 0.36, HORSE_COAT);
+  b.box(x, 1.8, hz + 1.15, 0.22, 0.26, 0.55, HORSE_COAT);
+  for (const dx of [-0.17, 0.17]) for (const dz of [-0.6, 0.6]) b.box(x + dx, 0, hz + dz, 0.13, 0.95, 0.15, HORSE_COAT);
+  return b.build();
+}
+
 /** Colours of the goods as they look in a sack or a bundle (sRGB). */
 const GOOD_HEX: Record<ResourceId, number> = {
   gold: 0xd9b23c,
@@ -184,6 +248,26 @@ export class PeopleView {
     for (const id of Object.keys(GOOD_HEX) as ResourceId[]) this.goodColours.set(id, new Color(GOOD_HEX[id]));
   }
 
+  /** Whether the carts are the modelled ones (their loads sit a little differently). */
+  private modelled = false;
+
+  /** Swaps the built handcart and wagon for the modelled barrow and wagon, if their files load. */
+  async loadCarts(base: string): Promise<void> {
+    try {
+      const get = async (name: string): Promise<PropModel> => (await (await fetch(`${base}props/${name}.json`)).json()) as PropModel;
+      const [barrow, wagon] = await Promise.all([get('handcart'), get('wagon')]);
+      const shapes = [propGeometry(barrow, 0, BARROW_Z, null), propGeometry(wagon, WAGON_X, WAGON_Z, wagonHorse())];
+      this.carts.forEach((mesh, k) => {
+        const old = mesh.geometry;
+        mesh.geometry = shapes[k] as BufferGeometry;
+        old.dispose();
+      });
+      this.modelled = true;
+    } catch {
+      // Keep the built carts.
+    }
+  }
+
   private poseOf(person: Person, timeS: number, index: number): Pose {
     if (person.act === 'work' || person.act === 'build') return Math.floor(timeS * WORK_BEATS_PER_S + index * 0.37) % 2 === 0 ? 'workA' : 'workB';
     if (person.speedMs > 0.05) return Math.floor(person.strideM / STEP_M) % 2 === 0 ? 'walkA' : 'walkB';
@@ -227,9 +311,9 @@ export class PeopleView {
       if (person.load && loads < this.loads.instanceMatrix.count) {
         if (carted) {
           // In the cart instead of on his shoulder.
-          const dx = level >= 3 ? 1.0 : 0;
-          const dz = level >= 3 ? -0.1 : 1.15;
-          const dy = level >= 3 ? -0.55 : -0.85;
+          const dx = level >= 3 ? WAGON_X : 0;
+          const dz = level >= 3 ? (this.modelled ? WAGON_Z : -0.1) : this.modelled ? BARROW_Z : 1.15;
+          const dy = level >= 3 ? -0.55 : this.modelled ? -0.95 : -0.85;
           const c = Math.cos(person.headingRad);
           const sn = Math.sin(person.headingRad);
           this.p.set(person.x + c * dx + sn * dz - 0.1 * c, heightAtM(person.x, person.z) + dy, person.z - sn * dx + c * dz + 0.1 * sn);

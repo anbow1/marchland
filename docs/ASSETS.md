@@ -34,10 +34,10 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 | „Peasant”, „Farmer”, „Medieval Villager Render”, „Medieval woman figure” (bez szkieletu) | jubabuba2512 / samsikua / Quatrilion / mikurban, Sketchfab | CC BY 4.0 | ludzie w mieście (po dopięciu szkieletu) |
 | „Blacksmith” (szkielet, animacja pracy) | celestin.bitternose, Sketchfab | CC BY 4.0 | kowal przy kuźni |
 | „Blacksmith” (bez szkieletu) | XiaoBuBu80, Sketchfab | CC BY 4.0 | rzemieślnik |
-| Wózek ręczny, 4 wozy | 3dAssetsForGames, AspectStudios, rakutin, NoodlePoodle, Cinnamine3D (Sketchfab) | CC BY 4.0 | transport poziom 2–3 |
+| Wózek ręczny, 4 wozy | 3dAssetsForGames, AspectStudios, rakutin, NoodlePoodle, Cinnamine3D (Sketchfab) | CC BY 4.0 | **w grze**: taczka (poziom 2, 3dAssetsForGames), wóz (poziom 3, NoodlePoodle); reszta w zapasie |
 | Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | jeśli armaty zamiast balist |
 | Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
-| Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | chlewnia |
+| Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | **w grze**: świnie w chlewni |
 | Medieval Gatehouse, Medieval castle (wieża), Saxon warrior | Daniel74 i in., Blendswap | CC0 | brama zamku, wieże, milicja |
 
 Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjnej), „Knight Face Reval”

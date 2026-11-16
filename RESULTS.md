@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Taczki, wozy i świnie z modeli
+
+- Nowe narzędzie `tools/blender/prop.py`: dowolny model bez szkieletu → lekka siatka z kolorami
+  z tekstur w wierzchołkach (przerzedzenie, obrót, skala do zadanej długości lub wysokości, na ziemi,
+  wyśrodkowana). Podgląd na stronie z three.js, bo Blender tu nie renderuje.
+- Transport poziom 2: przewoźnik pcha taczkę („Wooden hand truck low poly 3D”, 522 trójkąty, 1,5 m)
+  kołem do przodu, ładunek leży w skrzyni. Poziom 3: dwukołowy wóz („Old wooden cart (revamp)”,
+  1200 trójkątów, 3,4 m z dyszlami) obok przewoźnika, koń (nadal z pudełek) między dyszlami.
+  Bez plików zostają stare wózki z pudełek.
+- Świnie w chlewni z modelu („Curious Pink Pig”, 320 trójkątów, 1,1–1,3 m), każda trochę inaczej
+  obrócona; `MeshBuilder.model()` wstawia gotowy model w budynek składany z kodu.
+- Testy 86/86; zrzuty z bliska.
+
 ## 2026-11-16 · M4, krok 5: pikinierzy i łucznicy na własnych postaciach
 
 - `tools/blender/rigged.py` przyjmuje teraz dowolną postać ze szkieletem Mixamo: sam ją obraca (od

@@ -363,7 +363,28 @@ export function logPile(b: MeshBuilder, cx: number, cz: number, length: number, 
 }
 
 /** A four-legged animal of body length `length` and shoulder height `height`, facing +X. */
+/** A modelled prop as tools/blender/prop.py writes it. */
+export interface PropModel {
+  size: number[];
+  positions: number[];
+  normals: number[];
+  colours: number[];
+  triangles: number[];
+}
+
+/** The pig model (public/props/pig.json, head along -Z), once loaded: the sty's pigs are drawn with it. */
+let pigModel: PropModel | null = null;
+export function setPigModel(model: PropModel): void {
+  pigModel = model;
+}
+
 export function animal(b: MeshBuilder, cx: number, cz: number, length: number, height: number, hex: number): void {
+  if (hex === PIG && pigModel) {
+    // Head to +X like the built animals; each pig a little turned, by where it stands.
+    const lean = Math.sin(cx * 3.1 + cz * 1.7) * 0.6;
+    b.model(pigModel, cx, 0, cz, -Math.PI / 2 + lean, length / (pigModel.size[2] as number));
+    return;
+  }
   b.log(cx, height * 0.72, cz, height * 0.3, length, 7, hex);
   b.box(cx + length * 0.6, height * 0.68, cz, length * 0.3, height * 0.36, length * 0.26, hex);
   for (const dx of [-0.36, 0.36]) for (const dz of [-0.11, 0.11]) b.box(cx + dx * length, 0, cz + dz * length, length * 0.09, height * 0.5, length * 0.09, hex);

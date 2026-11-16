@@ -77,6 +77,23 @@ export class MeshBuilder {
     }
   }
 
+  /** A modelled shape (unindexed through its triangles, its own linear colours, plain paint) placed at
+   * (x, y, z), turned about the vertical and scaled. */
+  model(m: { positions: readonly number[]; normals: readonly number[]; colours: readonly number[]; triangles: readonly number[] }, x: number, y: number, z: number, turnRad: number, scale: number): void {
+    const keep = [this.ox, this.oy, this.oz, this.turnRad] as const;
+    this.at(x, y, z, turnRad);
+    this.layer = -1;
+    this.repeatsPerM = 1;
+    for (const v of m.triangles) {
+      this.colour.setRGB(m.colours[v * 3] as number, m.colours[v * 3 + 1] as number, m.colours[v * 3 + 2] as number);
+      this.vertex(
+        [(m.positions[v * 3] as number) * scale, (m.positions[v * 3 + 1] as number) * scale, (m.positions[v * 3 + 2] as number) * scale],
+        [m.normals[v * 3] as number, m.normals[v * 3 + 1] as number, m.normals[v * 3 + 2] as number],
+      );
+    }
+    this.at(...keep);
+  }
+
   /** A flat triangle, counter-clockwise seen from outside. */
   tri(a: Vec3, b: Vec3, c: Vec3, hex: number): this {
     this.paint(hex);

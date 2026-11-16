@@ -6,7 +6,7 @@ import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
-import { surfacePaint } from './buildingParts.ts';
+import { type PropModel, setPigModel, surfacePaint } from './buildingParts.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { type SurfaceModel, surfaceModel } from './surfaceModel.ts';
 import { TEAM_HEX } from './palette.ts';
@@ -111,6 +111,13 @@ export class TownView {
    * kind on the shapes from code, with a warning: the game is playable without them.
    */
   async loadModels(base: string): Promise<number> {
+    // The sty's pigs (a plain mesh; buildings built from code use it once it is here).
+    try {
+      const pig = await fetch(`${base}props/pig.json`);
+      if (pig.ok) setPigModel((await pig.json()) as PropModel);
+    } catch {
+      // Built pigs then.
+    }
     const response = await fetch(freshUrl(base, 'buildings/index.json'));
     if (!response.ok) {
       console.warn(`[models] no index at ${base}buildings/index.json (${response.status}): buildings keep their shapes from code`);
