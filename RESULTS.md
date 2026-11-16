@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Drogi jak polne trakty
+
+- Drogi nie są już szarym brukiem: to ubita, jasna, piaszczysta ziemia (kolor ok. sRGB 180·152·116,
+  światłocień ze skanu ziemi), z poszarpanym brzegiem, w który wchodzi darń, ciemniejszymi koleinami
+  przy krawędziach i lekką trawą na środku (jak na zrzutach referencyjnych).
+- Próbowałem też drobnych kwiatów na łące (fioletowe i żółte plamki przy kamerze) — z tej wysokości
+  wyglądały jak żółte kleksy, więc wyleciały; kępy trawy wystarczą.
+- Testy 86/86; wygląd sprawdzony na zrzucie z bliska (SwiftShader).
+
 ## 2026-11-16 · Zamki bliżej narożników
 
 - Miejsca startowe (−232, 232), (−236, 140), (−140, 236) zamiast (−212, 212), (−212, 128), (−128, 212):

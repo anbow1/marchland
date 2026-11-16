@@ -66,7 +66,6 @@ const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>>
   // Trodden earth in a wet country is grey-brown, not the scan's ochre.
   dirt: [0.72, 0.7, 0.68],
   // Road setts: a light, weathered grey-beige stone, as country roads read from the air.
-  rubble: [1.0, 1.0, 1.0],
 };
 
 /** 1 inside `radiusM` of a point, falling to 0 over `fadeM` beyond it. */
@@ -191,8 +190,12 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const earth = smoothstep(0.44, 0.56, max(what.g, made.r).add(ragged.mul(0.55)));
   const rock = smoothstep(0.38, 0.62, what.a.add(ragged.mul(0.7)));
   const soil = smoothstep(0.4, 0.6, made.g.add(ragged.mul(0.2)));
-  // Roads are paved: setts over the trodden earth, worn ragged at the edges.
-  const paved = smoothstep(0.35, 0.65, made.a.add(ragged.mul(0.3)));
+  // Roads are cart tracks: trodden bare earth, its edges ragged where the turf creeps in.
+  const paved = smoothstep(0.35, 0.65, made.a.add(ragged.mul(0.45)));
+  // Across a track the map rises from its edges to a flat middle: wheel ruts run just inside the edges,
+  // and down the middle, where no wheel goes, tufts of grass hold on.
+  const rutBand = smoothstep(0.5, 0.66, made.a).mul(float(1).sub(smoothstep(0.78, 0.92, made.a)));
+  const crown = smoothstep(0.97, 1.0, made.a).mul(smoothstep(0.45, 0.7, fine.add(coarse.mul(0.4)).sub(0.2)));
   // v runs against z so the scans' normals keep their handedness on the ground (tangent +X, bitangent −Z).
   const ground = vec2(positionWorld.x, positionWorld.z.negate());
   const far = smoothstep(FAR_FROM_M, FAR_FULL_M, positionWorld.sub(cameraPosition).length()).mul(0.8);
@@ -220,7 +223,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
     const grass = mix(sample('meadow'), sample('dry_grass'), dry);
     const turf = wildTint ? grass.mul(wildTint) : grass;
     const wild = mix(mix(turf, sample('forest_floor'), forest), sample('rock'), rock);
-    return mix(mix(mix(wild, sample('dirt'), earth), sample('farm_soil'), soil), sample('rubble'), paved);
+    return mix(mix(mix(wild, sample('dirt'), earth), sample('farm_soil'), soil), sample('mud'), paved);
   };
   // No meadow is one green: lush dark patches in the hollows of the noise, sere yellow ones on its crests,
   // and a scatter of flowering weeds a few metres across.
@@ -257,10 +260,15 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
     if (id === 'meadow') return pasture.mul(mix(vec3(1), detailOf('meadow'), detailShare));
     // Dry grass on the crests: the same land gone straw-coloured, with the dry scan's grain.
     if (id === 'dry_grass') return pasture.mul(vec3(DRY_TINT[0], DRY_TINT[1], DRY_TINT[2])).mul(mix(vec3(1), detailOf('dry_grass'), detailShare));
-    // Road setts: the rubble scan at half size, its ochre washed out to a weathered grey.
-    if (id === 'rubble') {
-      const setts = untiled(id, 0.5, 0.11);
-      return mix(vec3(setts.dot(luminance)), setts, 0.3).mul(1.15);
+    // A track: the earth scan bleached by sun and wheels to a pale sandy brown, darker in the ruts, with the
+    // meadow's grass along its crown.
+    if (id === 'mud') {
+      const earthScan = mix(untiled('dirt', 1, 0.23), untiled('dirt', FAR_SCALE, 0.41), far);
+      // The scan's light and shade on the pale, dusty brown of a dry track (sRGB about 180, 152, 116).
+      const shade = earthScan.dot(luminance).div(0.13).clamp(0.45, 1.6);
+      const sandy = mix(vec3(0.43, 0.31, 0.19).mul(shade), earthScan, 0.2);
+      const rutted = sandy.mul(float(1).sub(rutBand.mul(0.28)));
+      return mix(rutted, pasture.mul(0.85), crown.mul(0.4));
     }
     const near = untiled(id, 1, 0);
     const wide = untiled(id, FAR_SCALE, 0.31);
