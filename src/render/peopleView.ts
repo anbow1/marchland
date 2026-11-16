@@ -267,6 +267,16 @@ const YARD_MAX_PIECES = 6;
 const YARD_ROW = { x0: 4.3, step: -0.8, z: 4.4 };
 const YARD_CAPACITY = 900;
 
+/** A skinned body of the townsfolk: its instanced mesh, per-person attributes, clips, and how many drawn. */
+interface Folk {
+  mesh: InstancedMesh;
+  place: InstancedBufferAttribute;
+  frame: InstancedBufferAttribute;
+  side: InstancedBufferAttribute;
+  clips: TownsmanClips;
+  count: number;
+}
+
 export class PeopleView {
   private readonly poses: Record<Pose, InstancedMesh>[] = [];
   private readonly loads: InstancedMesh;
@@ -286,8 +296,12 @@ export class PeopleView {
   private readonly yardShapes = new Map<LoadShape, InstancedMesh>();
   private readonly shapeTints = new Map<ResourceId, Color>();
   private readonly prepare: (mesh: InstancedMesh) => InstancedMesh;
-  /** The modelled townsfolk (one skinned mesh for both sides), once loaded; until then the built figures. */
-  private folk: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: TownsmanClips } | null = null;
+  /** The modelled townsfolk (one skinned mesh for both sides), once loaded; until then the built figures.
+   * The townswomen are a second body with the same clips; every third person the view meets is one. */
+  private folk: Folk | null = null;
+  private women: Folk | null = null;
+  private readonly isWoman = new WeakMap<Person, boolean>();
+  private met = 0;
   private readonly material: MeshStandardNodeMaterial;
 
   constructor(
@@ -333,10 +347,17 @@ export class PeopleView {
 
   /** The modelled loads: one instanced mesh a shape; a shape whose file fails keeps the built sack. */
   async loadTownsfolk(base: string): Promise<void> {
+    [this.folk, this.women] = await Promise.all([this.loadBody(base, 'people/townsman.json', 'townsfolk'), this.loadBody(base, 'people/townswoman.json', 'townswomen')]);
+    // Women only among men: without the townsman the built figures stand in for everyone.
+    if (!this.folk) this.women = null;
+  }
+
+  /** One skinned body of the townsfolk with its clips; null if the file is missing or lacks a clip. */
+  private async loadBody(base: string, file: string, name: string): Promise<Folk | null> {
     try {
-      const model = (await (await fetch(`${base}people/townsman.json`)).json()) as RiggedModel;
+      const model = (await (await fetch(`${base}${file}`)).json()) as RiggedModel;
       const named = Object.fromEntries(model.clips.map((c) => [c.name, c])) as unknown as TownsmanClips;
-      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing', 'harvest'] as const) if (!named[k]) return;
+      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing', 'harvest'] as const) if (!named[k]) return null;
       const n = model.positions.length / 3;
       const g = new BufferGeometry();
       interleave(g, [
@@ -366,15 +387,15 @@ export class PeopleView {
       g.setAttribute('aSide', side);
       g.setAttribute('aFrame', frame);
       const mesh = new InstancedMesh(g, skinnedMaterial(boneTexture(model)), capacity);
-      mesh.name = 'townsfolk';
+      mesh.name = name;
       mesh.count = 0;
       mesh.frustumCulled = false;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       this.scene.add(mesh);
-      this.folk = { mesh, place, frame, side, clips: named };
+      return { mesh, place, frame, side, clips: named, count: 0 };
     } catch {
-      this.folk = null;
+      return null;
     }
   }
 
@@ -502,8 +523,9 @@ export class PeopleView {
     let loads = 0;
     const shapeCounts = new Map<LoadShape, number>();
     const carts = [0, 0];
-    let folk = 0;
     const folkCapacity = 2 * PEOPLE.maxPerSide;
+    if (this.folk) this.folk.count = 0;
+    if (this.women) this.women.count = 0;
     for (let i = 0; i < world.people.length; i++) {
       const person = world.people[i] as Person;
       if (!person.alive) continue;
@@ -513,8 +535,14 @@ export class PeopleView {
       const pose = this.poseOf(person, world.timeS, i);
       const ground = heightAtM(person.x, person.z);
       if (this.folk) {
-        if (folk >= folkCapacity) continue;
-        const f = this.folk;
+        let woman = this.isWoman.get(person);
+        if (woman === undefined) {
+          woman = this.met++ % 3 === 1;
+          this.isWoman.set(person, woman);
+        }
+        const f = woman && this.women ? this.women : this.folk;
+        if (f.count >= folkCapacity) continue;
+        const folk = f.count;
         const pl = f.place.array as Float32Array;
         pl[folk * 4] = person.x;
         pl[folk * 4 + 1] = ground;
@@ -523,7 +551,7 @@ export class PeopleView {
         pl[folk * 4 + 3] = person.headingRad + Math.PI;
         (f.side.array as Float32Array)[folk] = person.side;
         (f.frame.array as Float32Array)[folk] = this.folkFrame(f.clips, person, world, i, carted);
-        folk++;
+        f.count++;
         this.p.set(person.x, ground, person.z);
         this.q.setFromAxisAngle(this.up, person.headingRad);
         this.m.compose(this.p, this.q, this.s);
@@ -577,11 +605,12 @@ export class PeopleView {
         }
       }
     }
-    if (this.folk) {
-      this.folk.mesh.count = folk;
-      this.folk.place.needsUpdate = true;
-      this.folk.frame.needsUpdate = true;
-      this.folk.side.needsUpdate = true;
+    for (const f of [this.folk, this.women]) {
+      if (!f) continue;
+      f.mesh.count = f.count;
+      f.place.needsUpdate = true;
+      f.frame.needsUpdate = true;
+      f.side.needsUpdate = true;
     }
     for (const side of [0, 1] as const satisfies readonly Side[]) {
       for (const pose of POSES) {

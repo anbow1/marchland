@@ -2,7 +2,7 @@
 
     bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
         [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
-        [--tool-clips name,name] [--tool2-clips name,name]
+        [--tool-clips name,name] [--tool2-clips name,name] [--team-below 0.12]
         <clip.fbx>...
 
 --arms: what the man carries (the game's own simple shapes; "none" for nothing): sword and shield (the default), a halberd or
@@ -12,9 +12,10 @@ units it came in. --tool-clips: the weapon (a tool: --arms axe) shows only in th
 joint is collapsed to nothing, so a townsman carries his axe only while he chops. --arms tools: the axe
 (first joint, --tool-clips) and a mallet (second joint, held in the same hand, --tool2-clips). --source: the credit
 written into the file. --team: the garment (by its texture's name)
-dyed in the side's colour, over its own shading.
+dyed in the side's colour, over its own shading; with --team-below only its texels darker than that (linear
+luminance), so dark clothes take the colour and the skin on the same texture keeps its own.
 
-Any Mixamo-rigged character will do: it is turned to look the clips' way from where its hips put its
+Any Mixamo-rigged character will do (glTF, or an FBX from Mixamo with its skin): it is turned to look the clips' way from where its hips put its
 left, and its end bones (HeadTop_End, Toe_End) may be missing or lie at the origin. Rigid parts with no
 weights (a helmet, a hat, hair) ride on the head; other unweighted parts (its own sword, shield) are left
 out.
@@ -106,7 +107,11 @@ def body_meshes():
 
 def load_character(path: str, height_m: float):
     bpy.ops.wm.read_factory_settings(use_empty=True)
-    bpy.ops.import_scene.gltf(filepath=path)
+    if path.lower().endswith(".fbx"):
+        # A character from Mixamo itself (skinned, downloaded with a clip): its bind pose is its rest.
+        bpy.ops.import_scene.fbx(filepath=path)
+    else:
+        bpy.ops.import_scene.gltf(filepath=path)
     rig = [o for o in bpy.context.scene.objects if o.type == "ARMATURE"][0]
     bones = {}
     for b in rig.data.bones:
@@ -134,6 +139,9 @@ def load_character(path: str, height_m: float):
 
 
 TEAM_SHARE = 0.6
+
+
+TEAM_BELOW = None
 
 
 def bake_mesh(rig, G, team_garment=None):
@@ -175,6 +183,10 @@ def bake_mesh(rig, G, team_garment=None):
         base_img = mr_img = None
         if mat and mat.node_tree:
             for n in mat.node_tree.nodes:
+                # The image wired into the shader's base colour (an FBX's images have no telling names).
+                if n.type == "TEX_IMAGE" and n.image and any(l.to_socket.name == "Base Color" for l in n.outputs[0].links):
+                    base_img = n.image
+            for n in mat.node_tree.nodes:
                 if n.type == "TEX_IMAGE" and n.image:
                     if ("baseColor" in n.image.name or "diffuse" in n.image.name.lower()) and base_img is None:
                         base_img = n.image
@@ -190,8 +202,10 @@ def bake_mesh(rig, G, team_garment=None):
             u, v = uv[loop.index].uv
             c = sample(base_img, u, v)
             m = sample(mr_img, u, v) if mr_img else (0, 0.6, 0.0)
-            a = acc.setdefault(loop.vertex_index, [0, 0, 0, 0, 0, 0])
+            a = acc.setdefault(loop.vertex_index, [0, 0, 0, 0, 0, 0, 0])
             a[0] += c[0]; a[1] += c[1]; a[2] += c[2]; a[3] += m[2]; a[4] += m[1]; a[5] += 1
+            if TEAM_BELOW is not None and 0.2126 * srgb_to_linear(c[0]) + 0.7152 * srgb_to_linear(c[1]) + 0.0722 * srgb_to_linear(c[2]) < TEAM_BELOW:
+                a[6] += 1
         names = {g.index: g.name for g in o.vertex_groups}
         base = len(pos)
         for v in me.vertices:
@@ -203,7 +217,7 @@ def bake_mesh(rig, G, team_garment=None):
             if a and a[5] > 0:
                 # Image.pixels gives a PNG's stored (sRGB) values: to linear for the shader.
                 col.append([srgb_to_linear(a[0] / a[5]), srgb_to_linear(a[1] / a[5]), srgb_to_linear(a[2] / a[5])])
-                surf.append([a[3] / a[5], a[4] / a[5], team])
+                surf.append([a[3] / a[5], a[4] / a[5], team * (a[6] / a[5] if TEAM_BELOW is not None else 1.0)])
             else:
                 col.append([0.5, 0.5, 0.5])
                 surf.append([0.8, 0.4, 0.0])
@@ -469,13 +483,15 @@ def main() -> None:
     team_garment = option("--team", None)
     global TEAM_SHARE, TARGET_TRIS
     TEAM_SHARE = float(option("--team-share", str(TEAM_SHARE)))
+    global TEAM_BELOW
+    TEAM_BELOW = float(option("--team-below", "0")) or None
     TARGET_TRIS = int(option("--tris", str(TARGET_TRIS)))
     step = int(option("--step", "1"))  # every step-th frame (a clip's fps divided by it)
     tool_clips = set(filter(None, option("--tool-clips", "").split(",")))
     tool2_clips = set(filter(None, option("--tool2-clips", "").split(",")))
     if arms == "tools":
         WEAPONS["Shield_joint"] = "RightHand"
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips") if n in args}
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)

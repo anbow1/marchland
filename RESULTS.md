@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Mieszczanki
+
+- Co trzecia osoba w mieście to kobieta: Erika Archer z Mixamo (przysłana razem z „Box Walk Arc”),
+  wypieczona tym samym `rigged.py` i tymi samymi 11 klipami co mieszczanin (noszenie, kopanie, łowienie,
+  rąbanie, młot, żniwa…), druga instancjonowana siatka ze szkieletem. Kto jest kobietą, widok ustala przy
+  pierwszym spotkaniu danej osoby — nie zmienia się, gdy inni umierają.
+- `rigged.py` czyta teraz postać z FBX (Mixamo), teksturę koloru bierze po połączeniu z shaderem (nazwy obrazów
+  w FBX nic nie mówią), a `--team-below` farbuje w barwy strony tylko ciemne teksele: jej ciemnooliwkowa skóra
+  bez tego wyglądała z kamery jak czarna sylwetka; skóra twarzy i włosy zostają swoje.
+- Testy 94/94; WebGPU 0 błędów; miasto: 141 potoków (+2: druga siatka ludzi i jej cień).
+
 ## 2026-11-16 · Konie jazdy ze szkieletem: postój, stęp, galop, skubanie trawy
 
 - Lekka i ciężka jazda dosiada konia „Horse” (MAXDESIGN-3D, CC BY 4.0) na jego własnych kościach
