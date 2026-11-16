@@ -114,9 +114,11 @@ type Clip = { start: number; frames: number; travelM?: number };
 interface SkinnedKind {
   frame: InstancedBufferAttribute;
   fps: number;
-  /** The strike: first frame and length; the guard (the first frame of the block); the block held up. */
+  /** The strike: first frame and length (the first of `strikes`, which the men take by turns); the guard
+   * (the first frame of the block); the block held up. */
   strikeStart: number;
   strikeFrames: number;
+  strikes: Clip[];
   guard: number;
   blockHeld: number;
   /** The clips the file may also carry: standing at ease, walking, running, flinching, falling dead (one or more). */
@@ -392,7 +394,9 @@ export class ArmyView {
   private useRigged(kind: UnitKind, model: RiggedModel): boolean {
     const k = this.kinds.get(kind);
     // The blow: a sword's slash or a polearm's thrust.
-    const strike = model.clips.find((c) => /slash|thrust|stab|recoil/.test(c.name.toLowerCase()));
+    // The blows: a sword's slash, a polearm's thrust or chop, a bow's loose. With several, the men take turns.
+    const strikes = model.clips.filter((c) => /slash|thrust|stab|recoil|chop/.test(c.name.toLowerCase()));
+    const strike = strikes[0];
     const block = model.clips.find((c) => c.name.toLowerCase().includes('block'));
     if (!k || !strike || !block) return false;
     const named = (name: string): Clip | null => model.clips.find((c) => c.name.toLowerCase() === name) ?? null;
@@ -449,6 +453,7 @@ export class ArmyView {
       fps: strike.fps,
       strikeStart: strike.start,
       strikeFrames: strike.frames,
+      strikes,
       guard: block.start,
       blockHeld: block.start + Math.floor(block.frames * 0.5),
       idle: named('idle'),
@@ -507,9 +512,11 @@ export class ArmyView {
       const death = sk.deaths[s.slot % Math.max(1, sk.deaths.length)];
       return death ? at(death, s.deadS) : sk.guard;
     }
-    // The whole blow fits between two blows: a long one (the halberd's thrust) is played faster.
-    const strikeS = Math.min(sk.strikeFrames / sk.fps, s.regiment.def.attackIntervalS * 0.9);
-    if (s.sinceAttackS < strikeS) return sk.strikeStart + Math.min(sk.strikeFrames - 1, Math.floor((s.sinceAttackS / strikeS) * sk.strikeFrames));
+    // Each man his own blow, by his place in the ranks; the whole blow fits between two blows (a long one,
+    // the halberd's thrust, is played faster).
+    const blow = sk.strikes[s.slot % sk.strikes.length] as Clip;
+    const strikeS = Math.min(blow.frames / sk.fps, s.regiment.def.attackIntervalS * 0.9);
+    if (s.sinceAttackS < strikeS) return blow.start + Math.min(blow.frames - 1, Math.floor((s.sinceAttackS / strikeS) * blow.frames));
     const hurtS = timeS - (s.hurtAtS ?? -1e9);
     if (sk.impact && hurtS >= 0 && hurtS < sk.impact.frames / sk.fps) return at(sk.impact, hurtS);
     const r = s.regiment;

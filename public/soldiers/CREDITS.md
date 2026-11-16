@@ -12,7 +12,7 @@
   The strike, guard, idle, walk, run, flinch and two deaths are motion from **Mixamo** (Adobe),
   retargeted and baked into bone matrices; the raw animation files are not part of this repository.
 - `halberdier.json` — the same knight with the game's own halberd (`rigged.py --arms halberd`), striking
-  with Mixamo's "Upward Thrust".
+  with Mixamo's "Upward Thrust", "Great Sword Attack" and "Great Sword Slash" by turns.
 - `pikeman.json` — the pikemen, made by `rigged.py --arms pike` from **".Fuse Warrior"** by **Leonardo
   Carvalho** (Sketchfab), licensed **CC BY 4.0**: its sword and shield left out, the helmet kept, the
   upper armour dyed in the side's colour; the pike is the game's own. Motion from Mixamo ("Stabbing",

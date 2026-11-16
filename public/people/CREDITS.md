@@ -7,5 +7,5 @@
 - `townsman.json` — the carriers, workers and builders, made by `tools/blender/rigged.py --arms none
   --tris 1200 --step 2` from **".Fuse Civilian 2"** by **Leonardo Carvalho** (Sketchfab), licensed
   **CC BY 4.0**, the tunic partly in the side's colour. Motion from **Mixamo** (Box Walk, Box Idle,
-  Picking Up, Putting Down, Digging, Fishing Cast, Walking, a standing idle),
+  Picking Up, Putting Down, Digging, Fishing Cast, Walking, Great Sword Attack as the axe's chop, a standing idle); the axe is the game's own,
   retargeted and baked; the raw animation files are not part of this repository.

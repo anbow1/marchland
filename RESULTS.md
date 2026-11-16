@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Siekiera: drwale i budowniczowie rąbią; halabardnicy z trzema ciosami
+
+- „Great Sword Attack” (Mixamo; najbliższe młotkowi i siekierze) jako rąbanie oburącz siekierą:
+  drwal przy pracy i budowniczowie na budowie (zamiast kopania). `rigged.py --arms axe --tool-clips
+  chop`: siekiera (trzonek 0,9 m, ostrze) widoczna tylko w tym klipie — w pozostałych macierz jej
+  kości ma zerową skalę, więc trójkąty znikają (bez osobnej siatki i bez kosztu).
+- Halabardnicy zadają trzy różne ciosy, na zmianę według miejsca w szyku: pchnięcie („Upward Thrust”),
+  rąbnięcie z góry („Great Sword Attack”) i zamach poziomy („Great Sword Slash”). Każdy cios mieści
+  się między dwoma uderzeniami. Klipy bez kości broni: halabarda idzie za prawą dłonią.
+- WebGPU: 0 błędów (bitwa, miasto). Testy 86/86; zrzut drwala z siekierą.
+
 ## 2026-11-16 · Zwykły chód; pomiar klatki po nowych modelach
 
 - „Walking” (Mixamo) zamiast chodu z mieczem i tarczą: ludzie bez ładunku (1,66 m na cykl)

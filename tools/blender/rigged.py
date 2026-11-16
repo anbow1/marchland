@@ -2,12 +2,15 @@
 
     bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
         [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
+        [--tool-clips name,name]
         <clip.fbx>...
 
 --arms: what the man carries (the game's own simple shapes; "none" for nothing): sword and shield (the default), a halberd or
 a pike in the sword hand (a shaft along the sword's line, more of it ahead of the hand than behind), or a
 longbow upright in the left fist. --height: the character is scaled to stand this tall (metres), whatever
-units it came in. --source: the credit written into the file. --team: the garment (by its texture's name)
+units it came in. --tool-clips: the weapon (a tool: --arms axe) shows only in these clips; in the others its
+joint is collapsed to nothing, so a townsman carries his axe only while he chops. --source: the credit
+written into the file. --team: the garment (by its texture's name)
 dyed in the side's colour, over its own shading.
 
 Any Mixamo-rigged character will do: it is turned to look the clips' way from where its hips put its
@@ -236,6 +239,11 @@ HALBERD = [
     ("Sword_joint", (-0.79, -1.45, 1.33), (0.012, 0.07, 0.12), (0.55, 0.56, 0.58), 1.0, 0.3, 0.0),  # back hook
     ("Sword_joint", (-0.79, -1.2, 1.41), (0.05, 0.1, 0.05), (1, 1, 1), 0.0, 0.7, 1.0),  # tassel in the side's colour
 ]
+AXE = [
+    # A felling axe held two-handed: a 0.9 m haft along the sword's line, the head at its end.
+    ("Sword_joint", (-0.79, -0.22, 1.41), (0.035, 0.9, 0.035), (0.42, 0.30, 0.16), 0.0, 0.8, 0.0),  # haft
+    ("Sword_joint", (-0.79, -0.62, 1.50), (0.02, 0.12, 0.2), (0.55, 0.56, 0.58), 1.0, 0.35, 0.0),  # blade
+]
 PIKE = [
     # A 4 m ash shaft, 1 m of it behind the hand, and a narrow steel head.
     ("Sword_joint", (-0.79, -0.84, 1.41), (0.032, 4.0, 0.032), (0.24, 0.16, 0.09), 0.0, 0.8, 0.0),  # shaft
@@ -406,7 +414,8 @@ def main() -> None:
     TEAM_SHARE = float(option("--team-share", str(TEAM_SHARE)))
     TARGET_TRIS = int(option("--tris", str(TARGET_TRIS)))
     step = int(option("--step", "1"))  # every step-th frame (a clip's fps divided by it)
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step") if n in args}
+    tool_clips = set(filter(None, option("--tool-clips", "").split(",")))
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
@@ -422,6 +431,15 @@ def main() -> None:
             frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, ratio)
         anim_hand = anim_hand or hands
         frames = frames[::step]
+        if tool_clips and name not in tool_clips:
+            # The tool put away: its joints' matrices with no extent (its triangles have no area).
+            for mats in frames:
+                for k in range(len(ORDER), len(BONES)):
+                    m = mats[k].copy()
+                    for r in range(3):
+                        for c in range(3):
+                            m[r][c] = 0.0
+                    mats[k] = m
         fps = fps / step
         clip_meta.append({"name": name, "start": len(all_frames), "frames": len(frames), "fps": fps, "travelM": round(travel, 3)})
         all_frames += frames
@@ -432,7 +450,7 @@ def main() -> None:
     elif arms == "bow":
         add_bow(head_of(char_rest["LeftHand"]), *mesh)
     else:
-        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE}[arms])
+        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE}[arms])
     # Feet on the ground.
     floor = min(p[1] for p in pos)
     for p in pos:

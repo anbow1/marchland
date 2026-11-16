@@ -69,7 +69,7 @@ Broń drzewcowa (pikinierzy, halabardnicy, milicja):
 Tragarze, rzemieślnicy, rolnicy (ludzie w mieście):
 10. ~~Box Walk, Box Idle, Walking~~ — są, w grze
 11. ~~Pick Up / Put Down~~ — są, w grze
-12. ~~Digging~~, ~~Fishing Cast~~ — są, w grze; brakuje: **Hammering** (budowa), **Chopping** (drwal), **Harvesting / Plant** (żniwa, sadzenie)
+12. ~~Digging~~, ~~Fishing Cast~~, ~~Great Sword Attack (zamiast Chopping/Hammering)~~ — są, w grze; brakuje: **Harvesting / Plant** (żniwa, sadzenie)
 
 Jazda:
 13. Horse Riding (jeździec w siodle) — jeśli Mixamo ma; inaczej poza siedząca

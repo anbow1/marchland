@@ -231,8 +231,9 @@ const LOAD_SIZE_M = 0.5;
 const LOAD_AT: [number, number, number] = [0.1, 1.45, -0.08];
 /** With the modelled townsfolk the load is held before the chest in both hands (their box walk). */
 const LOAD_IN_HANDS: [number, number, number] = [0, 0.95, 0.36];
-/** The workshops whose men dig (fields, quarries, mines, the woods); the fisher casts; the rest lift and set down. */
-const DIGGERS: ReadonlySet<string> = new Set(['farm', 'vineyard', 'quarry', 'ironMine', 'woodcutter']);
+/** The workshops whose men dig (fields, quarries, mines); the woodcutter and the builders swing an axe; the
+ * fisher casts; the rest lift and set down. */
+const DIGGERS: ReadonlySet<string> = new Set(['farm', 'vineyard', 'quarry', 'ironMine']);
 
 type Clip = { start: number; frames: number; fps: number; travelM?: number };
 /** The townsman's clips by name (public/people/townsman.json). */
@@ -245,6 +246,8 @@ interface TownsmanClips {
   putdown: Clip;
   digging: Clip;
   fishing: Clip;
+  /** A two-handed swing with the axe (the only clip in which the axe shows). */
+  chop: Clip;
 }
 /** Goods waiting in a yard to be carried off: a piece (0.6 m) for every few units, at most a row of six
  * along the front of the plot, right of the door (the door looks along the building's +Z). */
@@ -323,7 +326,7 @@ export class PeopleView {
     try {
       const model = (await (await fetch(`${base}people/townsman.json`)).json()) as RiggedModel;
       const named = Object.fromEntries(model.clips.map((c) => [c.name, c])) as unknown as TownsmanClips;
-      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing'] as const) if (!named[k]) return;
+      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop'] as const) if (!named[k]) return;
       const n = model.positions.length / 3;
       const g = new BufferGeometry();
       interleave(g, [
@@ -375,10 +378,11 @@ export class PeopleView {
       return cycle(clip, person.strideM / Math.max(0.5, clip.travelM ?? 1.4));
     }
     const offset = index * 1.37;
-    if (person.act === 'build') return looped(c.digging, offset);
+    if (person.act === 'build') return looped(c.chop, offset);
     if (person.act === 'work') {
       const kind = person.work >= 0 ? world.towns[person.side].plots[person.work]?.kind : undefined;
       if (kind === 'fisher') return looped(c.fishing, offset);
+      if (kind === 'woodcutter') return looped(c.chop, offset);
       if (kind && DIGGERS.has(kind)) return looped(c.digging, offset);
       // Lifting and setting down by turns.
       const pickS = c.pickup.frames / c.pickup.fps;
