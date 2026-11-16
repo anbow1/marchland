@@ -632,6 +632,8 @@ export function workState(b: Building): WorkState {
   if (b.workRate <= 0) return 'noWorker';
   const recipe = BUILDINGS[b.kind].recipe;
   if (!recipe) {
+    if (b.kind === 'hunter' && (b.out.meat >= PEOPLE.outputCap || b.out.hide >= PEOPLE.outputCap)) return 'yardFull';
+    if (b.kind === 'forester' && b.noTrees) return 'waiting';
     if (b.kind === 'woodcutter' || b.kind === 'fisher') {
       const good = b.kind === 'woodcutter' ? 'wood' : 'fish';
       if (b.out[good] >= PEOPLE.outputCap) return 'yardFull';

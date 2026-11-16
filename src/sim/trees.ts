@@ -228,6 +228,36 @@ export function plantTree(stand: Stand, i: number, nowS: number): void {
   stand.version += 1;
 }
 
+/** The felled tree within `reachM` of (x, z) that most wants tending (a bare stump first, then the
+ * youngest sapling); -1 if every tree there stands grown. */
+export function treeToTend(stand: Stand, x: number, z: number, reachM: number, nowS: number): number {
+  let best = -1;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (const i of stand.changed) {
+    const d = hypot2((TREES.x[i] as number) - x, (TREES.z[i] as number) - z);
+    if (d > reachM) continue;
+    const g = growthOf(stand, i, nowS);
+    if (g >= 1) continue;
+    // A claim keeps two foresters off one tree.
+    if (nowS - (stand.claimedS[i] as number) < FORESTRY.claimS) continue;
+    const score = g * 100 + d * 0.1;
+    if (score < bestScore) {
+      best = i;
+      bestScore = score;
+    }
+  }
+  if (best >= 0) stand.claimedS[best] = nowS;
+  return best;
+}
+
+/** The forester's care: a sapling by a bare stump, or a sapling brought on by FORESTRY.tendBoostS. */
+export function tendTree(stand: Stand, i: number, nowS: number): void {
+  if ((stand.plantedS[i] as number) < (stand.felledS[i] as number)) stand.plantedS[i] = nowS;
+  else stand.plantedS[i] = (stand.plantedS[i] as number) - FORESTRY.tendBoostS;
+  stand.claimedS[i] = -1e9;
+  stand.version += 1;
+}
+
 /** Saplings grown into trees are standing again: off the list of changes. */
 export function stepStand(stand: Stand, nowS: number): void {
   for (const i of stand.changed) {

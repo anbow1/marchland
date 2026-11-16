@@ -79,6 +79,38 @@ const BUILDERS: Record<BuildingKind, Build> = {
     }
     b.log(0.9, 0.85, 3.45, 0.22, 2.6, 7, P.LOG);
   },
+  forester: (b, level) => {
+    // A small lodge, a nursery bed of saplings in rows, a water butt and a spade.
+    P.house(b, { cx: -2.0, cz: -2.0, sx: 4.6, sz: 3.8, wallH: 2.2, wall: P.BOARDS, roof: P.THATCH, hip: 0.9, pitch: 1.4 });
+    P.yard(b, 1.6, 1.6, 5.4, 4.4, P.SOIL, true, true);
+    const rows = level >= 2 ? 4 : 3;
+    for (let r = 0; r < rows; r++) {
+      for (let i = 0; i < 4; i++) {
+        const x = -0.4 + i * 1.1;
+        const z = 0.2 + r * 1.0;
+        b.box(x, 0, z, 0.06, 0.5, 0.06, P.TIMBER);
+        b.cylinder(x, 0.35, z, 0.0, 0.28, 0.6, 6, P.GREEN);
+      }
+    }
+    P.barrel(b, -3.6, 0.8);
+    b.strut([-3.0, 0, 1.4], [-2.8, 1.2, 1.5], 0.05, 0.05, P.BOARDS);
+  },
+  hunter: (b, level) => {
+    // A lodge with antlers over the door, hides stretched on frames and a carcass hanging from a rack.
+    P.house(b, { cx: -1.6, cz: -2.0, sx: 5.0, sz: 4.0, wallH: 2.3, wall: P.BOARDS, roof: P.THATCH, hip: 0.9, pitch: 1.4 });
+    b.box(-1.6, 2.5, 0.05, 0.9, 0.08, 0.08, P.STRAW);
+    for (const dx of [-0.45, 0.45]) b.box(-1.6 + dx, 2.5, 0.05, 0.08, 0.5, 0.08, P.STRAW);
+    for (let i = 0; i < (level >= 2 ? 3 : 2); i++) {
+      const x = 1.6 + i * 1.3;
+      b.box(x - 0.55, 0, 2.2, 0.08, 1.7, 0.08, P.TIMBER);
+      b.box(x + 0.55, 0, 2.2, 0.08, 1.7, 0.08, P.TIMBER);
+      b.box(x, 0.4, 2.2, 1.0, 1.1, 0.04, P.HIDE);
+    }
+    b.box(-2.6, 0, 2.6, 0.12, 2.2, 0.12, P.TIMBER);
+    b.box(-1.0, 0, 2.6, 0.12, 2.2, 0.12, P.TIMBER);
+    b.box(-1.8, 2.1, 2.6, 1.8, 0.1, 0.1, P.TIMBER);
+    b.box(-1.8, 1.0, 2.6, 0.45, 1.0, 0.35, P.MEAT);
+  },
   quarry: (b, level) => {
     // A cut face of rock stepping down, dressed blocks, and a hoist.
     b.box(-1.5, 0, -3.2, 7.4, 3.0, 2.4, P.STONE_DARK);

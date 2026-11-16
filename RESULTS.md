@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Myśliwy i leśnik
+
+- **Myśliwy** (40 złota, 10 drewna; przy lesie): wychodzi w las w okolice punktu, na który patrzy
+  chata — za każdym razem w inną stronę (14 m od niego) — poluje 22 s i wraca z tuszą: 2 mięsa
+  i 1 skóra do obejścia. Mięso i skóry przed chlewnią.
+- **Leśnik** (35 złota, 10 drewna; przy lesie): w promieniu 50 m od chaty sadzi przy gołych pniakach
+  i pielęgnuje sadzonki (każda wizyta 6 s przyspiesza wzrost o 150 s z 600); idzie od drzewka do
+  drzewka, do chaty wraca, gdy nie ma nic do roboty. Drwale dalej sadzą sami, leśnik przyspiesza
+  odrost.
+- Wygląd: chata myśliwego z rogami nad drzwiami, skóry na ramach, tusza na stojaku; leśnik z grządką
+  sadzonek w rzędach. Testy: myśliwy przynosi mięso i skóry; z leśnikiem obok drwala sadzonki są
+  średnio starsze po 15 minutach. Testy 90/90.
+
 ## 2026-11-16 · Armaty i ludwisarnia zamiast balisty i trebusza
 
 - Decyzja: armaty. **Ludwisarnia** (nowy budynek: 150 złota, 40 drewna, 60 kamienia; bez pracownika,

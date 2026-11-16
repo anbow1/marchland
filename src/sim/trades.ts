@@ -4,7 +4,7 @@ import { doorX, doorZ, type Person, walkTo, workRateOf } from './people.ts';
 import { NOWHERE } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
-import { claimNearestTree, fellTree, plantTree, TREES } from './trees.ts';
+import { claimNearestTree, fellTree, plantTree, tendTree, TREES, treeToTend } from './trees.ts';
 
 // What workers and builders do. Most trades are worked at the bench: the
 // worker stands in his building and the economy's clock runs while he is
@@ -104,6 +104,87 @@ function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: numb
   noteMade(town, crop, vines ? VINES.grapesPerHarvest : FIELDS.grainPerHarvest);
   p.load = null;
   p.phase = AT_HOME;
+}
+
+/**
+ * The hunter: out into the woods round his lodge's spot, a different way each time, a while stalking, and
+ * home with a carcass — meat and a hide into his yard.
+ */
+function stepHunter(world: World, town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
+  const trade = GATHER.hunter;
+  if (p.phase === AT_HOME) {
+    if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) {
+      p.act = 'walk';
+      return;
+    }
+    p.act = 'stand';
+    if (b.out.meat >= PEOPLE.outputCap || b.out.hide >= PEOPLE.outputCap) return;
+    // Which way into the woods this time (degrees).
+    p.strip = Math.floor(world.rng.range(0, 360));
+    p.phase = GOING_OUT;
+    return;
+  }
+  if (p.phase === GOING_OUT) {
+    p.act = 'walk';
+    const a = (p.strip * Math.PI) / 180;
+    if (!walkTo(world, p, b.spotX + Math.sin(a) * trade.roamM, b.spotZ + Math.cos(a) * trade.roamM, dtSeconds)) return;
+    p.timerS = trade.seconds;
+    p.phase = WORKING;
+    return;
+  }
+  if (p.phase === WORKING) {
+    p.act = 'work';
+    p.timerS -= dtSeconds * paceOf(town, b, p);
+    if (p.timerS > 0) return;
+    p.load = 'meat';
+    p.phase = COMING_BACK;
+    return;
+  }
+  p.act = 'walk';
+  if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) return;
+  b.out.meat += trade.meat;
+  b.out.hide += trade.hide;
+  noteMade(town, 'meat', trade.meat);
+  noteMade(town, 'hide', trade.hide);
+  p.load = null;
+  p.strip = -1;
+  p.phase = AT_HOME;
+}
+
+/**
+ * The forester: from young tree to young tree within his reach — a sapling by a bare stump, or a while
+ * working round a sapling so it grows sooner — and home only when there is none left to tend.
+ */
+function stepForester(world: World, town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
+  if (p.phase === AT_HOME || p.phase === COMING_BACK) {
+    p.strip = treeToTend(world.stand, b.x, b.z, FORESTRY.foresterReachM, world.timeS);
+    b.noTrees = p.strip < 0;
+    if (p.strip < 0) {
+      p.phase = AT_HOME;
+      p.act = walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds) ? 'stand' : 'walk';
+      return;
+    }
+    p.phase = GOING_OUT;
+    return;
+  }
+  if (p.phase === GOING_OUT) {
+    p.act = 'walk';
+    const tx = TREES.x[p.strip] as number;
+    const tz = TREES.z[p.strip] as number;
+    const d = Math.max(0.01, hypot2(b.x - tx, b.z - tz));
+    if (!walkTo(world, p, tx + ((b.x - tx) / d) * 1.1, tz + ((b.z - tz) / d) * 1.1, dtSeconds)) return;
+    p.headingRad = Math.atan2(tx - p.x, tz - p.z);
+    p.timerS = FORESTRY.tendSeconds;
+    p.phase = WORKING;
+    return;
+  }
+  p.act = 'work';
+  p.timerS -= dtSeconds * paceOf(town, b, p);
+  if (p.timerS > 0) return;
+  tendTree(world.stand, p.strip, world.timeS);
+  p.strip = -1;
+  // On to the next one, if any.
+  p.phase = COMING_BACK;
 }
 
 function stepGatherer(world: World, town: Town, b: Building, p: Person, plot: number, dtSeconds: number): void {
@@ -224,6 +305,16 @@ export function stepWorker(world: World, town: Town, p: Person, dtSeconds: numbe
   if (b.kind === 'woodcutter' || b.kind === 'fisher') {
     b.workRate += workRateOf(town, p);
     stepGatherer(world, town, b, p, plot, dtSeconds);
+    return;
+  }
+  if (b.kind === 'hunter') {
+    b.workRate += workRateOf(town, p);
+    stepHunter(world, town, b, p, plot, dtSeconds);
+    return;
+  }
+  if (b.kind === 'forester') {
+    b.workRate += workRateOf(town, p);
+    stepForester(world, town, b, p, plot, dtSeconds);
     return;
   }
   if (!walkTo(world, p, doorX(town, plot), doorZ(town, plot), dtSeconds)) {

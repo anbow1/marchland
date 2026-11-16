@@ -181,6 +181,44 @@ describe('a living town', () => {
     expect(result).toBe('alreadyBuilt');
   });
 
+  it('a hunter brings meat and hides from the woods; a forester brings the saplings on sooner', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const hunter = build(world, 'hunter');
+    runUntil(world, 600, () => finished(world, hunter) && (town.plots[hunter]?.out.meat ?? 0) + town.stock.meat > 0);
+    const h = town.plots[hunter];
+    if (!h) throw new Error('no hunter');
+    expect(h.out.meat + town.stock.meat).toBeGreaterThan(0);
+    expect(h.out.hide + town.stock.hide).toBeGreaterThan(0);
+
+    // A woodcutter fells and plants; with a forester beside him the saplings grow back sooner.
+    const grownBy = (withForester: boolean): number => {
+      const w = rich(quietWorld());
+      const cutter = w.towns[PLAYER].plots[build(w, 'woodcutter')];
+      if (!cutter) throw new Error('no woodcutter');
+      if (withForester) {
+        // Beside the woodcutter: the first free ground round his hut.
+        let placed = false;
+        for (let r = 14; r <= 40 && !placed; r += 4) {
+          for (let k = 0; k < 16 && !placed; k++) {
+            const a = (k / 16) * Math.PI * 2;
+            placed = cmdBuild(w, PLAYER, 'forester', cutter.x + Math.sin(a) * r, cutter.z + Math.cos(a) * r, 0) === 'ok';
+          }
+        }
+        expect(placed).toBe(true);
+      }
+      run(w, 900);
+      let young = 0;
+      let growth = 0;
+      for (const i of w.stand.changed) {
+        young++;
+        growth += growthOf(w.stand, i, w.timeS);
+      }
+      return young > 0 ? growth / young : 1;
+    };
+    expect(grownBy(true)).toBeGreaterThan(grownBy(false));
+  });
+
   it('a bakery bakes only the flour carriers bring it', () => {
     const world = rich(quietWorld());
     const town = world.towns[PLAYER];

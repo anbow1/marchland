@@ -263,6 +263,8 @@ export const GATHER = {
   /** The woodcutter also splits each load at the chopping block in his yard (`splitSeconds`, at `blockX/Z` in the lodge's own space, door towards +Z). */
   woodcutter: { seconds: 8, amount: 8, reachM: 16, splitSeconds: 6, blockX: -1.0, blockZ: 1.8 },
   fisher: { seconds: 10, amount: 3, reachM: 9 },
+  /** The hunter stalks in the woods round the spot his lodge looks out on, and brings back a carcass: meat and a hide. */
+  hunter: { seconds: 22, meat: 2, hide: 1, roamM: 14 },
 } as const;
 
 /**
@@ -279,6 +281,11 @@ export const FORESTRY = {
   growS: 600,
   /** A woodcutter's claim on a tree lapses after this (he was called away). */
   claimS: 120,
+  /** The forester tends the young trees within this of his hut: he plants by a bare stump, or works round a
+   * sapling so it grows `tendBoostS` sooner. */
+  foresterReachM: 50,
+  tendSeconds: 6,
+  tendBoostS: 150,
 } as const;
 
 export interface Recipe {
@@ -307,6 +314,9 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   house: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: { inputs: {}, outputs: { gold: 1 }, cycleSeconds: 2.5 } },
   // The woodcutter, the fisher and the farm have no cycle here: their workers go out to the land (GATHER, FIELDS).
   woodcutter: { cost: { gold: 30 }, buildSeconds: 8, hp: 250, recipe: null },
+  // The forester and the hunter go out to the woods like the woodcutter (FORESTRY, GATHER).
+  forester: { cost: { gold: 35, wood: 10 }, buildSeconds: 8, hp: 250, recipe: null },
+  hunter: { cost: { gold: 40, wood: 10 }, buildSeconds: 8, hp: 250, recipe: null },
   fisher: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: null },
   quarry: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 300, recipe: { inputs: {}, outputs: { stone: 1 }, cycleSeconds: 6 } },
   farm: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: null },
