@@ -231,9 +231,11 @@ const LOAD_SIZE_M = 0.5;
 const LOAD_AT: [number, number, number] = [0.1, 1.45, -0.08];
 /** With the modelled townsfolk the load is held before the chest in both hands (their box walk). */
 const LOAD_IN_HANDS: [number, number, number] = [0, 0.95, 0.36];
-/** The workshops whose men dig (fields, quarries, mines); the woodcutter chops with an axe and the builders
+/** The workshops whose men dig (quarries, mines); the fields and vines are reaped; the woodcutter chops with an axe and the builders
  * swing a mallet; the fisher casts; the rest lift and set down. */
-const DIGGERS: ReadonlySet<string> = new Set(['farm', 'vineyard', 'quarry', 'ironMine']);
+const DIGGERS: ReadonlySet<string> = new Set(['quarry', 'ironMine']);
+/** The farmers and vine-dressers stoop to reap and gather. */
+const HARVESTERS: ReadonlySet<string> = new Set(['farm', 'vineyard']);
 
 type Clip = { start: number; frames: number; fps: number; travelM?: number };
 /** The townsman's clips by name (public/people/townsman.json). */
@@ -250,6 +252,8 @@ interface TownsmanClips {
   chop: Clip;
   /** A heavy swing of the mallet (the only clip in which the mallet shows): the builders. */
   swing: Clip;
+  /** Stooping to reap and gather: farmers and vine-dressers. */
+  harvest: Clip;
 }
 /** Goods waiting in a yard to be carried off: a piece (0.6 m) for every few units, at most a row of six
  * along the front of the plot, right of the door (the door looks along the building's +Z). */
@@ -328,7 +332,7 @@ export class PeopleView {
     try {
       const model = (await (await fetch(`${base}people/townsman.json`)).json()) as RiggedModel;
       const named = Object.fromEntries(model.clips.map((c) => [c.name, c])) as unknown as TownsmanClips;
-      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing'] as const) if (!named[k]) return;
+      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing', 'harvest'] as const) if (!named[k]) return;
       const n = model.positions.length / 3;
       const g = new BufferGeometry();
       interleave(g, [
@@ -385,6 +389,7 @@ export class PeopleView {
       const kind = person.work >= 0 ? world.towns[person.side].plots[person.work]?.kind : undefined;
       if (kind === 'fisher') return looped(c.fishing, offset);
       if (kind === 'woodcutter') return looped(c.chop, offset);
+      if (kind && HARVESTERS.has(kind)) return looped(c.harvest, offset);
       if (kind && DIGGERS.has(kind)) return looped(c.digging, offset);
       // Lifting and setting down by turns.
       const pickS = c.pickup.frames / c.pickup.fps;

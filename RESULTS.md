@@ -5,6 +5,11 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Żniwa
+
+- „Harvesting” (Mixamo) dla rolników w polu i w winnicy (zamiast kopania; kopanie zostaje
+  w kamieniołomie i kopalni). Testy 86/86.
+
 ## 2026-11-16 · Siekiera: drwale i budowniczowie rąbią; halabardnicy z trzema ciosami
 
 - „Great Sword Attack” (Mixamo; najbliższe młotkowi i siekierze) jako rąbanie oburącz siekierą:
