@@ -10,3 +10,9 @@ for the game). All licensed **CC BY 4.0**.
   game's own.
 - `pig.json` — the pigs in the sty: **"Curious Pink Pig animal 3d model free"** by **iRahulRajput**
   (https://sketchfab.com/3d-models/curious-pink-pig-animal-3d-model-free-f40237ad33df4a2896e5978fe489d412).
+
+## goods/ (CC0)
+
+Made by `prop.py` from **KayKit** packs by **Kay Lousberg** (www.kaylousberg.com), licensed **CC0**:
+"Medieval Hexagon Pack 1.0" (`lumber`, `stone`, `sack`, `barrel`, `crate`, `arrows`) and "Restaurant
+Bits 1.0" (`bread` from crate_buns, `meat` from crate_ham).

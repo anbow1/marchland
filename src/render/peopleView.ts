@@ -2,10 +2,11 @@ import { BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, InstancedMesh
 import { PEOPLE } from '../config.ts';
 import type { Person } from '../sim/people.ts';
 import { heightAtM } from '../sim/terrain.ts';
-import type { ResourceId, Side } from '../sim/types.ts';
+import { RESOURCE_IDS, type ResourceId, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
+import { groundUnder } from './townView.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // The townspeople. Each is drawn in one of a handful of poses, picked by what
@@ -130,7 +131,7 @@ const WAGON_HORSE_Z = 1.15;
 
 /** A prop moved by (dx, dz), unindexed, with the plain-colour layer the people's material expects, and
  * optionally a built shape alongside (the wagon's horse). */
-function propGeometry(model: PropModel, dx: number, dz: number, extra: BufferGeometry | null): BufferGeometry {
+function propGeometry(model: PropModel, dx: number, dz: number, extra: BufferGeometry | null, scale = 1, dy = 0): BufferGeometry {
   const n = model.triangles.length;
   const more = extra ? (extra.getAttribute('position').count as number) : 0;
   const pos = new Float32Array((n + more) * 3);
@@ -139,9 +140,9 @@ function propGeometry(model: PropModel, dx: number, dz: number, extra: BufferGeo
   const layer = new Float32Array((n + more) * 2);
   for (let k = 0; k < n; k++) {
     const v = model.triangles[k] as number;
-    pos[k * 3] = (model.positions[v * 3] as number) + dx;
-    pos[k * 3 + 1] = model.positions[v * 3 + 1] as number;
-    pos[k * 3 + 2] = (model.positions[v * 3 + 2] as number) + dz;
+    pos[k * 3] = (model.positions[v * 3] as number) * scale + dx;
+    pos[k * 3 + 1] = (model.positions[v * 3 + 1] as number) * scale + dy;
+    pos[k * 3 + 2] = (model.positions[v * 3 + 2] as number) * scale + dz;
     for (let c = 0; c < 3; c++) {
       nor[k * 3 + c] = model.normals[v * 3 + c] as number;
       col[k * 3 + c] = model.colours[v * 3 + c] as number;
@@ -199,6 +200,42 @@ const GOOD_HEX: Record<ResourceId, number> = {
   horse: 0x6b4a34,
 };
 
+/** The modelled loads (public/props/goods, KayKit, CC0): which shape each good travels as, and a tint
+ * over the model's own colours where one shape serves several goods. */
+const LOAD_SHAPES = ['lumber', 'stone', 'sack', 'barrel', 'crate', 'arrows', 'bread', 'meat'] as const;
+type LoadShape = (typeof LOAD_SHAPES)[number];
+const GOOD_SHAPE: Record<ResourceId, [LoadShape, number]> = {
+  wood: ['lumber', 0xffffff],
+  stone: ['stone', 0xffffff],
+  ironOre: ['stone', 0x9a6a5a],
+  iron: ['stone', 0x6a7078],
+  grain: ['sack', 0xfff0c0],
+  flour: ['sack', 0xffffff],
+  hide: ['sack', 0xa07850],
+  wine: ['barrel', 0xffffff],
+  bread: ['bread', 0xffffff],
+  meat: ['meat', 0xffffff],
+  sausage: ['meat', 0xc08070],
+  bow: ['arrows', 0xffffff],
+  fish: ['crate', 0xb8c8d8],
+  grapes: ['crate', 0xb090b0],
+  gold: ['crate', 0xffe080],
+  weapon: ['crate', 0xd0d4dc],
+  mailArmor: ['crate', 0xc0c8d0],
+  leatherArmor: ['crate', 0xc09070],
+  horse: ['sack', 0x8a6040],
+};
+/** How big a load is (its longest side, metres) and where it rides: on the shoulder, like the built sack. */
+const LOAD_SIZE_M = 0.5;
+const LOAD_AT: [number, number, number] = [0.1, 1.45, -0.08];
+/** Goods waiting in a yard to be carried off: a piece (0.6 m) for every few units, at most a row of six
+ * along the front of the plot, right of the door (the door looks along the building's +Z). */
+const YARD_PIECE_M = 0.6;
+const YARD_UNITS_PER_PIECE = 4;
+const YARD_MAX_PIECES = 6;
+const YARD_ROW = { x0: 4.3, step: -0.8, z: 4.4 };
+const YARD_CAPACITY = 900;
+
 export class PeopleView {
   private readonly poses: Record<Pose, InstancedMesh>[] = [];
   private readonly loads: InstancedMesh;
@@ -212,9 +249,17 @@ export class PeopleView {
   private readonly up = new Vector3(0, 1, 0);
   private readonly tint = new Color();
   private readonly goodColours = new Map<ResourceId, Color>();
+  /** Modelled loads by shape, once loaded (else every load is the built sack). */
+  private readonly shapes = new Map<LoadShape, InstancedMesh>();
+  /** The same shapes set on the ground, for the goods in the yards. */
+  private readonly yardShapes = new Map<LoadShape, InstancedMesh>();
+  private readonly shapeTints = new Map<ResourceId, Color>();
+  private readonly prepare: (mesh: InstancedMesh) => InstancedMesh;
+  private readonly material: MeshStandardNodeMaterial;
 
   constructor(scene: Scene, lib: SurfaceLibrary) {
     const material: MeshStandardNodeMaterial = surfaceMaterial(lib, 'people');
+    this.material = material;
     material.roughness = 0.85;
     const first = new Color(1, 1, 1);
     const prepare = (mesh: InstancedMesh): InstancedMesh => {
@@ -246,6 +291,30 @@ export class PeopleView {
       this.carts.push(mesh);
     }
     for (const id of Object.keys(GOOD_HEX) as ResourceId[]) this.goodColours.set(id, new Color(GOOD_HEX[id]));
+    for (const id of Object.keys(GOOD_SHAPE) as ResourceId[]) this.shapeTints.set(id, new Color(GOOD_SHAPE[id][1]));
+    this.prepare = prepare;
+  }
+
+  /** The modelled loads: one instanced mesh a shape; a shape whose file fails keeps the built sack. */
+  async loadGoods(base: string): Promise<void> {
+    await Promise.all(
+      LOAD_SHAPES.map(async (shape) => {
+        try {
+          const model = (await (await fetch(`${base}props/goods/${shape}.json`)).json()) as PropModel;
+          const scale = LOAD_SIZE_M / Math.max(...(model.size as number[]));
+          const g = propGeometry(model, LOAD_AT[0], LOAD_AT[2], null, scale, LOAD_AT[1]);
+          const mesh = this.prepare(new InstancedMesh(g, this.material, 2 * PEOPLE.maxPerSide));
+          mesh.name = `loads ${shape}`;
+          this.shapes.set(shape, mesh);
+          const yardScale = YARD_PIECE_M / Math.max(...(model.size as number[]));
+          const yard = this.prepare(new InstancedMesh(propGeometry(model, 0, 0, null, yardScale, 0), this.material, YARD_CAPACITY));
+          yard.name = `yard ${shape}`;
+          this.yardShapes.set(shape, yard);
+        } catch {
+          // The built sack for this one.
+        }
+      }),
+    );
   }
 
   /** Whether the carts are the modelled ones (their loads sit a little differently). */
@@ -268,6 +337,52 @@ export class PeopleView {
     }
   }
 
+  /** The goods lying in each finished building's yard, as pieces in a row at the front of its plot. */
+  private updateYards(world: World): void {
+    if (this.yardShapes.size === 0) return;
+    const counts = new Map<LoadShape, number>();
+    for (const town of world.towns) {
+      for (const b of town.plots) {
+        if (!b || b.constructionLeftS > 0) continue;
+        let piece = 0;
+        // On the building's own level: it stands on the highest ground under it, on a plinth on a slope.
+        let floorY = Number.NaN;
+        const c = Math.cos(b.yawRad);
+        const sn = Math.sin(b.yawRad);
+        for (const good of RESOURCE_IDS) {
+          const units = b.out[good] ?? 0;
+          if (units <= 0) continue;
+          const kind = (GOOD_SHAPE[good] as [LoadShape, number])[0];
+          const mesh = this.yardShapes.get(kind);
+          if (!mesh) continue;
+          const pieces = Math.min(YARD_MAX_PIECES - piece, Math.ceil(units / YARD_UNITS_PER_PIECE));
+          for (let k = 0; k < pieces; k++, piece++) {
+            const at = counts.get(kind) ?? 0;
+            if (at >= YARD_CAPACITY) break;
+            const lx = YARD_ROW.x0 + piece * YARD_ROW.step;
+            const lz = YARD_ROW.z;
+            // The plot's x and z turned by its yaw (door along +Z at yaw 0).
+            const x = b.x + lx * c + lz * sn;
+            const z = b.z - lx * sn + lz * c;
+            if (Number.isNaN(floorY)) floorY = groundUnder(b.x, b.z, b.yawRad)[1];
+            this.p.set(x, Math.max(floorY, heightAtM(x, z)), z);
+            this.q.setFromAxisAngle(this.up, b.yawRad + (piece % 3) * 0.35);
+            this.m.compose(this.p, this.q, this.s);
+            mesh.setMatrixAt(at, this.m);
+            mesh.setColorAt(at, this.shapeTints.get(good) as Color);
+            counts.set(kind, at + 1);
+          }
+          if (piece >= YARD_MAX_PIECES) break;
+        }
+      }
+    }
+    for (const [kind, mesh] of this.yardShapes) {
+      mesh.count = counts.get(kind) ?? 0;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+  }
+
   private poseOf(person: Person, timeS: number, index: number): Pose {
     if (person.act === 'work' || person.act === 'build') return Math.floor(timeS * WORK_BEATS_PER_S + index * 0.37) % 2 === 0 ? 'workA' : 'workB';
     if (person.speedMs > 0.05) return Math.floor(person.strideM / STEP_M) % 2 === 0 ? 'walkA' : 'walkB';
@@ -277,6 +392,7 @@ export class PeopleView {
   update(world: World): void {
     for (const counts of this.counts) for (const pose of POSES) counts[pose] = 0;
     let loads = 0;
+    const shapeCounts = new Map<LoadShape, number>();
     const carts = [0, 0];
     for (let i = 0; i < world.people.length; i++) {
       const person = world.people[i] as Person;
@@ -319,9 +435,18 @@ export class PeopleView {
           this.p.set(person.x + c * dx + sn * dz - 0.1 * c, heightAtM(person.x, person.z) + dy, person.z - sn * dx + c * dz + 0.1 * sn);
           this.m.compose(this.p, this.q, this.s);
         }
-        this.loads.setMatrixAt(loads, this.m);
-        this.loads.setColorAt(loads, this.goodColours.get(person.load) as Color);
-        loads++;
+        const kind = (GOOD_SHAPE[person.load] as [LoadShape, number])[0];
+        const shape = this.shapes.get(kind);
+        if (shape) {
+          const at = shapeCounts.get(kind) ?? 0;
+          shape.setMatrixAt(at, this.m);
+          shape.setColorAt(at, this.shapeTints.get(person.load) as Color);
+          shapeCounts.set(kind, at + 1);
+        } else {
+          this.loads.setMatrixAt(loads, this.m);
+          this.loads.setColorAt(loads, this.goodColours.get(person.load) as Color);
+          loads++;
+        }
       }
     }
     for (const side of [0, 1] as const satisfies readonly Side[]) {
@@ -337,6 +462,12 @@ export class PeopleView {
       mesh.instanceMatrix.needsUpdate = true;
       if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
     });
+    for (const [kind, mesh] of this.shapes) {
+      mesh.count = shapeCounts.get(kind) ?? 0;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    }
+    this.updateYards(world);
     this.loads.count = loads;
     this.loads.instanceMatrix.needsUpdate = true;
     if (this.loads.instanceColor) this.loads.instanceColor.needsUpdate = true;

@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Towary z modeli: niesione ładunki i stosy w obejściach
+
+- Modele zasobów z KayKit (Kay Lousberg, CC0): „Medieval Hexagon Pack” (deski, kamień, worek,
+  beczka, skrzynia, kubeł ze strzałami) i „Restaurant Bits” (skrzynia bułek, skrzynia szynki),
+  przez `prop.py` do `public/props/goods/` (90–400 trójkątów, razem 228 kB).
+- Niesiony ładunek ma kształt towaru (zamiast jednego worka w kolorze): drewno → deski, kamień →
+  bloki (ruda i żelazo tymi samymi blokami w innym odcieniu), zboże, mąka, skóry → worek, wino →
+  beczka, chleb → skrzynia bułek, mięso i kiełbasy → skrzynia szynki, łuki → kubeł strzał, reszta
+  → skrzynia w barwie towaru. W taczce i na wozie ten sam model.
+- Nowe: towary czekające w obejściu na wywóz (`out`) widać przy budynku — po kawałku (0,6 m) na
+  każde 4 jednostki, do sześciu w rzędzie przy przedniej krawędzi działki, na poziomie budynku
+  (na cokole, gdy stoi na zboczu). Zatory w produkcji widać teraz na mapie.
+- Jeden mesh instancjonowany na kształt (8 na ładunki, 8 na obejścia). Testy 86/86.
+
 ## 2026-11-16 · Taczki, wozy i świnie z modeli
 
 - Nowe narzędzie `tools/blender/prop.py`: dowolny model bez szkieletu → lekka siatka z kolorami

@@ -100,7 +100,7 @@ export class WorldView {
     const models = await this.town.loadModels(import.meta.env.BASE_URL);
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
-    await this.people.loadCarts(import.meta.env.BASE_URL);
+    await Promise.all([this.people.loadCarts(import.meta.env.BASE_URL), this.people.loadGoods(import.meta.env.BASE_URL)]);
     this.vines = new VinesView(scene, surfaces);
     this.crops = new CropsView(scene);
     this.smoke = new SmokeView(scene);

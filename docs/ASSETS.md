@@ -22,6 +22,13 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
 | Stabbing, Double Dagger Stab, Standing Aim Walk Forward/Right, Idle 1–2, Block (drugi) | Mixamo | Mixamo | w zapasie (pikinierzy, łucznicy) |
 
+### Zasoby i towary (pobrane z GitHuba KayKit, CC0) — w grze
+
+Deski, kamień, worek, beczka, skrzynia, kubeł strzał (Medieval Hexagon Pack), skrzynia bułek i szynki
+(Restaurant Bits): niesione ładunki i stosy w obejściach (`public/props/goods/`). Do znalezienia:
+ryby w koszu, winogrona w koszu, sztabki żelaza, ruda, zbroje/broń na stojaku, snopki zboża — w tym
+samym stylu albo realistyczne CC0/CC BY.
+
 ### Dostarczone 16.11 — do wpięcia (licencje sprawdzone)
 
 | Co | Źródło | Licencja | Plan |
