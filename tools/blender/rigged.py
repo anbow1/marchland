@@ -248,7 +248,13 @@ def bake_frames(char_rest, clip_path, hips_ratio):
     # The character's rest turned onto the clip's rest, bone by bone (directions from head to the child's head).
     align = {}
     for n, child in KEEP.items():
-        dc = (head_of(char_rest[child]) - head_of(char_rest[n])).normalized()
+        dc = head_of(char_rest[child]) - head_of(char_rest[n])
+        if head_of(char_rest[child]).length < 1e-3:
+            # The knight's end bones (HeadTop_End, Toe_End) sit at the origin: the bone goes on the way
+            # its parent points (the head along the neck, the toes along the foot).
+            parent = next(p for p, c in KEEP.items() if c == n)
+            dc = head_of(char_rest[n]) - head_of(char_rest[parent])
+        dc = dc.normalized()
         da = (a_rest_head[child] - a_rest_head[n]).normalized()
         align[n] = dc.rotation_difference(da)
     frames = []

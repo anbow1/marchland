@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Głowy na miejscu
+
+- Miecznicy i halabardnicy wyglądali, jakby nie mieli głowy: w modelu rycerza końcówki kości
+  (`HeadTop_End`, `Toe_End`) leżą w początku układu, więc kierunek głowy wychodził w dół i przy
+  przenoszeniu ruchów głowa obracała się o ~160° w tułów (stopy podobnie). Teraz taka kość idzie
+  w kierunku swojego rodzica (głowa wzdłuż szyi, palce wzdłuż stopy); żadna kość poza zgiętym
+  przedramieniem z tarczą nie obraca się już o ponad 100°. Sprawdzone na zrzucie z bliska.
+
 ## 2026-11-16 · M4, krok 4: miecznicy i halabardnicy chodzą, biegną, obrywają i padają
 
 - Z przesłanych animacji Mixamo upieczone na rycerza Thosta: postawa (idle), marsz, bieg, trafienie
