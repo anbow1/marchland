@@ -183,57 +183,65 @@ function beam(f: Figure, x: number, y0: number, z0: number, y1: number, z1: numb
 
 const CREW: Kit = { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'none', shield: false };
 
-/** A bolt-thrower on a wheeled carriage, with its crew of two. Shoots towards −Z. */
-function ballista(f: Figure): void {
+/** A field gun on its carriage, built (the modelled one replaces it once loaded), with its crew of two. Shoots towards −Z. */
+function cannon(f: Figure): void {
   const b = f.b;
   f.cloth();
-  // Carriage, wheels, the stock on its stand.
-  b.box(0, 0.45, 0.2, 1.1, 0.16, 2.2, WOOD);
-  for (const dx of [-0.75, 0.75]) b.log(dx, 0.5, 0.2, 0.5, 0.14, 10, WOOD_DARK);
-  b.box(0, 0.6, 0.1, 0.22, 0.7, 0.22, WOOD);
-  beam(f, 0, 1.25, 1.2, 1.45, -1.3, 0.16, WOOD);
-  // The bow frame and its two arms, drawn back.
-  b.box(0, 1.2, -1.0, 1.5, 0.5, 0.2, WOOD_DARK);
-  for (const dx of [-1, 1]) b.box(dx * 1.15, 1.38, -0.75, 0.9, 0.09, 0.09, WOOD);
+  // Trail and cheeks, two wheels, the barrel on top.
+  b.box(0, 0.35, 0.5, 0.7, 0.3, 2.0, WOOD);
+  for (const dx of [-0.6, 0.6]) b.log(dx, 0.55, -0.2, 0.55, 0.12, 12, WOOD_DARK);
   f.steel();
-  b.box(0, 1.5, -1.6, 0.05, 0.05, 1.1, STEEL);
-  f.team();
-  b.box(0, 0.62, 1.2, 0.9, 0.5, 0.06, WHITE);
-  b.at(1.25, 0, 0.9, 0.3);
-  man(f, CREW, 0, false, false);
-  b.at(-1.25, 0, 0.5, -0.3);
-  man(f, CREW, 0, false, false);
+  b.at(0, 0.95, -0.5, Math.PI / 2);
+  b.log(0, 0, 0, 0.17, 2.0, 10, STEEL);
   b.at(0, 0, 0, 0);
+  f.team();
+  b.box(0, 0.55, 1.45, 0.6, 0.4, 0.06, WHITE);
+  gunCrew(f, [[1.15, 0.9, 0.3], [-1.15, 0.5, -0.3]]);
 }
 
-/** A counterweight trebuchet with a crew of three. The throwing arm swings when it shoots (towards −Z). */
-function trebuchet(f: Figure): void {
+/** A mortar on its bed, built (the modelled one replaces it once loaded), with its crew of three. */
+function mortar(f: Figure): void {
   const b = f.b;
-  const axle = 4.4;
   f.cloth();
-  // Ground frame.
-  for (const dx of [-1.3, 1.3]) b.box(dx, 0, 0, 0.3, 0.3, 6.4, WOOD);
-  for (const dz of [-2.9, 0, 2.9]) b.box(0, 0.05, dz, 2.9, 0.26, 0.3, WOOD_DARK);
-  // Two A-frames up to the axle.
-  for (const dx of [-1.3, 1.3]) {
-    beam(f, dx, 0.3, -2.2, axle, 0, 0.26, WOOD);
-    beam(f, dx, 0.3, 2.2, axle, 0, 0.26, WOOD);
-    b.box(dx, 0.3, 0, 0.24, axle - 0.3, 0.24, WOOD_DARK);
-  }
-  b.log(0, axle, 0, 0.16, 3.0, 8, WOOD_DARK);
-  // The arm, its counterweight box and the sling: one part that turns about the axle.
-  const arm: Part = [axle, 0, 0, 1];
-  f.cloth(arm);
-  beam(f, 0, axle + 1.3, -1.7, axle - 3.4, 4.6, 0.24, WOOD);
-  b.box(0, axle + 0.2, -2.2, 1.3, 1.5, 1.3, WOOD_DARK);
-  b.box(0, axle - 3.9, 4.6, 0.04, 0.6, 0.04, STRAW);
-  f.team(arm);
-  b.box(0, axle + 0.5, -2.86, 0.9, 0.9, 0.05, WHITE);
-  for (const [x, z, turn] of [[2.2, 2.6, 0.4], [-2.2, 1.4, -0.5], [1.9, -1.6, 0.2]] as const) {
-    b.at(x, 0, z, turn);
+  b.box(0, 0, 0.1, 1.3, 0.6, 1.6, WOOD_DARK);
+  f.steel();
+  // The squat barrel, raised steeply towards −Z.
+  beam(f, 0, 0.6, 0.3, 1.5, -0.5, 0.6, STEEL);
+  f.team();
+  b.box(0, 0.25, 0.92, 1.0, 0.3, 0.05, WHITE);
+  gunCrew(f, [[1.3, 1.2, 0.4], [-1.3, 0.9, -0.5], [1.1, -0.9, 0.2]]);
+}
+
+/** The men who serve a gun, standing about it (x, z, turn). */
+function gunCrew(f: Figure, spots: readonly (readonly [number, number, number])[]): void {
+  for (const [x, z, turn] of spots) {
+    f.b.at(x, 0, z, turn);
     man(f, CREW, 0, false, false);
   }
-  b.at(0, 0, 0, 0);
+  f.b.at(0, 0, 0, 0);
+}
+
+/** A modelled prop (tools/blender/prop.py) as the game's guns use it. */
+export interface GunModel {
+  size: number[];
+  positions: number[];
+  normals: number[];
+  colours: number[];
+  triangles: number[];
+}
+
+/** A gun from its model (barrel along −Z, on the ground) with its crew and a small flag in the side's colour. */
+export function engineGeometryOnModel(kind: 'cannon' | 'mortar', model: GunModel): BufferGeometry {
+  const f = new Figure();
+  f.cloth();
+  f.b.model(model, 0, 0, 0, 0, 1);
+  f.team();
+  const back = (model.size[2] as number) / 2 + 0.2;
+  f.b.box(0, 0, back, 0.05, 1.6, 0.05, WOOD_DARK);
+  f.b.box(0.25, 1.15, back, 0.5, 0.35, 0.03, WHITE);
+  const side = (model.size[0] as number) / 2 + 0.6;
+  gunCrew(f, kind === 'cannon' ? [[side, 0.6, 0.3], [-side, 0.2, -0.3]] : [[side, 0.9, 0.4], [-side, 0.6, -0.5], [0.4, back + 0.9, 0.2]]);
+  return finish(f.b.build('extra'));
 }
 
 function horse(f: Figure, coat: number, caparison: boolean): void {
@@ -260,7 +268,7 @@ function horse(f: Figure, coat: number, caparison: boolean): void {
   }
 }
 
-const KITS: Record<Exclude<UnitKind, 'ballista' | 'trebuchet'>, Kit> = {
+const KITS: Record<Exclude<UnitKind, 'cannon' | 'mortar'>, Kit> = {
   militia: { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'spear', shield: true },
   pikemen: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'pike', shield: false },
   archers: { tunic: TUNIC_GREEN, head: 'hood', mail: false, weapon: 'bow', shield: false },
@@ -273,8 +281,8 @@ const KITS: Record<Exclude<UnitKind, 'ballista' | 'trebuchet'>, Kit> = {
 
 export function soldierGeometry(kind: UnitKind): BufferGeometry {
   const f = new Figure();
-  if (kind === 'ballista') ballista(f);
-  else if (kind === 'trebuchet') trebuchet(f);
+  if (kind === 'cannon') cannon(f);
+  else if (kind === 'mortar') mortar(f);
   else if (kind === 'lightCavalry' || kind === 'heavyCavalry') {
     horse(f, kind === 'heavyCavalry' ? HORSE_GREY : HORSE_BAY, kind === 'heavyCavalry');
     man(f, KITS[kind], 0.72, true);

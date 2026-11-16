@@ -16,6 +16,18 @@ import type { SurfaceLibrary } from './surfaces.ts';
 type Build = (b: MeshBuilder, level: number) => void;
 
 const BUILDERS: Record<BuildingKind, Build> = {
+  foundry: (b, level) => {
+    // A stone casting house with a tall furnace stack, the casting pit's shed, and a new gun on show.
+    P.house(b, { cx: -1.2, cz: -2.0, sx: 6.4, sz: 4.6, wallH: 3.2, wall: P.STONE, roof: P.SHINGLE, pitch: 1.3, frame: false });
+    P.chimney(b, 1.4, -3.2, 8.6, 1.3);
+    b.box(3.4, 0, -0.6, 2.2, 1.6, 2.2, P.STONE);
+    b.box(3.4, 1.6, -0.6, 1.6, 0.6, 1.6, P.SOOT);
+    for (const x of [2.4, 4.4]) b.box(x, 0, 1.6, 0.18, 2.3, 0.18, P.TIMBER);
+    b.roof(3.4, 2.3, 1.2, 2.6, 1.6, 0.4, 0, 0.12, 0.08, P.SHINGLE, P.TIMBER);
+    P.yard(b, 0.2, 3.4, 9.0, 3.4, 0, false, true);
+    P.gunOnShow(b, -1.6, 3.4, 0.3);
+    if (level >= 2) P.logPile(b, 4.2, 3.6, 2.2, 3);
+  },
   storehouse: (b, level) => {
     // A long barn of boards on a stone footing, big doors to the yard, a lean-to of goods beside it.
     b.box(-0.6, 0, -1.4, 7.6, 0.6, 5.0, P.STONE);

@@ -58,6 +58,7 @@ const GOOD_PL: Record<ResourceId, string> = {
 
 const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   house: { name: 'House', role: 'Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.' },
+  foundry: { name: 'Gun Foundry', role: 'Casts the guns: field cannon at level 1, mortars at level 2, from iron, timber and stone. Like the barracks it has no worker; a gun\'s crew comes from the town. A stone casting house with a tall furnace stack, a casting shed and a new gun on show in the yard.' },
   storehouse: { name: 'Storehouse', role: "A second store of the town's goods. Carriers take finished goods to whichever store is nearest and fetch from it, so a village far from the keep stops costing long walks. A long timber barn on a stone footing, crates, barrels and sacks under a lean-to." },
   woodcutter: { name: "Woodcutter's Lodge", role: 'The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines. An open shed of stacked logs, fresh trunks by the track, a chopping block and a sawhorse in the yard.' },
   quarry: { name: 'Quarry', role: 'Cuts building stone from an outcrop: stone for workshops, the barracks and roads.' },
@@ -122,7 +123,7 @@ const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKin
   { name: 'Iron, weapons and mail', pl: 'Żelazo, broń i kolczugi', kinds: ['ironMine', 'smelter', 'smithy', 'armourer'], planned: [] },
   { name: 'Leather armour and bows', pl: 'Zbroje skórzane i łuki', kinds: ['tannery', 'fletcher'], planned: [] },
   { name: 'Horses', pl: 'Konie', kinds: ['stable'], planned: [] },
-  { name: 'Army and defence', pl: 'Wojsko i obrona', kinds: ['barracks', 'tower'], planned: ['Siege Workshop', 'Gate (a wall that opens for its own side)', 'Keep, levels 2 and 3'] },
+  { name: 'Army and defence', pl: 'Wojsko i obrona', kinds: ['barracks', 'foundry', 'tower'], planned: ['Gate (a wall that opens for its own side)', 'Keep, levels 2 and 3'] },
 ];
 
 for (const kind of BUILDING_KINDS) {
@@ -208,9 +209,10 @@ Farm ──grain──► Windmill ──flour──► Bakery ──bread──
      │                   └─hides─► Tannery ──leather armour──► pikemen, archers, crossbowmen, light cavalry
      └─grain──► Stable ──horses──► light and heavy cavalry
 Fisher's Hut ──fish──► houses, keep, army
-Woodcutter's Lodge ──timber──► buildings, Smithy, Fletcher, militia shields, siege engines
-Quarry ──stone──► buildings, roads, trebuchet
-Iron Mine ──ore──► Smelter (+ timber) ──iron──► Smithy (+ timber) ──weapons──► every armed regiment, ballista
+Woodcutter's Lodge ──timber──► buildings, Smithy, Fletcher, militia shields, cannon
+Quarry ──stone──► buildings, roads, mortars
+Iron Mine ──ore──► Smelter (+ timber) ──iron──► Smithy (+ timber) ──weapons──► every armed regiment
+                                         ├─► Gun Foundry (+ timber, stone) ──► cannon, mortars
                                          └─► Armourer ──mail──► swordsmen, halberdiers, heavy cavalry
 Fletcher ──bows──► archers, crossbowmen
 \`\`\`
@@ -222,7 +224,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | Priority | Building | Why it is needed |
 |---|---|---|
 | A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
-| A | **Siege Workshop** | Builds ballistae and trebuchets instead of the barracks (timber, weapons, stone), so engines are a separate investment. |
 | B | **Sawmill** | Logs → planks: higher levels of buildings and engines ask for planks, so timber gets a second tier. |
 | B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |
 | B | **Hunter's Lodge** | Meat and hides from the forest before the town can afford pigs. |
@@ -361,8 +362,8 @@ const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
   crossbowmen: { name: 'Kusznicy', use: 'Wolno ładują, bełt przebija kolczugę: odpowiedź na ciężkozbrojnych.' },
   lightCavalry: { name: 'Lekka jazda', use: 'Najszybsza: zagony na wsie, strzelców i machiny, pościg za uciekającymi.' },
   heavyCavalry: { name: 'Ciężka jazda', use: 'Rycerstwo: szarża, która łamie linię. Nie na piki od czoła.' },
-  ballista: { name: 'Balisty', use: 'Dwie machiny: daleki bełt, który ignoruje pancerz. Bezradne, gdy wróg dojdzie.' },
-  trebuchet: { name: 'Trebusz', use: 'Jedna machina: kamienie rozbijają szyk i burzą mury oraz zamek.' },
+  cannon: { name: 'Armaty', use: 'Dwa działa z ludwisarni: kula na wprost przebija każdą zbroję i wybija dziury w murach. Bezradne, gdy wróg dojdzie.' },
+  mortar: { name: 'Moździerz', use: 'Jedno działo (ludwisarnia poz. 2): ciężka kula stromym torem nad murami rozbija szyk i burzy mury, wieże i zamek.' },
 };
 
 export function unitsDoc(): string {

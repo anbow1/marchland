@@ -63,11 +63,12 @@ export const BUILDING_KINDS = [
   'fletcher',
   'stable',
   'barracks',
+  'foundry',
   'tower',
 ] as const;
 export type BuildingKind = (typeof BUILDING_KINDS)[number];
 
-export const UNIT_KINDS = ['militia', 'pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen', 'lightCavalry', 'heavyCavalry', 'ballista', 'trebuchet'] as const;
+export const UNIT_KINDS = ['militia', 'pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen', 'lightCavalry', 'heavyCavalry', 'cannon', 'mortar'] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
 /** Why a command was refused; 'ok' when it was carried out. The HUD turns these into messages. */
@@ -89,6 +90,7 @@ export type CommandResult =
   | 'maxLevel'
   | 'underConstruction'
   | 'needsBarracks'
+  | 'needsFoundry'
   | 'armyFull'
   | 'queueFull'
   | 'noSuchRegiment'
@@ -111,7 +113,7 @@ export type Difficulty = 'easy' | 'normal' | 'hard';
 
 /** Buildings nobody works in (people live in houses, soldiers train in the barracks): no worker is sent,
  * nothing is made, and they cannot be paused. */
-export const WORKLESS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['house', 'barracks', 'tower', 'storehouse']);
+export const WORKLESS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['house', 'barracks', 'foundry', 'tower', 'storehouse']);
 
 /** What a building needs from the land it is put on. */
 export type SiteNeed = 'none' | 'forest' | 'water' | 'stone' | 'ore' | 'fields';
@@ -119,6 +121,7 @@ export type SiteNeed = 'none' | 'forest' | 'water' | 'stone' | 'ore' | 'fields';
 export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
   house: 'none',
   storehouse: 'none',
+  foundry: 'none',
   woodcutter: 'forest',
   quarry: 'stone',
   farm: 'fields',

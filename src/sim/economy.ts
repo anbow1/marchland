@@ -379,6 +379,22 @@ export function barracksLevel(town: Town): number {
   return best;
 }
 
+/** The best working foundry's level (guns are cast there); 0 with none. */
+export function foundryLevel(town: Town): number {
+  let best = 0;
+  for (const b of town.plots) {
+    if (!b || b.kind !== 'foundry') continue;
+    const usable = b.constructionLeftS > 0 ? b.level - 1 : b.level;
+    if (usable > best) best = usable;
+  }
+  return best;
+}
+
+/** The level of the building that raises this kind (barracks, or foundry for guns) the town has now. */
+export function trainingLevel(town: Town, kind: UnitKind): number {
+  return UNITS[kind].trainedAt === 'foundry' ? foundryLevel(town) : barracksLevel(town);
+}
+
 export function canAffordUnit(stock: Stock, kind: UnitKind): boolean {
   const def = UNITS[kind];
   if (stock.gold < def.goldCost) return false;
@@ -401,7 +417,7 @@ export function peopleFor(kind: UnitKind): number {
 /** Why a regiment cannot be ordered now, apart from the people it needs; 'ok' if it can. */
 export function canRecruit(town: Town, kind: UnitKind, menUnderArms: number): CommandResult {
   const def = UNITS[kind];
-  if (barracksLevel(town) < def.barracksLevel) return 'needsBarracks';
+  if (trainingLevel(town, kind) < def.barracksLevel) return def.trainedAt === 'foundry' ? 'needsFoundry' : 'needsBarracks';
   if (town.recruitQueue.length >= ARMY.maxRecruitQueue) return 'queueFull';
   if (menUnderArms + queuedMen(town) + def.men > ARMY.maxSoldiersPerSide) return 'armyFull';
   if (!canAffordUnit(town.stock, kind)) return 'cannotAfford';

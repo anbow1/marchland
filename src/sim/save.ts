@@ -1,3 +1,5 @@
+import { UNITS } from '../config.ts';
+import type { UnitKind } from './types.ts';
 import { EventQueue } from './events.ts';
 import { LAYOUT, START } from './layout.ts';
 import { SpatialGrid } from './movement.ts';
@@ -157,7 +159,18 @@ function upgrade(world: World): World {
     town.orders ??= {};
     town.kindPriority ??= {};
   }
+  // Ballistae and trebuchets became cannon and mortars (2026-11-16): an old save's engines are cast anew.
+  const renamed: Record<string, UnitKind> = { ballista: 'cannon', trebuchet: 'mortar' };
+  for (const town of world.towns) {
+    for (const order of town.recruitQueue) order.kind = renamed[order.kind] ?? order.kind;
+    town.trained = town.trained.map((k) => renamed[k] ?? k);
+  }
   for (const r of world.regiments) {
+    const now = renamed[r.kind];
+    if (now) {
+      r.kind = now;
+      r.def = UNITS[now];
+    }
     r.xp ??= 0;
     r.paceCapMs ??= 0;
     r.route ??= [];

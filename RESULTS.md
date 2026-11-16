@@ -5,6 +5,23 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Armaty i ludwisarnia zamiast balisty i trebusza
+
+- Decyzja: armaty. **Ludwisarnia** (nowy budynek: 150 złota, 40 drewna, 60 kamienia; bez pracownika,
+  jak koszary) odlewa **armaty** (poziom 1: dwa działa, 140 złota, na działo 6 żelaza i 6 drewna;
+  kula na wprost do 120 m, przebicie 0,9, 30 obrażeń murom) i **moździerze** (poziom 2: jedno działo,
+  200 złota, 10 żelaza i 8 kamienia; stromy tor 40–150 m, rozprysk 4,5 m, 110 obrażeń murom i zamkowi).
+  Obsługa idzie z miasta do ludwisarni jak rekruci do koszar. Nowe pole jednostki `trainedAt`
+  (koszary / ludwisarnia); panel ludwisarni pokazuje tylko działa, zakładka Werbunek wszystko.
+- Nazwy wewnętrzne `ballista` → `cannon`, `trebuchet` → `mortar`; stare zapisy gry przeliczają się
+  same (oddziały, kolejka werbunku).
+- Wygląd: modele „Cannon” (Lyskilde) i „Medieval Mortier” (ViktorKom), lufą do przodu, z obsługą
+  i chorągiewką w barwach; pociski to żeliwne kule (armatnia mniejsza). Przed ludwisarnią stoi armata
+  na pokaz. Bez plików: proste działa z brył.
+- Komputer: ludwisarnia po płatnerzu, podnosi jej poziom; w partii komputer–komputer pierwsze armaty
+  w 37. minucie. Tempo z bezczynnym graczem bez zmian (36,6 / 40,3 min).
+- Testy 89/89; WebGPU 0 błędów (bitwa); zrzuty armat i moździerza.
+
 ## 2026-11-16 · Skład, 4 tragarzy zawsze, granica zasięgu budowy, obracanie budowy
 
 - **Skład** (nowy budynek: 60 złota, 40 drewna, 10 kamienia): towary miasta są wspólne, a zamek i każdy

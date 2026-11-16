@@ -93,6 +93,8 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'stable',
   'tower',
   'armourer',
+  // Guns for the siege: the foundry casts cannon, and mortars once it is raised a level.
+  'foundry',
   'vineyard',
   'winery',
   // A second store once the town has spread: carriers stop walking every sack to the keep.
@@ -104,10 +106,10 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'house',
 ];
 
-const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'ballista', 'heavyCavalry', 'archers', 'trebuchet', 'swordsmen'];
+const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'cannon', 'heavyCavalry', 'archers', 'mortar', 'swordsmen'];
 
 /** Upgrades in the order they pay back for an army. */
-const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'windmill', 'bakery', 'smelter', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'armourer', 'stable', 'fletcher', 'butcher', 'woodcutter', 'fisher', 'quarry'];
+const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'windmill', 'bakery', 'smelter', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'armourer', 'foundry', 'stable', 'fletcher', 'butcher', 'woodcutter', 'fisher', 'quarry'];
 
 /** Staging point: this far short of the enemy keep, on the line from home. */
 const STAGE_DISTANCE_M = 115;

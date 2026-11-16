@@ -6,7 +6,7 @@ import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
-import { type PropModel, setPigModel, surfacePaint } from './buildingParts.ts';
+import { type PropModel, setCannonModel, setPigModel, surfacePaint } from './buildingParts.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { type SurfaceModel, surfaceModel } from './surfaceModel.ts';
 import { TEAM_HEX } from './palette.ts';
@@ -115,6 +115,8 @@ export class TownView {
     try {
       const pig = await fetch(`${base}props/pig.json`);
       if (pig.ok) setPigModel((await pig.json()) as PropModel);
+      const cannon = await fetch(`${base}props/cannon.json`);
+      if (cannon.ok) setCannonModel((await cannon.json()) as PropModel);
     } catch {
       // Built pigs then.
     }

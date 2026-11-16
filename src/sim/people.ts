@@ -263,19 +263,20 @@ function enemyNear(world: World, side: Side, x: number, z: number): boolean {
 }
 
 function stepRecruit(world: World, town: Town, p: Person, dtSeconds: number): void {
-  // The nearest finished barracks.
+  const waiting = town.recruitQueue.find((o) => o.arrived < o.needPeople);
+  // The nearest finished barracks (or foundry, for a gun's crew).
+  const at = waiting && UNITS[waiting.kind].trainedAt === 'foundry' ? 'foundry' : 'barracks';
   let plot = NOWHERE;
   let bestD2 = Number.POSITIVE_INFINITY;
   for (let i = 0; i < town.plots.length; i++) {
     const b = town.plots[i];
-    if (!b || b.kind !== 'barracks' || (b.level === 1 && !isBuilt(b))) continue;
+    if (!b || b.kind !== at || (b.level === 1 && !isBuilt(b))) continue;
     const d2 = (p.x - b.x) ** 2 + (p.z - b.z) ** 2;
     if (d2 < bestD2) {
       plot = i;
       bestD2 = d2;
     }
   }
-  const waiting = town.recruitQueue.find((o) => o.arrived < o.needPeople);
   // Militia is armed at the keep's gate when there is no barracks to go to.
   if (plot === NOWHERE && waiting && UNITS[waiting.kind].barracksLevel === 0) plot = KEEP;
   if (plot === NOWHERE || !waiting) {

@@ -1,7 +1,7 @@
 import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost } from '../sim/commands.ts';
-import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
+import { trainingLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
 import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS, WORKLESS } from '../sim/types.ts';
@@ -73,7 +73,7 @@ const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
   ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
 
-const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', ballista: '⇶', trebuchet: '☄' };
+const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', cannon: '⇶', mortar: '☄' };
 
 const MAX_CARDS = 48;
 const PANEL_REFRESH_S = 0.25;
@@ -400,19 +400,21 @@ export class Hud {
     if (this.debugVisible) this.debug.textContent = text;
   }
 
-  private recruitHtml(world: World, town: Town): string {
+  /** `at`: only what this building raises (a barracks' or a foundry's panel); everything on the army tab. */
+  private recruitHtml(world: World, town: Town, at: 'barracks' | 'foundry' | null = null): string {
     // With no barracks the keep still arms militia.
-    const level = barracksLevel(town);
     const men = menAlive(world, PLAYER);
     const free = freePeople(world, PLAYER);
     let html = `<div class="row wrap"><span class="label">${T.recruit}</span>`;
     for (const kind of UNIT_KINDS) {
       const def = UNITS[kind];
+      if (at !== null && def.trainedAt !== at) continue;
+      const level = trainingLevel(town, kind);
       const locked = def.barracksLevel > level;
       const full = men + def.men > ARMY.maxSoldiersPerSide;
       const hands = free >= peopleFor(kind) + PEOPLE.minFreeAfterCallUp;
       const off = locked || full || !hands || !canAffordUnit(town.stock, kind) ? ' off' : '';
-      const need = locked ? ` (${T.needsBarracksLevel} ${def.barracksLevel})` : def.barracksLevel === 0 ? ` (${T.atKeep})` : '';
+      const need = locked ? ` (${def.trainedAt === 'foundry' ? T.needsFoundryLevel : T.needsBarracksLevel} ${def.barracksLevel})` : def.barracksLevel === 0 ? ` (${T.atKeep})` : '';
       html += `<button class="option${off}" data-act="recruit" data-arg="${kind}" data-tip="${T.units[kind].name}: ${T.units[kind].about} ${T.counters[kind]}${need}"><span class="glyph">${UNIT_GLYPH[kind]}</span><span class="name">${T.units[kind].name}</span><span class="costs">${locked ? need : unitCostHtml(town, kind)}</span></button>`;
     }
     html += '</div>';
@@ -635,7 +637,8 @@ export class Hud {
     if (state === 'building' && b.level === 1) html += `<button class="option" data-act="turnSite" data-tip="${T.turnSite}"><span class="name">${T.turnSite}</span></button>`;
     if (!WORKLESS.has(b.kind)) html += `<button class="option" data-act="pause" data-tip="${T.pause}"><span class="name">${b.paused ? T.unpause : T.pause}</span></button>`;
     html += `<button class="option" data-act="demolish" data-tip="${T.demolish}"><span class="name">${T.demolish}</span></button></div>`;
-    if (b.kind === 'barracks') html += this.recruitHtml(world, town);
+    if (b.kind === 'barracks') html += this.recruitHtml(world, town, 'barracks');
+    if (b.kind === 'foundry') html += this.recruitHtml(world, town, 'foundry');
     return html;
   }
 

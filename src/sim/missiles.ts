@@ -10,7 +10,7 @@ import { enemyOf, type Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
-// Missiles: arrows, crossbow bolts, ballista bolts and trebuchet stones. Each
+// Missiles: arrows, crossbow bolts, cannonballs and mortar balls. Each
 // is launched at the elevation that carries it to its aim point under gravity
 // (no drag: over a hundred metres these lose little speed), flies for its time
 // of flight, and hits whoever stands where it lands. A stone is lobbed on the
@@ -32,7 +32,7 @@ export interface Arrow {
   pierce: number;
   splashM: number;
   siegeDamage: number;
-  /** For the view: 0 arrow, 1 crossbow bolt, 2 ballista bolt, 3 stone. */
+  /** For the view: 0 arrow, 1 crossbow bolt, 2 cannonball, 3 mortar ball. */
   look: number;
   /** Aimed at a building: the side and plot (-1 = keep); plot -2 means "at soldiers". */
   buildingSide: Side;

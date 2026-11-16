@@ -233,22 +233,22 @@ describe('the wider roster', () => {
     expect(losses('crossbowmen')).toBeGreaterThan(losses('archers') + 4);
   }, 30_000);
 
-  it('ballistae reach where archers cannot, and shoot nothing inside their minimum range', () => {
+  it('cannon reach where archers cannot, and shoot nothing inside their minimum range', () => {
     const shootAt = (distanceM: number): number => {
       const world = emptyWorld();
-      spawnRegiment(world, PLAYER, 'ballista', 0, 0, Math.PI);
+      spawnRegiment(world, PLAYER, 'cannon', 0, 0, Math.PI);
       const target = spawnRegiment(world, COMPUTER, 'swordsmen', 0, -distanceM, 0);
       run(world, 120);
       return target.initialMen - target.aliveMen;
     };
-    expect(UNITS.ballista.missileRangeM).toBeGreaterThan(UNITS.archers.missileRangeM);
+    expect(UNITS.cannon.missileRangeM).toBeGreaterThan(UNITS.archers.missileRangeM);
     expect(shootAt(100)).toBeGreaterThanOrEqual(2);
-    expect(shootAt(UNITS.ballista.missileMinRangeM - 5)).toBe(0);
+    expect(shootAt(UNITS.cannon.missileMinRangeM - 5)).toBe(0);
   });
 
   it('siege engines do not fight back and fall to horsemen', () => {
     const world = emptyWorld();
-    const engines = spawnRegiment(world, PLAYER, 'ballista', 0, 30, Math.PI);
+    const engines = spawnRegiment(world, PLAYER, 'cannon', 0, 30, Math.PI);
     // Inside the engines' minimum range from the start, so no bolt is loosed: only melee is tested.
     const cavalry = spawnRegiment(world, COMPUTER, 'lightCavalry', 0, 22, 0);
     cmdAttackRegiment(world, cavalry.id, engines.id);
@@ -257,9 +257,9 @@ describe('the wider roster', () => {
     expect(cavalry.aliveMen).toBe(cavalry.initialMen);
   });
 
-  it('a trebuchet lobs its stone high, scatters a formation and brings down a building', () => {
+  it('a mortar lobs its ball high, scatters a formation and brings down a building', () => {
     const g = MISSILE.gravityMs2;
-    const v = UNITS.trebuchet.missileSpeedMs;
+    const v = UNITS.mortar.missileSpeedMs;
     const steep = launchElevationRad(100, 0, v, g, true);
     const flat = launchElevationRad(100, 0, v, g, false);
     expect(steep).toBeGreaterThan(Math.PI / 4);
@@ -267,7 +267,7 @@ describe('the wider roster', () => {
     expect(steep + flat).toBeCloseTo(Math.PI / 2, 6);
 
     const world = emptyWorld();
-    spawnRegiment(world, PLAYER, 'trebuchet', 0, 0, Math.PI);
+    spawnRegiment(world, PLAYER, 'mortar', 0, 0, Math.PI);
     const target = spawnRegiment(world, COMPUTER, 'militia', 0, -100, 0);
     run(world, 150);
     expect(target.aliveMen === 0 || target.state === 'routing' || target.initialMen - target.aliveMen >= 3).toBe(true);
@@ -280,7 +280,7 @@ describe('the wider roster', () => {
     const hz = townZ(COMPUTER) + 25;
     expect(cmdBuild(siege, COMPUTER, 'house', hx, hz, 0)).toBe('ok');
     // 100 m short of the house, on the open field side.
-    const engine = spawnRegiment(siege, PLAYER, 'trebuchet', hx - 70, hz + 70, 0);
+    const engine = spawnRegiment(siege, PLAYER, 'mortar', hx - 70, hz + 70, 0);
     expect(cmdAttackBuilding(siege, engine.id, COMPUTER, 0)).toBe('ok');
     runUntil(siege, 400, () => town.plots[0] === null || engine.aliveMen === 0);
     expect(town.plots[0]).toBeNull();

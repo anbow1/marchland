@@ -11,6 +11,11 @@ for the game). All licensed **CC BY 4.0**.
 - `pig.json` — the pigs in the sty: **"Curious Pink Pig animal 3d model free"** by **iRahulRajput**
   (https://sketchfab.com/3d-models/curious-pink-pig-animal-3d-model-free-f40237ad33df4a2896e5978fe489d412).
 
+- `cannon.json` — the field gun (and the gun on show before the foundry): **"Cannon"** by **Lyskilde**
+  (https://sketchfab.com/3d-models/cannon-84d7315b51c9473cb3cfd1501a5e5e03).
+- `mortar.json` — the mortar: **"Medieval Mortier"** by **ViktorKom**
+  (https://sketchfab.com/3d-models/medieval-mortier-a931843c33b048359019263b70168207).
+
 ## goods/ (CC0)
 
 Made by `prop.py` from **KayKit** packs by **Kay Lousberg** (www.kaylousberg.com), licensed **CC0**:

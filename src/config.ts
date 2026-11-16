@@ -329,6 +329,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, recipe: null },
   // A stone tower for up to TOWER.maxGarrison archers or crossbowmen, who shoot further from its top.
   tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
+  // Casts guns (level 1 cannon, level 2 mortar) from iron, timber and stone; nobody works here between orders.
+  foundry: { cost: { gold: 150, wood: 40, stone: 60 }, buildSeconds: 20, hp: 500, recipe: null },
   // A second store of the town's goods: carriers bring to and fetch from whichever store is nearest.
   storehouse: { cost: { gold: 60, wood: 40, stone: 10 }, buildSeconds: 14, hp: 400, recipe: null },
 };
@@ -386,8 +388,8 @@ export const REARM = {
     crossbowmen: [],
     lightCavalry: ['heavyCavalry'],
     heavyCavalry: [],
-    ballista: [],
-    trebuchet: [],
+    cannon: [],
+    mortar: [],
   } as Record<UnitKind, readonly UnitKind[]>,
 } as const;
 
@@ -417,6 +419,8 @@ export interface UnitDef {
   engine: boolean;
   /** Barracks level that trains it. */
   barracksLevel: number;
+  /** Where it is raised: the barracks, or the foundry (guns); `barracksLevel` is then the foundry's level. */
+  trainedAt: 'barracks' | 'foundry';
   goldCost: number;
   /** Equipment taken from the stock, per man (per engine). */
   equipment: Cost;
@@ -468,9 +472,9 @@ export interface UnitDef {
 // bolt about 60, a torsion engine's bolt 70 (published reconstructions).
 // Everything else in this table is game balance, tuned in tests/.
 const NO_MISSILE = { missileRangeM: 0, missileMinRangeM: 0, missileDamage: 0, missilePierce: 0, missileSpeedMs: 0, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 0, reloadS: 0 };
-const FOOT = { ...NO_MISSILE, defenceOnly: false, crew: 1, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
-const HORSE = { ...NO_MISSILE, defenceOnly: false, crew: 1, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
-const ENGINE = { defenceOnly: false, cavalry: false, engine: true, attack: 0, defence: 0, armour: 0, damage: 0, reachM: 0, attackIntervalS: 1, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, turnRateRadS: 0.5, recruitSeconds: 20 };
+const FOOT = { ...NO_MISSILE, trainedAt: 'barracks' as const, defenceOnly: false, crew: 1, men: 12, files: 6, fileSpacingM: 1.15, rankSpacingM: 1.4, cavalry: false, engine: false, walkSpeedMs: 1.4, turnRateRadS: 1.2, bodyRadiusM: 0.36, recruitSeconds: 10, reachM: 1.6, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const HORSE = { ...NO_MISSILE, trainedAt: 'barracks' as const, defenceOnly: false, crew: 1, men: 8, files: 4, fileSpacingM: 1.9, rankSpacingM: 3.2, cavalry: true, engine: false, walkSpeedMs: 3.6, turnRateRadS: 0.9, bodyRadiusM: 0.75, recruitSeconds: 14, attackIntervalS: 1.5, bonusVsCavalry: 0, missileBlock: 0 };
+const ENGINE = { trainedAt: 'foundry' as const, defenceOnly: false, cavalry: false, engine: true, attack: 0, defence: 0, armour: 0, damage: 0, reachM: 0, attackIntervalS: 1, bonusVsCavalry: 0, chargeBonus: 0, chargeShock: 0, turnRateRadS: 0.5, recruitSeconds: 20 };
 
 export const UNITS: Record<UnitKind, UnitDef> = {
   // Townsmen with a shield and a spear: cheap, steady enough behind the shield, quick to run.
@@ -488,10 +492,12 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   lightCavalry: { ...HORSE, barracksLevel: 2, goldCost: 100, equipment: { horse: 1, weapon: 1, leatherArmor: 1 }, hp: 40, attack: 7, defence: 5, armour: 0.2, damage: 6, reachM: 1.9, chargeBonus: 8, chargeShock: 9, morale: 65, runSpeedMs: 8.5, bounty: 4 },
   // Knights: the charge that breaks a line.
   heavyCavalry: { ...HORSE, barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 12, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.3, bounty: 6 },
-  // Two bolt-throwers: long reach, a bolt that ignores armour, helpless once reached.
-  ballista: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 2, goldCost: 120, equipment: { wood: 12, weapon: 2 }, hp: 70, missileBlock: 0.7, missileRangeM: 110, missileMinRangeM: 12, missileDamage: 45, missilePierce: 0.8, missileSpeedMs: 70, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 14, reloadS: 9, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
-  // One counterweight engine: it lobs stones that scatter a formation and bring down walls.
-  trebuchet: { ...ENGINE, crew: 8, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 3, goldCost: 200, equipment: { wood: 40, stone: 10 }, hp: 140, missileBlock: 0.8, missileRangeM: 135, missileMinRangeM: 35, missileDamage: 26, missilePierce: 0.5, missileSpeedMs: 45, missileHighArc: true, missileSplashM: 3.5, missileSiegeDamage: 90, reloadS: 14, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.4, bounty: 15 },
+  // Two field guns cast at the foundry: a ball on a flat line to 120 m that goes through any armour and
+  // knocks holes in walls; helpless once reached.
+  cannon: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
+  // One mortar (the foundry's second level): it lobs a heavy ball high over walls; it scatters a formation
+  // and brings down walls, towers and the keep. Cannot shoot closer than 40 m.
+  mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 4.5, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
 };
 
 export const ARMY = {
@@ -579,7 +585,7 @@ export const MORALE = {
   flankHitShock: 0.5,
   rearHitShock: 1,
   arrowHitShock: 0.6,
-  /** To every regiment a trebuchet's stone lands among. */
+  /** To every regiment a mortar's ball lands among. */
   stoneShock: 6,
   killBoost: 0.5,
   recoverPerSecond: 1.5,

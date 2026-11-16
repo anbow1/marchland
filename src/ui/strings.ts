@@ -121,6 +121,7 @@ interface Strings {
   pausedBuilding: string;
   maxLevel: string;
   needsBarracksLevel: string;
+  needsFoundryLevel: string;
   hintIdle: string;
   hintArmy: string;
   starving: string;
@@ -229,6 +230,7 @@ const pl: Strings = {
   resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
   buildings: {
     house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
+    foundry: { name: 'Ludwisarnia', about: 'Odlewa działa z żelaza: armaty (poziom 1) i moździerze (poziom 2). Obsługa przychodzi z miasta jak rekruci.' },
     storehouse: { name: 'Skład', about: 'Drugi magazyn miasta: tragarze odnoszą towary do najbliższego magazynu i stamtąd je biorą. Postaw przy oddalonej wsi.' },
     woodcutter: { name: 'Drwal', about: 'Drewno na budowę, do kuźni i dla łuczarza. Musi stać przy lesie.' },
     quarry: { name: 'Kamieniołom', about: 'Kamień na murowane budynki i drogi. Musi stać przy skale.' },
@@ -259,8 +261,8 @@ const pl: Strings = {
     crossbowmen: { name: 'Kusznicy', about: 'Wolno napinają, strzelają płasko na 70 m; bełt przebija kolczugę.' },
     lightCavalry: { name: 'Lekka jazda', about: 'Szybka. Na łuczników, machiny i w pościg; nie na piki.' },
     heavyCavalry: { name: 'Ciężka jazda', about: 'Rycerstwo. Szarża, która łamie szyk.' },
-    ballista: { name: 'Balisty', about: 'Dwie machiny. Bełt na 110 m przebija każdą zbroję; z bliska bezbronne.' },
-    trebuchet: { name: 'Trebusz', about: 'Miota kamienie na 135 m: rozbija szyk i burzy mury. Nie strzela bliżej niż 35 m.' },
+    cannon: { name: 'Armaty', about: 'Dwa działa z ludwisarni. Kula na 120 m przebija każdą zbroję i wybija dziury w murach; z bliska bezbronne.' },
+    mortar: { name: 'Moździerz', about: 'Ciężka kula stromym torem na 150 m: rozbija szyk, burzy mury, wieże i zamek. Nie strzela bliżej niż 40 m.' },
   },
   results: {
     cannotAfford: 'Za mało zasobów.',
@@ -279,6 +281,7 @@ const pl: Strings = {
     maxLevel: 'To już najwyższy poziom.',
     underConstruction: 'Budowa jeszcze trwa.',
     needsBarracks: 'Potrzebne koszary wyższego poziomu.',
+    needsFoundry: 'Potrzebna ludwisarnia (moździerz: poziom 2).',
     armyFull: 'Armia w komplecie: 100 ludzi.',
     queueFull: 'Kolejka werbunku jest pełna.',
     noSuchRegiment: 'Nie ma takiego oddziału.',
@@ -409,6 +412,7 @@ const pl: Strings = {
   pausedBuilding: 'Wstrzymany',
   maxLevel: 'Najwyższy poziom',
   needsBarracksLevel: 'koszary poz.',
+  needsFoundryLevel: 'ludwisarnia poz.',
   hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
   hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Shift: do kolejki. Spacja: pauza. Ctrl+cyfra: grupa i jej szyk.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
@@ -468,8 +472,8 @@ const pl: Strings = {
     crossbowmen: 'Dobrzy na: opancerzonych (kolczuga). Słabi na: lekką jazdę.',
     lightCavalry: 'Dobra na: strzelców, machiny, uciekających. Słaba na: pikinierów, halabardników.',
     heavyCavalry: 'Dobra na: mieczników, strzelców. Słaba na: pikinierów, halabardników, kuszników.',
-    ballista: 'Dobra na: oddziały z daleka i budynki. Słaba na: każdego, kto podejdzie blisko.',
-    trebuchet: 'Dobry na: mury, budynki, zbite szyki. Słaby na: wszystko z bliska.',
+    cannon: 'Dobre na: oddziały z daleka, mury i budynki. Słabe na: każdego, kto podejdzie blisko.',
+    mortar: 'Dobry na: mury, budynki, zbite szyki. Słaby na: wszystko z bliska.',
   },
   menu: 'Menu',
   speed: 'Tempo',
@@ -541,6 +545,7 @@ const en: Strings = {
   resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
   buildings: {
     house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
+    foundry: { name: 'Gun Foundry', about: 'Casts guns from iron: cannon (level 1) and mortars (level 2). Their crews come from the town like recruits.' },
     storehouse: { name: 'Storehouse', about: "A second store of the town's goods: carriers bring to and fetch from the nearest store. Build it by a far village." },
     woodcutter: { name: 'Woodcutter', about: 'Wood for building, for the smithy and the fletcher. Must stand by the forest.' },
     quarry: { name: 'Quarry', about: 'Stone for masonry buildings and roads. Must stand by a stone outcrop.' },
@@ -571,8 +576,8 @@ const en: Strings = {
     crossbowmen: { name: 'Crossbowmen', about: 'Slow to span, flat-shooting to 70 m; a bolt goes through mail.' },
     lightCavalry: { name: 'Light cavalry', about: 'Fast. For archers, engines and pursuit; not for pikes.' },
     heavyCavalry: { name: 'Heavy cavalry', about: 'Knights. A charge that breaks a line.' },
-    ballista: { name: 'Ballistae', about: 'Two engines. A bolt to 110 m goes through any armour; helpless up close.' },
-    trebuchet: { name: 'Trebuchet', about: 'Hurls stones to 135 m: scatters a formation and brings down walls. Cannot shoot closer than 35 m.' },
+    cannon: { name: 'Cannon', about: 'Two guns from the foundry. A ball to 120 m goes through any armour and holes walls; helpless up close.' },
+    mortar: { name: 'Mortar', about: 'A heavy ball on a high arc to 150 m: scatters a formation, brings down walls, towers and the keep. Cannot shoot closer than 40 m.' },
   },
   results: {
     cannotAfford: 'Not enough resources.',
@@ -591,6 +596,7 @@ const en: Strings = {
     maxLevel: 'Already at the highest level.',
     underConstruction: 'Still under construction.',
     needsBarracks: 'Needs a barracks of a higher level.',
+    needsFoundry: 'Needs a gun foundry (mortar: level 2).',
     armyFull: 'The army is full: 100 men.',
     queueFull: 'The recruiting queue is full.',
     noSuchRegiment: 'No such regiment.',
@@ -721,6 +727,7 @@ const en: Strings = {
   pausedBuilding: 'Paused',
   maxLevel: 'Highest level',
   needsBarracksLevel: 'barracks lvl',
+  needsFoundryLevel: 'foundry lvl',
   hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
   hintArmy: 'Right click: march. Double click: run. Hold right and drag: line and facing. On an enemy: attack. Shift: queue. Space: pause. Ctrl+digit: group and its formation.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
@@ -780,8 +787,8 @@ const en: Strings = {
     crossbowmen: 'Good against: armoured men (mail). Poor against: light horse.',
     lightCavalry: 'Good against: shooters, engines, men running away. Poor against: pikemen, halberdiers.',
     heavyCavalry: 'Good against: swordsmen, shooters. Poor against: pikemen, halberdiers, crossbowmen.',
-    ballista: 'Good against: regiments from afar, buildings. Poor against: anyone who comes close.',
-    trebuchet: 'Good against: walls, buildings, packed ranks. Poor against: anything close.',
+    cannon: 'Good against: regiments from afar, buildings. Poor against: anyone who comes close.',
+    mortar: 'Good against: walls, buildings, packed ranks. Poor against: anything close.',
   },
   menu: 'Menu',
   speed: 'Speed',

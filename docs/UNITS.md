@@ -31,8 +31,8 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 | **Kusznicy** | 2 | 12 | 80 zł + 12 drewno, 12 zbroja skórzana, 12 łuk | 26 | 4 / 5 | 20 % | 4 | 55 | 1.4 / 2.9 |
 | **Lekka jazda** | 2 | 8 | 100 zł + 8 zbroja skórzana, 8 broń, 8 koń | 40 | 7 / 5 | 20 % | 6 | 65 | 3.6 / 8.5 |
 | **Ciężka jazda** | 3 | 8 | 160 zł + 8 broń, 8 kolczuga, 8 koń | 52 | 10 / 9 | 45 % | 8 | 85 | 3.6 / 7.5 |
-| **Balisty** | 2 | 2 (6 ludzi) | 120 zł + 24 drewno, 4 broń | 70 | 0 / 0 | 0 % | 0 | 55 | 0.9 / 0.9 |
-| **Trebusz** | 3 | 1 (8 ludzi) | 200 zł + 40 drewno, 10 kamień | 140 | 0 / 0 | 0 % | 0 | 60 | 0.6 / 0.6 |
+| **Armaty** | 1 | 2 (6 ludzi) | 140 zł + 12 drewno, 12 żelazo | 80 | 0 / 0 | 0 % | 0 | 55 | 0.9 / 0.9 |
+| **Moździerz** | 2 | 1 (5 ludzi) | 200 zł + 8 kamień, 10 żelazo | 120 | 0 / 0 | 0 % | 0 | 60 | 0.6 / 0.6 |
 
 ## 3. Strzelcy i machiny
 
@@ -40,8 +40,8 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 |---|---|---|---|---|---|---|
 | **Łucznicy** | 80 m | 9 | 0 % | 6 s | — | 1.5 |
 | **Kusznicy** | 70 m | 16 | 60 % | 10 s | — | 2 |
-| **Balisty** | 12–110 m | 45 | 80 % | 9 s | — | 14 |
-| **Trebusz** | 35–135 m | 26 | 50 % | 14 s | 3.5 m | 90 |
+| **Armaty** | 10–120 m | 55 | 90 % | 10 s | — | 30 |
+| **Moździerz** | 40–150 m | 30 | 50 % | 15 s | 4.5 m | 110 |
 
 Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 
@@ -55,8 +55,8 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 - **Kusznicy** — Wolno ładują, bełt przebija kolczugę: odpowiedź na ciężkozbrojnych. *(30 % szans zatrzymania pocisku)*
 - **Lekka jazda** — Najszybsza: zagony na wsie, strzelców i machiny, pościg za uciekającymi. *(szarża +8 do ataku, wstrząs 9)*
 - **Ciężka jazda** — Rycerstwo: szarża, która łamie linię. Nie na piki od czoła. *(szarża +12 do ataku, wstrząs 15; 30 % szans zatrzymania pocisku)*
-- **Balisty** — Dwie machiny: daleki bełt, który ignoruje pancerz. Bezradne, gdy wróg dojdzie. *(70 % szans zatrzymania pocisku)*
-- **Trebusz** — Jedna machina: kamienie rozbijają szyk i burzą mury oraz zamek. *(80 % szans zatrzymania pocisku)*
+- **Armaty** — Dwa działa z ludwisarni: kula na wprost przebija każdą zbroję i wybija dziury w murach. Bezradne, gdy wróg dojdzie. *(70 % szans zatrzymania pocisku)*
+- **Moździerz** — Jedno działo (ludwisarnia poz. 2): ciężka kula stromym torem nad murami rozbija szyk i burzy mury, wieże i zamek. *(80 % szans zatrzymania pocisku)*
 
 ## 5. Przezbrojenie
 

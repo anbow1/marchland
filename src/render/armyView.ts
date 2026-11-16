@@ -10,7 +10,7 @@ import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
-import { type BodyModel, cavalryGeometryOnModels, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
+import { type BodyModel, cavalryGeometryOnModels, engineGeometryOnModel, type GunModel, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
 import { freshUrl } from '../version.ts';
 
 // Every soldier on the field, one instanced mesh per kind of unit. The CPU
@@ -34,8 +34,10 @@ const STRIKE_S = 0.45;
 /** A fallen man goes down in this time, then sinks out of sight over the last seconds he is shown. */
 const FALL_S = 0.5;
 const SINK_S = 2;
-/** Size of the arrow model for each missile look: arrow, crossbow bolt, ballista bolt. */
-const BOLT_SCALE: readonly number[] = [1, 0.7, 2.6];
+/** Size of the arrow model for each missile look: arrow, crossbow bolt (looks 2 and 3 are balls). */
+const BOLT_SCALE: readonly number[] = [1, 0.7];
+/** A ball's size by look: a cannonball, a mortar's heavy ball. */
+const BALL_SCALE: readonly number[] = [0, 0, 0.55, 1];
 
 interface KindMesh {
   mesh: InstancedMesh;
@@ -314,10 +316,10 @@ export class ArmyView {
     this.arrows.count = 0;
     this.arrows.frustumCulled = false;
     scene.add(this.arrows);
-    // A trebuchet's stone: about 45 cm across.
+    // A cast-iron ball: about 45 cm across for the mortar, smaller for the cannon (scaled per shot).
     const stone = new MeshBuilder();
-    stone.cylinder(0, -0.2, 0, 0.16, 0.23, 0.2, 7, 0x7a7672);
-    stone.cylinder(0, 0, 0, 0.23, 0.12, 0.2, 7, 0x8a857e);
+    stone.cylinder(0, -0.2, 0, 0.16, 0.23, 0.2, 8, 0x2c2c2e);
+    stone.cylinder(0, 0, 0, 0.23, 0.12, 0.2, 8, 0x353538);
     this.stones = new InstancedMesh(stone.build(), arrowMaterial, 32);
     this.stones.name = 'stones';
     this.stones.instanceMatrix.setUsage(DynamicDrawUsage);
@@ -372,6 +374,25 @@ export class ArmyView {
       }
     } catch (error) {
       console.warn(`[soldiers] no modelled horsemen (${String(error)}): they keep their figures`);
+    }
+    // The guns from their models (public/props), each with its crew.
+    for (const kind of ['cannon', 'mortar'] as const) {
+      const k = this.kinds.get(kind);
+      if (!k) continue;
+      try {
+        const response = await fetch(freshUrl(base, `props/${kind}.json`));
+        if (!response.ok) throw new Error(`${kind} ${response.status}`);
+        const geometry = engineGeometryOnModel(kind, (await response.json()) as GunModel);
+        geometry.setAttribute('aPlace', k.place);
+        geometry.setAttribute('aAnim', k.anim);
+        geometry.setAttribute('aSide', k.side);
+        const old = k.mesh.geometry;
+        k.mesh.geometry = geometry;
+        old.dispose();
+        changed++;
+      } catch (error) {
+        console.warn(`[soldiers] no modelled ${kind} (${String(error)}): it keeps its built shape`);
+      }
     }
     for (const kind of PLATE_KINDS) {
       if (this.kinds.get(kind)?.skinned) continue;
@@ -607,12 +628,14 @@ export class ArmyView {
       const x = a.x0 + a.vx * a.ageS;
       const y = arrowY(a);
       const z = a.z0 + a.vz * a.ageS;
-      if (a.look === 3) {
+      if (a.look >= 2) {
         if (stones >= 32) continue;
-        // A stone tumbles: no heading, just a place.
+        // A ball: no heading, just a place and its size.
         const o = stones * 16;
+        const ball = BALL_SCALE[a.look] ?? 1;
         st.fill(0, o, o + 16);
-        st[o] = st[o + 5] = st[o + 10] = st[o + 15] = 1;
+        st[o] = st[o + 5] = st[o + 10] = ball;
+        st[o + 15] = 1;
         st[o + 12] = x;
         st[o + 13] = y;
         st[o + 14] = z;
@@ -632,7 +655,7 @@ export class ArmyView {
       const ux = -rz * fy;
       const uy = rz * fx - rx * fz;
       const uz = rx * fy;
-      // A crossbow bolt is short and stout, a ballista's is a small spear.
+      // A crossbow bolt is short and stout.
       const size = BOLT_SCALE[a.look] ?? 1;
       const o = n * 16;
       e[o] = rx * size;

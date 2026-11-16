@@ -378,6 +378,25 @@ export function setPigModel(model: PropModel): void {
   pigModel = model;
 }
 
+/** A finished cannon on show before the foundry (public/props/cannon.json), once loaded. */
+let cannonModel: PropModel | null = null;
+export function setCannonModel(model: PropModel): void {
+  cannonModel = model;
+}
+
+/** The foundry's gun on show: the model if loaded, else a barrel on two wheels. */
+export function gunOnShow(b: MeshBuilder, cx: number, cz: number, turnRad: number): void {
+  if (cannonModel) {
+    b.model(cannonModel, cx, 0, cz, turnRad, 0.9);
+    return;
+  }
+  b.at(cx, 0, cz, turnRad);
+  for (const dx of [-0.55, 0.55]) b.log(dx, 0.5, 0, 0.5, 0.12, 10, BOARDS_DARK);
+  b.at(cx, 0.9, cz, turnRad + Math.PI / 2);
+  b.log(0, 0, 0, 0.16, 1.9, 10, SOOT);
+  b.at(0, 0, 0, 0);
+}
+
 export function animal(b: MeshBuilder, cx: number, cz: number, length: number, height: number, hex: number): void {
   if (hex === PIG && pigModel) {
     // Head to +X like the built animals; each pig a little turned, by where it stands.
