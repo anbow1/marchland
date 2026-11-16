@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Kowal przy warsztacie
+
+- Nowe narzędzie `tools/blender/baked.py`: postać z dowolnym szkieletem i własną animacją, bez
+  przenoszenia ruchu — macierze kości liczone klatka po klatce wprost z animacji modelu, z jego
+  przemieszczaniem się; lekkie kości (palce, skręty) łączone z najbliższym przodkiem (zostaje 40).
+  Odniesieniem jest pierwsza wypiekana klatka, nie poza wiązania: w tym modelu siatka w pozie
+  spoczynkowej miała inną skalę niż szkielet (pierwsza próba dała biodra na 8,6 m).
+- „BlackSmith” (celestin.bitternose, CC BY 4.0): 3000 trójkątów, 193 klatki (16 s przy 12 kl./s),
+  obchód warsztatu — od drzwi do jednego stanowiska, praca, drugie stanowisko, powrót (ok. 3 m).
+  Stoi przy hucie, kuźni i płatnerzu, póki warsztat pracuje; każdy w innym miejscu klipu.
+- `WorkersView`: jeden mesh instancjonowany ze skinningiem na GPU (ten sam materiał co wojsko).
+- Testy 86/86; zrzut z bliska (kowal przy dymarce).
+
 ## 2026-11-16 · Towary z modeli: niesione ładunki i stosy w obejściach
 
 - Modele zasobów z KayKit (Kay Lousberg, CC0): „Medieval Hexagon Pack” (deski, kamień, worek,

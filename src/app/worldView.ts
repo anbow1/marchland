@@ -1,3 +1,4 @@
+import { WorkersView } from '../render/workersView.ts';
 import { Vector3 } from 'three/webgpu';
 import { heightAtM } from '../sim/terrain.ts';
 import type { BuildingKind } from '../sim/types.ts';
@@ -51,6 +52,7 @@ export class WorldView {
   private lighting!: Lighting;
   private town!: TownView;
   private army!: ArmyView;
+  private workers!: WorkersView;
   private markers!: Markers;
   private people!: PeopleView;
   private vines!: VinesView;
@@ -108,6 +110,8 @@ export class WorldView {
     await this.points.load(import.meta.env.BASE_URL);
     this.walls = new WallView(scene, surfaces);
     await this.walls.loadModel(import.meta.env.BASE_URL);
+    this.workers = new WorkersView(scene);
+    await this.workers.load(import.meta.env.BASE_URL);
     this.army = new ArmyView(scene);
     await this.army.loadBodies(import.meta.env.BASE_URL);
     this.markers = new Markers(scene);
@@ -158,6 +162,7 @@ export class WorldView {
     this.points.update(world, world.timeS);
     this.smoke.update(this.smokeSources, this.town.smokeSources(world, this.smokeSources), frameSeconds);
     this.army.update(world);
+    this.workers.update(world);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);
     this.stage.render();
   }

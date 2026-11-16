@@ -94,8 +94,8 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
   return m;
 }
 
-/** A skinned body and its clips as tools/blender/rigged.py writes them. */
-interface RiggedModel {
+/** A skinned body and its clips as tools/blender/rigged.py (or baked.py) writes them. */
+export interface RiggedModel {
   bones: string[];
   /** travelM: ground a clip walks over (one not made "in place"), 0 when it stays on the spot. */
   clips: { name: string; start: number; frames: number; fps: number; travelM?: number }[];
@@ -143,7 +143,27 @@ const AT_EASE_AFTER_S = 5;
  * one draw. While no walk is baked, the legs swing about the hips as the boxes' did; then the man is
  * turned, felled and placed as the others are.
  */
-function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
+/** The bone texture of a skinned model: three texels (the matrix's rows) a bone, a row a frame. */
+export function boneTexture(model: RiggedModel): DataTexture {
+  const nb = model.bones.length;
+  const frames = model.frames.length / (nb * 12);
+  const data = new Float32Array(nb * 3 * frames * 4);
+  for (let f = 0; f < frames; f++) {
+    for (let b = 0; b < nb; b++) {
+      for (let r = 0; r < 3; r++) {
+        const src = (f * nb + b) * 12 + r * 4;
+        const dst = (f * nb * 3 + b * 3 + r) * 4;
+        for (let c = 0; c < 4; c++) data[dst + c] = model.frames[src + c] as number;
+      }
+    }
+  }
+  const bones = new DataTexture(data, nb * 3, frames, RGBAFormat, FloatType);
+  bones.magFilter = bones.minFilter = NearestFilter;
+  bones.needsUpdate = true;
+  return bones;
+}
+
+export function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
   const m = new MeshStandardNodeMaterial({ name: 'skinned footman' });
   const skin = attribute('aSkin', 'vec4') as Node<'vec4'>;
   const weight = attribute('aWeight', 'vec4') as Node<'vec4'>;
@@ -321,22 +341,7 @@ export class ArmyView {
     if (!k || !strike || !block) return false;
     const named = (name: string): Clip | null => model.clips.find((c) => c.name.toLowerCase() === name) ?? null;
     const deaths = model.clips.filter((c) => c.name.toLowerCase().startsWith('death'));
-    const nb = model.bones.length;
-    const frames = model.frames.length / (nb * 12);
-    // The bone texture: three texels (the matrix's rows) a bone, a row a frame.
-    const data = new Float32Array(nb * 3 * frames * 4);
-    for (let f = 0; f < frames; f++) {
-      for (let b = 0; b < nb; b++) {
-        for (let r = 0; r < 3; r++) {
-          const src = (f * nb + b) * 12 + r * 4;
-          const dst = (f * nb * 3 + b * 3 + r) * 4;
-          for (let c = 0; c < 4; c++) data[dst + c] = model.frames[src + c] as number;
-        }
-      }
-    }
-    const bones = new DataTexture(data, nb * 3, frames, RGBAFormat, FloatType);
-    bones.magFilter = bones.minFilter = NearestFilter;
-    bones.needsUpdate = true;
+    const bones = boneTexture(model);
     // The legs' limb per vertex (by its heaviest bone), swinging about the hips while there is no walk clip.
     const legSide = model.bones.map((b) => (/^Left(UpLeg|Leg|Foot|ToeBase)$/.test(b) ? -1 : /^Right(UpLeg|Leg|Foot|ToeBase)$/.test(b) ? 1 : 0));
     const n = model.positions.length / 3;
