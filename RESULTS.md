@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Etapy budowy: fundament, ściany, rusztowanie, dach na końcu
+
+- Budynek w budowie nie jest już spłaszczonym budynkiem, tylko tym samym modelem uciętym na wysokości,
+  do której doszła budowa: przez pierwsze 12% pracy stoją fundamenty (0,35 m murów), potem ściany
+  rosną warstwami aż po dach, który dochodzi ostatni. Jeden materiał dla wszystkich placów budowy
+  odrzuca to, co leży powyżej wysokości danego placu (`maskNode` z jednolitą zmienną odczytywaną dla
+  każdego obiektu; cień przycięty tak samo).
+- Od chwili, gdy ruszą ściany, wokół stoi rusztowanie: słupy co ~2,4 m pół metra od ścian, pomosty
+  z desek z poręczą co 1,6 m, drabina od frontu; sięga ~1,4 m ponad ułożone warstwy. Rusztowanie
+  mierzone jest z bryły budynku (to, co powyżej 45% wysokości), nie z całego placu — inaczej obejmowało
+  stosy, płoty i stragany. Śmigła młyna ruszają dopiero po ukończeniu.
+- Testy 94/94; WebGPU 0 błędów; miasto: 139 potoków (+2: materiał placu budowy i jego cień).
+
 ## 2026-11-16 · Obsługa dział jako postacie ze szkieletem
 
 - Przy armacie stoi dwóch, przy moździerzu trzech mieszczan (ta sama postać co w mieście,

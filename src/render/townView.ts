@@ -1,10 +1,11 @@
-import { type BufferGeometry, Color, Mesh, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Scene } from 'three/webgpu';
+import { Box3, type BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Scene } from 'three/webgpu';
 import { TOWN } from '../config.ts';
 import type { Building } from '../sim/economy.ts';
 import { heightAtM, townX, townZ } from '../sim/terrain.ts';
 import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { positionWorld, uniform } from 'three/tsl';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
 import { type PropModel, setCannonModel, setPigModel, surfacePaint } from './buildingParts.ts';
 import { MeshBuilder } from './meshBuilder.ts';
@@ -18,12 +19,22 @@ import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 // (public/buildings, made by tools/blender/build.py) is drawn with it, its
 // moving part (a mill's sails) turning while it works; the others with the
 // shapes from code in buildingGeometry.ts. A mesh takes the geometry, the place and
-// the facing of whatever stands in its slot; a building under construction
-// rises out of the ground. Geometries are made once per kind, level and side
+// the facing of whatever stands in its slot. A building under construction is
+// built up: first its footings, then its walls rise course by course inside a
+// scaffold, the roof last (the same model cut off at the height reached, by one
+// material that discards what is above each site's own cut). Geometries are made once per kind, level and side
 // and kept. The ghost is the building the player is about to place.
 
-/** A building being built shows at least this share of its height. */
-const MIN_BUILT_SHARE = 0.18;
+/** The first share of a building's work lays its footings, this high; after that the walls rise to the roof. */
+const FOOTING_SHARE = 0.12;
+const FOOTING_M = 0.35;
+/** The scaffold stands this far out from the walls and reaches this far above the courses laid. */
+const SCAFFOLD_OUT_M = 0.55;
+const SCAFFOLD_AHEAD_M = 1.4;
+const SCAFFOLD_POLE = 0x7a5e44;
+const SCAFFOLD_PLANK = 0x9a7a56;
+/** No cut: a site's object without one is drawn whole. */
+const UNCUT = 1e6;
 const GHOST_OK = new Color(0x8fe07a);
 /** A post mill's sails at work: about one turn every seven seconds. */
 const SAIL_TURN_RAD_S = 0.9;
@@ -45,6 +56,11 @@ export class TownView {
   /** A rubble-stone plinth under each building, filling the gap where the ground falls away on a slope. */
   private readonly plinths: Mesh[][] = [[], []];
   private plinthCache: BufferGeometry | null = null;
+  /** Building sites: the buildings' own material, cut off above each site's height reached (`userData.cutY`). */
+  private readonly siteMaterial: MeshStandardNodeMaterial;
+  /** Each slot's scaffold, shown while its building goes up; geometries by the building's size. */
+  private readonly scaffolds: Mesh[][] = [[], []];
+  private readonly scaffoldCache = new Map<string, BufferGeometry>();
 
   /** A rubble-stone block, 8.6 m square and 1 m deep below its top (scaled down to the ground by each building). */
   private get plinthGeometry(): BufferGeometry {
@@ -63,6 +79,9 @@ export class TownView {
     private readonly lib: SurfaceLibrary,
   ) {
     this.material = surfaceMaterial(lib, 'building');
+    this.siteMaterial = surfaceMaterial(lib, 'building site');
+    const cut = uniform(UNCUT).onObjectUpdate((frame) => (frame.object?.userData['cutY'] as number | undefined) ?? UNCUT);
+    this.siteMaterial.maskNode = positionWorld.y.lessThan(cut);
     for (const side of [0, 1] as const satisfies readonly Side[]) {
       const tx = townX(side);
       const tz = townZ(side);
@@ -88,6 +107,11 @@ export class TownView {
         mover.visible = false;
         mesh.add(mover);
         (this.movers[side] as Mesh[]).push(mover);
+        const scaffold = new Mesh(this.geometry('house', 1, side), this.siteMaterial);
+        scaffold.castShadow = true;
+        scaffold.visible = false;
+        mesh.add(scaffold);
+        (this.scaffolds[side] as Mesh[]).push(scaffold);
         const plinth = new Mesh(this.plinthGeometry, this.material);
         plinth.name = `plinth ${side}/${slot}`;
         plinth.castShadow = true;
@@ -104,6 +128,43 @@ export class TownView {
     this.ghost.visible = false;
     this.ghost.renderOrder = 3;
     scene.add(this.ghost);
+  }
+
+  /**
+   * A scaffold about a building of this size: poles a little out from its walls, a plank walk with a rail
+   * along every side at each storey's height, up to the eaves.
+   */
+  private scaffoldGeometry(box: Box3 | null): BufferGeometry {
+    const [x0, x1, z0, z1, top] = box
+      ? [box.min.x - SCAFFOLD_OUT_M, box.max.x + SCAFFOLD_OUT_M, box.min.z - SCAFFOLD_OUT_M, box.max.z + SCAFFOLD_OUT_M, Math.max(2.4, box.max.y * 0.8)]
+      : [-4, 4, -4, 4, 4];
+    const key = [x0, x1, z0, z1, top].map((v) => v.toFixed(1)).join(':');
+    const cached = this.scaffoldCache.get(key);
+    if (cached) return cached;
+    const b = new MeshBuilder(0, new Map([[SCAFFOLD_PLANK, surfacePaint(this.lib, 'boards')], [SCAFFOLD_POLE, surfacePaint(this.lib, 'bark')]]));
+    const along = (from: number, to: number): number[] => {
+      const n = Math.max(1, Math.round((to - from) / 2.4));
+      return Array.from({ length: n + 1 }, (_, i) => from + ((to - from) * i) / n);
+    };
+    for (const x of along(x0, x1)) for (const z of [z0, z1]) b.box(x, 0, z, 0.12, top, 0.12, SCAFFOLD_POLE);
+    for (const z of along(z0, z1).slice(1, -1)) for (const x of [x0, x1]) b.box(x, 0, z, 0.12, top, 0.12, SCAFFOLD_POLE);
+    const [cx, cz, wx, wz] = [(x0 + x1) / 2, (z0 + z1) / 2, x1 - x0 + 0.5, z1 - z0 + 0.5];
+    for (let y = 1.5; y < top - 0.3; y += 1.6) {
+      for (const z of [z0, z1]) {
+        b.box(cx, y, z, wx, 0.06, 0.55, SCAFFOLD_PLANK);
+        b.box(cx, y + 0.95, z + (z === z0 ? -0.22 : 0.22), wx, 0.07, 0.07, SCAFFOLD_POLE);
+      }
+      for (const x of [x0, x1]) {
+        b.box(x, y, cz, 0.55, 0.06, wz, SCAFFOLD_PLANK);
+        b.box(x + (x === x0 ? -0.22 : 0.22), y + 0.95, cz, 0.07, 0.07, wz, SCAFFOLD_POLE);
+      }
+    }
+    // A ladder up the front.
+    for (const dx of [-0.25, 0.25]) b.box(cx + 1.2 + dx, 0, z1 + 0.35, 0.07, top, 0.07, SCAFFOLD_POLE);
+    for (let y = 0.3; y < top; y += 0.35) b.box(cx + 1.2, y, z1 + 0.35, 0.5, 0.04, 0.05, SCAFFOLD_PLANK);
+    const geometry = b.build();
+    this.scaffoldCache.set(key, geometry);
+    return geometry;
   }
 
   /**
@@ -231,8 +292,12 @@ export class TownView {
           if (!b) ((this.plinths[side] as Mesh[])[slot] as Mesh).visible = false;
           const mover = (this.movers[side] as Mesh[])[slot] as Mesh;
           mover.visible = false;
+          mover.userData['part'] = false;
           if (b) {
             mesh.geometry = this.geometry(b.kind, b.level, side);
+            const box = mesh.geometry.boundingBox ?? (mesh.geometry.computeBoundingBox(), mesh.geometry.boundingBox);
+            mesh.userData['height'] = box ? box.max.y : 4;
+            ((this.scaffolds[side] as Mesh[])[slot] as Mesh).geometry = this.scaffoldGeometry(body(mesh.geometry));
             // On a slope the building stands on the highest ground under it (no wall sinks into the hill);
             // a plinth of rubble stone fills in down to the lowest.
             const [low, high] = groundUnder(b.x, b.z, b.yawRad);
@@ -249,7 +314,7 @@ export class TownView {
             if (part) {
               mover.geometry = part.geometry;
               mover.position.copy(part.pivot);
-              mover.visible = true;
+              mover.userData['part'] = true;
             }
           }
         }
@@ -257,13 +322,48 @@ export class TownView {
           // Sails turn while the mill grinds.
           const mover = (this.movers[side] as Mesh[])[slot] as Mesh;
           if (mover.visible && b.cycleStarted && b.workRate > 0 && b.constructionLeftS <= 0) mover.rotation.z += frameSeconds * SAIL_TURN_RAD_S * b.workRate;
-          const built = b.constructionTotalS > 0 ? 1 - b.constructionLeftS / b.constructionTotalS : 1;
-          mesh.scale.y = MIN_BUILT_SHARE + (1 - MIN_BUILT_SHARE) * built;
+          const built = b.constructionLeftS > 0 && b.constructionTotalS > 0 ? 1 - b.constructionLeftS / b.constructionTotalS : 1;
+          const site = built < 1;
+          const scaffold = (this.scaffolds[side] as Mesh[])[slot] as Mesh;
+          mesh.material = site ? this.siteMaterial : this.material;
+          mover.visible = mover.userData['part'] === true && !site;
+          scaffold.visible = site && built >= FOOTING_SHARE;
+          if (site) {
+            // Footings first, then the walls course by course; the scaffold keeps a little ahead of them.
+            const height = mesh.userData['height'] as number;
+            const rise = built < FOOTING_SHARE ? 0 : (built - FOOTING_SHARE) / (1 - FOOTING_SHARE);
+            const cutY = mesh.position.y + FOOTING_M + Math.max(0, height - FOOTING_M) * rise;
+            mesh.userData['cutY'] = cutY;
+            scaffold.userData['cutY'] = cutY + SCAFFOLD_AHEAD_M;
+          } else mesh.userData['cutY'] = UNCUT;
         }
       }
     }
   }
 }
+
+/**
+ * The building's body without its yard: the box about whatever stands above 45% of its height (walls
+ * and roof; not the piles, fences and stalls about it), down to the ground.
+ */
+function body(geometry: BufferGeometry): Box3 | null {
+  const cached = bodies.get(geometry);
+  if (cached !== undefined) return cached;
+  const position = geometry.getAttribute('position');
+  let top = 0;
+  for (let i = 0; i < position.count; i++) top = Math.max(top, position.getY(i));
+  const box = new Box3();
+  const point = new Vector3();
+  for (let i = 0; i < position.count; i++) {
+    if (position.getY(i) < top * 0.45) continue;
+    box.expandByPoint(point.fromBufferAttribute(position, i));
+  }
+  const found = box.isEmpty() ? null : box;
+  if (found) found.min.y = 0;
+  bodies.set(geometry, found);
+  return found;
+}
+const bodies = new WeakMap<BufferGeometry, Box3 | null>();
 
 /**
  * The lowest and highest ground under a building's footprint (a square about 8 m across, turned with it),
