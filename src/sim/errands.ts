@@ -57,7 +57,7 @@ export function cancelErrand(town: Town, p: Person): void {
   if (p.errand === 'none') return;
   const dst = p.dst >= 0 ? town.plots[p.dst] : null;
   const sameBuilding = dst !== null && dst === p.dstRef;
-  if (p.errand === 'site' && sameBuilding && (p.good === 'wood' || p.good === 'stone')) dst.matWaiting[p.good] += p.amount;
+  if (p.errand === 'site' && sameBuilding && (p.good === 'wood' || p.good === 'stone' || p.good === 'planks')) dst.matWaiting[p.good] += p.amount;
   else town.stock[p.good] += p.amount;
   if ((p.errand === 'input' || p.errand === 'food') && sameBuilding) dst.incoming[p.good] -= p.amount;
   p.errand = 'none';
@@ -145,7 +145,7 @@ function findErrand(town: Town, p: Person): boolean {
     if (!b) continue;
     if (!isBuilt(b)) {
       // Timber and stone for the builders: already paid for, waiting at the keep.
-      for (const good of ['wood', 'stone'] as const) offer(town, p, URGENCY.site, 'site', good, Math.min(cap, b.matWaiting[good]), nearestStore(town, b.x, b.z), plot);
+      for (const good of ['wood', 'stone', 'planks'] as const) offer(town, p, URGENCY.site, 'site', good, Math.min(cap, b.matWaiting[good]), nearestStore(town, b.x, b.z), plot);
       continue;
     }
     if (b.kind === 'house') {
@@ -193,7 +193,7 @@ function findErrand(town: Town, p: Person): boolean {
   if (choice.errand === 'none') return false;
   // Off the source's books now, so two carriers do not go for the same sack.
   const dst = choice.dst >= 0 ? (town.plots[choice.dst] as Building) : null;
-  if (choice.errand === 'site') (dst as Building).matWaiting[choice.good as 'wood' | 'stone'] -= choice.amount;
+  if (choice.errand === 'site') (dst as Building).matWaiting[choice.good as 'wood' | 'stone' | 'planks'] -= choice.amount;
   else if (isStore(town, choice.src)) town.stock[choice.good] -= choice.amount;
   else (town.plots[choice.src] as Building).out[choice.good] -= choice.amount;
   if (choice.errand === 'input' || choice.errand === 'food') (dst as Building).incoming[choice.good] += choice.amount;

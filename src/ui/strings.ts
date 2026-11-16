@@ -227,11 +227,12 @@ interface Strings {
 const pl: Strings = {
   title: 'Marchland',
   subtitle: 'Średniowieczna strategia: miasto, szyki, bitwa',
-  resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
+  resources: { gold: 'Złoto', wood: 'Drewno', planks: 'Deski', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
   buildings: {
     house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
     foundry: { name: 'Ludwisarnia', about: 'Odlewa działa z żelaza: armaty (poziom 1) i moździerze (poziom 2). Obsługa przychodzi z miasta jak rekruci.' },
     storehouse: { name: 'Skład', about: 'Drugi magazyn miasta: tragarze odnoszą towary do najbliższego magazynu i stamtąd je biorą. Postaw przy oddalonej wsi.' },
+    sawmill: { name: 'Tartak', about: 'Tnie kłody na deski. Deski idą na wyższe poziomy budynków (połowa drewna).' },
     forester: { name: 'Leśnik', about: 'Doogląda młodego lasu wokół chaty: sadzi przy pniakach i pielęgnuje sadzonki, które rosną szybciej. Musi stać przy lesie.' },
     hunter: { name: 'Myśliwy', about: 'Poluje w lesie: mięso i skóry, zanim stać cię na chlewnię. Musi stać przy lesie.' },
     woodcutter: { name: 'Drwal', about: 'Drewno na budowę, do kuźni i dla łuczarza. Musi stać przy lesie.' },
@@ -544,11 +545,12 @@ const pl: Strings = {
 const en: Strings = {
   title: 'Marchland',
   subtitle: 'Medieval strategy: a town, formations, a battle',
-  resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
+  resources: { gold: 'Gold', wood: 'Wood', planks: 'Planks', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
   buildings: {
     house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
     foundry: { name: 'Gun Foundry', about: 'Casts guns from iron: cannon (level 1) and mortars (level 2). Their crews come from the town like recruits.' },
     storehouse: { name: 'Storehouse', about: "A second store of the town's goods: carriers bring to and fetch from the nearest store. Build it by a far village." },
+    sawmill: { name: 'Sawmill', about: 'Saws logs into planks. Higher levels of buildings take planks for half their timber.' },
     forester: { name: 'Forester', about: 'Tends the young wood round his lodge: plants by bare stumps and looks after saplings so they grow faster. Must stand by the forest.' },
     hunter: { name: 'Hunter', about: 'Hunts in the woods: meat and hides before you can afford pigs. Must stand by the forest.' },
     woodcutter: { name: 'Woodcutter', about: 'Wood for building, for the smithy and the fletcher. Must stand by the forest.' },

@@ -79,6 +79,20 @@ const BUILDERS: Record<BuildingKind, Build> = {
     }
     b.log(0.9, 0.85, 3.45, 0.22, 2.6, 7, P.LOG);
   },
+  sawmill: (b, level) => {
+    // An open saw shed: the frame saw over a log on its carriage, logs waiting on skids, planks drying in stacks.
+    P.house(b, { cx: -2.4, cz: -2.0, sx: 4.0, sz: 3.6, wallH: 2.2, wall: P.BOARDS, roof: P.SHINGLE, pitch: 1.3 });
+    for (const [x, z] of [[0.6, -2.6], [3.6, -2.6], [0.6, 0.2], [3.6, 0.2]] as const) b.box(x, 0, z, 0.2, 2.6, 0.2, P.TIMBER);
+    b.roof(2.1, 2.6, -1.2, 3.6, 3.4, 0.5, 0, 0.14, 0.08, P.SHINGLE, P.TIMBER);
+    b.box(2.1, 0.5, -1.2, 0.5, 0.25, 3.2, P.TIMBER);
+    b.log(2.1, 0.95, -1.2, 0.24, 2.6, 8, P.LOG);
+    b.box(2.1, 0.75, -1.2, 0.08, 1.6, 0.9, P.TIMBER);
+    b.box(2.1, 1.2, -1.2, 0.03, 0.9, 0.85, P.IRON);
+    P.logPile(b, -2.4, 2.4, 3.2, 3);
+    for (let i = 0; i < (level >= 2 ? 3 : 2); i++) {
+      for (let k = 0; k < 6; k++) b.box(1.4 + i * 1.3, 0.05 + k * 0.12, 2.6, 1.0, 0.06, 2.0, P.BOARDS);
+    }
+  },
   forester: (b, level) => {
     // A small lodge, a nursery bed of saplings in rows, a water butt and a spade.
     P.house(b, { cx: -2.0, cz: -2.0, sx: 4.6, sz: 3.8, wallH: 2.2, wall: P.BOARDS, roof: P.THATCH, hip: 0.9, pitch: 1.4 });

@@ -182,6 +182,7 @@ function wagonHorse(): BufferGeometry {
 const GOOD_HEX: Record<ResourceId, number> = {
   gold: 0xd9b23c,
   wood: 0x7a5a36,
+  planks: 0xd9a96a,
   stone: 0x9a9690,
   grain: 0xd0b050,
   flour: 0xe8e0cc,
@@ -207,6 +208,7 @@ const LOAD_SHAPES = ['lumber', 'stone', 'sack', 'barrel', 'crate', 'arrows', 'br
 type LoadShape = (typeof LOAD_SHAPES)[number];
 const GOOD_SHAPE: Record<ResourceId, [LoadShape, number]> = {
   wood: ['lumber', 0xffffff],
+  planks: ['lumber', 0xffe2b8],
   stone: ['stone', 0xffffff],
   ironOre: ['stone', 0x9a6a5a],
   iron: ['stone', 0x6a7078],

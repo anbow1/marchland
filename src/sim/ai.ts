@@ -99,6 +99,8 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'winery',
   // A second store once the town has spread: carriers stop walking every sack to the keep.
   'storehouse',
+  // Planks for the upgrades that come after the build order (a sawmill earlier only eats scarce timber).
+  'sawmill',
   'house',
   'fisher',
   'farm',

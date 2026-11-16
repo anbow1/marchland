@@ -46,7 +46,7 @@ export interface Building {
   constructionLeftS: number;
   constructionTotalS: number;
   /** Timber and stone for the work in hand: still at the keep, and how much of the total has reached the site. */
-  matWaiting: { wood: number; stone: number };
+  matWaiting: { wood: number; stone: number; planks: number };
   matDelivered: number;
   matTotal: number;
   /** Goods waiting to be used, goods made and not yet carried off, and goods a carrier is bringing. */
@@ -189,10 +189,19 @@ export function createTown(side: Side, productionFactor = 1): Town {
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
+/**
+ * What raising a building to `level` costs in one good: the base price times the level's factor. From the
+ * second level on, half the timber is asked as planks (the sawmill's), so a town that grows needs one.
+ */
 export function buildingCost(kind: BuildingKind, level: number, resource: ResourceId): number {
   const factor = LEVEL_COST[level - 1];
   if (factor === undefined) throw new Error(`building level '${level}' is not in 1…${MAX_LEVEL}`);
-  return Math.round((BUILDINGS[kind].cost[resource] ?? 0) * factor);
+  const base = BUILDINGS[kind].cost;
+  if (level >= 2 && (resource === 'wood' || resource === 'planks')) {
+    const timber = (base.wood ?? 0) * factor;
+    return resource === 'planks' ? Math.round(timber / 2) : Math.round(timber) - Math.round(timber / 2);
+  }
+  return Math.round((base[resource] ?? 0) * factor);
 }
 
 export function buildingMaxHp(kind: BuildingKind, level: number): number {
@@ -209,7 +218,8 @@ function orderWork(town: Town, b: Building, level: number, seconds: number): voi
   for (const id of RESOURCE_IDS) town.stock[id] -= buildingCost(b.kind, level, id);
   b.matWaiting.wood = buildingCost(b.kind, level, 'wood');
   b.matWaiting.stone = buildingCost(b.kind, level, 'stone');
-  b.matTotal = b.matWaiting.wood + b.matWaiting.stone;
+  b.matWaiting.planks = buildingCost(b.kind, level, 'planks');
+  b.matTotal = b.matWaiting.wood + b.matWaiting.stone + b.matWaiting.planks;
   b.matDelivered = 0;
   b.constructionLeftS = seconds;
   b.constructionTotalS = seconds;
@@ -241,7 +251,7 @@ export function startBuilding(town: Town, kind: BuildingKind, site: Site): numbe
     spotZ: site.spotZ,
     constructionLeftS: 0,
     constructionTotalS: 0,
-    matWaiting: { wood: 0, stone: 0 },
+    matWaiting: { wood: 0, stone: 0, planks: 0 },
     matDelivered: 0,
     matTotal: 0,
     inp: emptyStock(),

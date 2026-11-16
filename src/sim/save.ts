@@ -1,5 +1,5 @@
 import { UNITS } from '../config.ts';
-import type { UnitKind } from './types.ts';
+import { RESOURCE_IDS, type UnitKind } from './types.ts';
 import { EventQueue } from './events.ts';
 import { LAYOUT, START } from './layout.ts';
 import { SpatialGrid } from './movement.ts';
@@ -158,6 +158,22 @@ function upgrade(world: World): World {
     town.priority ??= {};
     town.orders ??= {};
     town.kindPriority ??= {};
+  }
+  // Goods added since (planks): every store an old save holds gets them at nothing.
+  const fill = (stock: Record<string, number> | undefined): void => {
+    if (!stock) return;
+    for (const id of RESOURCE_IDS) stock[id] ??= 0;
+  };
+  for (const town of world.towns) {
+    fill(town.stock);
+    fill(town.made);
+    for (const b of town.plots) {
+      if (!b) continue;
+      fill(b.inp);
+      fill(b.out);
+      fill(b.incoming);
+      b.matWaiting.planks ??= 0;
+    }
   }
   // Ballistae and trebuchets became cannon and mortars (2026-11-16): an old save's engines are cast anew.
   const renamed: Record<string, UnitKind> = { ballista: 'cannon', trebuchet: 'mortar' };

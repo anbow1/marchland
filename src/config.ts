@@ -314,6 +314,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   house: { cost: { gold: 40, wood: 10 }, buildSeconds: 10, hp: 250, recipe: { inputs: {}, outputs: { gold: 1 }, cycleSeconds: 2.5 } },
   // The woodcutter, the fisher and the farm have no cycle here: their workers go out to the land (GATHER, FIELDS).
   woodcutter: { cost: { gold: 30 }, buildSeconds: 8, hp: 250, recipe: null },
+  // Logs to planks: higher levels of buildings take planks for half their timber (economy.buildingCost).
+  sawmill: { cost: { gold: 60, wood: 30, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { wood: 2 }, outputs: { planks: 2 }, cycleSeconds: 6 } },
   // The forester and the hunter go out to the woods like the woodcutter (FORESTRY, GATHER).
   forester: { cost: { gold: 35, wood: 10 }, buildSeconds: 8, hp: 250, recipe: null },
   hunter: { cost: { gold: 40, wood: 10 }, buildSeconds: 8, hp: 250, recipe: null },

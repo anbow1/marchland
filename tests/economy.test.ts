@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { ARMY, BUILDINGS, LEVEL_COST, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTurnSite, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
-import { carryCapacity, workState } from '../src/sim/economy.ts';
+import { buildingCost, carryCapacity, workState } from '../src/sim/economy.ts';
 import { grownTreesNear } from '../src/sim/trees.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
@@ -26,6 +26,7 @@ function rich(world: World): World {
   stock.wood = 1000;
   stock.stone = 1000;
   stock.bread = 300;
+  stock.planks = 500;
   return world;
 }
 
@@ -217,6 +218,20 @@ describe('a living town', () => {
       return young > 0 ? growth / young : 1;
     };
     expect(grownBy(true)).toBeGreaterThan(grownBy(false));
+  });
+
+  it('a sawmill saws timber into planks, and a second level asks half its timber as planks', () => {
+    expect(buildingCost('farm', 1, 'planks')).toBe(0);
+    const timber2 = buildingCost('farm', 2, 'wood') + buildingCost('farm', 2, 'planks');
+    expect(buildingCost('farm', 2, 'planks')).toBeGreaterThan(0);
+    expect(Math.abs(buildingCost('farm', 2, 'planks') - buildingCost('farm', 2, 'wood'))).toBeLessThanOrEqual(1);
+    expect(timber2).toBe(buildingCost('farm', 1, 'wood') * 0 + Math.round((BUILDINGS.farm.cost.wood ?? 0) * (LEVEL_COST[1] as number)));
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    town.stock.planks = 0;
+    const saw = build(world, 'sawmill');
+    runUntil(world, 900, () => finished(world, saw) && town.stock.planks + (town.plots[saw]?.out.planks ?? 0) >= 4);
+    expect(town.stock.planks + (town.plots[saw]?.out.planks ?? 0)).toBeGreaterThanOrEqual(4);
   });
 
   it('a bakery bakes only the flour carriers bring it', () => {

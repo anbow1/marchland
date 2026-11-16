@@ -86,6 +86,7 @@ function prepareScene(game: Game, scene: string): void {
         b.constructionLeftS = 0;
         b.matWaiting.wood = 0;
         b.matWaiting.stone = 0;
+        b.matWaiting.planks = 0;
         b.matDelivered = b.matTotal;
       }
     }

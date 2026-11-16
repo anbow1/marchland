@@ -20,6 +20,7 @@ export function enemyOf(side: Side): Side {
 export const RESOURCE_IDS = [
   'gold',
   'wood',
+  'planks',
   'stone',
   'grain',
   'flour',
@@ -46,6 +47,7 @@ export const BUILDING_KINDS = [
   'house',
   'storehouse',
   'woodcutter',
+  'sawmill',
   'forester',
   'hunter',
   'quarry',
@@ -124,6 +126,7 @@ export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
   house: 'none',
   storehouse: 'none',
   foundry: 'none',
+  sawmill: 'none',
   woodcutter: 'forest',
   forester: 'forest',
   hunter: 'forest',

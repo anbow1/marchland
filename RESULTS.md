@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Tartak i deski
+
+- Nowy towar **deski** i **tartak** (60 złota, 30 drewna, 10 kamienia; 2 drewna → 2 deski na 6 s).
+  Od poziomu 2 każdy budynek bierze połowę drewna w deskach (`buildingCost`); tragarze noszą deski na
+  plac budowy jak drewno i kamień. Ikona desek, ładunek to deski z KayKit w jaśniejszym odcieniu.
+  Stare zapisy dostają zerowe deski we wszystkich składach.
+- Komputer: tartak na końcu listy budowy, przed fazą ulepszeń. Postawiony wcześnie (zaraz po
+  koszarach) zjadał rzadkie drewno, pracownika i tragarzy na deski, których nikt jeszcze nie
+  potrzebował — komputer wygrywał dopiero w 47,6 min. Po przesunięciu: 36,6 / 40,3 min jak wcześniej.
+- Test: deski z drewna; koszt poziomu 2 dzieli drewno pół na pół. Testy 91/91; WebGPU 0 błędów.
+
 ## 2026-11-16 · Myśliwy i leśnik
 
 - **Myśliwy** (40 złota, 10 drewna; przy lesie): wychodzi w las w okolice punktu, na który patrzy
