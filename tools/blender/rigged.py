@@ -1,9 +1,18 @@
 """Bakes a Mixamo-rigged character and Mixamo animations into the game's skinned soldier.
 
-    bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--halberd] <clip.fbx>...
+    bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
+        [--height 1.8] [--source "credit"] [--team <image name part>] <clip.fbx>...
 
-With --halberd the man carries a halberd in his sword hand instead of sword and shield (the clips' sword
-joint holds it: a 2.4 m shaft, more of it ahead of the hand than behind, the axe and spike at its head).
+--arms: what the man carries (the game's own simple shapes): sword and shield (the default), a halberd or
+a pike in the sword hand (a shaft along the sword's line, more of it ahead of the hand than behind), or a
+longbow upright in the left fist. --height: the character is scaled to stand this tall (metres), whatever
+units it came in. --source: the credit written into the file. --team: the garment (by its texture's name)
+dyed in the side's colour, over its own shading.
+
+Any Mixamo-rigged character will do: it is turned to look the clips' way from where its hips put its
+left, and its end bones (HeadTop_End, Toe_End) may be missing or lie at the origin. Rigid parts with no
+weights (a helmet, a hat, hair) ride on the head; other unweighted parts (its own sword, shield) are left
+out.
 
 The character ("knight for game project (old)", Thomas.Osterhammel, Sketchfab, CC BY 4.0, see
 CREDITS.md) stands in an A pose and looks along -X; the clips (Mixamo, without skin) were made on a
@@ -76,24 +85,56 @@ def to_game_point(v: Vector) -> list[float]:
     return [-v.x, v.z, v.y]
 
 
-def load_character(path: str):
+ON_HEAD = ("helmet", "hat", "hood", "hair", "cap")
+
+
+def body_meshes():
+    """The character's own meshes: the weighted ones, and rigid ones worn on the head."""
+    out = []
+    for o in bpy.context.scene.objects:
+        if o.type != "MESH" or o.name == "Icosphere":
+            continue
+        if len(o.vertex_groups) > 0 or any(k in o.name.lower() for k in ON_HEAD):
+            out.append(o)
+    return out
+
+
+def load_character(path: str, height_m: float):
     bpy.ops.wm.read_factory_settings(use_empty=True)
     bpy.ops.import_scene.gltf(filepath=path)
     rig = [o for o in bpy.context.scene.objects if o.type == "ARMATURE"][0]
-    # Turn the character to look along -Y like the clips (it looks along -X).
-    G = Matrix.Rotation(math.radians(90), 4, "Z")
-    rest = {}
+    bones = {}
     for b in rig.data.bones:
-        n = plain(b.name)
-        if n in KEEP or n in {v for v in KEEP.values()}:
-            rest.setdefault(n, G @ rig.matrix_world @ b.matrix_local)
+        bones.setdefault(plain(b.name), rig.matrix_world @ b.matrix_local)
+    # Turn the character to look along -Y like the clips: his left (from the right hip to the left) to +X.
+    left = head_of(bones["LeftUpLeg"]) - head_of(bones["RightUpLeg"])
+    turn = Matrix.Rotation(-math.atan2(left.y, left.x), 4, "Z")
+    # And scale him to stand height_m tall (his meshes' height in the bind pose, whatever the units).
+    rig.data.pose_position = "REST"
+    bpy.context.view_layer.update()
+    zs = [(o.matrix_world @ v.co).z for o in body_meshes() for v in o.data.vertices]
+    scale = height_m / (max(zs) - min(zs))
+    G = Matrix.Scale(scale, 4) @ turn
+    rest = {n: G @ m for n, m in bones.items() if n in KEEP or n in KEEP.values()}
+    # End bones missing or at the origin: one bone-length on along the parent's line.
+    for n, child in KEEP.items():
+        if child in KEEP:
+            continue
+        if child not in rest or head_of(rest[child]).length < 1e-3 * scale:
+            parent = next(p for p, c in KEEP.items() if c == n)
+            step = head_of(rest[n]) - head_of(rest[parent])
+            rest[child] = Matrix.Translation(head_of(rest[n]) + step * 0.6)
+    print(f"character: scale {scale:.4f}, turned {math.degrees(-math.atan2(left.y, left.x)):.0f} deg")
     return rig, G, rest
 
 
-def bake_mesh(rig, G):
+TEAM_SHARE = 0.6
+
+
+def bake_mesh(rig, G, team_garment=None):
     """The character's meshes in the bind pose, thinned, with colours from the texture and the kept bones' weights."""
     rig.data.pose_position = "REST"
-    meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and o.name != "Icosphere" and len(o.vertex_groups) > 0]
+    meshes = body_meshes()
     total = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes)
     ratio = min(1.0, TARGET_TRIS / max(1, total))
     for o in meshes:
@@ -130,11 +171,12 @@ def bake_mesh(rig, G):
         if mat and mat.node_tree:
             for n in mat.node_tree.nodes:
                 if n.type == "TEX_IMAGE" and n.image:
-                    if "baseColor" in n.image.name and base_img is None:
+                    if ("baseColor" in n.image.name or "diffuse" in n.image.name.lower()) and base_img is None:
                         base_img = n.image
                     if "metallicRoughness" in n.image.name and mr_img is None:
                         mr_img = n.image
         uv = me.uv_layers.active.data if me.uv_layers.active else None
+        team = TEAM_SHARE if team_garment and base_img and team_garment in base_img.name else 0.0
         # Per vertex: the mean of its loops' texture colours.
         acc = {}
         for loop in me.loops:
@@ -156,7 +198,7 @@ def bake_mesh(rig, G):
             if a and a[5] > 0:
                 # Image.pixels gives a PNG's stored (sRGB) values: to linear for the shader.
                 col.append([srgb_to_linear(a[0] / a[5]), srgb_to_linear(a[1] / a[5]), srgb_to_linear(a[2] / a[5])])
-                surf.append([a[3] / a[5], a[4] / a[5], 0.0])
+                surf.append([a[3] / a[5], a[4] / a[5], team])
             else:
                 col.append([0.5, 0.5, 0.5])
                 surf.append([0.8, 0.4, 0.0])
@@ -164,6 +206,8 @@ def bake_mesh(rig, G):
             for g in v.groups:
                 k = kept(names.get(g.group, "Hips"))
                 folded[k] = folded.get(k, 0.0) + g.weight
+            if not folded:
+                folded = {"Head": 1.0}  # a rigid part worn on the head
             top = sorted(folded.items(), key=lambda kv: -kv[1])[:4]
             s = sum(w for _, w in top) or 1.0
             idx = [BONES.index(k) for k, _ in top] + [0] * (4 - len(top))
@@ -191,6 +235,43 @@ HALBERD = [
     ("Sword_joint", (-0.79, -1.45, 1.33), (0.012, 0.07, 0.12), (0.55, 0.56, 0.58), 1.0, 0.3, 0.0),  # back hook
     ("Sword_joint", (-0.79, -1.2, 1.41), (0.05, 0.1, 0.05), (1, 1, 1), 0.0, 0.7, 1.0),  # tassel in the side's colour
 ]
+PIKE = [
+    # A 4 m ash shaft, 1 m of it behind the hand, and a narrow steel head.
+    ("Sword_joint", (-0.79, -0.84, 1.41), (0.032, 4.0, 0.032), (0.24, 0.16, 0.09), 0.0, 0.8, 0.0),  # shaft
+    ("Sword_joint", (-0.79, -2.98, 1.41), (0.03, 0.28, 0.018), (0.55, 0.56, 0.58), 1.0, 0.3, 0.0),  # head
+    ("Sword_joint", (-0.79, -2.7, 1.41), (0.05, 0.08, 0.05), (1, 1, 1), 0.0, 0.7, 1.0),  # pennon in the side's colour
+]
+
+
+def add_box(centre, size, colour, metal, rough, team, bone, pos, nor, col, surf, skin, wts, tris):
+    """One box in the character's rest space (Blender, looking along -Y), riding on one bone."""
+    corners, faces = box(*centre, *size)
+    base = len(pos)
+    for p in corners:
+        pos.append(to_game_point(p))
+        d = (p - Vector(centre)).normalized()
+        nor.append([-d.x, d.z, d.y])
+        col.append([srgb_to_linear(x) for x in colour])
+        surf.append([metal, rough, team])
+        skin.append([BONES.index(bone), 0, 0, 0])
+        wts.append([1.0, 0.0, 0.0, 0.0])
+    for a, b, cc, d in faces:
+        tris.append([base + a, base + b, base + cc])
+        tris.append([base + a, base + cc, base + d])
+
+
+def add_bow(hand, *mesh):
+    """A longbow upright in the left fist as the T pose holds it (the arm out along +X): the stave through
+    the fist, its limbs bending a little towards the man, the string on his side of it."""
+    wood = (0.55, 0.38, 0.2)
+    fist = hand + Vector((0.08, 0.0, 0.0))
+    # Twice a real stave's thickness, so it reads from a strategy camera.
+    add_box(fist, (0.07, 0.07, 0.22), (0.16, 0.10, 0.05), 0.0, 0.8, 0.0, "LeftHand", *mesh)  # leather grip
+    for up in (1, -1):
+        add_box(fist + Vector((-0.03, 0.0, up * 0.42)), (0.055, 0.06, 0.64), wood, 0.0, 0.7, 0.0, "LeftHand", *mesh)  # inner limb
+        add_box(fist + Vector((-0.08, 0.0, up * 0.8)), (0.045, 0.05, 0.18), wood, 0.0, 0.7, 0.0, "LeftHand", *mesh)  # tip
+    add_box(fist + Vector((-0.14, 0.0, 0.0)), (0.012, 0.012, 1.68), (0.85, 0.82, 0.72), 0.0, 0.9, 0.0, "LeftHand", *mesh)  # string
+    add_box(fist + Vector((0.0, 0.0, 0.0)), (0.07, 0.07, 0.05), (1, 1, 1), 0.0, 0.7, 1.0, "LeftHand", *mesh)  # wrap in the side's colour
 
 
 def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris, polearm=None):
@@ -257,6 +338,13 @@ def bake_frames(char_rest, clip_path, hips_ratio):
         dc = dc.normalized()
         da = (a_rest_head[child] - a_rest_head[n]).normalized()
         align[n] = dc.rotation_difference(da)
+    # How far the clip walks the hips over the ground (a clip not made "in place"), before it is kept on the spot.
+    hips_bone = anim.pose.bones[bones["Hips"].name]
+    bpy.context.scene.frame_set(first)
+    start = (aw @ hips_bone.head).copy()
+    bpy.context.scene.frame_set(last)
+    end = aw @ hips_bone.head
+    travel = math.hypot(end.x - start.x, end.y - start.y) * hips_ratio
     frames = []
     for f in range(first, last + 1):
         bpy.context.scene.frame_set(f)
@@ -296,31 +384,42 @@ def bake_frames(char_rest, clip_path, hips_ratio):
         frames.append(mats)
     fps = bpy.context.scene.render.fps
     anim_rest_hand = {hand: a_rest_head[hand] for hand in WEAPONS.values()}
-    return frames, fps, anim_rest_hand, a_rest_head["Hips"].z
+    return frames, fps, anim_rest_hand, a_rest_head["Hips"].z, travel
 
 
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1:]
     char_path, out = args[0], args[1]
-    halberd = "--halberd" in args
-    clips = [a for a in args[2:] if not a.startswith("--")]
-    rig, G, char_rest = load_character(char_path)
-    pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G)
+    def option(name, default):
+        return args[args.index(name) + 1] if name in args else default
+
+    arms = option("--arms", "sword")
+    height_m = float(option("--height", "1.99"))
+    source = option("--source", "knight for game project (old), Thomas.Osterhammel (Sketchfab), CC BY 4.0")
+    team_garment = option("--team", None)
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team") if n in args}
+    clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
+    rig, G, char_rest = load_character(char_path, height_m)
+    pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
     hips_char = head_of(char_rest["Hips"]).z
     all_frames, clip_meta = [], []
     anim_hand = None
     for path in clips:
         name = os.path.splitext(os.path.basename(path))[0]
         # The first pass only measures the clips' hips height.
-        frames, fps, hands, hips_anim = bake_frames(char_rest, path, 1.0)
+        frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, 1.0)
         ratio = hips_char / hips_anim
         if abs(ratio - 1) > 1e-3:
-            frames, fps, hands, hips_anim = bake_frames(char_rest, path, ratio)
+            frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, ratio)
         anim_hand = anim_hand or hands
-        clip_meta.append({"name": name, "start": len(all_frames), "frames": len(frames), "fps": fps})
+        clip_meta.append({"name": name, "start": len(all_frames), "frames": len(frames), "fps": fps, "travelM": round(travel, 3)})
         all_frames += frames
     char_hand = {hand: head_of(char_rest[hand]) for hand in WEAPONS.values()}
-    add_weapons(anim_hand, char_hand, pos, nor, col, surf, skin, wts, tris, HALBERD if halberd else None)
+    mesh = (pos, nor, col, surf, skin, wts, tris)
+    if arms == "bow":
+        add_bow(head_of(char_rest["LeftHand"]), *mesh)
+    else:
+        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE}[arms])
     # Feet on the ground.
     floor = min(p[1] for p in pos)
     for p in pos:
@@ -333,7 +432,7 @@ def main() -> None:
             flat += [round(g[r][c], 4) for r in range(3) for c in range(4)]
     r4 = lambda v: [round(x, 4) for x in v]  # noqa: E731
     data = {
-        "source": "knight for game project (old), Thomas.Osterhammel (Sketchfab), CC BY 4.0; clips from Mixamo",
+        "source": source + "; clips from Mixamo",
         "bones": BONES,
         "clips": clip_meta,
         "frames": flat,

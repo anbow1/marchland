@@ -5,6 +5,24 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · M4, krok 5: pikinierzy i łucznicy na własnych postaciach
+
+- `tools/blender/rigged.py` przyjmuje teraz dowolną postać ze szkieletem Mixamo: sam ją obraca (od
+  prawego do lewego biodra), skaluje do zadanego wzrostu (`--height`, niezależnie od jednostek: wojownik
+  Fuse był w centymetrach), dorabia brakujące kości końcowe, sztywny hełm przypina do głowy, a własną
+  broń modelu pomija. Opcje: `--arms sword|halberd|pike|bow`, `--team <tekstura>` (to ubranie w barwach
+  strony), `--source` (podpis w pliku). Każdy klip zapisuje, ile metrów przechodzi (`travelM`): marsz
+  nienagrany „w miejscu” wyznacza długość kroku w grze (miecznik 1,8 m, pikinier 1,5 m, łucznik 1,5 m).
+- Pikinierzy: „.Fuse Warrior” (skórzana zbroja, hełm), pika 4 m z proporcem w barwach, cios
+  „Stabbing”, marsz z bronią „Rifle Walk”, górna zbroja w barwach strony.
+- Łucznicy: „.Fuse Civilian 2”, łuk w lewej pięści (dwa razy grubszy niż prawdziwy, żeby był widoczny
+  z kamery), tunika w barwach. Strzał: po wypuszczeniu klatki „Standing Aim Recoil”, przed następnym
+  strzałem „Standing Draw Arrow” zgrane z czasem do przeładowania, między strzałami postawa z łukiem.
+- Miecznik i halabardnik przepieczeni nowym skryptem (różnica: skala 1,002).
+- Pliki po gzip: miecznik 472 kB, halabardnik 489, pikinier 468, łucznik 404.
+- Zostaje na zawias: kusznicy (dalej bryły z pudełek), garda pikinierów to poza z tarczą, jazda
+  dalej na sztywnym rycerzu. Testy 86/86; zrzuty z bliska.
+
 ## 2026-11-16 · Łąka bez plam w średnim zbliżeniu
 
 - Z wysoka i z bliska łąka wyglądała dobrze, ale ze średniej wysokości (kamera 30–80 m) jak rozlana

@@ -13,7 +13,7 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 |---|---|---|---|
 | Rycerz w zbroi płytowej (miecznicy, halabardnicy) | „Rigged Knight in Armor”, Xali, Blendswap | CC0 | w grze (`public/soldiers/knight.json`) |
 | Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | w grze: miecznicy (`swordsman.json`) i halabardnicy z halabardą (`halberdier.json`) |
-| Wojownik w skórze/przeszywanicy, szkielet Mixamo | „.Fuse Warrior”, Leonardo Carvalho, Sketchfab | CC BY 4.0 | do wpięcia (lekka piechota) |
+| Wojownik w skórze/przeszywanicy, szkielet Mixamo | „.Fuse Warrior”, Leonardo Carvalho, Sketchfab | CC BY 4.0 | w grze: pikinierzy (`pikeman.json`) |
 | Rycerz w płycie z płaszczem (bez szkieletu) | „Medieval knight”, 3dUVpro, Sketchfab | CC BY 4.0 | dowódca / jeździec |
 | Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | w grze: jazda (`public/soldiers/horse.json`), jeździec to rycerz Xali w siodle (`rider.json`) |
 | Jeździec i koń w zbroi (posąg, 120 tys. tr.) | „1964.88 Armor for Man and Horse”, Cleveland Museum of Art | CC0 | ciężka jazda po uproszczeniu |
@@ -26,9 +26,9 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 
 | Co | Źródło | Licencja | Plan |
 |---|---|---|---|
-| „.Fuse Civilian 2” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | łucznicy / kusznicy, tragarze |
-| Longbow Aiming Pack (naciąganie, celowanie, chód z celowaniem ×4, idle) | Mixamo | Mixamo | łucznicy |
-| Walk With Rifle, Rifle Walk | Mixamo | Mixamo | marsz z drzewcem (pikinierzy) |
+| „.Fuse Civilian 2” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze: łucznicy** (`archer.json`); dalej kusznicy, tragarze |
+| Longbow Aiming Pack (naciąganie, celowanie, chód z celowaniem ×4, idle) | Mixamo | Mixamo | **w grze**: naciąganie, odrzut, postawa łuczników |
+| Walk With Rifle, Rifle Walk | Mixamo | Mixamo | **w grze**: Rifle Walk = marsz pikinierów |
 | „Archer Shooting Arrow from Bow in Battle” (szkielet + animacja) | LasquetiSpice, Sketchfab | CC BY 4.0 | łucznik, porównanie |
 | „Archer's clothes”, „English archer” | ArtLeaving / count_zero, Sketchfab | CC BY 4.0 | ubiór łucznika |
 | „Peasant”, „Farmer”, „Medieval Villager Render”, „Medieval woman figure” (bez szkieletu) | jubabuba2512 / samsikua / Quatrilion / mikurban, Sketchfab | CC BY 4.0 | ludzie w mieście (po dopięciu szkieletu) |

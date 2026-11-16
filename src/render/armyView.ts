@@ -97,7 +97,8 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
 /** A skinned body and its clips as tools/blender/rigged.py writes them. */
 interface RiggedModel {
   bones: string[];
-  clips: { name: string; start: number; frames: number; fps: number }[];
+  /** travelM: ground a clip walks over (one not made "in place"), 0 when it stays on the spot. */
+  clips: { name: string; start: number; frames: number; fps: number; travelM?: number }[];
   frames: number[];
   positions: number[];
   normals: number[];
@@ -108,7 +109,7 @@ interface RiggedModel {
   triangles: number[];
 }
 
-type Clip = { start: number; frames: number };
+type Clip = { start: number; frames: number; travelM?: number };
 
 interface SkinnedKind {
   frame: InstancedBufferAttribute;
@@ -124,6 +125,8 @@ interface SkinnedKind {
   run: Clip | null;
   impact: Clip | null;
   deaths: Clip[];
+  /** A bowman's draw before a shot (his strike is the loose and the bow's recoil). */
+  draw: Clip | null;
 }
 
 /** Ground covered by one cycle (two steps) of the walk and of the run as the game plays them. The walk
@@ -189,6 +192,8 @@ function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
 const SKINNED_KINDS: readonly [UnitKind, string][] = [
   ['swordsmen', 'soldiers/swordsman.json'],
   ['halberdiers', 'soldiers/halberdier.json'],
+  ['pikemen', 'soldiers/pikeman.json'],
+  ['archers', 'soldiers/archer.json'],
 ];
 
 export class ArmyView {
@@ -311,7 +316,7 @@ export class ArmyView {
   private useRigged(kind: UnitKind, model: RiggedModel): boolean {
     const k = this.kinds.get(kind);
     // The blow: a sword's slash or a polearm's thrust.
-    const strike = model.clips.find((c) => /slash|thrust|stab/.test(c.name.toLowerCase()));
+    const strike = model.clips.find((c) => /slash|thrust|stab|recoil/.test(c.name.toLowerCase()));
     const block = model.clips.find((c) => c.name.toLowerCase().includes('block'));
     if (!k || !strike || !block) return false;
     const named = (name: string): Clip | null => model.clips.find((c) => c.name.toLowerCase() === name) ?? null;
@@ -386,6 +391,7 @@ export class ArmyView {
       run: named('run'),
       impact: named('impact'),
       deaths,
+      draw: named('draw'),
     };
     return true;
   }
@@ -442,7 +448,15 @@ export class ArmyView {
     const r = s.regiment;
     if (speed > 0.25) {
       if (sk.run && speed > (r.def.walkSpeedMs + r.def.runSpeedMs) / 2) return cycle(sk.run, s.strideM / RUN_CYCLE_M);
-      if (sk.walk) return cycle(sk.walk, s.strideM / WALK_CYCLE_M);
+      // A walk that moved as it was recorded says how far one cycle goes; an in-place one keeps the measured 1.6 m.
+      if (sk.walk) return cycle(sk.walk, s.strideM / ((sk.walk.travelM ?? 0) > 0.5 ? (sk.walk.travelM as number) : WALK_CYCLE_M));
+    }
+    if (sk.draw) {
+      // A bowman shooting: the draw in the last moments before his next shot, the bow at rest between.
+      const drawS = sk.draw.frames / sk.fps;
+      const shooting = s.sinceAttackS < r.def.reloadS * 1.6;
+      if (shooting && s.attackCooldownS < drawS) return at(sk.draw, drawS - s.attackCooldownS);
+      return sk.idle ? cycle(sk.idle, timeS / (sk.idle.frames / sk.fps) + s.slot * 0.37) : sk.guard;
     }
     if (r.stance === 'shields') return sk.blockHeld;
     const fighting = s.target !== null || s.sinceAttackS < AT_EASE_AFTER_S || hurtS < AT_EASE_AFTER_S;
