@@ -2,12 +2,21 @@
 
     bl/bin/python -I tools/blender/baked.py -- <model.glb> <out.json> [--height 1.75] [--fps 12]
         [--from 12] [--to 396] [--bones 40] [--name work] [--source "credit"]
+        [--clips walk:74:107,gallop:0:16] [--saddle Spine2_04] [--centre]
 
 The character is thinned to about 3 000 triangles, coloured from its textures, scaled to --height and set
 with its feet on the ground at the origin. Its animation is sampled at --fps between frames --from and
 --to and kept as it moves (root motion and all: a man who walks about his workshop walks about it in the
 game too). Bones that carry little weight (fingers, toes, twist bones) fold into their nearest kept
 ancestor, so at most --bones remain. Rigid parts with no weights (hair cards) ride on the head.
+
+With --clips the take is cut into several clips instead (name:from:to, frames from up to but not including
+`to`, so a loop's last frame is not its first again); the mesh is then taken at --from (default: the first
+clip's start). With --centre the body is set centred over the origin (an animal: its middle where the unit
+stands), not where the take had it. With --saddle the output also says where on that bone's back a rider sits: the top of the
+body above the bone's head ({bone, x, y, z}, game space, reference pose). Each clip says how much ground one
+loop of it covers (`travelM`): how fast the feet planted on the ground slide back, an animal galloping on the
+spot.
 
 The mesh is taken as Blender deforms it at the first sampled frame, and every frame's matrices carry the
 bones from there (not from the bind pose: some exports scale the bind pose apart from the skeleton). The
@@ -33,13 +42,27 @@ def srgb_to_linear(c: float) -> float:
 
 
 def colour_image(mat):
+    """The image behind a material's base colour, also through mix nodes (a texture times a vertex colour)."""
     if not mat or not mat.node_tree:
         return None
+
+    def upstream(node, depth=0):
+        if node.type == "TEX_IMAGE":
+            return node.image
+        if depth > 4:
+            return None
+        for i in node.inputs:
+            for link in i.links:
+                found = upstream(link.from_node, depth + 1)
+                if found:
+                    return found
+        return None
+
     for n in mat.node_tree.nodes:
         if n.type == "BSDF_PRINCIPLED":
             links = n.inputs["Base Color"].links
-            if links and links[0].from_node.type == "TEX_IMAGE":
-                return links[0].from_node.image
+            if links:
+                return upstream(links[0].from_node)
     return None
 
 
@@ -72,8 +95,11 @@ def main() -> None:
     bpy.ops.import_scene.gltf(filepath=src)
     arm = [o for o in bpy.context.scene.objects if o.type == "ARMATURE"][0]
     action = arm.animation_data.action
-    first = int(option("--from", str(int(action.frame_range[0]))))
+    cuts = [(c.split(":")[0], int(c.split(":")[1]), int(c.split(":")[2])) for c in option("--clips", "").split(",") if c]
+    first = int(option("--from", str(cuts[0][1] if cuts else int(action.frame_range[0]))))
     last = int(option("--to", str(int(action.frame_range[1]))))
+    if not cuts:
+        cuts = [(clip_name, first, last + 1)]
     scene_fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
     meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and o.name != "Icosphere"]
     total = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes)
@@ -125,7 +151,7 @@ def main() -> None:
         x = min(w - 1, max(0, int((u % 1.0) * w)))
         y = min(h - 1, max(0, int((v % 1.0) * h)))
         o = (y * w + x) * 4
-        return px[o], px[o + 1], px[o + 2]
+        return px[o], px[o + 1], px[o + 2], px[o + 3]
 
     world_pos, nor, col, skin, wts, tris = [], [], [], [], [], []
     for o in meshes:
@@ -139,6 +165,8 @@ def main() -> None:
         if img and uv:
             for loop in me.loops:
                 c = sample(img, *uv[loop.index].uv)
+                if c[3] < 0.5:
+                    continue  # a see-through texel (between a hair card's strands): no colour of its own
                 a = acc.setdefault(loop.vertex_index, [0.0, 0.0, 0.0, 0])
                 a[0] += c[0]
                 a[1] += c[1]
@@ -172,7 +200,9 @@ def main() -> None:
     floor = min(p.z for p in world_pos)
     top = max(p.z for p in world_pos)
     scale = height / (top - floor)
-    T = P @ Matrix.Scale(scale, 4) @ Matrix.Translation((0, 0, -floor))
+    cx = (min(p.x for p in world_pos) + max(p.x for p in world_pos)) / 2 if "--centre" in args else 0.0
+    cy = (min(p.y for p in world_pos) + max(p.y for p in world_pos)) / 2 if "--centre" in args else 0.0
+    T = P @ Matrix.Scale(scale, 4) @ Matrix.Translation((-cx, -cy, -floor))
     Ti = T.inverted()
     pos = [list((T @ p.to_4d()).xyz) for p in world_pos]
     normals = [[-n.x, n.z, n.y] for n in nor]
@@ -183,19 +213,55 @@ def main() -> None:
     flat = []
     step = scene_fps / fps
     frames = 0
-    f = float(first)
-    while f <= last + 1e-6:
-        bpy.context.scene.frame_set(int(f), subframe=f - int(f))
-        for n in order:
-            m = T @ (W @ arm.pose.bones[n].matrix) @ rest_inv[n] @ Ti
-            flat += [round(m[r][c], 4) for r in range(3) for c in range(4)]
-        frames += 1
-        f += step
+    clips = []
+    for name, start, end in cuts:
+        clip_start = frames
+        f = float(start)
+        while f < end - 1e-6:
+            bpy.context.scene.frame_set(int(f), subframe=f - int(f))
+            for n in order:
+                m = T @ (W @ arm.pose.bones[n].matrix) @ rest_inv[n] @ Ti
+                flat += [round(m[r][c], 4) for r in range(3) for c in range(4)]
+            frames += 1
+            f += step
+        clips.append({"name": name, "start": clip_start, "frames": frames - clip_start, "fps": fps})
+    # Ground covered per loop: the median backward slide of vertices on the ground in two frames running.
+    nb = len(order)
+    low = [i for i, p in enumerate(pos) if p[1] < 0.06][::3]
+
+    def at(i, fr):
+        x, y, z = pos[i]
+        out = [0.0, 0.0, 0.0]
+        for b, w in zip(skin[i], wts[i]):
+            if w == 0:
+                continue
+            m = flat[(fr * nb + b) * 12:(fr * nb + b) * 12 + 12]
+            for r in range(3):
+                out[r] += w * (m[r * 4] * x + m[r * 4 + 1] * y + m[r * 4 + 2] * z + m[r * 4 + 3])
+        return out
+
+    for c in clips:
+        slides = []
+        for fr in range(c["start"], c["start"] + c["frames"] - 1):
+            for i in low:
+                a, b = at(i, fr), at(i, fr + 1)
+                if a[1] < 0.05 and b[1] < 0.05 and b[2] - a[2] > 0.005:
+                    slides.append(b[2] - a[2])
+        slides.sort()
+        c["travelM"] = round(slides[len(slides) // 2] * c["frames"], 3) if len(slides) > c["frames"] else 0.0
+    saddle = None
+    if "--saddle" in args:
+        bpy.context.scene.frame_set(first)
+        bone = option("--saddle", "")
+        head = list((T @ (W @ arm.pose.bones[bone].head).to_4d()).xyz)
+        over = [p for p in pos if abs(p[0]) < 0.12 and abs(p[2] - head[2]) < 0.12]
+        top = max(p[1] for p in over) if over else head[1]
+        saddle = {"bone": order.index(keeper(bone)), "x": 0.0, "y": round(top, 4), "z": round(head[2], 4)}
     r4 = lambda v: [round(x, 4) for x in v]  # noqa: E731
     data = {
         "source": source,
         "bones": order,
-        "clips": [{"name": clip_name, "start": 0, "frames": frames, "fps": fps}],
+        "clips": clips,
         "frames": flat,
         "positions": [x for p in pos for x in r4(p)],
         "normals": [x for n in normals for x in r4(n)],
@@ -205,10 +271,12 @@ def main() -> None:
         "weights": [x for w in wts for x in r4(w)],
         "triangles": [i for t in tris for i in t],
     }
+    if saddle:
+        data["saddle"] = saddle
     os.makedirs(os.path.dirname(os.path.abspath(out)), exist_ok=True)
     with open(out, "w") as fh:
         json.dump(data, fh, separators=(",", ":"))
-    print(f"baked: {len(pos)} vertices, {len(tris)} triangles, {len(order)} bones, {frames} frames at {fps} fps")
+    print(f"baked: {len(pos)} vertices, {len(tris)} triangles, {len(order)} bones, {frames} frames at {fps} fps; clips {[(c['name'], c['frames']) for c in clips]}; saddle {saddle}")
 
 
 main()

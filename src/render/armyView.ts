@@ -1,5 +1,5 @@
 import { abs, attribute, cos, Fn, int, ivec2, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
-import { BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
 import { ARMY, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
@@ -10,7 +10,7 @@ import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
-import { type BodyModel, cavalryGeometryOnModels, engineGeometryOnModel, type GunModel, gunCrewSpots, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
+import { type BodyModel, cavalryGeometryOnModels, type Saddle, engineGeometryOnModel, type GunModel, gunCrewSpots, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
 import { freshUrl } from '../version.ts';
 
 // Every soldier on the field, one instanced mesh per kind of unit. The CPU
@@ -138,7 +138,14 @@ interface SkinnedKind {
    * levelled, a sword out), held by men without a shield on guard and by a pike wall. */
   shield: boolean;
   reach: number;
+  /** A horse's clips (a mounted kind): standing, walking, galloping, grazing at ease. */
+  horse?: { idle: Clip; walk: Clip; gallop: Clip; graze: Clip | null };
 }
+
+/** A horse gallops above this speed (m/s), walks below it; a gallop cycle as played covers this much ground
+ * (the take's 3.6 m would show a charge at a march's speed in slow motion). */
+const GALLOP_FROM_MS = 1.8;
+const GALLOP_CYCLE_M = 3;
 
 /** The frame of a clip in which a weapon's tip (a vertex on its joint, the furthest forward at rest)
  * reaches furthest forward (−Z) while staying about chest high. */
@@ -226,8 +233,8 @@ export function boneTexture(model: RiggedModel): DataTexture {
   return bones;
 }
 
-export function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
-  const m = new MeshStandardNodeMaterial({ name: 'skinned footman' });
+export function skinnedMaterial(bones: DataTexture, mounted = false): MeshStandardNodeMaterial {
+  const m = new MeshStandardNodeMaterial({ name: mounted ? 'skinned horseman' : 'skinned footman' });
   const skin = attribute('aSkin', 'vec4') as Node<'vec4'>;
   const weight = attribute('aWeight', 'vec4') as Node<'vec4'>;
   const part = attribute('aPart', 'vec4') as Node<'vec4'>;
@@ -247,7 +254,8 @@ export function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
   const pose = (v: Node<'vec3'>): Node<'vec3'> => {
     const cf = cos(anim.w);
     const sf = sin(anim.w);
-    const fallen = vec3(v.x, v.y.mul(cf).sub(v.z.mul(sf)), v.y.mul(sf).add(v.z.mul(cf)));
+    // A man falls on his back (about his shoulders' axis), a horse on its side (about its length).
+    const fallen = mounted ? vec3(v.x.mul(cf).sub(v.y.mul(sf)), v.x.mul(sf).add(v.y.mul(cf)), v.z) : vec3(v.x, v.y.mul(cf).sub(v.z.mul(sf)), v.y.mul(sf).add(v.z.mul(cf)));
     const cy = cos(place.w);
     const sy = sin(place.w);
     return vec3(fallen.x.mul(cy).add(fallen.z.mul(sy)), fallen.y, fallen.z.mul(cy).sub(fallen.x.mul(sy)));
@@ -255,7 +263,8 @@ export function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
   m.positionNode = Fn(() => {
     const p = skinned(attribute('position', 'vec3') as Node<'vec3'>, 1);
     // The legs walk about the hips (part: pivot height, pivot depth, swing); a clip with a walk will take over.
-    const angle = part.z.mul(sin(anim.x)).mul(anim.y).mul(WALK_SWING_RAD);
+    // A rider's arm and weapon strike about his shoulder (part.w: its share of the blow).
+    const angle = part.z.mul(sin(anim.x)).mul(anim.y).mul(WALK_SWING_RAD).add(part.w.mul(anim.z));
     const c = cos(angle);
     const s = sin(angle);
     const ry = p.y.sub(part.x);
@@ -362,8 +371,19 @@ export class ArmyView {
         console.warn(`[soldiers] no skinned ${kind} (${String(error)}): it keeps its figure`);
       }
     }
-    // Horsemen: the seated knight on the armoured horse.
+    // Horsemen: the seated knight on a horse that walks and gallops on its own bones; without that file, on
+    // the armoured horse whose legs swing in code.
     try {
+      const [rider, horse] = await Promise.all(['soldiers/rider.json', 'soldiers/warhorse.json'].map(async (file) => {
+        const response = await fetch(freshUrl(base, file));
+        if (!response.ok) throw new Error(`${file} ${response.status}`);
+        return response.json();
+      }));
+      for (const kind of ['lightCavalry', 'heavyCavalry'] as const) if (this.useMounted(kind, horse as RiggedModel & { saddle: { bone: number; y: number; z: number } }, rider as BodyModel)) changed++;
+    } catch (error) {
+      console.warn(`[soldiers] no skinned horse (${String(error)}): horsemen ride the armoured horse`);
+    }
+    if (!this.kinds.get('lightCavalry')?.skinned) try {
       const [rider, horse] = await Promise.all(['soldiers/rider.json', 'soldiers/horse.json'].map(async (file) => {
         const response = await fetch(freshUrl(base, file));
         if (!response.ok) throw new Error(`${file} ${response.status}`);
@@ -526,6 +546,87 @@ export class ArmyView {
     crew.side.needsUpdate = true;
   }
 
+  /** A mounted kind on the skinned horse: the horse on its own bones, the rider with his kit and the saddle
+   * cloth riding its back (bound to the saddle's bone), his arm striking about his shoulder as before. */
+  private useMounted(kind: UnitKind, horse: RiggedModel & { saddle: { bone: number; y: number; z: number } }, rider: BodyModel): boolean {
+    const k = this.kinds.get(kind);
+    const named = (name: string): (Clip & { fps: number }) | null => horse.clips.find((c) => c.name === name) ?? null;
+    const [idle, walk, gallop] = [named('idle'), named('walk'), named('gallop')];
+    if (!k || !idle || !walk || !gallop) return false;
+    const nh = horse.positions.length / 3;
+    // How wide the horse is under the saddle, for the cloth.
+    let halfWidth = 0.2;
+    for (let i = 0; i < nh; i++) {
+      const y = horse.positions[i * 3 + 1] as number;
+      if (Math.abs((horse.positions[i * 3 + 2] as number) - horse.saddle.z) < 0.35 && y > horse.saddle.y - 0.6) halfWidth = Math.max(halfWidth, Math.abs(horse.positions[i * 3] as number));
+    }
+    const saddle: Saddle = { y: horse.saddle.y, z: horse.saddle.z, halfWidth };
+    const man = cavalryGeometryOnModels(kind, rider, null, saddle);
+    const nr = man.getAttribute('position').count;
+    const total = nh + nr;
+    const join = (size: number, a: ArrayLike<number>, b: ArrayLike<number>): Float32Array => {
+      const out = new Float32Array(total * size);
+      out.set(Array.from(a).slice(0, nh * size));
+      out.set(Array.from(b).slice(0, nr * size), nh * size);
+      return out;
+    };
+    const skin = new Float32Array(total * 4);
+    const weights = new Float32Array(total * 4);
+    skin.set(horse.skin);
+    weights.set(horse.weights);
+    for (let i = nh; i < total; i++) {
+      skin[i * 4] = horse.saddle.bone;
+      weights[i * 4] = 1;
+    }
+    const g = new BufferGeometry();
+    interleave(g, [
+      ['position', 3, join(3, horse.positions, man.getAttribute('position').array)],
+      ['normal', 3, join(3, horse.normals, man.getAttribute('normal').array)],
+      ['color', 3, join(3, horse.colours, man.getAttribute('color').array)],
+      ['aSurface', 3, join(3, horse.surface, man.getAttribute('aSurface').array)],
+    ]);
+    interleave(g, [
+      ['aSkin', 4, skin],
+      ['aWeight', 4, weights],
+      ['aPart', 4, join(4, new Float32Array(nh * 4), man.getAttribute('aPart').array)],
+    ]);
+    const index = new Uint32Array(horse.triangles.length + nr);
+    index.set(horse.triangles);
+    for (let i = 0; i < nr; i++) index[horse.triangles.length + i] = nh + i;
+    g.setIndex(new BufferAttribute(index, 1));
+    g.computeBoundingSphere();
+    man.dispose();
+    const frame = new InstancedBufferAttribute(new Float32Array(CAPACITY), 1);
+    frame.setUsage(DynamicDrawUsage);
+    g.setAttribute('aPlace', k.place);
+    g.setAttribute('aAnim', k.anim);
+    g.setAttribute('aSide', k.side);
+    g.setAttribute('aFrame', frame);
+    const old = k.mesh.geometry;
+    k.mesh.geometry = g;
+    k.mesh.material = skinnedMaterial(boneTexture(horse), true);
+    old.dispose();
+    k.skinned = {
+      frame,
+      fps: idle.fps,
+      strikeStart: idle.start,
+      strikeFrames: 1,
+      strikes: [],
+      guard: idle.start,
+      blockHeld: idle.start,
+      idle,
+      walk,
+      run: gallop,
+      impact: null,
+      deaths: [],
+      draw: null,
+      shield: false,
+      reach: idle.start,
+      horse: { idle, walk, gallop, graze: named('graze') },
+    };
+    return true;
+  }
+
   /** Puts a kind on a skinned body with its clips; false if the file lacks what the game needs. */
   private useRigged(kind: UnitKind, model: RiggedModel): boolean {
     const k = this.kinds.get(kind);
@@ -646,6 +747,18 @@ export class ArmyView {
   private skinnedFrame(sk: SkinnedKind, s: Soldier, speed: number, timeS: number): number {
     const at = (c: Clip, t: number): number => c.start + Math.min(c.frames - 1, Math.floor(t * sk.fps));
     const cycle = (c: Clip, phase: number): number => c.start + Math.floor((((phase % 1) + 1) % 1) * c.frames) % c.frames;
+    const horse = sk.horse;
+    if (horse) {
+      // A horse: gallop or walk in step with the ground it covers; standing, or grazing at ease. A dead one
+      // lies as it stood (the whole falls on its side).
+      const loop = (c: Clip): number => cycle(c, timeS / (c.frames / sk.fps) + s.slot * 0.37);
+      if (!s.alive) return horse.idle.start;
+      if (speed > GALLOP_FROM_MS) return cycle(horse.gallop, s.strideM / GALLOP_CYCLE_M);
+      if (speed > 0.25) return cycle(horse.walk, s.strideM / Math.max(0.5, horse.walk.travelM ?? 1));
+      const hurtS = timeS - (s.hurtAtS ?? -1e9);
+      const atEase = s.target === null && s.sinceAttackS > AT_EASE_AFTER_S && hurtS > AT_EASE_AFTER_S;
+      return atEase && horse.graze && s.slot % 3 === 0 ? loop(horse.graze) : loop(horse.idle);
+    }
     if (!s.alive) {
       const death = sk.deaths[s.slot % Math.max(1, sk.deaths.length)];
       return death ? at(death, s.deadS) : sk.guard;

@@ -5,6 +5,23 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Konie jazdy ze szkieletem: postój, stęp, galop, skubanie trawy
+
+- Lekka i ciężka jazda dosiada konia „Horse” (MAXDESIGN-3D, CC BY 4.0) na jego własnych kościach
+  (`soldiers/warhorse.json`, 40 kości, ~3 000 trójkątów). Jedno nagranie z pliku pocięte na pętle
+  znalezione przez porównanie póz klatka po klatce: galop co 16 klatek (dokładna pętla), stęp co 33,
+  postój z rzutem głowy (62) i skubanie trawy (151).
+- `baked.py` umie teraz: kilka klipów z jednego nagrania (`--clips`), wyśrodkowanie zwierzęcia (`--centre`),
+  miejsce siodła (`--saddle`), drogę na pętlę z kopyt stojących na ziemi (`travelM`: stęp 0,95 m, galop
+  3,56 m), kolor tekstury także przez węzeł mieszania (tekstura × kolor wierzchołków) i pomija
+  przezroczyste teksele kosmyków (grzywa i ogon nie są już w białe pasy).
+- Jeździec (siedzący rycerz), jego broń, tarcza, opończa i nowy czaprak w barwach strony są
+  przypięte do kości grzbietu — jadą z koniem i kołyszą się z nim; ramię z bronią nadal uderza.
+  Koń idzie stępem do 1,8 m/s, wyżej galopuje (cykl jak 3 m drogi, żeby szarża nie szła w zwolnionym
+  tempie); w spoczynku co trzeci koń skubie trawę. Zabity koń pada na bok razem z jeźdźcem.
+- Bez pliku jazda wraca do konia w zbroi z nogami poruszanymi w kodzie.
+- Testy 94/94; WebGPU 0 błędów; bitwa: 139 potoków.
+
 ## 2026-11-16 · Etapy budowy: fundament, ściany, rusztowanie, dach na końcu
 
 - Budynek w budowie nie jest już spłaszczonym budynkiem, tylko tym samym modelem uciętym na wysokości,

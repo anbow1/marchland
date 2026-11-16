@@ -393,17 +393,36 @@ export interface HorseModel {
   triangles: number[];
 }
 
+/** Where a rider sits on a horse (the top of its back) and, for a saddle cloth, how wide the horse is there. */
+export interface Saddle {
+  y: number;
+  z: number;
+  halfWidth?: number;
+}
+
 /**
  * A horseman on modelled bodies: the horse with its legs walking in diagonal pairs, the knight seated in
  * the saddle (his arms swing and strike as a foot soldier's), and the kind's lance or spear, shield and
- * surcoat from the code.
+ * surcoat from the code. With no horse (`null`, the horse drawn skinned on its own bones) only the rider
+ * and his kit, set in `saddle`, with a saddle cloth in the side's colours over the horse's flanks.
  */
-export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse: HorseModel): BufferGeometry {
+export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse: HorseModel | null, saddle: Saddle = (horse as HorseModel).saddle): BufferGeometry {
   const f = new Figure();
-  const dy = horse.saddle.y - rider.pivots.hipY;
-  const dz = horse.saddle.z - rider.pivots.hipZ;
+  const dy = saddle.y - rider.pivots.hipY;
+  const dz = saddle.z - rider.pivots.hipZ;
   // The code's figure measures from the feet: its hips (0.86 up) in the saddle.
-  man(f, KITS[kind as keyof typeof KITS], horse.saddle.y - 0.86, true, true, false);
+  man(f, KITS[kind as keyof typeof KITS], saddle.y - 0.86, true, true, false);
+  if (saddle.halfWidth !== undefined) {
+    // The cloth: over the back under the saddle and down both flanks; a heavy horseman's longer and deeper.
+    const heavy = kind === 'heavyCavalry';
+    const [length, drop] = heavy ? [1.1, 0.62] : [0.7, 0.4];
+    const x = saddle.halfWidth + 0.02;
+    f.team();
+    f.b.box(0, saddle.y - 0.02, saddle.z, x * 2, 0.04, length, WHITE);
+    for (const side of [-1, 1]) f.b.box(side * x, saddle.y - drop, saddle.z, 0.03, drop, length, WHITE);
+    f.cloth();
+    f.b.box(0, saddle.y, saddle.z + 0.05, 0.42, 0.1, 0.55, WOOD_DARK);
+  }
   const extras = finish(f.b.build('extra'));
   const { shoulderY, shoulderZ } = rider.pivots;
   const ARM: readonly (readonly [number, number, number, number])[] = [
@@ -413,7 +432,7 @@ export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse:
     [shoulderY + dy, shoulderZ + dz, -0.5, 0],
     [shoulderY + dy, shoulderZ + dz, 0.5, -0.45],
   ];
-  const nh = horse.triangles.length;
+  const nh = horse ? horse.triangles.length : 0;
   const nr = rider.triangles.length;
   const m = extras.getAttribute('position').count;
   const total = nh + nr + m;
@@ -422,7 +441,7 @@ export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse:
   const color = new Float32Array(total * 3);
   const part = new Float32Array(total * 4);
   const surface = new Float32Array(total * 3);
-  for (let k = 0; k < nh; k++) {
+  for (let k = 0; horse && k < nh; k++) {
     const v = horse.triangles[k] as number;
     for (let a = 0; a < 3; a++) {
       position[k * 3 + a] = horse.positions[v * 3 + a] as number;
