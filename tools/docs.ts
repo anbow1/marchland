@@ -21,6 +21,7 @@ const GOOD_EN: Record<ResourceId, string> = {
   flour: 'flour',
   grapes: 'grapes',
   wine: 'wine',
+  ale: 'ale',
   bread: 'bread',
   fish: 'fish',
   meat: 'meat',
@@ -44,6 +45,7 @@ const GOOD_PL: Record<ResourceId, string> = {
   flour: 'mąka',
   grapes: 'winogrona',
   wine: 'wino',
+  ale: 'piwo',
   bread: 'chleb',
   fish: 'ryby',
   meat: 'mięso',
@@ -61,6 +63,10 @@ const GOOD_PL: Record<ResourceId, string> = {
 const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   house: { name: 'House', role: 'Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.' },
   foundry: { name: 'Gun Foundry', role: 'Casts the guns: field cannon at level 1, mortars at level 2, from iron, timber and stone. Like the barracks it has no worker; a gun\'s crew comes from the town. A stone casting house with a tall furnace stack, a casting shed and a new gun on show in the yard.' },
+  tavern: { name: 'Tavern', role: 'The innkeeper draws the ale the brewery makes and sells it: gold besides the tax. A long low inn with benches and a sign out front, barrels by the door.' },
+  chapel: { name: 'Chapel', role: 'While one stands, every regiment of the side fights with more heart (+6 morale). A small stone chapel with a bell-cote and a churchyard wall.' },
+  well: { name: 'Well', role: 'Houses within 40 m take in newcomers a quarter sooner; it will put out fires once buildings can burn. A stone well-head under a small roof, a bucket on its rope.' },
+  brewery: { name: 'Brewery', role: 'Brews ale from grain (2 grain → 2 ale) for the tavern. A brewhouse with a copper under a smoke hood, casks stacked in the yard.' },
   market: { name: 'Market', role: 'Trades with passing merchants: a lot of ten of any good sold for 60% of its worth in gold, or bought for 160%. A way out of a stalled chain, not a way to get rich. Stalls under striped awnings round a market cross, crates and barrels.' },
   storehouse: { name: 'Storehouse', role: "A second store of the town's goods. Carriers take finished goods to whichever store is nearest and fetch from it, so a village far from the keep stops costing long walks. A long timber barn on a stone footing, crates, barrels and sacks under a lean-to." },
   sawmill: { name: 'Sawmill', role: 'Saws logs into planks (2 timber → 2 planks). From the second level on, every building takes half its timber as planks, so a growing town needs one. A water-wheel saw under an open roof, logs waiting on skids and planks stacked to dry.' },
@@ -120,9 +126,9 @@ function makes(kind: BuildingKind): string {
 
 /** The branches of the economy, in the order a town grows into them; every kind in exactly one (checked below). */
 const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKind[]; planned: readonly string[] }[] = [
-  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house', 'storehouse', 'market'], planned: ['Well', 'Tavern', 'Chapel'] },
+  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house', 'storehouse', 'market', 'tavern', 'chapel', 'well'], planned: [] },
   { name: 'Building materials', pl: 'Budulec', kinds: ['woodcutter', 'sawmill', 'forester', 'quarry'], planned: [] },
-  { name: 'Grain and bread', pl: 'Zboże i chleb', kinds: ['farm', 'windmill', 'bakery'], planned: ['Brewery'] },
+  { name: 'Grain and bread', pl: 'Zboże i chleb', kinds: ['farm', 'windmill', 'bakery', 'brewery'], planned: [] },
   { name: 'Meat, sausage and hides', pl: 'Mięso, kiełbasy i skóry', kinds: ['hunter', 'pigFarm', 'butcher'], planned: [] },
   { name: 'Fish', pl: 'Ryby', kinds: ['fisher'], planned: [] },
   { name: 'Wine', pl: 'Wino', kinds: ['vineyard', 'winery'], planned: [] },
@@ -230,10 +236,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | Priority | Building | Why it is needed |
 |---|---|---|
 | A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
-| C | **Tavern** | Uses sausages (later ale): fed and merry houses grow faster and pay more tax. |
-| C | **Brewery** | Grain → ale for the tavern and for the army's morale on campaign. |
-| C | **Chapel** | Raises the morale soldiers start with; a place people gather after a lost battle. |
-| C | **Well** | Puts out fires once buildings can burn; cosmetic until then. |
 | C | **Keep, levels 2 and 3** | Stone tower, then castle: more household, stronger garrison, wider land to build on. |
 `;
 }

@@ -11,31 +11,35 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | 2 | **House** | 40 gold, 10 timber | any level ground | 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
 | 3 | **Storehouse** | 60 gold, 40 timber, 10 stone | any level ground | — | 1 | 400 |
 | 4 | **Market** | 80 gold, 40 timber, 20 stone | any level ground | — | 1 | 400 |
-| 5 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 8 timber a trip (8 s of felling + the walk) | 1 | 250 |
-| 6 | **Sawmill** | 60 gold, 30 timber, 10 stone | any level ground | 2 timber → 2 planks every 6 s | 1 | 300 |
-| 7 | **Forester's Hut** | 35 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
-| 8 | **Hunter's Lodge** | 40 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
-| 9 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
-| 10 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
-| 11 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
-| 12 | **Windmill** | 70 gold, 30 timber | any level ground | 2 grain → 2 flour every 6 s | 1 | 300 |
-| 13 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
-| 14 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
-| 15 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
-| 16 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 6 grapes a vintage from each strip of vines, every 110 s once planted (30 s to plant a strip); 2 / 4 / 6 strips (levels 1–3) | 1 | 250 |
-| 17 | **Winery** | 90 gold, 20 timber, 20 stone | any level ground | 3 grapes → 2 wine every 12 s | 1 | 300 |
-| 18 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
-| 19 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
-| 20 | **Smelter** | 90 gold, 20 timber, 30 stone | any level ground | 1 timber, 2 iron ore → 2 iron every 9 s | 1 | 350 |
-| 21 | **Smithy** | 80 gold, 20 timber, 20 stone | any level ground | 1 timber, 1 iron → 1 weapons every 7 s | 1 | 350 |
-| 22 | **Armourer** | 120 gold, 20 timber, 40 stone | any level ground | 2 iron → 1 mail every 12 s | 1 | 350 |
-| 23 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
-| 24 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
-| 25 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
-| 26 | **Gun Foundry** | 150 gold, 40 timber, 60 stone | any level ground | — | 1 | 500 |
-| 27 | **Watchtower** | 40 gold, 15 timber, 60 stone | any level ground | — | 1 | 900 |
-| 28 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
-| 29 | **Wall** | 15 stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; 260 blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | 260 per 2 m |
+| 5 | **Tavern** | 80 gold, 30 timber, 10 stone | any level ground | 1 ale → 2 gold every 5 s | 1 | 300 |
+| 6 | **Chapel** | 120 gold, 20 timber, 50 stone | any level ground | — | 1 | 450 |
+| 7 | **Well** | 25 gold, 15 stone | any level ground | — | 1 | 200 |
+| 8 | **Woodcutter's Lodge** | 30 gold | within 26 m of forest | 8 timber a trip (8 s of felling + the walk) | 1 | 250 |
+| 9 | **Sawmill** | 60 gold, 30 timber, 10 stone | any level ground | 2 timber → 2 planks every 6 s | 1 | 300 |
+| 10 | **Forester's Hut** | 35 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
+| 11 | **Hunter's Lodge** | 40 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
+| 12 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
+| 13 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
+| 14 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
+| 15 | **Windmill** | 70 gold, 30 timber | any level ground | 2 grain → 2 flour every 6 s | 1 | 300 |
+| 16 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
+| 17 | **Brewery** | 60 gold, 25 timber, 10 stone | any level ground | 2 grain → 2 ale every 8 s | 1 | 300 |
+| 18 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
+| 19 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
+| 20 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 6 grapes a vintage from each strip of vines, every 110 s once planted (30 s to plant a strip); 2 / 4 / 6 strips (levels 1–3) | 1 | 250 |
+| 21 | **Winery** | 90 gold, 20 timber, 20 stone | any level ground | 3 grapes → 2 wine every 12 s | 1 | 300 |
+| 22 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
+| 23 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
+| 24 | **Smelter** | 90 gold, 20 timber, 30 stone | any level ground | 1 timber, 2 iron ore → 2 iron every 9 s | 1 | 350 |
+| 25 | **Smithy** | 80 gold, 20 timber, 20 stone | any level ground | 1 timber, 1 iron → 1 weapons every 7 s | 1 | 350 |
+| 26 | **Armourer** | 120 gold, 20 timber, 40 stone | any level ground | 2 iron → 1 mail every 12 s | 1 | 350 |
+| 27 | **Fletcher** | 60 gold, 20 timber | any level ground | 1 timber → 1 bows every 8 s | 1 | 250 |
+| 28 | **Stable** | 100 gold, 40 timber, 10 stone | any level ground | 3 grain → 1 horses every 25 s | 1 | 300 |
+| 29 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
+| 30 | **Gun Foundry** | 150 gold, 40 timber, 60 stone | any level ground | — | 1 | 500 |
+| 31 | **Watchtower** | 40 gold, 15 timber, 60 stone | any level ground | — | 1 | 900 |
+| 32 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
+| 33 | **Wall** | 15 stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; 260 blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | 260 per 2 m |
 
 What each is for:
 
@@ -43,6 +47,9 @@ What each is for:
 - **House** — Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.
 - **Storehouse** — A second store of the town's goods. Carriers take finished goods to whichever store is nearest and fetch from it, so a village far from the keep stops costing long walks. A long timber barn on a stone footing, crates, barrels and sacks under a lean-to.
 - **Market** — Trades with passing merchants: a lot of ten of any good sold for 60% of its worth in gold, or bought for 160%. A way out of a stalled chain, not a way to get rich. Stalls under striped awnings round a market cross, crates and barrels.
+- **Tavern** — The innkeeper draws the ale the brewery makes and sells it: gold besides the tax. A long low inn with benches and a sign out front, barrels by the door.
+- **Chapel** — While one stands, every regiment of the side fights with more heart (+6 morale). A small stone chapel with a bell-cote and a churchyard wall.
+- **Well** — Houses within 40 m take in newcomers a quarter sooner; it will put out fires once buildings can burn. A stone well-head under a small roof, a bucket on its rope.
 - **Woodcutter's Lodge** — The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines. An open shed of stacked logs, fresh trunks by the track, a chopping block and a sawhorse in the yard.
 - **Sawmill** — Saws logs into planks (2 timber → 2 planks). From the second level on, every building takes half its timber as planks, so a growing town needs one. A water-wheel saw under an open roof, logs waiting on skids and planks stacked to dry.
 - **Forester's Hut** — The forester walks the young wood round his hut: he sets a sapling by any bare stump and works round the saplings so each grows sooner — the wood the woodcutters fell comes back faster. A small lodge with a nursery bed of saplings in rows.
@@ -52,6 +59,7 @@ What each is for:
 - **Fisher's Hut** — The fisher works the shore of the lake: food that needs no mill or oven.
 - **Windmill** — A post mill: grinds grain into flour. The tallest thing in a village; its sails turn while it works.
 - **Bakery** — Bakes flour into bread, the staple ration of town and army. A domed oven by the house and a pretzel over the door.
+- **Brewery** — Brews ale from grain (2 grain → 2 ale) for the tavern. A brewhouse with a copper under a smoke hood, casks stacked in the yard.
 - **Pig Farm** — Fattens pigs on grain: meat for the butcher, hides for the tanner.
 - **Butcher** — Turns meat into sausages; a sausage feeds two.
 - **Vineyard** — A vintner's press-house with rows of vines behind it. The vines are planted once and bear every season without new sowing; they take up land like a farm's fields.
@@ -95,9 +103,9 @@ roads serve all of them.
 - **House** — 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident. *Model from Blender.*
 - **Storehouse** — —. *Shapes from code; model to come.*
 - **Market** — —. *Shapes from code; model to come.*
-- Well — *planned (§4)*
-- Tavern — *planned (§4)*
-- Chapel — *planned (§4)*
+- **Tavern** — 1 ale → 2 gold. *Shapes from code; model to come.*
+- **Chapel** — —. *Shapes from code; model to come.*
+- **Well** — —. *Shapes from code; model to come.*
 
 ### Building materials (Budulec)
 
@@ -111,7 +119,7 @@ roads serve all of them.
 - **Farm** — 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Model from Blender.*
 - **Windmill** — 2 grain → 2 flour. *Model from Blender.*
 - **Bakery** — 1 flour → 1 bread. *Model from Blender.*
-- Brewery — *planned (§4)*
+- **Brewery** — 2 grain → 2 ale. *Shapes from code; model to come.*
 
 ### Meat, sausage and hides (Mięso, kiełbasy i skóry)
 
@@ -175,8 +183,4 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | Priority | Building | Why it is needed |
 |---|---|---|
 | A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
-| C | **Tavern** | Uses sausages (later ale): fed and merry houses grow faster and pay more tax. |
-| C | **Brewery** | Grain → ale for the tavern and for the army's morale on campaign. |
-| C | **Chapel** | Raises the morale soldiers start with; a place people gather after a lost battle. |
-| C | **Well** | Puts out fires once buildings can burn; cosmetic until then. |
 | C | **Keep, levels 2 and 3** | Stone tower, then castle: more household, stronger garrison, wider land to build on. |

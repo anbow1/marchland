@@ -343,6 +343,14 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
   // Casts guns (level 1 cannon, level 2 mortar) from iron, timber and stone; nobody works here between orders.
   foundry: { cost: { gold: 150, wood: 40, stone: 60 }, buildSeconds: 20, hp: 500, recipe: null },
+  // Grain to ale for the tavern.
+  brewery: { cost: { gold: 60, wood: 25, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { grain: 2 }, outputs: { ale: 2 }, cycleSeconds: 8 } },
+  // The innkeeper sells the ale: gold besides the tax.
+  tavern: { cost: { gold: 80, wood: 30, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { ale: 1 }, outputs: { gold: 2 }, cycleSeconds: 5 } },
+  // Raises the heart of every regiment of the side while one stands (CHAPEL).
+  chapel: { cost: { gold: 120, wood: 20, stone: 50 }, buildSeconds: 18, hp: 450, recipe: null },
+  // Houses round a well take in newcomers sooner (WELL); it will put out fires once buildings can burn.
+  well: { cost: { gold: 25, stone: 15 }, buildSeconds: 6, hp: 200, recipe: null },
   // Sells what the town has too much of and buys what it lacks, at a poor rate (MARKET).
   market: { cost: { gold: 80, wood: 40, stone: 20 }, buildSeconds: 14, hp: 400, recipe: null },
   // A second store of the town's goods: carriers bring to and fetch from whichever store is nearest.
@@ -741,8 +749,14 @@ export const MARKET = {
   lot: 10,
   sellShare: 0.6,
   buyShare: 1.6,
-  value: { gold: 1, wood: 1, planks: 2, stone: 1.5, grain: 1, flour: 1.5, grapes: 1, wine: 4, bread: 2, fish: 2, meat: 2, sausage: 3, hide: 2, leatherArmor: 6, ironOre: 2, iron: 5, weapon: 8, mailArmor: 12, bow: 5, horse: 15 },
+  value: { gold: 1, wood: 1, planks: 2, stone: 1.5, grain: 1, flour: 1.5, grapes: 1, wine: 4, ale: 2.5, bread: 2, fish: 2, meat: 2, sausage: 3, hide: 2, leatherArmor: 6, ironOre: 2, iron: 5, weapon: 8, mailArmor: 12, bow: 5, horse: 15 },
 } as const;
+
+/** A chapel: every regiment of the side, at home or away, fights with this much more heart while one stands. */
+export const CHAPEL = { morale: 6 } as const;
+
+/** A well: houses within `reachM` of one take in newcomers this much sooner (their wait times `growFactor`). */
+export const WELL = { reachM: 40, growFactor: 0.75 } as const;
 
 export const ARMS_GOODS = ['weapon', 'bow', 'leatherArmor', 'mailArmor', 'horse'] as const;
 

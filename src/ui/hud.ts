@@ -70,7 +70,7 @@ export type Project = (x: number, y: number, z: number, out: { x: number; y: num
 
 const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
   ['gold', 'wood', 'planks', 'stone'],
-  ['grain', 'flour', 'bread', 'fish', 'meat', 'sausage', 'grapes', 'wine'],
+  ['grain', 'flour', 'bread', 'fish', 'meat', 'sausage', 'grapes', 'wine', 'ale'],
   ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
 

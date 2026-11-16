@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, BUILDINGS, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { ARMY, BUILDINGS, CHAPEL, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTrade, cmdTurnSite, lotPrice, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
@@ -250,6 +250,46 @@ describe('a living town', () => {
     // A round trip always loses gold.
     expect(town.stock.gold).toBeLessThan(gold);
     expect(cmdTrade(world, PLAYER, 'gold', true)).not.toBe('ok');
+  });
+
+  it('a chapel lifts every regiment\'s heart; a brewery and a tavern turn grain into gold', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    const r = spawnRegiment(world, PLAYER, 'pikemen', townX(PLAYER) + 30, townZ(PLAYER) - 30, 0);
+    const before = topMorale(world, r);
+    const chapel = build(world, 'chapel');
+    runUntil(world, 900, () => finished(world, chapel));
+    expect(topMorale(world, r)).toBe(before + CHAPEL.morale);
+
+    town.stock.grain = 200;
+    const gold0 = town.stock.gold;
+    const brewery = build(world, 'brewery');
+    const tavern = build(world, 'tavern');
+    runUntil(world, 1200, () => finished(world, brewery) && finished(world, tavern) && (town.plots[tavern]?.out.gold ?? 0) + town.stock.gold > gold0 + 40);
+    const made = town.made.ale ?? 0;
+    expect(made).toBeGreaterThan(0);
+  });
+
+  it('houses by a well take in newcomers sooner', () => {
+    const growAt = (withWell: boolean): number => {
+      const world = rich(quietWorld());
+      const house = build(world, 'house');
+      const h = world.towns[PLAYER].plots[house];
+      if (!h) throw new Error('no house');
+      if (withWell) {
+        let placed = false;
+        for (let r = 12; r <= 30 && !placed; r += 3) for (let k = 0; k < 16 && !placed; k++) {
+          const a = (k / 16) * Math.PI * 2;
+          placed = cmdBuild(world, PLAYER, 'well', h.x + Math.sin(a) * r, h.z + Math.cos(a) * r, 0) === 'ok';
+        }
+        expect(placed).toBe(true);
+      }
+      runUntil(world, 900, () => finished(world, house));
+      const t0 = world.timeS;
+      runUntil(world, 900, () => (world.towns[PLAYER].plots[house]?.residents ?? 0) >= 2);
+      return world.timeS - t0;
+    };
+    expect(growAt(true)).toBeLessThan(growAt(false));
   });
 
   it('a bakery bakes only the flour carriers bring it', () => {

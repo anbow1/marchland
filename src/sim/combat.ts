@@ -1,4 +1,4 @@
-import { ARMY, CAPTAIN, COMBAT, ELEVATION, FATIGUE, FOOD, FORMATION, MORALE, PAY, TOWN, VETERANS, WALLS } from '../config.ts';
+import { ARMY, CAPTAIN, COMBAT, ELEVATION, FATIGUE, FOOD, FORMATION, MORALE, PAY, TOWN, VETERANS, WALLS, CHAPEL } from '../config.ts';
 import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movement.ts';
 import { assignSlots, captainOf, facingToward, forwardX, forwardZ, hasCaptain, isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
 import { damageWall, stampBuilding } from './nav.ts';
@@ -48,7 +48,8 @@ export function topMorale(world: World, r: Regiment): number {
     VETERANS.moralePerRank * veteranRank(r) -
     (hasCaptain(r) ? 0 : CAPTAIN.moraleWithout) -
     (town.starving ? FOOD.starvingMoralePenalty : 0) -
-    (town.unpaid ? PAY.unpaidMoralePenalty : 0)
+    (town.unpaid ? PAY.unpaidMoralePenalty : 0) +
+    (town.plots.some((b) => b !== null && b.kind === 'chapel' && b.constructionLeftS <= 0) ? CHAPEL.morale : 0)
   );
 }
 

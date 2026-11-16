@@ -28,6 +28,48 @@ const BUILDERS: Record<BuildingKind, Build> = {
     P.gunOnShow(b, -1.6, 3.4, 0.3);
     if (level >= 2) P.logPile(b, 4.2, 3.6, 2.2, 3);
   },
+  brewery: (b, level) => {
+    // A brewhouse with a copper under a smoke hood, casks stacked in the yard.
+    P.house(b, { cx: -1.0, cz: -2.0, sx: 6.0, sz: 4.4, wallH: 2.8, wall: P.PLASTER, roof: P.TILE, pitch: 1.4, frame: true });
+    P.chimney(b, 1.4, -2.6, 6.8, 0.9);
+    P.yard(b, 0.6, 2.8, 8.4, 3.6, P.YARD, false, true);
+    for (let i = 0; i < (level >= 2 ? 6 : 4); i++) P.barrel(b, -2.4 + (i % 3) * 0.9, 2.2 + Math.floor(i / 3) * 0.9);
+    b.cylinder(2.6, 0, 2.6, 0.7, 0.8, 1.0, 10, P.IRON);
+  },
+  tavern: (b, level) => {
+    // A long low inn, benches and a trestle out front, a sign on a bracket, barrels by the door.
+    P.house(b, { cx: -0.6, cz: -1.8, sx: 7.4, sz: 4.6, wallH: 2.7, upperH: level >= 2 ? 2.4 : 0, wall: P.PLASTER, roof: P.THATCH, hip: 1.0, pitch: 1.45, frame: true });
+    P.chimney(b, 2.4, -2.6, 6.4, 0.8);
+    b.box(-0.4, 0.75, 2.4, 2.4, 0.08, 0.8, P.BOARDS);
+    for (const z of [1.7, 3.1]) b.box(-0.4, 0.45, z, 2.4, 0.08, 0.35, P.BOARDS);
+    for (const x of [-1.4, 0.6]) b.box(x, 0, 2.4, 0.1, 0.75, 0.1, P.TIMBER);
+    b.box(3.4, 2.2, 0.8, 1.2, 0.08, 0.08, P.TIMBER);
+    b.box(3.9, 1.5, 0.8, 0.06, 0.7, 0.6, P.CANVAS_RED);
+    P.barrel(b, 2.6, 1.4);
+    P.barrel(b, 3.3, 1.6, 0.9);
+  },
+  chapel: (b, level) => {
+    // A small stone chapel, east end towards the back, a bell-cote over the door, a low churchyard wall.
+    P.house(b, { cx: 0, cz: -1.4, sx: 4.2, sz: 7.0, wallH: 3.6, wall: P.STONE, roof: P.SHINGLE, pitch: 1.6, frame: false });
+    b.box(0, 3.6, 2.0, 1.0, 1.6, 0.6, P.STONE);
+    b.roof(0, 5.2, 2.0, 1.1, 0.8, 0.6, 0, 0.1, 0.06, P.SHINGLE, P.TIMBER);
+    b.box(0, 4.2, 2.25, 0.4, 0.5, 0.12, P.IRON);
+    for (const [x0, z0, x1, z1] of [[-4.6, 4.6, 4.6, 4.6], [-4.6, -4.6, -4.6, 4.6], [4.6, -4.6, 4.6, 4.6]] as const) {
+      const len = Math.hypot(x1 - x0, z1 - z0);
+      b.box((x0 + x1) / 2, 0, (z0 + z1) / 2, x0 === x1 ? 0.4 : len, 0.8, x0 === x1 ? len : 0.4, P.STONE_DARK);
+    }
+    if (level >= 2) for (const x of [-2.8, 2.8]) b.box(x, 0, 3.0, 0.3, 0.9, 0.12, P.STONE_LIGHT);
+  },
+  well: (b, level) => {
+    // A round stone well-head under a little roof on two posts, a bucket on its rope; a trough beside.
+    b.cylinder(0, 0, 0.6, 1.0, 1.0, 0.9, 12, P.STONE);
+    for (const x of [-1.0, 1.0]) b.box(x, 0.9, 0.6, 0.14, 1.6, 0.14, P.TIMBER);
+    b.box(0, 2.4, 0.6, 2.2, 0.1, 0.12, P.TIMBER);
+    b.roof(0, 2.5, 0.6, 2.4, 1.4, 0.5, 0, 0.1, 0.06, P.SHINGLE, P.TIMBER);
+    b.cylinder(0.3, 1.2, 0.6, 0.18, 0.15, 0.3, 8, P.BOARDS_DARK);
+    P.trough(b, 2.2, 1.4);
+    if (level >= 2) P.trough(b, -2.2, 1.4);
+  },
   market: (b, level) => {
     // Stalls under striped awnings round a market cross; a small weighhouse at the back.
     P.house(b, { cx: -0.4, cz: -3.0, sx: 5.0, sz: 3.0, wallH: 2.6, wall: P.PLASTER, roof: P.TILE, pitch: 1.35, frame: true });

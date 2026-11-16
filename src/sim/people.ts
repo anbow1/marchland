@@ -1,4 +1,4 @@
-import { PEOPLE, ROADS, TOWN, UNITS, WINE } from '../config.ts';
+import { PEOPLE, ROADS, TOWN, UNITS, WINE, WELL } from '../config.ts';
 import { type Building, housingCapacity, isBuilt, type Town } from './economy.ts';
 import { cancelErrand, stepCarrier } from './errands.ts';
 import { findPath, speedFactorAt } from './nav.ts';
@@ -346,7 +346,8 @@ function grow(world: World, town: Town, living: number, dtSeconds: number): void
     const b = town.plots[plot];
     if (!b || b.kind !== 'house' || !isBuilt(b) || b.starving || b.residents >= (PEOPLE.houseResidents[b.level - 1] as number)) continue;
     b.growS += dtSeconds;
-    if (b.growS < PEOPLE.growSeconds * (b.hasWine ? WINE.growFactor : 1)) continue;
+    const byWell = town.plots.some((w) => w !== null && w.kind === 'well' && w.constructionLeftS <= 0 && (w.x - b.x) ** 2 + (w.z - b.z) ** 2 <= WELL.reachM * WELL.reachM);
+    if (b.growS < PEOPLE.growSeconds * (b.hasWine ? WINE.growFactor : 1) * (byWell ? WELL.growFactor : 1)) continue;
     b.growS = 0;
     spawnPerson(world, side, doorX(town, plot), doorZ(town, plot), plot);
     return;

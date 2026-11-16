@@ -230,10 +230,14 @@ interface Strings {
 const pl: Strings = {
   title: 'Marchland',
   subtitle: 'Średniowieczna strategia: miasto, szyki, bitwa',
-  resources: { gold: 'Złoto', wood: 'Drewno', planks: 'Deski', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
+  resources: { gold: 'Złoto', wood: 'Drewno', planks: 'Deski', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', ale: 'Piwo', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
   buildings: {
     house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
     foundry: { name: 'Ludwisarnia', about: 'Odlewa działa z żelaza: armaty (poziom 1) i moździerze (poziom 2). Obsługa przychodzi z miasta jak rekruci.' },
+    tavern: { name: 'Karczma', about: 'Karczmarz sprzedaje piwo z browaru: złoto poza podatkiem (1 piwo → 2 złota).' },
+    chapel: { name: 'Kaplica', about: 'Dopóki stoi, każdy oddział strony walczy z większym sercem (+6 morale).' },
+    well: { name: 'Studnia', about: 'Do chat w promieniu 40 m nowi ludzie wprowadzają się o czwartą część szybciej.' },
+    brewery: { name: 'Browar', about: 'Warzy piwo ze zboża (2 zboża → 2 piwa) dla karczmy.' },
     market: { name: 'Targ', about: 'Sprzedaje nadwyżki za złoto i kupuje braki — drogo: sprzedaż za 60% wartości, zakup za 160%. Wyjście z zatoru, nie sposób na bogactwo.' },
     storehouse: { name: 'Skład', about: 'Drugi magazyn miasta: tragarze odnoszą towary do najbliższego magazynu i stamtąd je biorą. Postaw przy oddalonej wsi.' },
     sawmill: { name: 'Tartak', about: 'Tnie kłody na deski. Deski idą na wyższe poziomy budynków (połowa drewna).' },
@@ -553,10 +557,14 @@ const pl: Strings = {
 const en: Strings = {
   title: 'Marchland',
   subtitle: 'Medieval strategy: a town, formations, a battle',
-  resources: { gold: 'Gold', wood: 'Wood', planks: 'Planks', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
+  resources: { gold: 'Gold', wood: 'Wood', planks: 'Planks', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', ale: 'Ale', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
   buildings: {
     house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
     foundry: { name: 'Gun Foundry', about: 'Casts guns from iron: cannon (level 1) and mortars (level 2). Their crews come from the town like recruits.' },
+    tavern: { name: 'Tavern', about: 'The innkeeper sells the ale from the brewery: gold besides the tax (1 ale → 2 gold).' },
+    chapel: { name: 'Chapel', about: 'While it stands every regiment of the side fights with more heart (+6 morale).' },
+    well: { name: 'Well', about: 'Houses within 40 m take in newcomers a quarter sooner.' },
+    brewery: { name: 'Brewery', about: 'Brews ale from grain (2 grain → 2 ale) for the tavern.' },
     market: { name: 'Market', about: 'Sells surplus for gold and buys what is short — at a poor rate: sold for 60% of worth, bought for 160%. A way out of a stalled chain, not a way to get rich.' },
     storehouse: { name: 'Storehouse', about: "A second store of the town's goods: carriers bring to and fetch from the nearest store. Build it by a far village." },
     sawmill: { name: 'Sawmill', about: 'Saws logs into planks. Higher levels of buildings take planks for half their timber.' },

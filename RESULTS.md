@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Browar, karczma, kaplica, studnia
+
+- Nowy towar **piwo**. **Browar** (60 złota, 25 drewna, 10 kamienia): 2 zboża → 2 piwa na 8 s.
+  **Karczma** (80/30/10): karczmarz sprzedaje piwo, 1 piwo → 2 złota na 5 s — dochód poza podatkiem.
+- **Kaplica** (120 złota, 20 drewna, 50 kamienia; bez pracownika): dopóki stoi, każdy oddział strony
+  ma +6 do górnej granicy morale (`CHAPEL.morale`; jedna wystarczy, więcej nie sumuje się).
+- **Studnia** (25 złota, 15 kamienia; bez pracownika): chaty w promieniu 40 m przyjmują nowych
+  mieszkańców po ¾ zwykłego czasu (`WELL`); kiedyś będzie gasić pożary.
+- Wygląd z kodu: browar z kotłem i beczkami, karczma z ławami, szyldem i beczkami, kamienna kaplica
+  z dzwonnicą i murkiem cmentarza, studnia z daszkiem, wiadrem i korytem. Ikona piwa; ładunek to beczka
+  w jaśniejszym odcieniu. Komputer tych budynków nie stawia.
+- Testy: kaplica podnosi morale o 6; browar + karczma robią piwo i złoto; chata przy studni zapełnia
+  się szybciej. Testy 94/94; WebGPU 0 błędów.
+
 ## 2026-11-16 · Targ
 
 - **Targ** (80 złota, 40 drewna, 20 kamienia; bez pracownika): w jego panelu przy każdym towarze
