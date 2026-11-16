@@ -61,6 +61,7 @@ const GOOD_PL: Record<ResourceId, string> = {
 const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   house: { name: 'House', role: 'Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.' },
   foundry: { name: 'Gun Foundry', role: 'Casts the guns: field cannon at level 1, mortars at level 2, from iron, timber and stone. Like the barracks it has no worker; a gun\'s crew comes from the town. A stone casting house with a tall furnace stack, a casting shed and a new gun on show in the yard.' },
+  market: { name: 'Market', role: 'Trades with passing merchants: a lot of ten of any good sold for 60% of its worth in gold, or bought for 160%. A way out of a stalled chain, not a way to get rich. Stalls under striped awnings round a market cross, crates and barrels.' },
   storehouse: { name: 'Storehouse', role: "A second store of the town's goods. Carriers take finished goods to whichever store is nearest and fetch from it, so a village far from the keep stops costing long walks. A long timber barn on a stone footing, crates, barrels and sacks under a lean-to." },
   sawmill: { name: 'Sawmill', role: 'Saws logs into planks (2 timber → 2 planks). From the second level on, every building takes half its timber as planks, so a growing town needs one. A water-wheel saw under an open roof, logs waiting on skids and planks stacked to dry.' },
   forester: { name: "Forester's Hut", role: 'The forester walks the young wood round his hut: he sets a sapling by any bare stump and works round the saplings so each grows sooner — the wood the woodcutters fell comes back faster. A small lodge with a nursery bed of saplings in rows.' },
@@ -119,7 +120,7 @@ function makes(kind: BuildingKind): string {
 
 /** The branches of the economy, in the order a town grows into them; every kind in exactly one (checked below). */
 const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKind[]; planned: readonly string[] }[] = [
-  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house', 'storehouse'], planned: ['Market', 'Well', 'Tavern', 'Chapel'] },
+  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house', 'storehouse', 'market'], planned: ['Well', 'Tavern', 'Chapel'] },
   { name: 'Building materials', pl: 'Budulec', kinds: ['woodcutter', 'sawmill', 'forester', 'quarry'], planned: [] },
   { name: 'Grain and bread', pl: 'Zboże i chleb', kinds: ['farm', 'windmill', 'bakery'], planned: ['Brewery'] },
   { name: 'Meat, sausage and hides', pl: 'Mięso, kiełbasy i skóry', kinds: ['hunter', 'pigFarm', 'butcher'], planned: [] },
@@ -229,7 +230,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | Priority | Building | Why it is needed |
 |---|---|---|
 | A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
-| B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |
 | C | **Tavern** | Uses sausages (later ale): fed and merry houses grow faster and pay more tax. |
 | C | **Brewery** | Grain → ale for the tavern and for the army's morale on campaign. |
 | C | **Chapel** | Raises the morale soldiers start with; a place people gather after a lost battle. |

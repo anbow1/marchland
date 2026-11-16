@@ -343,6 +343,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
   // Casts guns (level 1 cannon, level 2 mortar) from iron, timber and stone; nobody works here between orders.
   foundry: { cost: { gold: 150, wood: 40, stone: 60 }, buildSeconds: 20, hp: 500, recipe: null },
+  // Sells what the town has too much of and buys what it lacks, at a poor rate (MARKET).
+  market: { cost: { gold: 80, wood: 40, stone: 20 }, buildSeconds: 14, hp: 400, recipe: null },
   // A second store of the town's goods: carriers bring to and fetch from whichever store is nearest.
   storehouse: { cost: { gold: 60, wood: 40, stone: 10 }, buildSeconds: 14, hp: 400, recipe: null },
 };
@@ -731,6 +733,17 @@ export const TRANSPORT = [
 ] as const;
 
 /** The player's arms workshops start with nothing ordered: they make arms only when arms are ordered (the computer works unlimited). */
+/**
+ * The market: what each good is worth in gold. It is sold for `sellShare` of that and bought for `buyShare`,
+ * `lot` at a time — a way out of a stalled chain, never a way to get rich.
+ */
+export const MARKET = {
+  lot: 10,
+  sellShare: 0.6,
+  buyShare: 1.6,
+  value: { gold: 1, wood: 1, planks: 2, stone: 1.5, grain: 1, flour: 1.5, grapes: 1, wine: 4, bread: 2, fish: 2, meat: 2, sausage: 3, hide: 2, leatherArmor: 6, ironOre: 2, iron: 5, weapon: 8, mailArmor: 12, bow: 5, horse: 15 },
+} as const;
+
 export const ARMS_GOODS = ['weapon', 'bow', 'leatherArmor', 'mailArmor', 'horse'] as const;
 
 /** How much a carrier's choice of errand leans towards (or away from) a good the player marked high (or low). */

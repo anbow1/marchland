@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Targ
+
+- **Targ** (80 złota, 40 drewna, 20 kamienia; bez pracownika): w jego panelu przy każdym towarze
+  ikona, zapas i dwa przyciski — sprzedaj 10 (za 60% wartości) albo kup 10 (za 160%). Wartości
+  w `MARKET.value` (drewno 1, deski 2, kamień 1,5, chleb 2, żelazo 5, broń 8, kolczuga 12, koń 15…);
+  złota się nie kupuje. Wyjście z zatoru (brak rudy, nadmiar zboża), nigdy zysk: kupno i sprzedaż
+  w kółko zawsze traci złoto. Komputer z targu nie korzysta.
+- Test: przed postawieniem „Potrzebny targ”, sprzedaż i kupno zmieniają zapasy i złoto o ceny lotu,
+  obrót w kółko traci. Testy 92/92; WebGPU 0 błędów; zrzut panelu.
+
 ## 2026-11-16 · Tartak i deski
 
 - Nowy towar **deski** i **tartak** (60 złota, 30 drewna, 10 kamienia; 2 drewna → 2 deski na 6 s).

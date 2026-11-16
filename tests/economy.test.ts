@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, BUILDINGS, LEVEL_COST, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTurnSite, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { ARMY, BUILDINGS, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTrade, cmdTurnSite, lotPrice, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
 import { buildingCost, carryCapacity, workState } from '../src/sim/economy.ts';
@@ -232,6 +232,24 @@ describe('a living town', () => {
     const saw = build(world, 'sawmill');
     runUntil(world, 900, () => finished(world, saw) && town.stock.planks + (town.plots[saw]?.out.planks ?? 0) >= 4);
     expect(town.stock.planks + (town.plots[saw]?.out.planks ?? 0)).toBeGreaterThanOrEqual(4);
+  });
+
+  it('a market sells ten of a good for little gold and buys ten for much more, and only once it stands', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    expect(cmdTrade(world, PLAYER, 'wood', false)).toBe('needsMarket');
+    const market = build(world, 'market');
+    runUntil(world, 900, () => finished(world, market));
+    const gold = town.stock.gold;
+    const wood = town.stock.wood;
+    expect(cmdTrade(world, PLAYER, 'wood', false)).toBe('ok');
+    expect(town.stock.wood).toBe(wood - MARKET.lot);
+    expect(town.stock.gold).toBe(gold + lotPrice('wood', false));
+    expect(cmdTrade(world, PLAYER, 'wood', true)).toBe('ok');
+    expect(town.stock.wood).toBe(wood);
+    // A round trip always loses gold.
+    expect(town.stock.gold).toBeLessThan(gold);
+    expect(cmdTrade(world, PLAYER, 'gold', true)).not.toBe('ok');
   });
 
   it('a bakery bakes only the flour carriers bring it', () => {

@@ -1,6 +1,6 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTurnSite, cmdGarrison, cmdHalt, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
@@ -128,6 +128,7 @@ export class Game implements ControlTarget {
         else this.report(last);
       },
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
+      trade: (good, buying) => this.report(cmdTrade(this.world, PLAYER, good, buying)),
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),
       rearm: (id, kind) => this.report(cmdRearm(this.world, id, kind)),

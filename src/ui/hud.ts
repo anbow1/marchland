@@ -1,6 +1,6 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS } from '../config.ts';
+import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
 import { resourceIcon } from './icons.ts';
-import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost } from '../sim/commands.ts';
+import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost, lotPrice } from '../sim/commands.ts';
 import { trainingLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
@@ -30,6 +30,7 @@ export interface HudActions {
   turnSite(plot: number): void;
   upgradeKeep(): void;
   demolish(plot: number): void;
+  trade(good: ResourceId, buying: boolean): void;
   togglePaused(plot: number): void;
   recruit(kind: UnitKind): void;
   rearm(regimentId: number, kind: UnitKind): void;
@@ -301,6 +302,11 @@ export class Hud {
       case 'demolish':
         this.actions.demolish(this.plotInPanel);
         break;
+      case 'trade': {
+        const [good, way] = arg.split(':');
+        this.actions.trade(good as ResourceId, way === 'buy');
+        break;
+      }
       case 'pause':
         this.actions.togglePaused(this.plotInPanel);
         break;
@@ -398,6 +404,22 @@ export class Hud {
   setDebugText(text: string): void {
     this.debug.style.display = this.debugVisible ? 'block' : 'none';
     if (this.debugVisible) this.debug.textContent = text;
+  }
+
+  /** The market's lots: every good with what selling ten fetches and what buying ten costs. */
+  private marketHtml(town: Town): string {
+    let html = `<div class="status">${T.marketNote}</div><div class="row wrap">`;
+    for (const id of RESOURCE_IDS) {
+      if (id === 'gold') continue;
+      const sell = lotPrice(id, false);
+      const buy = lotPrice(id, true);
+      const canSell = town.stock[id] >= MARKET.lot;
+      const canBuy = town.stock.gold >= buy;
+      html += `<span class="orderUnit" title="${T.resources[id]}"><span class="cost"><i class="ico">${resourceIcon(id)}</i>${town.stock[id]}</span>`;
+      html += `<button class="choice${canSell ? '' : ' off'}" data-act="trade" data-arg="${id}:sell" data-tip="${T.sell} ${MARKET.lot} ${T.resources[id].toLowerCase()}: +${sell} ${T.resources.gold.toLowerCase()}">−${MARKET.lot} +${sell}</button>`;
+      html += `<button class="choice${canBuy ? '' : ' off'}" data-act="trade" data-arg="${id}:buy" data-tip="${T.buy} ${MARKET.lot} ${T.resources[id].toLowerCase()}: −${buy} ${T.resources.gold.toLowerCase()}">+${MARKET.lot} −${buy}</button></span>`;
+    }
+    return `${html}</div>`;
   }
 
   /** `at`: only what this building raises (a barracks' or a foundry's panel); everything on the army tab. */
@@ -639,6 +661,7 @@ export class Hud {
     html += `<button class="option" data-act="demolish" data-tip="${T.demolish}"><span class="name">${T.demolish}</span></button></div>`;
     if (b.kind === 'barracks') html += this.recruitHtml(world, town, 'barracks');
     if (b.kind === 'foundry') html += this.recruitHtml(world, town, 'foundry');
+    if (b.kind === 'market' && state !== 'building') html += this.marketHtml(town);
     return html;
   }
 

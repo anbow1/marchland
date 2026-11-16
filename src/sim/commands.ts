@@ -1,4 +1,4 @@
-import { ARMY, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
+import { ARMY, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
@@ -175,6 +175,36 @@ export function cmdOrderRegiments(world: World, side: Side, kind: UnitKind, coun
   for (const id of RESOURCE_IDS) {
     const n = goods[id] ?? 0;
     if (n > 0) orders[id] = (orders[id] ?? 0) + n * count;
+  }
+  return 'ok';
+}
+
+/** True when the side has a finished market. */
+export function hasMarket(world: World, side: Side): boolean {
+  return world.towns[side].plots.some((b) => b !== null && b.kind === 'market' && isBuilt(b));
+}
+
+/** Gold a market lot of `good` fetches when sold, or costs when bought. */
+export function lotPrice(good: ResourceId, buying: boolean): number {
+  const value = MARKET.value[good] * MARKET.lot;
+  return buying ? Math.ceil(value * MARKET.buyShare) : Math.floor(value * MARKET.sellShare);
+}
+
+/** Sells (or buys, `buying`) one lot of a good at the market. */
+export function cmdTrade(world: World, side: Side, good: ResourceId, buying: boolean): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  if (good === 'gold') return 'notThisUnit';
+  if (!hasMarket(world, side)) return 'needsMarket';
+  const stock = world.towns[side].stock;
+  const price = lotPrice(good, buying);
+  if (buying) {
+    if (stock.gold < price) return 'cannotAfford';
+    stock.gold -= price;
+    stock[good] += MARKET.lot;
+  } else {
+    if (stock[good] < MARKET.lot) return 'cannotAfford';
+    stock[good] -= MARKET.lot;
+    stock.gold += price;
   }
   return 'ok';
 }

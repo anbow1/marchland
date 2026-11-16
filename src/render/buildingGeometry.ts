@@ -28,6 +28,20 @@ const BUILDERS: Record<BuildingKind, Build> = {
     P.gunOnShow(b, -1.6, 3.4, 0.3);
     if (level >= 2) P.logPile(b, 4.2, 3.6, 2.2, 3);
   },
+  market: (b, level) => {
+    // Stalls under striped awnings round a market cross; a small weighhouse at the back.
+    P.house(b, { cx: -0.4, cz: -3.0, sx: 5.0, sz: 3.0, wallH: 2.6, wall: P.PLASTER, roof: P.TILE, pitch: 1.35, frame: true });
+    P.yard(b, 0, 1.2, 10.0, 6.4, P.YARD, false, false);
+    b.box(0, 0, 1.0, 0.9, 0.5, 0.9, P.STONE);
+    b.box(0, 0.5, 1.0, 0.3, 2.6, 0.3, P.STONE);
+    b.box(0, 2.6, 1.0, 1.0, 0.25, 0.25, P.STONE);
+    P.stall(b, -3.0, 0.4, P.CANVAS_RED, P.BREAD);
+    P.stall(b, 3.0, 0.4, P.CANVAS_BLUE, P.CABBAGE);
+    P.stall(b, -3.0, 3.2, P.CANVAS_PALE, P.MEAT);
+    if (level >= 2) P.stall(b, 3.0, 3.2, P.CANVAS_RED, P.HIDE);
+    P.crate(b, 1.4, 3.6);
+    P.barrel(b, -1.4, 3.8);
+  },
   storehouse: (b, level) => {
     // A long barn of boards on a stone footing, big doors to the yard, a lean-to of goods beside it.
     b.box(-0.6, 0, -1.4, 7.6, 0.6, 5.0, P.STONE);

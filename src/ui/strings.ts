@@ -62,6 +62,9 @@ interface Strings {
   upgrade: string;
   demolish: string;
   turnSite: string;
+  sell: string;
+  buy: string;
+  marketNote: string;
   pause: string;
   unpause: string;
   recruit: string;
@@ -231,6 +234,7 @@ const pl: Strings = {
   buildings: {
     house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
     foundry: { name: 'Ludwisarnia', about: 'Odlewa działa z żelaza: armaty (poziom 1) i moździerze (poziom 2). Obsługa przychodzi z miasta jak rekruci.' },
+    market: { name: 'Targ', about: 'Sprzedaje nadwyżki za złoto i kupuje braki — drogo: sprzedaż za 60% wartości, zakup za 160%. Wyjście z zatoru, nie sposób na bogactwo.' },
     storehouse: { name: 'Skład', about: 'Drugi magazyn miasta: tragarze odnoszą towary do najbliższego magazynu i stamtąd je biorą. Postaw przy oddalonej wsi.' },
     sawmill: { name: 'Tartak', about: 'Tnie kłody na deski. Deski idą na wyższe poziomy budynków (połowa drewna).' },
     forester: { name: 'Leśnik', about: 'Doogląda młodego lasu wokół chaty: sadzi przy pniakach i pielęgnuje sadzonki, które rosną szybciej. Musi stać przy lesie.' },
@@ -285,6 +289,7 @@ const pl: Strings = {
     underConstruction: 'Budowa jeszcze trwa.',
     needsBarracks: 'Potrzebne koszary wyższego poziomu.',
     needsFoundry: 'Potrzebna ludwisarnia (moździerz: poziom 2).',
+    needsMarket: 'Potrzebny targ.',
     armyFull: 'Armia w komplecie: 100 ludzi.',
     queueFull: 'Kolejka werbunku jest pełna.',
     noSuchRegiment: 'Nie ma takiego oddziału.',
@@ -357,6 +362,9 @@ const pl: Strings = {
   upgrade: 'Ulepsz',
   demolish: 'Rozbierz',
   turnSite: 'Obróć (R)',
+  sell: 'Sprzedaj',
+  buy: 'Kup',
+  marketNote: 'Przy każdym towarze: sprzedaj 10 (−10, +złoto) albo kup 10 (+10, −złoto).',
   pause: 'Wstrzymaj',
   unpause: 'Wznów',
   recruit: 'Werbunek',
@@ -549,6 +557,7 @@ const en: Strings = {
   buildings: {
     house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
     foundry: { name: 'Gun Foundry', about: 'Casts guns from iron: cannon (level 1) and mortars (level 2). Their crews come from the town like recruits.' },
+    market: { name: 'Market', about: 'Sells surplus for gold and buys what is short — at a poor rate: sold for 60% of worth, bought for 160%. A way out of a stalled chain, not a way to get rich.' },
     storehouse: { name: 'Storehouse', about: "A second store of the town's goods: carriers bring to and fetch from the nearest store. Build it by a far village." },
     sawmill: { name: 'Sawmill', about: 'Saws logs into planks. Higher levels of buildings take planks for half their timber.' },
     forester: { name: 'Forester', about: 'Tends the young wood round his lodge: plants by bare stumps and looks after saplings so they grow faster. Must stand by the forest.' },
@@ -603,6 +612,7 @@ const en: Strings = {
     underConstruction: 'Still under construction.',
     needsBarracks: 'Needs a barracks of a higher level.',
     needsFoundry: 'Needs a gun foundry (mortar: level 2).',
+    needsMarket: 'Needs a market.',
     armyFull: 'The army is full: 100 men.',
     queueFull: 'The recruiting queue is full.',
     noSuchRegiment: 'No such regiment.',
@@ -675,6 +685,9 @@ const en: Strings = {
   upgrade: 'Upgrade',
   demolish: 'Demolish',
   turnSite: 'Turn (R)',
+  sell: 'Sell',
+  buy: 'Buy',
+  marketNote: 'For each good: sell ten (−10, +gold) or buy ten (+10, −gold).',
   pause: 'Pause',
   unpause: 'Resume',
   recruit: 'Recruit',
