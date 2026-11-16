@@ -43,6 +43,19 @@ def colour_image(mat):
     return None
 
 
+def colour_value(mat):
+    """A material's own base colour (linear), for parts with no texture (hair, eyes)."""
+    if mat and mat.node_tree:
+        for n in mat.node_tree.nodes:
+            if n.type == "BSDF_PRINCIPLED":
+                return list(n.inputs["Base Color"].default_value)[:3]
+    return [0.35, 0.28, 0.22]
+
+
+# Parts thinned less than the rest: the skin (the face is on it) and the eyes.
+SPARE = ("body", "skin", "head", "face", "eye")
+
+
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1:]
     src, out = args[0], args[1]
@@ -64,10 +77,16 @@ def main() -> None:
     scene_fps = bpy.context.scene.render.fps / bpy.context.scene.render.fps_base
     meshes = [o for o in bpy.context.scene.objects if o.type == "MESH" and o.name != "Icosphere"]
     total = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes)
-    ratio = min(1.0, TARGET_TRIS / max(1, total))
+    def spared(o):
+        return any(k in (m.name.lower() if m else "") for m in o.data.materials for k in SPARE)
+
+    spare_tris = sum(sum(len(p.vertices) - 2 for p in o.data.polygons) for o in meshes if spared(o))
+    # The skin and eyes keep up to half their triangles; the rest share what is left of the budget.
+    spare_ratio = min(1.0, 0.5, TARGET_TRIS * 0.4 / max(1, spare_tris))
+    ratio = min(1.0, (TARGET_TRIS - spare_tris * spare_ratio) / max(1, total - spare_tris))
     for o in meshes:
         d = o.modifiers.new("thin", "DECIMATE")
-        d.ratio = ratio
+        d.ratio = spare_ratio if spared(o) else ratio
         d.use_collapse_triangulate = True
         o.modifiers.move(o.modifiers.find(d.name), 0)
 
@@ -114,6 +133,7 @@ def main() -> None:
         me = ev.to_mesh()
         me.calc_loop_triangles()
         img = colour_image(me.materials[0] if me.materials else None)
+        plain = colour_value(me.materials[0] if me.materials else None)
         uv = me.uv_layers.active.data if me.uv_layers.active else None
         acc = {}
         if img and uv:
@@ -131,7 +151,7 @@ def main() -> None:
             world_pos.append(o.matrix_world @ v.co)
             nor.append((nworld @ v.normal).normalized())
             a = acc.get(v.index)
-            col.append([srgb_to_linear(a[i] / a[3]) for i in range(3)] if a else [0.35, 0.28, 0.22])
+            col.append([srgb_to_linear(a[i] / a[3]) for i in range(3)] if a else plain)
             folded = {}
             for g in v.groups:
                 n = names.get(g.group)

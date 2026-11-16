@@ -16,7 +16,11 @@ jeszcze nie mierzyłem.
   obchód warsztatu — od drzwi do jednego stanowiska, praca, drugie stanowisko, powrót (ok. 3 m).
   Stoi przy hucie, kuźni i płatnerzu, póki warsztat pracuje; każdy w innym miejscu klipu.
 - `WorkersView`: jeden mesh instancjonowany ze skinningiem na GPU (ten sam materiał co wojsko).
-- Testy 86/86; zrzut z bliska (kowal przy dymarce).
+- Poprawka po uwadze „kowal nie ma twarzy”: włosy i oczy (bez tekstur) dostawały domyślny
+  szarobrązowy kolor zamiast koloru materiału, a siatka skóry z twarzą była przerzedzona jak ubranie.
+  Teraz części bez tekstury mają kolor swojego materiału, a skóra i oczy zachowują do połowy
+  trójkątów (40% budżetu); twarz ma oczy, wąsy, czarne włosy.
+- Testy 86/86; zrzut z bliska (kowal przy dymarce) i podgląd głowy.
 
 ## 2026-11-16 · Towary z modeli: niesione ładunki i stosy w obejściach
 
