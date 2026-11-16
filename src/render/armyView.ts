@@ -274,6 +274,7 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
   ['halberdiers', 'soldiers/halberdier.json'],
   ['pikemen', 'soldiers/pikeman.json'],
   ['archers', 'soldiers/archer.json'],
+  ['crossbowmen', 'soldiers/crossbowman.json'],
 ];
 
 export class ArmyView {

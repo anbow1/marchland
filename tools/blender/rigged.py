@@ -250,6 +250,14 @@ MALLET = [
     ("Shield_joint", (-0.79, -0.12, 1.41), (0.035, 0.62, 0.035), (0.42, 0.30, 0.16), 0.0, 0.8, 0.0),  # handle
     ("Shield_joint", (-0.79, -0.44, 1.41), (0.13, 0.14, 0.26), (0.36, 0.25, 0.14), 0.0, 0.75, 0.0),  # head
 ]
+CROSSBOW = [
+    # A crossbow held like a gun: the stock forward from the grip along the sword's line, the steel bow
+    # across its front end, the string drawn back to the nut.
+    ("Sword_joint", (-0.79, -0.22, 1.41), (0.06, 0.78, 0.08), (0.36, 0.24, 0.12), 0.0, 0.8, 0.0),  # stock
+    ("Sword_joint", (-0.79, -0.58, 1.43), (0.74, 0.05, 0.05), (0.55, 0.56, 0.58), 1.0, 0.35, 0.0),  # bow
+    ("Sword_joint", (-0.79, -0.4, 1.45), (0.62, 0.01, 0.01), (0.85, 0.82, 0.72), 0.0, 0.9, 0.0),  # string
+    ("Sword_joint", (-0.79, 0.12, 1.41), (0.07, 0.12, 0.1), (1, 1, 1), 0.0, 0.7, 1.0),  # butt wrap in the side's colour
+]
 PIKE = [
     # A 4 m ash shaft, 1 m of it behind the hand, and a narrow steel head.
     ("Sword_joint", (-0.79, -0.84, 1.41), (0.032, 4.0, 0.032), (0.24, 0.16, 0.09), 0.0, 0.8, 0.0),  # shaft
@@ -463,7 +471,7 @@ def main() -> None:
     elif arms == "bow":
         add_bow(head_of(char_rest["LeftHand"]), *mesh)
     else:
-        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE, "tools": AXE + MALLET}[arms])
+        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE, "tools": AXE + MALLET, "crossbow": CROSSBOW}[arms])
     # Feet on the ground.
     floor = min(p[1] for p in pos)
     for p in pos:

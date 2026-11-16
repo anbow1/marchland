@@ -26,3 +26,6 @@
   **naminoff** (https://sketchfab.com/3d-models/armored-horse-98c3f1c40a6b422dba76bf5403e0a3d8), licensed
   **CC BY 4.0**: thinned to about 3 600 triangles, colours taken from its textures, legs walking in
   diagonal pairs about the shoulder and the hip.
+- `crossbowman.json` — the crossbowmen, made by `rigged.py --arms crossbow` from **".Fuse Warrior"** by
+  **Leonardo Carvalho** (Sketchfab), licensed **CC BY 4.0**; the crossbow is the game's own. Motion from
+  Mixamo ("Rifle Down To Aim", "Rifle Walk" and the sword-and-shield set).

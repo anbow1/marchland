@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Kusznicy na własnej postaci
+
+- Kusznicy: „.Fuse Warrior” (jak pikinierzy, górna zbroja w barwach), kusza z gry w prawej dłoni
+  (kolba, stalowe łuczysko, cięciwa; `rigged.py --arms crossbow`). „Rifle Down To Aim” (Mixamo)
+  jako przyłożenie do celowania przed strzałem i ponowne po strzale; marsz „Rifle Walk”, postawa
+  z łucznikowej paczki, trafienie i śmierci z zestawu miecza i tarczy.
+- Pasek zasobów ma teraz trzy rzędy (doszły deski i piwo).
+- Testy 94/94; WebGPU 0 błędów (bitwa); zrzut z bliska.
+
 ## 2026-11-16 · Browar, karczma, kaplica, studnia
 
 - Nowy towar **piwo**. **Browar** (60 złota, 25 drewna, 10 kamienia): 2 zboża → 2 piwa na 8 s.
