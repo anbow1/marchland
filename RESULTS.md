@@ -8,7 +8,9 @@ jeszcze nie mierzyłem.
 ## 2026-11-16 · Siekiera: drwale i budowniczowie rąbią; halabardnicy z trzema ciosami
 
 - „Great Sword Attack” (Mixamo; najbliższe młotkowi i siekierze) jako rąbanie oburącz siekierą:
-  drwal przy pracy i budowniczowie na budowie (zamiast kopania). `rigged.py --arms axe --tool-clips
+  drwal przy pracy. Budowniczowie: „Heavy Weapon Swing” (5 s, z zamachem) z drewnianym młotem
+  (`--arms tools`: siekiera na pierwszej kości broni, młot na drugiej, obie w prawej dłoni;
+  `--tool-clips chop --tool2-clips swing` — każde narzędzie widać tylko w jego klipie). `rigged.py --arms axe --tool-clips
   chop`: siekiera (trzonek 0,9 m, ostrze) widoczna tylko w tym klipie — w pozostałych macierz jej
   kości ma zerową skalę, więc trójkąty znikają (bez osobnej siatki i bez kosztu).
 - Halabardnicy zadają trzy różne ciosy, na zmianę według miejsca w szyku: pchnięcie („Upward Thrust”),

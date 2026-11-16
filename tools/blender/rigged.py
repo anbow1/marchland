@@ -2,14 +2,15 @@
 
     bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
         [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
-        [--tool-clips name,name]
+        [--tool-clips name,name] [--tool2-clips name,name]
         <clip.fbx>...
 
 --arms: what the man carries (the game's own simple shapes; "none" for nothing): sword and shield (the default), a halberd or
 a pike in the sword hand (a shaft along the sword's line, more of it ahead of the hand than behind), or a
 longbow upright in the left fist. --height: the character is scaled to stand this tall (metres), whatever
 units it came in. --tool-clips: the weapon (a tool: --arms axe) shows only in these clips; in the others its
-joint is collapsed to nothing, so a townsman carries his axe only while he chops. --source: the credit
+joint is collapsed to nothing, so a townsman carries his axe only while he chops. --arms tools: the axe
+(first joint, --tool-clips) and a mallet (second joint, held in the same hand, --tool2-clips). --source: the credit
 written into the file. --team: the garment (by its texture's name)
 dyed in the side's colour, over its own shading.
 
@@ -244,6 +245,11 @@ AXE = [
     ("Sword_joint", (-0.79, -0.22, 1.41), (0.035, 0.9, 0.035), (0.42, 0.30, 0.16), 0.0, 0.8, 0.0),  # haft
     ("Sword_joint", (-0.79, -0.62, 1.50), (0.02, 0.12, 0.2), (0.55, 0.56, 0.58), 1.0, 0.35, 0.0),  # blade
 ]
+# A builder's mallet on the second weapon joint, which for --arms tools rides in the right hand too.
+MALLET = [
+    ("Shield_joint", (-0.79, -0.12, 1.41), (0.035, 0.62, 0.035), (0.42, 0.30, 0.16), 0.0, 0.8, 0.0),  # handle
+    ("Shield_joint", (-0.79, -0.44, 1.41), (0.13, 0.14, 0.26), (0.36, 0.25, 0.14), 0.0, 0.75, 0.0),  # head
+]
 PIKE = [
     # A 4 m ash shaft, 1 m of it behind the hand, and a narrow steel head.
     ("Sword_joint", (-0.79, -0.84, 1.41), (0.032, 4.0, 0.032), (0.24, 0.16, 0.09), 0.0, 0.8, 0.0),  # shaft
@@ -415,7 +421,10 @@ def main() -> None:
     TARGET_TRIS = int(option("--tris", str(TARGET_TRIS)))
     step = int(option("--step", "1"))  # every step-th frame (a clip's fps divided by it)
     tool_clips = set(filter(None, option("--tool-clips", "").split(",")))
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips") if n in args}
+    tool2_clips = set(filter(None, option("--tool2-clips", "").split(",")))
+    if arms == "tools":
+        WEAPONS["Shield_joint"] = "RightHand"
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
@@ -431,15 +440,19 @@ def main() -> None:
             frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, ratio)
         anim_hand = anim_hand or hands
         frames = frames[::step]
+        # A tool put away: its joint's matrices with no extent (its triangles have no area).
+        hidden = []
         if tool_clips and name not in tool_clips:
-            # The tool put away: its joints' matrices with no extent (its triangles have no area).
-            for mats in frames:
-                for k in range(len(ORDER), len(BONES)):
-                    m = mats[k].copy()
-                    for r in range(3):
-                        for c in range(3):
-                            m[r][c] = 0.0
-                    mats[k] = m
+            hidden.append(len(ORDER))
+        if (tool_clips or tool2_clips) and name not in tool2_clips:
+            hidden.append(len(ORDER) + 1)
+        for mats in frames:
+            for k in hidden:
+                m = mats[k].copy()
+                for r in range(3):
+                    for c in range(3):
+                        m[r][c] = 0.0
+                mats[k] = m
         fps = fps / step
         clip_meta.append({"name": name, "start": len(all_frames), "frames": len(frames), "fps": fps, "travelM": round(travel, 3)})
         all_frames += frames
@@ -450,7 +463,7 @@ def main() -> None:
     elif arms == "bow":
         add_bow(head_of(char_rest["LeftHand"]), *mesh)
     else:
-        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE}[arms])
+        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE, "tools": AXE + MALLET}[arms])
     # Feet on the ground.
     floor = min(p[1] for p in pos)
     for p in pos:
