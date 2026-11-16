@@ -1,6 +1,10 @@
 """Turns "Rigged Knight in Armor" (Xali, BlendSwap, CC0, see CREDITS.md) into the game's plate-armoured man.
 
     bl/bin/python -I tools/blender/soldiers.py <Rigged_Knight_in_Armor.blend> public/soldiers/knight.json
+    bl/bin/python -I tools/blender/soldiers.py <Rigged_Knight_in_Armor.blend> public/soldiers/rider.json --seated
+
+With --seated the knight sits a horse: thighs forward, shins down from the knee, legs apart round the
+horse's barrel; his legs no longer walk (limb 0), his arms still swing.
 
 The knight is made of rigid plates, each hung on one bone, over a skinned mail suit: exactly what the
 game's soldier shader moves (armyView.ts), which turns whole limbs about the hip and the shoulder. So
@@ -62,8 +66,15 @@ def srgb_to_linear(c: float) -> float:
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
+def is_lower_leg(bone: str) -> bool:
+    name = bone.lower()
+    return any(k in name for k in ("shin", "foot", "toe", "heel"))
+
+
 def main() -> None:
-    src, out = sys.argv[-2], sys.argv[-1]
+    seated = "--seated" in sys.argv
+    args = [a for a in sys.argv[sys.argv.index("--") + 1:] if a != "--seated"]
+    src, out = args[0], args[1]
     bpy.ops.wm.open_mainfile(filepath=src, load_ui=False, use_scripts=False)
     rig = bpy.data.objects["Knight_rig"]
     rig.data.pose_position = "REST"
@@ -89,6 +100,7 @@ def main() -> None:
     deform = {b.name for b in rig.data.bones}
 
     positions, normals, colours, surface, limbs, triangles = [], [], [], [], [], []
+    lowers = []
     for o in meshes:
         ev = o.evaluated_get(depsgraph)
         me = ev.to_mesh()
@@ -96,24 +108,26 @@ def main() -> None:
         world = o.matrix_world
         normal_world = world.to_3x3().inverted().transposed()
         # The limb of each vertex: the bone the plate hangs on, else the heaviest bone in its weights.
-        fixed = limb_of(o.parent_bone) if o.parent_type == "BONE" and o.parent_bone else None
+        fixed = o.parent_bone if o.parent_type == "BONE" and o.parent_bone else None
         group_names = {g.index: g.name for g in o.vertex_groups}
         vertex_limb = []
+        vertex_lower = []
         for v in me.vertices:
-            if fixed is not None:
-                vertex_limb.append(fixed)
-                continue
-            best, best_w = 0, 0.0
-            for g in v.groups:
-                name = group_names.get(g.group, "")
-                if name in deform and g.weight > best_w:
-                    best, best_w = limb_of(name), g.weight
-            vertex_limb.append(best)
+            bone = fixed
+            if bone is None:
+                best_w = 0.0
+                for g in v.groups:
+                    name = group_names.get(g.group, "")
+                    if name in deform and g.weight > best_w:
+                        bone, best_w = name, g.weight
+            vertex_limb.append(limb_of(bone) if bone else 0)
+            vertex_lower.append(bool(bone) and is_lower_leg(bone))
         base = len(positions)
         for v in me.vertices:
             positions.append(world @ v.co)
             normals.append((normal_world @ v.normal).normalized())
             limbs.append(vertex_limb[v.index])
+            lowers.append(vertex_lower[v.index])
         # A vertex's colour from the first face that uses it (plates are one material each, or nearly).
         colour_of = {}
         for tri in me.loop_triangles:
@@ -164,6 +178,38 @@ def main() -> None:
             nx, ny = nor[i][0], nor[i][1]
             nor[i][0] = nx * c - ny * s
             nor[i][1] = nx * s + ny * c
+    if seated:
+        # In the saddle: the thigh comes half forward about the hip, the shin hangs straight again from the knee, and the
+        # legs part round the horse. Rotations about the hip's or knee's line along X (forward is -Z).
+        def turn_x(i, py, pz, a):
+            c, s_ = math.cos(a), math.sin(a)
+            y, z = pos[i][1] - py, pos[i][2] - pz
+            pos[i][1], pos[i][2] = py + y * c - z * s_, pz + y * s_ + z * c
+            ny, nz = nor[i][1], nor[i][2]
+            nor[i][1], nor[i][2] = ny * c - nz * s_, ny * s_ + nz * c
+
+        def turn_z(i, px, py, a):
+            c, s_ = math.cos(a), math.sin(a)
+            x, y = pos[i][0] - px, pos[i][1] - py
+            pos[i][0], pos[i][1] = px + x * c - y * s_, py + x * s_ + y * c
+            nx, ny = nor[i][0], nor[i][1]
+            nor[i][0], nor[i][1] = nx * c - ny * s_, nx * s_ + ny * c
+
+        lift = math.radians(50)
+        for limb, hip, knee_name, out_sign in ((1, hip_l, "L.shin", -1), (2, hip_r, "R.shin", 1)):
+            knee = joint(knee_name)
+            # The knee after the thigh has come forward.
+            c, s_ = math.cos(lift), math.sin(lift)
+            ky, kz = knee[1] - hip[1], knee[2] - hip[2]
+            knee_now = (hip[1] + ky * c - kz * s_, hip[2] + ky * s_ + kz * c)
+            for i, l in enumerate(limbs):
+                if l != limb:
+                    continue
+                turn_x(i, hip[1], hip[2], lift)
+                if lowers[i]:
+                    turn_x(i, knee_now[0], knee_now[1], -lift)
+                turn_z(i, hip[0], hip[1], math.radians(16) * out_sign)
+                limbs[i] = 0
     pivots = {
         "hipY": (hip_l[1] + hip_r[1]) / 2,
         "hipZ": (hip_l[2] + hip_r[2]) / 2,

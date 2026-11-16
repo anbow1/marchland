@@ -10,7 +10,7 @@ import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
-import { type BodyModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
+import { type BodyModel, cavalryGeometryOnModels, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
 import { freshUrl } from '../version.ts';
 
 // Every soldier on the field, one instanced mesh per kind of unit. The CPU
@@ -248,6 +248,28 @@ export class ArmyView {
       } catch (error) {
         console.warn(`[soldiers] no skinned ${kind} (${String(error)}): it keeps its figure`);
       }
+    }
+    // Horsemen: the seated knight on the armoured horse.
+    try {
+      const [rider, horse] = await Promise.all(['soldiers/rider.json', 'soldiers/horse.json'].map(async (file) => {
+        const response = await fetch(freshUrl(base, file));
+        if (!response.ok) throw new Error(`${file} ${response.status}`);
+        return response.json();
+      }));
+      for (const kind of ['lightCavalry', 'heavyCavalry'] as const) {
+        const k = this.kinds.get(kind);
+        if (!k) continue;
+        const geometry = cavalryGeometryOnModels(kind, rider as BodyModel, horse as HorseModel);
+        geometry.setAttribute('aPlace', k.place);
+        geometry.setAttribute('aAnim', k.anim);
+        geometry.setAttribute('aSide', k.side);
+        const old = k.mesh.geometry;
+        k.mesh.geometry = geometry;
+        old.dispose();
+        changed++;
+      }
+    } catch (error) {
+      console.warn(`[soldiers] no modelled horsemen (${String(error)}): they keep their figures`);
     }
     for (const kind of PLATE_KINDS) {
       if (this.kinds.get(kind)?.skinned) continue;

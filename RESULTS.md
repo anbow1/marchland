@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · M4, krok 3: jazda na modelowanym koniu, jeździec w siodle
+
+- `tools/blender/horse.py`: „Armored Horse” (naminoff, CC BY 4.0) bez szkieletu → 3 591 trójkątów,
+  1,6 m w kłębie, kolory z tekstur; każdy wierzchołek poniżej brzucha (poza osią, czyli bez ogona) idzie
+  do nogi swojej ćwiartki i chodzi parami po przekątnej wokół barku i biodra, jak dotąd; miejsce siodła
+  zapisane dla jeźdźca.
+- `soldiers.py --seated`: ten sam rycerz z płyt usadzony — uda 50° do przodu wokół biodra, łydki znów
+  pionowo od kolana, nogi rozchylone o 16° na boki konia; nogi nie chodzą, ręce walczą jak u piechoty.
+- W grze lekka i ciężka jazda na tych modelach; kopia/włócznia, tarcza i napierśnik w barwach strony
+  z kodu. Jedno rysowanie na rodzaj, jak dotąd.
+- Testy: 86 / 86.
+
 ## 2026-11-16 · M4, krok 2: animacje szkieletowe na GPU — miecznicy tną i trzymają gardę
 
 - `tools/blender/rigged.py`: postać ze szkieletem Mixamo („knight for game project (old)”, Thost,

@@ -366,3 +366,88 @@ export function soldierGeometryOnBody(kind: UnitKind, body: BodyModel): BufferGe
   g.computeBoundingSphere();
   return g;
 }
+
+/** A modelled horse (tools/blender/horse.py): legs per vertex as (pivot height, pivot depth, walk swing), and the saddle. */
+export interface HorseModel {
+  saddle: { y: number; z: number };
+  positions: number[];
+  normals: number[];
+  colours: number[];
+  surface: number[];
+  parts: number[];
+  triangles: number[];
+}
+
+/**
+ * A horseman on modelled bodies: the horse with its legs walking in diagonal pairs, the knight seated in
+ * the saddle (his arms swing and strike as a foot soldier's), and the kind's lance or spear, shield and
+ * surcoat from the code.
+ */
+export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse: HorseModel): BufferGeometry {
+  const f = new Figure();
+  const dy = horse.saddle.y - rider.pivots.hipY;
+  const dz = horse.saddle.z - rider.pivots.hipZ;
+  // The code's figure measures from the feet: its hips (0.86 up) in the saddle.
+  man(f, KITS[kind as keyof typeof KITS], horse.saddle.y - 0.86, true, true, false);
+  const extras = finish(f.b.build('extra'));
+  const { shoulderY, shoulderZ } = rider.pivots;
+  const ARM: readonly (readonly [number, number, number, number])[] = [
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [0, 0, 0, 0],
+    [shoulderY + dy, shoulderZ + dz, -0.5, 0],
+    [shoulderY + dy, shoulderZ + dz, 0.5, -0.45],
+  ];
+  const nh = horse.triangles.length;
+  const nr = rider.triangles.length;
+  const m = extras.getAttribute('position').count;
+  const total = nh + nr + m;
+  const position = new Float32Array(total * 3);
+  const normal = new Float32Array(total * 3);
+  const color = new Float32Array(total * 3);
+  const part = new Float32Array(total * 4);
+  const surface = new Float32Array(total * 3);
+  for (let k = 0; k < nh; k++) {
+    const v = horse.triangles[k] as number;
+    for (let a = 0; a < 3; a++) {
+      position[k * 3 + a] = horse.positions[v * 3 + a] as number;
+      normal[k * 3 + a] = horse.normals[v * 3 + a] as number;
+      color[k * 3 + a] = horse.colours[v * 3 + a] as number;
+      surface[k * 3 + a] = horse.surface[v * 3 + a] as number;
+    }
+    part[k * 4] = horse.parts[v * 3] as number;
+    part[k * 4 + 1] = horse.parts[v * 3 + 1] as number;
+    part[k * 4 + 2] = horse.parts[v * 3 + 2] as number;
+  }
+  for (let k = 0; k < nr; k++) {
+    const v = rider.triangles[k] as number;
+    const o = nh + k;
+    position[o * 3] = rider.positions[v * 3] as number;
+    position[o * 3 + 1] = (rider.positions[v * 3 + 1] as number) + dy;
+    position[o * 3 + 2] = (rider.positions[v * 3 + 2] as number) + dz;
+    for (let a = 0; a < 3; a++) {
+      normal[o * 3 + a] = rider.normals[v * 3 + a] as number;
+      color[o * 3 + a] = rider.colours[v * 3 + a] as number;
+    }
+    const p = ARM[rider.limbs[v] as number] ?? (ARM[0] as readonly [number, number, number, number]);
+    for (let a = 0; a < 4; a++) part[o * 4 + a] = p[a] as number;
+    surface[o * 3] = rider.surface[v * 2] as number;
+    surface[o * 3 + 1] = rider.surface[v * 2 + 1] as number;
+  }
+  const copy = (name: string, out: Float32Array, size: number): void => {
+    out.set((extras.getAttribute(name).array as Float32Array).subarray(0, m * size), (nh + nr) * size);
+  };
+  copy('position', position, 3);
+  copy('normal', normal, 3);
+  copy('color', color, 3);
+  copy('aPart', part, 4);
+  copy('aSurface', surface, 3);
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(position, 3));
+  g.setAttribute('normal', new BufferAttribute(normal, 3));
+  g.setAttribute('color', new BufferAttribute(color, 3));
+  g.setAttribute('aPart', new BufferAttribute(part, 4));
+  g.setAttribute('aSurface', new BufferAttribute(surface, 3));
+  g.computeBoundingSphere();
+  return g;
+}

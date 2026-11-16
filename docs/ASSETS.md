@@ -15,7 +15,7 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 | Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | w grze: miecznicy (`public/soldiers/swordsman.json`) |
 | Wojownik w skórze/przeszywanicy, szkielet Mixamo | „.Fuse Warrior”, Leonardo Carvalho, Sketchfab | CC BY 4.0 | do wpięcia (lekka piechota) |
 | Rycerz w płycie z płaszczem (bez szkieletu) | „Medieval knight”, 3dUVpro, Sketchfab | CC BY 4.0 | dowódca / jeździec |
-| Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | do wpięcia (jazda) |
+| Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | w grze: jazda (`public/soldiers/horse.json`), jeździec to rycerz Xali w siodle (`rider.json`) |
 | Jeździec i koń w zbroi (posąg, 120 tys. tr.) | „1964.88 Armor for Man and Horse”, Cleveland Museum of Art | CC0 | ciężka jazda po uproszczeniu |
 | Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | do sprawdzenia |
 | Animacje: cięcie mieczem z tarczą, blok (×2) | Mixamo | Mixamo | w grze (miecznicy) |
