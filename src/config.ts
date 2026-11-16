@@ -511,6 +511,8 @@ export const ARMY = {
   targetSearchIntervalS: 0.2,
   /** Round walls: files while marching in column, how near a way point counts as reached, how far the goal may move before the way is found again, and how often it is looked at (on failure, retried after `routeRetryS`). */
   columnFiles: 3,
+  /** Orders a regiment may have waiting (Shift). */
+  maxQueuedOrders: 12,
   routeReachM: 3,
   routeGoalSlackM: 6,
   routeCheckS: 1,
@@ -733,6 +735,14 @@ export const AI = {
   thinkIntervalS: 1,
   /** The computer forms a pike wall when enemy horse come this near, and raises shields for this long after an arrow strikes. */
   pikeWallAtM: 55,
+  /** The wall across the approach: stone in hand before it is begun, how far out from the keep, half its length. */
+  wallStone: 260,
+  /** While saving for the keep's second level, the computer recruits only with this much gold over its price. */
+  keepSavingMarginGold: 60,
+  /** …and only once it has this many regiments in the field: the first waves are not held back. */
+  keepSavingAfterRegiments: 3,
+  wallForwardM: 104,
+  wallHalfM: 34,
   shieldsUnderFireS: 4,
   /** How often the computer looks for a place in the middle to take. */
   pointsLookS: 20,

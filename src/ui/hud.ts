@@ -42,6 +42,8 @@ export interface HudActions {
   setOrder(good: ResourceId, amount: number | null): void;
   orderRegiments(kind: UnitKind, count: number): void;
   toggleGrid(): void;
+  /** Space or the ⏸ button: the battle stops, orders can still be given. */
+  togglePause(): void;
   selectPlot(plot: number): void;
   halt(): void;
   selectAll(): void;
@@ -123,6 +125,9 @@ export class Hud {
   private readonly peopleChip: HTMLElement;
   private readonly foodChip: HTMLElement;
   private readonly clock: HTMLElement;
+  private readonly pauseButton: HTMLButtonElement;
+  private readonly pausedBanner: HTMLElement;
+  private pausedShown = false;
   private readonly panel: HTMLElement;
   private readonly tip: HTMLElement;
   private readonly toasts: HTMLElement;
@@ -140,6 +145,14 @@ export class Hud {
   private panelHtml = '';
   private panelAge = PANEL_REFRESH_S;
   private mapAge = 1;
+  /** Shows the active pause: the banner and the button lit. */
+  setPaused(paused: boolean): void {
+    if (this.pausedShown === paused) return;
+    this.pausedShown = paused;
+    this.pausedBanner.style.display = paused ? 'block' : 'none';
+    this.pauseButton.classList.toggle('on', paused);
+  }
+
   debugVisible = false;
   /** Buildings snap to the grid (the game sets it; the build tab shows the switch). */
   gridOn = false;
@@ -164,6 +177,13 @@ export class Hud {
     this.foodChip = el('span', 'chip', right);
     this.armyChip = el('span', 'chip', right);
     this.clock = el('span', 'chip', right);
+    this.pauseButton = el('button', 'speed', right) as HTMLButtonElement;
+    this.pauseButton.textContent = '⏸';
+    this.pauseButton.title = T.pauseTip;
+    this.pauseButton.addEventListener('click', () => actions.togglePause());
+    this.pausedBanner = el('div', 'banner paused', root);
+    this.pausedBanner.innerHTML = T.pausedBanner;
+    this.pausedBanner.style.display = 'none';
     for (const speed of [1, 2, 3]) {
       const b = el('button', 'speed', right);
       b.textContent = `${speed}×`;

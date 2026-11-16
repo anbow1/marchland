@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CAPTAIN, ELEVATION, MAP, MISSILE, MORALE, POINTS, UNITS, VETERANS } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdMove, cmdMoveGroup, cmdRanks, cmdStance } from '../src/sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdHalt, cmdMove, cmdMoveGroup, cmdQueue, cmdRanks, cmdStance } from '../src/sim/commands.ts';
 import { launchElevationRad, reachM } from '../src/sim/missiles.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { frontageM, hasCaptain, type Regiment, slotX, slotZ, veteranRank } from '../src/sim/regiment.ts';
@@ -476,5 +476,35 @@ describe('experience and the captain', () => {
     expect(world.events.items.slice(0, world.events.count).some((e) => e.kind === 'captainFell')).toBe(true);
     expect(hasCaptain(r)).toBe(false);
     expect(topMorale(world, r)).toBe(UNITS.pikemen.morale - CAPTAIN.moraleWithout);
+  });
+});
+
+describe('queued orders', () => {
+  it('Shift orders are carried out one after another; a halt forgets them', () => {
+    const world = emptyWorld();
+    const r = spawnRegiment(world, PLAYER, 'swordsmen', 0, 0, 0);
+    // Idle: the first queued order starts at once; the next waits for it.
+    expect(cmdQueue(world, r.id, { kind: 'move', x: 20, z: 0, facingRad: 0, run: false })).toBe('ok');
+    expect(r.order).toBe('move');
+    expect(cmdQueue(world, r.id, { kind: 'move', x: 20, z: 25, facingRad: Math.PI / 2, run: false })).toBe('ok');
+    expect(r.queue.length).toBe(1);
+    runUntil(world, 60, () => r.queue.length === 0);
+    expect(Math.hypot(r.destX - 20, r.destZ - 25)).toBeLessThan(0.5);
+    runUntil(world, 60, () => r.order === 'hold');
+    expect(Math.hypot(r.anchorX - 20, r.anchorZ - 25)).toBeLessThan(0.5);
+    // An attack, then a march once the enemy is gone.
+    const enemy = spawnRegiment(world, COMPUTER, 'militia', 20, 45, Math.PI);
+    expect(cmdQueue(world, r.id, { kind: 'attackRegiment', targetId: enemy.id })).toBe('ok');
+    expect(cmdQueue(world, r.id, { kind: 'move', x: 0, z: 0, facingRad: 0, run: false })).toBe('ok');
+    expect(r.order).toBe('attackRegiment');
+    runUntil(world, 240, () => enemy.aliveMen === 0 || enemy.state === 'routing');
+    run(world, 2);
+    expect(r.queue.length).toBe(0);
+    expect(['move', 'hold']).toContain(r.order);
+    // A halt forgets what was queued.
+    cmdMove(world, r.id, 40, 0, null, false);
+    cmdQueue(world, r.id, { kind: 'move', x: 0, z: 40, facingRad: 0, run: false });
+    expect(cmdHalt(world, r.id)).toBe('ok');
+    expect(r.queue.length).toBe(0);
   });
 });

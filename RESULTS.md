@@ -5,6 +5,25 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Aktywna pauza, kolejka rozkazów, mur komputera, gospodarka kamienia
+
+- **Aktywna pauza (Spacja lub ⏸)**: bitwa staje, rozkazy można wydawać; baner na górze.
+- **Kolejka rozkazów (Shift + prawy)**: marsz, atak na oddział, szturm budynku dopisywane na koniec
+  kolejki (do 12); oddział bez zajęcia zaczyna od razu. Atak w kolejce kończy się, gdy cel ucieka
+  (bez pościgu). Rozkaz bez Shift zastępuje kolejkę, „Stój” ją kasuje. Zaplanowane punkty marszu
+  widać jako znaczniki przy zaznaczonych oddziałach.
+- **Komputer z murem**: po zamku poziomu 2 i 260 kamienia stawia odcinek muru (68 m) w poprzek
+  drogi wroga, 104 m przed zamkiem, a bramę, gdy ma 20 drewna; jego oddziały wychodzą bramą.
+- **Odkrycie przy okazji**: komputer nie dochodził do zamku poziomu 2 nawet po 80 min — kamień
+  stał w kamieniołomach (pełne podwórza po 24), a złoto szło na werbunek. Teraz: drugi i trzeci
+  kamieniołom oraz czwarty drwal w planie budowy; gdy w zamku jest mniej niż 80 drewna lub kamienia,
+  tragarze biorą je przed innymi podwórzami (po dostawach do warsztatów); z trzema oddziałami w polu
+  komputer oszczędza złoto na zamek. Wynik: zamek poziomu 2 ok. 40. min (wcześniej nigdy), mur
+  ok. 50. min, pierwsze oddziały ok. 20. min.
+- Tempo zburzenia bezczynnego gracza: 38,4 / 41,7 min (było 37,5 / 36,1 bez zamku poziomu 2);
+  próg testu podniesiony z 38 do 42 min.
+- Testy: 86 / 86.
+
 ## 2026-11-16 · Wojsko omija mury i wodę, załogi na wieżach, łąka bez plam, bruk na drogach
 
 - **Trasy oddziałów**: gdy między oddziałem a celem leży mur (cudzy albo własny bez bramy), woda

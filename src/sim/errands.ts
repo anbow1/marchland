@@ -16,9 +16,15 @@ const FOODS: readonly ResourceId[] = ['bread', 'fish', 'sausage'];
 const FOOD_RATIONS: Record<string, number> = { bread: FOOD.breadRations, fish: FOOD.fishRations, sausage: FOOD.sausageRations };
 
 /** How pressing each kind of errand is; distance to the pick-up (in metres) is taken off. */
-const URGENCY = { site: 4000, hungryHouse: 5000, food: 3000, wine: 2200, input: 2000, clear: 1000, clearScarce: 2600 } as const;
+const URGENCY = { site: 4000, hungryHouse: 5000, food: 3000, wine: 2200, input: 2000, clear: 1000, clearLow: 1700, clearScarce: 2600 } as const;
 /** The keep is short of a good when it holds fewer than this: fetching it from the yards comes before feeding workshops. */
 const SCARCE_BELOW = 12;
+/** Timber and stone go into every building, the keep and the walls: the keep wants a store of them, not a handful. */
+const MATERIAL_SCARCE_BELOW = 80;
+
+function scarceBelow(good: ResourceId): number {
+  return good === 'wood' || good === 'stone' ? MATERIAL_SCARCE_BELOW : SCARCE_BELOW;
+}
 
 /** Gives a carrier's load back when his errand is called off: to the site's pile or the keep. */
 export function cancelErrand(town: Town, p: Person): void {
@@ -143,8 +149,10 @@ function findErrand(town: Town, p: Person): boolean {
     // is nearly full (a long walk for half a load wastes the carrier).
     for (const good of RESOURCE_IDS) {
       const scarce = town.stock[good] < SCARCE_BELOW;
+      // Timber and stone run low in the keep: fetched before other yards are cleared, after workshops are fed.
+      const low = !scarce && town.stock[good] < scarceBelow(good);
       if (b.out[good] < (scarce || b.out[good] >= PEOPLE.outputCap - 4 ? PEOPLE.clearOutputAt : Math.min(cap, PEOPLE.outputCap - 4))) continue;
-      const urgency = (scarce ? URGENCY.clearScarce : URGENCY.clear) + priorityOf(town, good);
+      const urgency = (scarce ? URGENCY.clearScarce : low ? URGENCY.clearLow : URGENCY.clear) + priorityOf(town, good);
       offer(town, p, urgency + b.out[good] * 20, 'clear', good, Math.min(cap, b.out[good]), plot, KEEP);
     }
   }

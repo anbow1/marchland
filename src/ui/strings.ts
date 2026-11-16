@@ -79,6 +79,8 @@ interface Strings {
   orderTip: string;
   orderArms: string;
   ordered: string;
+  pauseTip: string;
+  pausedBanner: string;
   fromKeep: string;
   fromBuilding: string;
   orderLess: string;
@@ -362,6 +364,8 @@ const pl: Strings = {
   orderTip: 'Zamówienie: warsztaty robią tyle i stają (∞ = bez limitu, 0 = wstrzymane). Warsztaty uzbrojenia startują z zerem: pracują dopiero po zamówieniu.',
   orderArms: 'Zamów uzbrojenie',
   ordered: 'Zamówione do zrobienia',
+  pauseTip: 'Pauza (Spacja): bitwa staje, rozkazy można wydawać dalej',
+  pausedBanner: '<b>Pauza</b> · wydawaj rozkazy (Shift + prawy: do kolejki) · Spacja wznawia',
   fromKeep: 'od zamku',
   fromBuilding: 'od budynku',
   orderLess: 'Mniej',
@@ -402,7 +406,7 @@ const pl: Strings = {
   maxLevel: 'Najwyższy poziom',
   needsBarracksLevel: 'koszary poz.',
   hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
-  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Ctrl+cyfra: zapamiętaj grupę i jej szyk.',
+  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Shift: do kolejki. Spacja: pauza. Ctrl+cyfra: grupa i jej szyk.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
   fed: 'Miasto znów ma co jeść.',
   routed: 'Nasz oddział ucieka!',
@@ -669,6 +673,8 @@ const en: Strings = {
   orderTip: 'Order: the workshops make this much and stop (∞ = no limit, 0 = stopped).',
   orderArms: 'Order arms',
   ordered: 'On order',
+  pauseTip: 'Pause (Space): the battle stops, orders can still be given',
+  pausedBanner: '<b>Paused</b> · give orders (Shift + right: queue them) · Space resumes',
   fromKeep: 'from the keep',
   fromBuilding: 'from a building',
   orderLess: 'Less',
@@ -709,7 +715,7 @@ const en: Strings = {
   maxLevel: 'Highest level',
   needsBarracksLevel: 'barracks lvl',
   hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
-  hintArmy: 'Right click: march. Double click: run. Hold right and drag: line and facing. On an enemy: attack. Ctrl+digit: keep the group and its formation.',
+  hintArmy: 'Right click: march. Double click: run. Hold right and drag: line and facing. On an enemy: attack. Shift: queue. Space: pause. Ctrl+digit: group and its formation.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
   fed: 'The town has food again.',
   routed: 'Our regiment is running!',

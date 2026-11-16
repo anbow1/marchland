@@ -148,6 +148,7 @@ button.link { background: none; border: none; color: #f0d67a; text-decoration: u
 /* A standing line at the top: the tutorial's step, the defence's clock. */
 .banner { position: absolute; top: 92px; left: 50%; transform: translateX(-50%); max-width: min(760px, calc(100vw - 32px)); padding: 6px 14px; background: #1d1e17e6; border: 1px solid #8a7d4a; border-radius: 6px; color: #efe6c8; font-size: 14px; text-align: center; pointer-events: none; }
 .banner b { color: #f0d67a; }
+.banner.paused { top: 132px; border-color: #c9ae5a; }
 
 .formations .row { gap: 4px; align-items: center; margin-top: 3px; }
 .formations .label { min-width: 74px; color: #b9b29c; }

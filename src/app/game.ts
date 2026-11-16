@@ -1,6 +1,6 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdMoveFormation, cmdMoveGroup, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdGarrison, cmdHalt, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
@@ -136,6 +136,7 @@ export class Game implements ControlTarget {
       setKindPriority: (kind, priority) => this.report(cmdKindPriority(this.world, PLAYER, kind, priority)),
       setOrder: (good, amount) => this.report(cmdOrder(this.world, PLAYER, good, amount)),
       toggleGrid: () => this.toggleGrid(),
+      togglePause: () => this.togglePause(),
       orderRegiments: (kind, count) => {
         const result = cmdOrderRegiments(this.world, PLAYER, kind, count);
         this.report(result);
@@ -426,6 +427,8 @@ export class Game implements ControlTarget {
     this.timer.lap('hud');
     if (this.hud.debugVisible) this.hud.setDebugText(this.debugText());
     if (!this.loop.paused && this.world.winner === -1) this.view.stage.governor.update(frameSeconds);
+    // The pause banner follows the loop (the menu pauses and resumes it too).
+    this.hud.setPaused(this.loop.paused);
     this.framesDrawn++;
   }
 
@@ -755,7 +758,7 @@ export class Game implements ControlTarget {
     this.hud.selectionBox(x0, y0, x1, y1, visible);
   }
 
-  order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null): void {
+  order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null, queued = false): void {
     // The right button puts down whatever is being placed.
     if (this.tool) {
       this.dropTool();
@@ -763,6 +766,9 @@ export class Game implements ControlTarget {
     }
     if (this.selected.size === 0 || !this.ground(screenX, screenY, this.hit)) return;
     const ids = [...this.selected];
+    // An order without Shift replaces whatever was queued.
+    this.queueing = queued;
+    if (!queued) for (const id of ids) cmdClearQueue(this.world, id);
     const x = this.hit.x;
     const z = this.hit.z;
     const enemy = this.regimentAt(x, z, COMPUTER);
@@ -785,7 +791,7 @@ export class Game implements ControlTarget {
     const plot = this.plotAt(x, z, COMPUTER);
     if (plot >= -1 && faceToX === null) {
       let result: CommandResult = 'ok';
-      for (const id of ids) result = cmdAttackBuilding(this.world, id, COMPUTER, plot);
+      for (const id of ids) result = queued ? cmdQueue(this.world, id, { kind: 'attackBuilding', side: COMPUTER, plot }) : cmdAttackBuilding(this.world, id, COMPUTER, plot);
       this.report(result);
       return;
     }
@@ -809,9 +815,34 @@ export class Game implements ControlTarget {
       if (n === 0) return;
       facing = Math.atan2(x - cx / n, z - cz / n);
     }
+    // Queued: every regiment gets the place it would take, at the end of its queue.
+    if (queued) {
+      const spots: number[] = [];
+      let result: CommandResult = 'noSuchRegiment';
+      if (kept) {
+        formationSpots(kept, x, z, facing, spots);
+        kept.forEach((p, i) => {
+          result = cmdQueue(this.world, p.id, { kind: 'move', x: spots[i * 3] as number, z: spots[i * 3 + 1] as number, facingRad: spots[i * 3 + 2] as number, run });
+        });
+      } else if (groupLineSpots(this.world, ids, x, z, facing, spots) === 'ok') {
+        for (let i = 0; i < spots.length; i += 4) result = cmdQueue(this.world, spots[i] as number, { kind: 'move', x: spots[i + 1] as number, z: spots[i + 2] as number, facingRad: facing, run });
+      }
+      this.report(result);
+      return;
+    }
     // A kept formation moves whole, its shape turned to the new facing; otherwise one line.
     if (kept) this.report(cmdMoveFormation(this.world, kept, x, z, facing, run));
     else this.report(cmdMoveGroup(this.world, ids, x, z, facing, run));
+  }
+
+  /** Set while an order is being given with Shift (it goes to the queues). */
+  private queueing = false;
+
+  /** Space: the battle stops while orders can still be given; again, it goes on. */
+  togglePause(): void {
+    this.loop.paused = !this.loop.paused;
+    this.hud.setPaused(this.loop.paused);
+    this.sound.play('click');
   }
 
   /**
@@ -849,6 +880,22 @@ export class Game implements ControlTarget {
     return null;
   }
 
+  /** Small markers where the selected regiments' queued marches will take them, so the plan can be seen. */
+  private showQueues(): boolean {
+    for (const id of this.selected) {
+      const r = findRegiment(this.world, id);
+      if (!r) continue;
+      for (const q of r.queue) {
+        if (q.kind !== 'move') continue;
+        this.tiles.values.push(q.x, q.z, 1.6, 1.6, q.facingRad);
+        this.tiles.values.push(q.x + Math.sin(q.facingRad) * 1.8, q.z + Math.cos(q.facingRad) * 1.8, 0.6, 0.6, q.facingRad);
+        this.tiles.count += 2;
+      }
+    }
+    this.tiles.allowed = true;
+    return this.tiles.count > 0;
+  }
+
   hasSelection(): boolean {
     return this.selected.size > 0 && !this.tool;
   }
@@ -860,7 +907,7 @@ export class Game implements ControlTarget {
   /** While a right-button drag lays out a line: where each selected regiment would stand, and which way it would look. */
   private previewFacing(): boolean {
     const drag = this.facingDrag;
-    if (!drag || this.selected.size === 0) return false;
+    if (!drag || this.selected.size === 0) return this.showQueues();
     const start = { x: 0, z: 0 };
     const end = { x: 0, z: 0 };
     if (!this.ground(drag.x0, drag.y0, start) || !this.ground(drag.x1, drag.y1, end) || Math.hypot(end.x - start.x, end.z - start.z) < 1) return false;
@@ -992,7 +1039,10 @@ export class Game implements ControlTarget {
     else if (action === 'debug') this.hud.debugVisible = !this.hud.debugVisible;
     else if (action === 'turnBuilding') {
       if (this.tool?.kind === 'build') this.tool.turns = (this.tool.turns + (this.gridOn ? 2 : 1)) % 8;
-    } else if (action === 'grid') this.toggleGrid(); else if (action === 'road') this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false });
+    } else if (action === 'grid') this.toggleGrid();
+    else if (action === 'pause') {
+      if (this.world.winner === -1) this.togglePause();
+    } else if (action === 'road') this.pickTool({ kind: 'road', fromX: 0, fromZ: 0, started: false });
     else if (action === 'cancel') {
       if (this.tool) this.dropTool();
       else if (this.selected.size > 0 || this.selectedPlot !== NOWHERE) {
@@ -1011,7 +1061,8 @@ export class Game implements ControlTarget {
     const target = findRegiment(this.world, targetId);
     if (!target || target.side === PLAYER || this.selected.size === 0) return;
     let result: CommandResult = 'ok';
-    for (const id of this.selected) result = cmdAttackRegiment(this.world, id, targetId);
+    for (const id of this.selected) result = this.queueing ? cmdQueue(this.world, id, { kind: 'attackRegiment', targetId }) : cmdAttackRegiment(this.world, id, targetId);
+    this.queueing = false;
     this.report(result);
   }
 

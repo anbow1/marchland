@@ -167,7 +167,9 @@ function upgrade(world: World): World {
     r.routeVersion ??= -1;
     r.routeCheckS ??= 0;
     r.marchFiles ??= 0;
+    r.queue ??= [];
   }
   for (const a of world.arrows) a.shooterId ??= -1;
+  if (world.ai) world.ai.walled ??= false;
   return world;
 }

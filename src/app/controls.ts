@@ -16,7 +16,7 @@ export interface ControlTarget {
   boxSelect(x0: number, y0: number, x1: number, y1: number, additive: boolean): void;
   showBox(x0: number, y0: number, x1: number, y1: number, visible: boolean): void;
   /** An order at a screen point; `faceX/faceZ` set when the player dragged out a facing. */
-  order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null): void;
+  order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null, queued?: boolean): void;
   /** A tap: selects, or orders when troops are selected and the tap is not on something selectable. */
   tap(screenX: number, screenY: number, double: boolean): void;
   press(action: Action): void;
@@ -181,8 +181,10 @@ export class Controls {
       this.target.showFacing(0, 0, 0, 0, false);
       // A plain drag with nothing chosen turned the map: no order. With troops chosen (or Ctrl) it set the line's facing.
       if (p.dragging && !this.target.hasSelection() && !this.actions.isCtrlHeld()) return;
-      if (p.dragging && this.target.ground(p.x, p.y, this.a)) this.target.order(p.startX, p.startY, double, this.a.x, this.a.z);
-      else this.target.order(p.startX, p.startY, double, null, null);
+      // With Shift the order goes to the end of the queue instead of replacing it.
+      const queued = this.actions.isHeld('add');
+      if (p.dragging && this.target.ground(p.x, p.y, this.a)) this.target.order(p.startX, p.startY, double, this.a.x, this.a.z, queued);
+      else this.target.order(p.startX, p.startY, double, null, null, queued);
     }
   };
 

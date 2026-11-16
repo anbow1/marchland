@@ -4,7 +4,7 @@ import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBui
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
-import { type Formation, frontageM, isArcher, type Regiment, type Stance } from './regiment.ts';
+import { type Formation, frontageM, isArcher, type QueuedOrder, type Regiment, type Stance } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, type Cost, type ResourceId, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
@@ -375,6 +375,8 @@ export function cmdHalt(world: World, regimentId: number): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
   holdHere(r);
+  // Halt means halt: whatever was queued is forgotten too.
+  r.queue.length = 0;
   return 'ok';
 }
 
@@ -508,6 +510,53 @@ export function cmdMoveFormation(world: World, places: readonly FormationPlace[]
   for (const r of moved) pace = Math.min(pace, run ? r.def.runSpeedMs : r.def.walkSpeedMs);
   if (moved.length > 1) for (const r of moved) r.paceCapMs = pace;
   return 'ok';
+}
+
+/** Carries out a queued order now, through the same commands as one given at once. */
+export function runQueued(world: World, regimentId: number, q: QueuedOrder): CommandResult {
+  if (q.kind === 'move') return cmdMove(world, regimentId, q.x, q.z, q.facingRad, q.run);
+  if (q.kind === 'attackRegiment') return cmdAttackRegiment(world, regimentId, q.targetId);
+  return cmdAttackBuilding(world, regimentId, q.side, q.plot);
+}
+
+/** True while a regiment has nothing in hand: standing, not fighting, nothing being re-armed. */
+function idle(r: Regiment): boolean {
+  return r.order === 'hold' && r.state === 'formed' && r.rearmTo === null;
+}
+
+/** Adds an order to the end of a regiment's queue (Shift); a regiment with nothing to do starts on it at once. */
+export function cmdQueue(world: World, regimentId: number, q: QueuedOrder): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (r.queue.length >= ARMY.maxQueuedOrders) return 'queueFull';
+  if (idle(r) && r.queue.length === 0) return runQueued(world, regimentId, q);
+  r.queue.push(q);
+  return 'ok';
+}
+
+/** Forgets a regiment's queued orders (an order given without Shift replaces them). */
+export function cmdClearQueue(world: World, regimentId: number): void {
+  const r = findRegiment(world, regimentId);
+  if (r) r.queue.length = 0;
+}
+
+/** Once a step: a regiment that has finished its order takes the next from its queue (one it can no longer carry out is dropped). */
+export function stepQueues(world: World): void {
+  for (const r of world.regiments) {
+    if (r.queue.length === 0 || r.aliveMen === 0) continue;
+    if (r.state !== 'formed') {
+      // A rout ends every plan.
+      r.queue.length = 0;
+      continue;
+    }
+    // An attack in a plan is done when its target breaks and runs: on to the next order, no chase.
+    const chasing = r.order === 'attackRegiment' && (findRegiment(world, r.targetRegimentId)?.state ?? 'routing') === 'routing';
+    if (!idle(r) && !chasing) continue;
+    while (r.queue.length > 0) {
+      const next = r.queue.shift() as QueuedOrder;
+      if (runQueued(world, r.id, next) === 'ok') break;
+    }
+  }
 }
 
 const wallScratch: number[] = [];

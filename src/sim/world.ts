@@ -9,7 +9,7 @@ import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
 import { doorX, doorZ, KEEP, type Person, returnHome, spawnPerson, stepPeople } from './people.ts';
 import { assignSlots, createRegiment, forwardX, forwardZ, type Regiment } from './regiment.ts';
-import { cmdMove, inHomeLand } from './commands.ts';
+import { cmdMove, inHomeLand, stepQueues } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { createStand, type Stand, stepStand } from './trees.ts';
 import { createPoints, type Point, stepPoints } from './points.ts';
@@ -305,6 +305,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
     stepPoints(world, 1);
     payArmy(world);
   }
+  stepQueues(world);
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);
   stepMelee(world);

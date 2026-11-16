@@ -1,10 +1,11 @@
-import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, POINTS, REARM, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
+import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, TOWN, UNITS } from '../config.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, isEngaged, type Regiment } from './regiment.ts';
-import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
+import { facingToEnemy, FORWARD_X, FORWARD_Z, rallyX, rallyZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
+import { wallCells } from './nav.ts';
 import { type BuildingKind, COMPUTER, enemyOf, PLAYER, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -36,10 +37,12 @@ export interface AiState {
   buildIndex: number;
   recruitIndex: number;
   sinceRecruitS: number;
+  /** The wall across the enemy's approach has been tried (built, or no ground for it). */
+  walled: boolean;
 }
 
 export function createAiState(side: Side, character: AiCharacter = 'balanced'): AiState {
-  return { side, character, raidS: AI_CHARACTERS[character].raidEveryS, thinkS: 0, pointsS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0 };
+  return { side, character, raidS: AI_CHARACTERS[character].raidEveryS, thinkS: 0, pointsS: 0, mode: 'gather', wave: 0, sinceWaveS: 0, waveIds: [], waveStartMen: 0, stageS: 0, homeDefending: false, buildIndex: 0, recruitIndex: 0, sinceRecruitS: 0, walled: false };
 }
 
 /**
@@ -71,11 +74,16 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'fletcher',
   // A watchtower out in front, manned by archers who stay home: a raid meets arrows before the keep.
   'tower',
+  // Stone for the keep's second level, towers and walls: one quarry was never enough.
+  'quarry',
+  // Timber runs short by the middle of the game (buildings, upgrades, bows, the smithy): a fourth woodcutter.
+  'woodcutter',
   'farm',
   'house',
   'ironMine',
   'smelter',
   'smithy',
+  'quarry',
   'woodcutter',
   'house',
   'farm',
@@ -121,6 +129,17 @@ function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 
 
 function runTown(world: World, ai: AiState): void {
   const town = world.towns[ai.side];
+  // The wall across the approach, once the keep stands at its second level and the stone is in: it costs no
+  // gold and waits for nothing else.
+  if (!ai.walled && town.keepLevel >= 2 && town.stock.stone >= AI.wallStone) {
+    buildFrontWall(world, ai);
+    return;
+  }
+  // The gate goes in once there is timber for it (the wall alone does not shut the town: it can be walked round).
+  if (ai.walled && !world.gates.some((g) => g.side === ai.side) && town.stock.wood >= GATE.cost.wood) {
+    const [cx, cz] = frontWallMiddle(ai.side);
+    if (cmdBuildGate(world, ai.side, cx, cz) === 'ok') return;
+  }
   if (ai.buildIndex >= BARRACKS_UPGRADE_AFTER) {
     // The barracks rises no higher than the keep: the keep first.
     if (town.keepLevel < 2 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
@@ -155,7 +174,43 @@ function runTown(world: World, ai: AiState): void {
   }
 }
 
+/**
+ * One stretch of wall with a gate in its middle across the way the enemy comes, out beyond the town: it
+ * does not close the town, but an attack must go round it or break it, and the defenders' archers and
+ * towers have the time. The computer's own regiments go out through the gate.
+ */
+function buildFrontWall(world: World, ai: AiState): void {
+  ai.walled = true;
+  const [cx, cz] = frontWallMiddle(ai.side);
+  const half = AI.wallHalfM;
+  const x0 = cx - SIDE_X * half;
+  const z0 = cz - SIDE_Z * half;
+  const x1 = cx + SIDE_X * half;
+  const z1 = cz + SIDE_Z * half;
+  // Only across open ground: where buildings or water break the line, the stretch is not worth its stone.
+  const scratch: number[] = [];
+  if (wallCells(world.nav, x0, z0, x1, z1, scratch) < ((half * 2) / ROADS.cellM) * 0.6) return;
+  if (cmdBuildWall(world, ai.side, x0, z0, x1, z1) !== 'ok') return;
+  cmdBuildGate(world, ai.side, cx, cz);
+}
+
+/** The middle of the wall across the approach: out from the keep towards the enemy. */
+function frontWallMiddle(side: Side): [number, number] {
+  const t = turnOf(side);
+  return [townX(side) + t * FORWARD_X * AI.wallForwardM, townZ(side) + t * FORWARD_Z * AI.wallForwardM];
+}
+
 function recruit(world: World, ai: AiState): void {
+  const town = world.towns[ai.side];
+  // Saving for the keep's second level (it opens the better barracks): no new regiments while the gold for
+  // it is short, unless the town is under attack.
+  const next = KEEP_LEVELS[town.keepLevel];
+  let regiments = 0;
+  for (const r of world.regiments) if (r.side === ai.side && r.aliveMen > 0 && !r.def.defenceOnly) regiments++;
+  if (ai.buildIndex >= BARRACKS_UPGRADE_AFTER && town.keepLevel < 2 && next && town.keepUpgradeLeftS === 0 && !ai.homeDefending && regiments >= AI.keepSavingAfterRegiments) {
+    const gold = (next.cost as { gold?: number }).gold ?? 0;
+    if (town.stock.gold < gold + AI.keepSavingMarginGold) return;
+  }
   // Men are not called up while the town would be left without hands to carry for its workshops.
   let buildings = 0;
   for (const b of world.towns[ai.side].plots) if (b) buildings++;

@@ -119,7 +119,15 @@ export interface Regiment {
   routeCheckS: number;
   /** Files while it marches in column round walls and through gates (0 = as ordered). */
   marchFiles: number;
+  /** Orders given with Shift, carried out one after another once the one in hand is done. */
+  queue: QueuedOrder[];
 }
+
+/** An order waiting its turn: a march to a point, an attack on a regiment, or on a building (plot -1 = the keep). */
+export type QueuedOrder =
+  | { kind: 'move'; x: number; z: number; facingRad: number; run: boolean }
+  | { kind: 'attackRegiment'; targetId: number }
+  | { kind: 'attackBuilding'; side: Side; plot: number };
 
 /** Men in the front rank now: as ordered, or fewer while it marches in column. */
 export function filesOf(r: Regiment): number {
@@ -288,6 +296,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     routeVersion: -1,
     routeCheckS: 0,
     marchFiles: 0,
+    queue: [],
   };
   for (let i = 0; i < def.men; i++) {
     r.soldiers.push({
