@@ -1,5 +1,5 @@
 import { abs, attribute, cos, Fn, int, ivec2, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
-import { BufferAttribute, BufferGeometry, Color, DataTexture, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
+import { BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
 import { ARMY, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
@@ -177,6 +177,28 @@ const AT_EASE_AFTER_S = 5;
  * one draw. While no walk is baked, the legs swing about the hips as the boxes' did; then the man is
  * turned, felled and placed as the others are.
  */
+/**
+ * Sets several per-vertex attributes from one interleaved buffer. WebGPU allows only eight vertex
+ * buffers a pipeline; a skinned man has seven per-vertex attributes and four per-instance ones, so
+ * they go into two interleaved buffers (what he looks like; how his bones move him).
+ */
+export function interleave(g: BufferGeometry, parts: readonly [name: string, size: number, data: ArrayLike<number>][]): void {
+  const stride = parts.reduce((sum, [, size]) => sum + size, 0);
+  const n = (parts[0] as [string, number, ArrayLike<number>])[2].length / (parts[0] as [string, number, ArrayLike<number>])[1];
+  const array = new Float32Array(n * stride);
+  let offset = 0;
+  for (const [, size, data] of parts) {
+    for (let i = 0; i < n; i++) for (let c = 0; c < size; c++) array[i * stride + offset + c] = data[i * size + c] as number;
+    offset += size;
+  }
+  const buffer = new InterleavedBuffer(array, stride);
+  offset = 0;
+  for (const [name, size] of parts) {
+    g.setAttribute(name, new InterleavedBufferAttribute(buffer, size, offset));
+    offset += size;
+  }
+}
+
 /** The bone texture of a skinned model: three texels (the matrix's rows) a bone, a row a frame. */
 export function boneTexture(model: RiggedModel): DataTexture {
   const nb = model.bones.length;
@@ -399,13 +421,17 @@ export class ArmyView {
       part[i * 4 + 2] = s;
     }
     const g = new BufferGeometry();
-    g.setAttribute('position', new BufferAttribute(new Float32Array(model.positions), 3));
-    g.setAttribute('normal', new BufferAttribute(new Float32Array(model.normals), 3));
-    g.setAttribute('color', new BufferAttribute(new Float32Array(model.colours), 3));
-    g.setAttribute('aSurface', new BufferAttribute(new Float32Array(model.surface), 3));
-    g.setAttribute('aSkin', new BufferAttribute(new Float32Array(model.skin), 4));
-    g.setAttribute('aWeight', new BufferAttribute(new Float32Array(model.weights), 4));
-    g.setAttribute('aPart', new BufferAttribute(part, 4));
+    interleave(g, [
+      ['position', 3, model.positions],
+      ['normal', 3, model.normals],
+      ['color', 3, model.colours],
+      ['aSurface', 3, model.surface],
+    ]);
+    interleave(g, [
+      ['aSkin', 4, model.skin],
+      ['aWeight', 4, model.weights],
+      ['aPart', 4, part],
+    ]);
     g.setIndex(model.triangles);
     g.computeBoundingSphere();
     const frame = new InstancedBufferAttribute(new Float32Array(CAPACITY), 1);

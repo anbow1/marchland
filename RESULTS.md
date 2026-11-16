@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Poprawka: skinowani żołnierze i kowal na WebGPU
+
+- Pomiar `tools/measure/load.mjs` na ścieżce WebGPU (tej, której używa prawdziwa karta) wykazał:
+  „Vertex buffer count (11) exceeds the maximum number of vertex buffers (8)” dla materiału
+  skinowanych postaci i ich cieni — potoki się nie tworzyły, więc na WebGPU miecznicy,
+  halabardnicy, pikinierzy, łucznicy i kowal **w ogóle się nie rysowali**. Moje zrzuty szły przez
+  WebGL (SwiftShader), który tego limitu nie ma, więc tego nie widziałem.
+- Teraz siedem atrybutów wierzchołka idzie w dwóch przeplatanych buforach (wygląd: pozycja,
+  normalna, kolor, powierzchnia; kości: indeksy, wagi, części) + cztery bufory instancji = 6.
+  Pomiar po poprawce: 0 błędów w scenach domyślnej, bitwy i miasta; 131 potoków, 161 modułów
+  shaderów; tekstury 296 MB wgranych + 67 MB renderowanych; gotowe po ~31 s (SwiftShader).
+- Od teraz każdą zmianę grafiki sprawdzam też pomiarem na WebGPU, nie tylko zrzutem na WebGL.
+
 ## 2026-11-16 · Piki opuszczone: szyk z pikami i garda bez tarczy
 
 - Pikinierzy i halabardnicy w walce i w szyku z pikami stali w gardzie z tarczą, której nie mają.

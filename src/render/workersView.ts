@@ -1,7 +1,7 @@
-import { BufferAttribute, BufferGeometry, DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, type Scene } from 'three/webgpu';
+import { BufferGeometry, DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, type Scene } from 'three/webgpu';
 import type { World } from '../sim/world.ts';
 import type { BuildingKind } from '../sim/types.ts';
-import { boneTexture, type RiggedModel, skinnedMaterial } from './armyView.ts';
+import { boneTexture, interleave, type RiggedModel, skinnedMaterial } from './armyView.ts';
 import { groundUnder } from './townView.ts';
 
 /**
@@ -34,14 +34,18 @@ export class WorkersView {
       this.fps = clip.fps;
       const n = model.positions.length / 3;
       const g = new BufferGeometry();
-      g.setAttribute('position', new BufferAttribute(new Float32Array(model.positions), 3));
-      g.setAttribute('normal', new BufferAttribute(new Float32Array(model.normals), 3));
-      g.setAttribute('color', new BufferAttribute(new Float32Array(model.colours), 3));
-      g.setAttribute('aSurface', new BufferAttribute(new Float32Array(model.surface), 3));
-      g.setAttribute('aSkin', new BufferAttribute(new Float32Array(model.skin), 4));
-      g.setAttribute('aWeight', new BufferAttribute(new Float32Array(model.weights), 4));
+      interleave(g, [
+        ['position', 3, model.positions],
+        ['normal', 3, model.normals],
+        ['color', 3, model.colours],
+        ['aSurface', 3, model.surface],
+      ]);
       // No swinging legs, no turn of the shoulders, no fall: the clip moves him.
-      g.setAttribute('aPart', new BufferAttribute(new Float32Array(n * 4), 4));
+      interleave(g, [
+        ['aSkin', 4, model.skin],
+        ['aWeight', 4, model.weights],
+        ['aPart', 4, new Float32Array(n * 4)],
+      ]);
       g.setIndex(model.triangles);
       g.computeBoundingSphere();
       const instanced = (size: number): InstancedBufferAttribute => {
