@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Zwykły chód; pomiar klatki po nowych modelach
+
+- „Walking” (Mixamo) zamiast chodu z mieczem i tarczą: ludzie bez ładunku (1,66 m na cykl)
+  i łucznicy w marszu.
+- Pomiar `tools/measure/passes.mjs` (dopisany punkt zaczepienia `window.__debug.game.view.stage`
+  dla gier na wspólnym kontrakcie), High: **bitwa** 124 wywołania / 1,69 mln trójkątów na ekran
+  + 146 / 0,89 mln w cieniach; **miasto** 147 / 1,23 mln + 175 / 0,42 mln. Najwięcej biorą kępy trawy
+  (0,7 mln w trzech pierścieniach) i teren (0,18 mln); jazda 0,11 mln na rodzaj (×2 z cieniem),
+  skinowana piechota 0,083 mln na rodzaj, ludzie w mieście 0,067 mln, kowale 0,018 mln.
+  Nowe modele mieszczą się w budżecie; nic do cięcia.
+- WebGPU: 0 błędów. Testy 86/86.
+
 ## 2026-11-16 · Ludzie w mieście z modeli i animacji
 
 - Tragarze, robotnicy i budowniczowie nie są już figurami z pudełek: „.Fuse Civilian 2” w lżejszej

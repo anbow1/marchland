@@ -67,7 +67,7 @@ Broń drzewcowa (pikinierzy, halabardnicy, milicja):
 9. Crossbow / Rifle Aim + Shoot (kusza, jeśli jest)
 
 Tragarze, rzemieślnicy, rolnicy (ludzie w mieście):
-10. ~~Box Walk, Box Idle~~ — są, w grze; brakuje zwykłego **Walking** (bez broni; teraz chód z mieczem i tarczą)
+10. ~~Box Walk, Box Idle, Walking~~ — są, w grze
 11. ~~Pick Up / Put Down~~ — są, w grze
 12. ~~Digging~~, ~~Fishing Cast~~ — są, w grze; brakuje: **Hammering** (budowa), **Chopping** (drwal), **Harvesting / Plant** (żniwa, sadzenie)
 
