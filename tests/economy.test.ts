@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ARMY, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTurnSite, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
 import { carryCapacity, workState } from '../src/sim/economy.ts';
@@ -12,7 +12,7 @@ import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
 import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
 import { claimNearestTree, createStand, fellTree, growthOf, plantTree, stepStand, TREES, woodStands } from '../src/sim/trees.ts';
-import { type BuildingKind, COMPUTER, PLAYER } from '../src/sim/types.ts';
+import { type BuildingKind, COMPUTER, KEEP, PLAYER } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, type World } from '../src/sim/world.ts';
 import { run, runUntil } from './helpers.ts';
 
@@ -115,6 +115,70 @@ describe('a living town', () => {
     expect(world.towns[PLAYER].stock.grain).toBeGreaterThan(0);
     expect(world.towns[PLAYER].stock.grain + farm.out.grain + carried).toBeGreaterThanOrEqual(FIELDS.grainPerHarvest);
     expect(farm.strips.some((s) => s.state !== 'wild')).toBe(true);
+  });
+
+  it('a storehouse is a second store: carriers take goods to whichever store is nearer, from one stock', () => {
+    const world = rich(quietWorld());
+    const town = world.towns[PLAYER];
+    // A farm and a storehouse next to it: the farm's grain goes to the storehouse, not the far keep.
+    const farm = build(world, 'farm');
+    const f = town.plots[farm];
+    if (!f) throw new Error('no farm');
+    const site = planSite(world, PLAYER, 'storehouse');
+    if (!site) throw new Error('no ground for a storehouse');
+    expect(cmdBuild(world, PLAYER, 'storehouse', site.x, site.z, site.yawRad)).toBe('ok');
+    const store = town.plots.findIndex((b) => b !== null && b.kind === 'storehouse');
+    runUntil(world, 900, () => finished(world, store) && finished(world, farm));
+    const before = town.stock.grain;
+    f.out.grain = 12;
+    let carriedTo = -99;
+    runUntil(world, 300, () => {
+      for (const p of world.people) if (p.alive && p.side === PLAYER && p.errand === 'clear' && p.good === 'grain') carriedTo = p.dst;
+      return town.stock.grain > before;
+    });
+    expect(town.stock.grain).toBeGreaterThan(before);
+    const keepM = Math.hypot(townX(PLAYER) - f.x, townZ(PLAYER) - f.z);
+    const s = town.plots[store];
+    if (!s) throw new Error('no storehouse');
+    const storeM = Math.hypot(s.x - f.x, s.z - f.z);
+    // To the nearer of the two.
+    expect(carriedTo).toBe(storeM < keepM ? store : KEEP);
+    // A storehouse makes nothing and needs no worker.
+    expect(workState(s)).toBe('working');
+  });
+
+  it('the town always keeps four carriers: workshops beyond its hands wait for a worker', () => {
+    const world = rich(quietWorld());
+    for (const kind of ['quarry', 'windmill', 'bakery', 'pigFarm', 'butcher', 'tannery', 'fletcher', 'smelter', 'smithy', 'farm', 'fisher', 'woodcutter'] as const) {
+      const site = planSite(world, PLAYER, kind);
+      if (site) cmdBuild(world, PLAYER, kind, site.x, site.z, site.yawRad);
+    }
+    let fewest = Number.POSITIVE_INFINITY;
+    for (let s = 0; s < 600; s++) {
+      run(world, 1);
+      let carriers = 0;
+      for (const p of world.people) if (p.alive && p.side === PLAYER && p.role === 'carrier') carriers++;
+      fewest = Math.min(fewest, carriers);
+    }
+    expect(fewest).toBeGreaterThanOrEqual(PEOPLE.minCarriers);
+  });
+
+  it('a building may be turned while it goes up, its fields with it, and not once it stands', () => {
+    const world = rich(quietWorld());
+    const plot = build(world, 'farm');
+    const farm = world.towns[PLAYER].plots[plot];
+    if (!farm) throw new Error('no farm');
+    const yaw = farm.yawRad;
+    const strip = farm.strips[0] ? { x: farm.strips[0].x, z: farm.strips[0].z } : null;
+    let result = cmdTurnSite(world, PLAYER, plot, 2);
+    // Turned a quarter, or refused because the land that way is taken: either way the rule held.
+    if (result === 'ok') {
+      expect(farm.yawRad).toBeCloseTo(yaw + Math.PI / 2, 6);
+      if (strip && farm.strips[0]) expect(Math.hypot(farm.strips[0].x - strip.x, farm.strips[0].z - strip.z)).toBeGreaterThan(1);
+    } else expect(['blocked', 'needsLand', 'tooSteep', 'tooFar']).toContain(result);
+    runUntil(world, 900, () => finished(world, plot));
+    result = cmdTurnSite(world, PLAYER, plot, 1);
+    expect(result).toBe('alreadyBuilt');
   });
 
   it('a bakery bakes only the flour carriers bring it', () => {

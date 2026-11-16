@@ -167,6 +167,7 @@ export class WorldView {
     this.army.update(world);
     this.workers.update(world);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);
+    this.markers.updateReach(world, ghost ? ghost.kind : null, pose.distanceM);
     this.stage.render();
   }
 

@@ -44,6 +44,7 @@ export type Cost = Partial<Record<ResourceId, number>>;
 
 export const BUILDING_KINDS = [
   'house',
+  'storehouse',
   'woodcutter',
   'quarry',
   'farm',
@@ -84,6 +85,7 @@ export type CommandResult =
   | 'townFull'
   | 'noPeople'
   | 'plotEmpty'
+  | 'alreadyBuilt'
   | 'maxLevel'
   | 'underConstruction'
   | 'needsBarracks'
@@ -107,11 +109,16 @@ export type CommandResult =
 
 export type Difficulty = 'easy' | 'normal' | 'hard';
 
+/** Buildings nobody works in (people live in houses, soldiers train in the barracks): no worker is sent,
+ * nothing is made, and they cannot be paused. */
+export const WORKLESS: ReadonlySet<BuildingKind> = new Set<BuildingKind>(['house', 'barracks', 'tower', 'storehouse']);
+
 /** What a building needs from the land it is put on. */
 export type SiteNeed = 'none' | 'forest' | 'water' | 'stone' | 'ore' | 'fields';
 
 export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
   house: 'none',
+  storehouse: 'none',
   woodcutter: 'forest',
   quarry: 'stone',
   farm: 'fields',

@@ -5,6 +5,27 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Skład, 4 tragarzy zawsze, granica zasięgu budowy, obracanie budowy
+
+- **Skład** (nowy budynek: 60 złota, 40 drewna, 10 kamienia): towary miasta są wspólne, a zamek i każdy
+  ukończony skład to magazyny — tragarz odnosi gotowy towar do magazynu najbliższego budynkowi,
+  bierze materiał na budowę z najbliższego budowie i pobiera wsad tam, skąd droga najkrótsza.
+  Komputer stawia skład w późnej fazie (po winnicy). Nowa wspólna lista `WORKLESS` (chata, koszary,
+  wieża, skład: bez pracownika i pauzy). Test: zboże z zagrody trafia do bliższego magazynu.
+- **Zawsze co najmniej 4 tragarzy** (`PEOPLE.minCarriers`): pracownika nie bierze się z ostatnich
+  czterech, a gdy coś się buduje — także nie z piątego (budowniczy). Pierwsza wersja bez tego piątego
+  zakleszczała miasto komputera na 14 budynkach (nikt nie budował chat, ludzi nie przybywało).
+  Tempo komputera po zmianie: wygrywa z bezczynnym graczem w 36,6 i 40,3 min (ziarna 5 i 6; było
+  41,5 i 34,9). Test: przy 12 warsztatach i małej ludności tragarzy nigdy mniej niż 4.
+- **Granica zasięgu budowy**: dotąd nigdzie jej nie było widać (żółty okrąg z zrzutów to punkt do
+  zajęcia), stąd wrażenie, że budynki nie poszerzają zasięgu. Przy stawianiu żółta przerywana linia
+  obrysowuje koło zamku razem z kołami 70 m wokół własnych budynków (kreska tylko tam, gdzie nie
+  przykrywa jej inne koło); kreski grubieją z oddaleniem kamery.
+- **Obracanie w trakcie budowy**: R przy zaznaczonej budowie albo „Obróć (R)” w panelu — o 1/8 obrotu
+  (o 1/4 z włączoną siatką), z tymi samymi sprawdzeniami co przy stawianiu; pola zagrody i winnicy
+  obracają się razem z nią. Po ukończeniu: „Obrócić można tylko budynek w budowie”. Test.
+- Testy 89/89; WebGPU 0 błędów.
+
 ## 2026-11-16 · Żniwa
 
 - „Harvesting” (Mixamo) dla rolników w polu i w winnicy (zamiast kopania; kopanie zostaje

@@ -1,5 +1,5 @@
 import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, TRANSPORT, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
-import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind } from './types.ts';
+import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind, WORKLESS } from './types.ts';
 
 // A town's economy. The keep is the storehouse (`stock`); every building has
 // its own small stores: inputs that carriers fill, outputs that pile up in its
@@ -612,7 +612,7 @@ export type WorkState = 'working' | 'building' | 'paused' | 'noWorker' | 'noInpu
 export function workState(b: Building): WorkState {
   if (b.constructionLeftS > 0) return 'building';
   if (b.paused) return 'paused';
-  if (b.kind === 'house' || b.kind === 'barracks' || b.kind === 'tower') return 'working';
+  if (WORKLESS.has(b.kind)) return 'working';
   if (b.workRate <= 0) return 'noWorker';
   const recipe = BUILDINGS[b.kind].recipe;
   if (!recipe) {

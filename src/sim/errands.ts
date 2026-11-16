@@ -26,6 +26,32 @@ function scarceBelow(good: ResourceId): number {
   return good === 'wood' || good === 'stone' ? MATERIAL_SCARCE_BELOW : SCARCE_BELOW;
 }
 
+/**
+ * The town's stores: the keep, and every finished storehouse. The goods in them are one stock (the town's);
+ * a store is only where carriers set goods down and pick them up, and each takes the one nearest his way.
+ */
+export function isStore(town: Town, plot: number): boolean {
+  if (plot === KEEP) return true;
+  const b = plot >= 0 ? town.plots[plot] : null;
+  return !!b && b.kind === 'storehouse' && b.constructionLeftS <= 0;
+}
+
+/** The store whose door is nearest (x, z): the keep, or a finished storehouse. */
+export function nearestStore(town: Town, x: number, z: number): number {
+  let best = KEEP;
+  let bestM = hypot2(doorX(town, KEEP) - x, doorZ(town, KEEP) - z);
+  for (let plot = 0; plot < town.plots.length; plot++) {
+    const b = town.plots[plot];
+    if (!b || b.kind !== 'storehouse' || b.constructionLeftS > 0) continue;
+    const m = hypot2(doorX(town, plot) - x, doorZ(town, plot) - z);
+    if (m < bestM) {
+      best = plot;
+      bestM = m;
+    }
+  }
+  return best;
+}
+
 /** Gives a carrier's load back when his errand is called off: to the site's pile or the keep. */
 export function cancelErrand(town: Town, p: Person): void {
   if (p.errand === 'none') return;
@@ -47,14 +73,22 @@ function findSource(town: Town, p: Person, good: ResourceId, toX: number, toZ: n
   let best = NOWHERE;
   let bestM = Number.POSITIVE_INFINITY;
   if (town.stock[good] > 0) {
-    const kx = doorX(town, KEEP);
-    const kz = doorZ(town, KEEP);
-    best = KEEP;
-    bestM = hypot2(kx - p.x, kz - p.z) + hypot2(kx - toX, kz - toZ);
+    // From the town's stock: through whichever store makes the shortest walk.
+    const stores = [KEEP];
+    for (let plot = 0; plot < town.plots.length; plot++) if (plot !== notPlot && isStore(town, plot)) stores.push(plot);
+    for (const store of stores) {
+      const sx = doorX(town, store);
+      const sz = doorZ(town, store);
+      const m = hypot2(sx - p.x, sz - p.z) + hypot2(sx - toX, sz - toZ);
+      if (m < bestM) {
+        best = store;
+        bestM = m;
+      }
+    }
   }
   for (let plot = 0; plot < town.plots.length; plot++) {
     const b = town.plots[plot];
-    if (!b || plot === notPlot || b.out[good] <= 0) continue;
+    if (!b || plot === notPlot || isStore(town, plot) || b.out[good] <= 0) continue;
     const m = hypot2(b.x - p.x, b.z - p.z) + hypot2(b.x - toX, b.z - toZ);
     if (m < bestM) {
       best = plot;
@@ -89,7 +123,7 @@ function offer(town: Town, p: Person, urgency: number, errand: Person['errand'],
 }
 
 function available(town: Town, src: number, good: ResourceId): number {
-  return src === KEEP ? town.stock[good] : (town.plots[src] as Building).out[good];
+  return isStore(town, src) ? town.stock[good] : (town.plots[src] as Building).out[good];
 }
 
 /** The player's lean towards a good, as urgency. */
@@ -111,7 +145,7 @@ function findErrand(town: Town, p: Person): boolean {
     if (!b) continue;
     if (!isBuilt(b)) {
       // Timber and stone for the builders: already paid for, waiting at the keep.
-      for (const good of ['wood', 'stone'] as const) offer(town, p, URGENCY.site, 'site', good, Math.min(cap, b.matWaiting[good]), KEEP, plot);
+      for (const good of ['wood', 'stone'] as const) offer(town, p, URGENCY.site, 'site', good, Math.min(cap, b.matWaiting[good]), nearestStore(town, b.x, b.z), plot);
       continue;
     }
     if (b.kind === 'house') {
@@ -153,14 +187,14 @@ function findErrand(town: Town, p: Person): boolean {
       const low = !scarce && town.stock[good] < scarceBelow(good);
       if (b.out[good] < (scarce || b.out[good] >= PEOPLE.outputCap - 4 ? PEOPLE.clearOutputAt : Math.min(cap, PEOPLE.outputCap - 4))) continue;
       const urgency = (scarce ? URGENCY.clearScarce : low ? URGENCY.clearLow : URGENCY.clear) + priorityOf(town, good);
-      offer(town, p, urgency + b.out[good] * 20, 'clear', good, Math.min(cap, b.out[good]), plot, KEEP);
+      offer(town, p, urgency + b.out[good] * 20, 'clear', good, Math.min(cap, b.out[good]), plot, nearestStore(town, b.x, b.z));
     }
   }
   if (choice.errand === 'none') return false;
   // Off the source's books now, so two carriers do not go for the same sack.
   const dst = choice.dst >= 0 ? (town.plots[choice.dst] as Building) : null;
   if (choice.errand === 'site') (dst as Building).matWaiting[choice.good as 'wood' | 'stone'] -= choice.amount;
-  else if (choice.src === KEEP) town.stock[choice.good] -= choice.amount;
+  else if (isStore(town, choice.src)) town.stock[choice.good] -= choice.amount;
   else (town.plots[choice.src] as Building).out[choice.good] -= choice.amount;
   if (choice.errand === 'input' || choice.errand === 'food') (dst as Building).incoming[choice.good] += choice.amount;
   p.errand = choice.errand;
@@ -178,7 +212,7 @@ function findErrand(town: Town, p: Person): boolean {
 /** Sets the load down where it was going; if that building is gone meanwhile, the keep takes it. */
 function deliver(town: Town, p: Person): void {
   const dst = p.dst >= 0 ? town.plots[p.dst] : null;
-  if (p.dst === KEEP || !dst || dst !== p.dstRef) {
+  if (isStore(town, p.dst) || !dst || dst !== p.dstRef) {
     town.stock[p.good] += p.amount;
   } else if (p.errand === 'site') {
     dst.matDelivered += p.amount;

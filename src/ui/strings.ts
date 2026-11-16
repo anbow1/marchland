@@ -61,6 +61,7 @@ interface Strings {
   build: string;
   upgrade: string;
   demolish: string;
+  turnSite: string;
   pause: string;
   unpause: string;
   recruit: string;
@@ -228,6 +229,7 @@ const pl: Strings = {
   resources: { gold: 'Złoto', wood: 'Drewno', stone: 'Kamień', grain: 'Zboże', flour: 'Mąka', grapes: 'Winogrona', wine: 'Wino', bread: 'Chleb', fish: 'Ryby', meat: 'Mięso', sausage: 'Kiełbasy', hide: 'Skóry', leatherArmor: 'Zbroje sk.', ironOre: 'Ruda', iron: 'Żelazo', weapon: 'Broń', mailArmor: 'Kolczugi', bow: 'Łuki', horse: 'Konie' },
   buildings: {
     house: { name: 'Chata', about: 'Tu mieszkają ludzie: pracownicy, tragarze, budowniczowie i rekruci. Najedzeni płacą podatek.' },
+    storehouse: { name: 'Skład', about: 'Drugi magazyn miasta: tragarze odnoszą towary do najbliższego magazynu i stamtąd je biorą. Postaw przy oddalonej wsi.' },
     woodcutter: { name: 'Drwal', about: 'Drewno na budowę, do kuźni i dla łuczarza. Musi stać przy lesie.' },
     quarry: { name: 'Kamieniołom', about: 'Kamień na murowane budynki i drogi. Musi stać przy skale.' },
     farm: { name: 'Zagroda', about: 'Rolnik orze, sieje i żnie pasy pola za zagrodą. Zboże: na chleb, dla trzody i dla koni. Potrzebuje wolnej ziemi za plecami.' },
@@ -273,6 +275,7 @@ const pl: Strings = {
     townFull: 'Miasto ma już komplet budynków.',
     noPeople: 'Brak wolnych ludzi: zbuduj chaty albo poczekaj na mieszkańców.',
     plotEmpty: 'Tu nic nie stoi.',
+    alreadyBuilt: 'Obrócić można tylko budynek w budowie.',
     maxLevel: 'To już najwyższy poziom.',
     underConstruction: 'Budowa jeszcze trwa.',
     needsBarracks: 'Potrzebne koszary wyższego poziomu.',
@@ -347,6 +350,7 @@ const pl: Strings = {
   build: 'Buduj',
   upgrade: 'Ulepsz',
   demolish: 'Rozbierz',
+  turnSite: 'Obróć (R)',
   pause: 'Wstrzymaj',
   unpause: 'Wznów',
   recruit: 'Werbunek',
@@ -537,6 +541,7 @@ const en: Strings = {
   resources: { gold: 'Gold', wood: 'Wood', stone: 'Stone', grain: 'Grain', flour: 'Flour', grapes: 'Grapes', wine: 'Wine', bread: 'Bread', fish: 'Fish', meat: 'Meat', sausage: 'Sausages', hide: 'Hides', leatherArmor: 'Leather', ironOre: 'Ore', iron: 'Iron', weapon: 'Weapons', mailArmor: 'Mail', bow: 'Bows', horse: 'Horses' },
   buildings: {
     house: { name: 'House', about: 'People live here: workers, carriers, builders and recruits. Fed, they pay tax.' },
+    storehouse: { name: 'Storehouse', about: "A second store of the town's goods: carriers bring to and fetch from the nearest store. Build it by a far village." },
     woodcutter: { name: 'Woodcutter', about: 'Wood for building, for the smithy and the fletcher. Must stand by the forest.' },
     quarry: { name: 'Quarry', about: 'Stone for masonry buildings and roads. Must stand by a stone outcrop.' },
     farm: { name: 'Farm', about: 'The farmer breaks, sows and reaps strips of land behind the farm. Grain: for bread, pigs and horses. Needs open land behind it.' },
@@ -582,6 +587,7 @@ const en: Strings = {
     townFull: 'The town has all the buildings it may.',
     noPeople: 'No free people: build houses or wait for newcomers.',
     plotEmpty: 'Nothing stands here.',
+    alreadyBuilt: 'Only a building still going up can be turned.',
     maxLevel: 'Already at the highest level.',
     underConstruction: 'Still under construction.',
     needsBarracks: 'Needs a barracks of a higher level.',
@@ -656,6 +662,7 @@ const en: Strings = {
   build: 'Build',
   upgrade: 'Upgrade',
   demolish: 'Demolish',
+  turnSite: 'Turn (R)',
   pause: 'Pause',
   unpause: 'Resume',
   recruit: 'Recruit',

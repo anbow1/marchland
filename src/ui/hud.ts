@@ -4,7 +4,7 @@ import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinfor
 import { barracksLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
-import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS } from '../sim/types.ts';
+import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS, WORKLESS } from '../sim/types.ts';
 import { menAlive, type World } from '../sim/world.ts';
 import { TEAM_CSS } from '../render/palette.ts';
 import { Minimap } from './minimap.ts';
@@ -27,6 +27,7 @@ export interface HudActions {
   /** Turns the map: −1 left, +1 right. */
   rotateCamera(direction: number): void;
   upgrade(plot: number): void;
+  turnSite(plot: number): void;
   upgradeKeep(): void;
   demolish(plot: number): void;
   togglePaused(plot: number): void;
@@ -291,6 +292,9 @@ export class Hud {
       case 'upgrade':
         this.actions.upgrade(this.plotInPanel);
         break;
+      case 'turnSite':
+        this.actions.turnSite(this.plotInPanel);
+        break;
       case 'upgradeKeep':
         this.actions.upgradeKeep();
         break;
@@ -484,7 +488,7 @@ export class Hud {
     // Hold-ups: workshops not working, gathered by kind and reason.
     const groups = new Map<string, { text: string; count: number; x: number; z: number }>();
     for (const b of town.plots) {
-      if (!b || b.kind === 'house' || b.kind === 'barracks' || b.kind === 'tower') continue;
+      if (!b || WORKLESS.has(b.kind)) continue;
       const state = workState(b);
       if (state === 'working' || state === 'building' || state === 'waiting') continue;
       const lacks = state === 'noInput' ? lackingInput(b) : null;
@@ -627,7 +631,9 @@ export class Hud {
     } else {
       html += `<span class="label">${T.maxLevel}</span>`;
     }
-    if (b.kind !== 'house' && b.kind !== 'barracks' && b.kind !== 'tower') html += `<button class="option" data-act="pause" data-tip="${T.pause}"><span class="name">${b.paused ? T.unpause : T.pause}</span></button>`;
+    // Still going up: it may yet be turned.
+    if (state === 'building' && b.level === 1) html += `<button class="option" data-act="turnSite" data-tip="${T.turnSite}"><span class="name">${T.turnSite}</span></button>`;
+    if (!WORKLESS.has(b.kind)) html += `<button class="option" data-act="pause" data-tip="${T.pause}"><span class="name">${b.paused ? T.unpause : T.pause}</span></button>`;
     html += `<button class="option" data-act="demolish" data-tip="${T.demolish}"><span class="name">${T.demolish}</span></button></div>`;
     if (b.kind === 'barracks') html += this.recruitHtml(world, town);
     return html;

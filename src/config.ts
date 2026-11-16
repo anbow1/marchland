@@ -153,6 +153,8 @@ export const PEOPLE = {
   maxBuildersPerSite: 3,
   /** A town keeps at least this many free hands when men are called up: someone has to carry the bread. */
   minFreeAfterCallUp: 4,
+  /** Carriers the town always keeps: no worker or builder is taken from the last four, so goods keep moving. */
+  minCarriers: 4,
   /** People run for the keep when an enemy regiment is this close, and come back this long after it has gone. */
   fleeRadiusM: 32,
   calmSeconds: 6,
@@ -327,6 +329,8 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   barracks: { cost: { gold: 100, wood: 30, stone: 30 }, buildSeconds: 16, hp: 450, recipe: null },
   // A stone tower for up to TOWER.maxGarrison archers or crossbowmen, who shoot further from its top.
   tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
+  // A second store of the town's goods: carriers bring to and fetch from whichever store is nearest.
+  storehouse: { cost: { gold: 60, wood: 40, stone: 10 }, buildSeconds: 14, hp: 400, recipe: null },
 };
 
 /** Experience: kills per man (of the regiment as raised) that make it seasoned, then veterans; what each rank gives. */

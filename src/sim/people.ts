@@ -5,7 +5,7 @@ import { findPath, speedFactorAt } from './nav.ts';
 import { doorOfX, doorOfZ } from './placement.ts';
 import { facingToEnemy, townX, townZ } from './terrain.ts';
 import { stepBuilder, stepWorker } from './trades.ts';
-import { KEEP, NOWHERE, type ResourceId, type Side } from './types.ts';
+import { KEEP, NOWHERE, type ResourceId, type Side, WORKLESS } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -185,7 +185,7 @@ function release(p: Person): void {
 
 /** True for buildings that need someone working in them. */
 function needsWorker(b: Building): boolean {
-  return b.kind !== 'house' && b.kind !== 'barracks' && b.kind !== 'tower' && isBuilt(b) && !b.paused;
+  return !WORKLESS.has(b.kind) && isBuilt(b) && !b.paused;
 }
 
 const staffed = new Uint8Array(TOWN.maxBuildings);
@@ -207,10 +207,16 @@ function assignRoles(world: World, town: Town): void {
     if (p.role === 'builder') builders++;
     if (p.role === 'carrier' || p.role === 'builder') free++;
   }
+  let sites = 0;
+  for (const b of town.plots) if (b && !isBuilt(b)) sites++;
+  // The last carriers stay carriers (without them nothing reaches the workshops), and while anything is
+  // being built one more stays free to build it: houses must go up, or the town never grows.
+  const keepFree = PEOPLE.minCarriers + (sites > 0 ? 1 : 0);
   // Workers first, in the order the plots are numbered: the nearest free person takes the job.
   for (let plot = 0; plot < town.plots.length; plot++) {
     const b = town.plots[plot];
     if (!b || !needsWorker(b) || (staffed[plot] as number) > 0) continue;
+    if (free <= keepFree) break;
     let best: Person | null = null;
     let bestD2 = Number.POSITIVE_INFINITY;
     for (const p of world.people) {
@@ -230,9 +236,8 @@ function assignRoles(world: World, town: Town): void {
     best.phase = 0;
     free--;
   }
-  let sites = 0;
-  for (const b of town.plots) if (b && !isBuilt(b)) sites++;
-  const wanted = sites === 0 ? 0 : Math.min(free, sites * PEOPLE.maxBuildersPerSite, Math.max(1, Math.round(free * PEOPLE.builderShare)));
+  const spare = Math.max(0, free - PEOPLE.minCarriers);
+  const wanted = sites === 0 ? 0 : Math.min(spare, sites * PEOPLE.maxBuildersPerSite, Math.max(1, Math.round(free * PEOPLE.builderShare)));
   for (const p of world.people) {
     if (builders === wanted) break;
     if (!p.alive || p.side !== side) continue;

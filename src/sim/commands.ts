@@ -1,5 +1,5 @@
 import { ARMY, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS } from '../config.ts';
-import { barracksLevel, canRecruit, demolish, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
+import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
@@ -20,6 +20,32 @@ export function cmdBuild(world: World, side: Side, kind: BuildingKind, x: number
   if (check.result !== 'ok') return check.result;
   startBuilding(world.towns[side], kind, check.site);
   stampBuilding(world.nav, x, z, TOWN.buildingRadiusM, true);
+  return 'ok';
+}
+
+/**
+ * Turns a building that is still going up by `turns` eighths of a circle (its door, its work spot and, for a
+ * farm or vineyard, the strips behind it turn with it). Only while it is first being built, and only if it
+ * would be allowed to stand that way: the same checks as placing it.
+ */
+export function cmdTurnSite(world: World, side: Side, plot: number, turns: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const town = world.towns[side];
+  const b = town.plots[plot];
+  if (!b) return 'plotEmpty';
+  if (b.level !== 1 || isBuilt(b)) return 'alreadyBuilt';
+  const yawRad = b.yawRad + (turns * Math.PI) / 4;
+  // Checked as if it were not there yet.
+  town.plots[plot] = null;
+  stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, false);
+  const check = checkSite(world, side, b.kind, b.x, b.z, yawRad);
+  town.plots[plot] = b;
+  stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, true);
+  if (check.result !== 'ok') return check.result;
+  b.yawRad = check.site.yawRad;
+  b.spotX = check.site.spotX;
+  b.spotZ = check.site.spotZ;
+  b.strips = check.site.strips.map((s) => ({ state: 'wild', growth: 0, x: s.x, z: s.z }));
   return 'ok';
 }
 

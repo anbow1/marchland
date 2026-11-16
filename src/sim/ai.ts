@@ -95,6 +95,8 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'armourer',
   'vineyard',
   'winery',
+  // A second store once the town has spread: carriers stop walking every sack to the keep.
+  'storehouse',
   'house',
   'fisher',
   'farm',

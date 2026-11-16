@@ -17,7 +17,8 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Każdy człowiek ma jedną rolę naraz, przydzielaną automatycznie co sekundę:
   1. **pracownik** — po jednym na każdy czynny budynek produkcyjny (najbliższy wolny człowiek),
   2. **budowniczy** — 30 % wolnych rąk, gdy cokolwiek się buduje (najwyżej 3 na budowę),
-  3. **tragarz** — wszyscy pozostali,
+  3. **tragarz** — wszyscy pozostali; miasto zawsze zostawia co najmniej 4 tragarzy (a gdy coś się buduje,
+     jeszcze jednego człowieka na budowniczego) — warsztat ponad to czeka na pracownika, aż przybędzie ludzi,
   4. **rekrut** — wezwany do koszar; po dojściu staje się żołnierzem.
 - **Wspólna ludność**: regiment zabiera z miasta tylu ludzi, ilu ma żołnierzy (machiny: obsługa).
   Żołnierze mieszkają w obozie, więc chaty z czasem zapełniają się na nowo — armia kosztuje
@@ -31,7 +32,9 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 3. Logistyka
 
-- **Zamek jest magazynem.** Każdy budynek ma własne składy: wejściowy (tragarze uzupełniają
+- **Zamek jest magazynem**, a każdy ukończony **skład** — drugim: towary miasta są wspólne, a tragarz
+  odnosi gotowe towary do najbliższego magazynu i stamtąd pobiera (przy oddalonej wsi oszczędza to drogę).
+- Każdy budynek ma własne składy: wejściowy (tragarze uzupełniają
   do 8 sztuk) i wyjściowy na podwórzu (do 24 sztuk; pełny zatrzymuje pracę).
 - Tragarz niesie do 8 sztuk jednego towaru; podniesienie i odłożenie trwa 1 s.
 - Wolny tragarz bierze najpilniejsze zlecenie, a przy równej pilności najbliższe:
@@ -84,7 +87,9 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Budynek stawia się **w dowolnym miejscu** w promieniu 280 m od własnego zamku (zagrody i winnice do
   340 m; drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy), ale nie bliżej niż
   90 m od wrogiego): teren pod nim może się wznosić najwyżej o 2.2 m, nie może to być woda,
-  a od innych budynków i pól dzieli go co najmniej 1.5 m. Budynek można obrócić przed postawieniem;
+  a od innych budynków i pól dzieli go co najmniej 1.5 m. Poza kołem zamku można budować do
+  70 m od każdego własnego budynku (także rozpoczętego) — przy stawianiu żółta przerywana linia pokazuje
+  granicę. Budynek można obrócić przed postawieniem i **w trakcie budowy** (R albo przycisk w panelu);
   drzwi wyznaczają, gdzie podchodzą ludzie. Limit: 48 budynków na stronę.
 - **Droga** to linia od punktu do punktu na siatce 2 m; kosztuje 1.7 kamienia za 10 m.
   Ludzie sami wybierają najszybszą trasę (drogą idą 1.4× szybciej) i omijają budynki oraz wodę.

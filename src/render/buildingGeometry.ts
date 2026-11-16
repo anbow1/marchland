@@ -16,6 +16,21 @@ import type { SurfaceLibrary } from './surfaces.ts';
 type Build = (b: MeshBuilder, level: number) => void;
 
 const BUILDERS: Record<BuildingKind, Build> = {
+  storehouse: (b, level) => {
+    // A long barn of boards on a stone footing, big doors to the yard, a lean-to of goods beside it.
+    b.box(-0.6, 0, -1.4, 7.6, 0.6, 5.0, P.STONE);
+    P.house(b, { cx: -0.6, cz: -1.4, sx: 7.4, sz: 4.8, wallH: 3.0, wall: P.BOARDS, roof: P.SHINGLE, pitch: 1.35, frame: false });
+    b.box(-0.6, 0.6, 1.02, 2.2, 2.2, 0.08, P.BOARDS_DARK);
+    // The lean-to: posts, a sloping roof, the goods under it.
+    for (const x of [2.4, 4.6]) b.box(x, 0, 2.6, 0.18, 2.2, 0.18, P.TIMBER);
+    b.roof(3.5, 2.2, 2.0, 2.8, 2.0, 0.5, 0, 0.12, 0.08, P.SHINGLE, P.TIMBER);
+    P.crate(b, 2.9, 2.0);
+    P.crate(b, 3.7, 2.2, 0.6);
+    P.barrel(b, 4.3, 1.6);
+    P.barrel(b, 2.4, 1.5, 0.9);
+    P.yard(b, -0.6, 3.6, 8.2, 2.8, 0, false, true);
+    if (level >= 2) P.cart(b, -3.0, 3.4, 0.4, 1);
+  },
   house: (b, level) => {
     if (level === 1) {
       // A cottage under a hipped thatch, with a kitchen garden.

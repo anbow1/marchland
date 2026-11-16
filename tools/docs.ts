@@ -58,6 +58,7 @@ const GOOD_PL: Record<ResourceId, string> = {
 
 const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   house: { name: 'House', role: 'Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.' },
+  storehouse: { name: 'Storehouse', role: "A second store of the town's goods. Carriers take finished goods to whichever store is nearest and fetch from it, so a village far from the keep stops costing long walks. A long timber barn on a stone footing, crates, barrels and sacks under a lean-to." },
   woodcutter: { name: "Woodcutter's Lodge", role: 'The woodcutter walks into the trees and comes back with timber: the material of every building, of bows and of siege engines. An open shed of stacked logs, fresh trunks by the track, a chopping block and a sawhorse in the yard.' },
   quarry: { name: 'Quarry', role: 'Cuts building stone from an outcrop: stone for workshops, the barracks and roads.' },
   farm: { name: 'Farm', role: 'The farmer breaks, sows and reaps strips of land behind the farm. The farmland grows with the farm level, so farms want open ground: build them as a village.' },
@@ -112,7 +113,7 @@ function makes(kind: BuildingKind): string {
 
 /** The branches of the economy, in the order a town grows into them; every kind in exactly one (checked below). */
 const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKind[]; planned: readonly string[] }[] = [
-  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house'], planned: ['Storehouse', 'Market', 'Well', 'Tavern', 'Chapel'] },
+  { name: 'Living and the town', pl: 'Mieszkanie i miasto', kinds: ['house', 'storehouse'], planned: ['Market', 'Well', 'Tavern', 'Chapel'] },
   { name: 'Building materials', pl: 'Budulec', kinds: ['woodcutter', 'quarry'], planned: ['Sawmill', "Forester's Hut"] },
   { name: 'Grain and bread', pl: 'Zboże i chleb', kinds: ['farm', 'windmill', 'bakery'], planned: ['Brewery'] },
   { name: 'Meat, sausage and hides', pl: 'Mięso, kiełbasy i skóry', kinds: ['pigFarm', 'butcher'], planned: ["Hunter's Lodge"] },
@@ -221,7 +222,6 @@ Not built yet; listed in the order they are worth adding. Names are final, numbe
 | Priority | Building | Why it is needed |
 |---|---|---|
 | A | **Gate** | A stretch of wall that opens for its own side and holds against the enemy. |
-| A | **Storehouse** | A second place to store goods: carriers bring and fetch from the nearest one, so a village far from the keep stops costing long walks. |
 | A | **Siege Workshop** | Builds ballistae and trebuchets instead of the barracks (timber, weapons, stone), so engines are a separate investment. |
 | B | **Sawmill** | Logs → planks: higher levels of buildings and engines ask for planks, so timber gets a second tier. |
 | B | **Market** | Sells surplus for gold and buys what is short, at a poor rate: a way out of a stalled chain. |
@@ -256,7 +256,8 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Każdy człowiek ma jedną rolę naraz, przydzielaną automatycznie co sekundę:
   1. **pracownik** — po jednym na każdy czynny budynek produkcyjny (najbliższy wolny człowiek),
   2. **budowniczy** — ${Math.round(PEOPLE.builderShare * 100)} % wolnych rąk, gdy cokolwiek się buduje (najwyżej ${PEOPLE.maxBuildersPerSite} na budowę),
-  3. **tragarz** — wszyscy pozostali,
+  3. **tragarz** — wszyscy pozostali; miasto zawsze zostawia co najmniej ${PEOPLE.minCarriers} tragarzy (a gdy coś się buduje,
+     jeszcze jednego człowieka na budowniczego) — warsztat ponad to czeka na pracownika, aż przybędzie ludzi,
   4. **rekrut** — wezwany do koszar; po dojściu staje się żołnierzem.
 - **Wspólna ludność**: regiment zabiera z miasta tylu ludzi, ilu ma żołnierzy (machiny: obsługa).
   Żołnierze mieszkają w obozie, więc chaty z czasem zapełniają się na nowo — armia kosztuje
@@ -270,7 +271,9 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 3. Logistyka
 
-- **Zamek jest magazynem.** Każdy budynek ma własne składy: wejściowy (tragarze uzupełniają
+- **Zamek jest magazynem**, a każdy ukończony **skład** — drugim: towary miasta są wspólne, a tragarz
+  odnosi gotowe towary do najbliższego magazynu i stamtąd pobiera (przy oddalonej wsi oszczędza to drogę).
+- Każdy budynek ma własne składy: wejściowy (tragarze uzupełniają
   do ${PEOPLE.inputTarget} sztuk) i wyjściowy na podwórzu (do ${PEOPLE.outputCap} sztuk; pełny zatrzymuje pracę).
 - Tragarz niesie do ${PEOPLE.carryCapacity} sztuk jednego towaru; podniesienie i odłożenie trwa ${PEOPLE.handlingSeconds} s.
 - Wolny tragarz bierze najpilniejsze zlecenie, a przy równej pilności najbliższe:
@@ -323,7 +326,9 @@ i drogi są decyzją gracza, a nie ozdobą.
 - Budynek stawia się **w dowolnym miejscu** w promieniu ${TOWN.territoryRadiusM} m od własnego zamku (zagrody i winnice do
   ${TOWN.fieldTerritoryRadiusM} m; drwal, kamieniołom, kopalnia i wieża — w dowolnym miejscu mapy), ale nie bliżej niż
   ${TOWN.enemyKeepClearM} m od wrogiego): teren pod nim może się wznosić najwyżej o ${TOWN.maxFootprintRiseM} m, nie może to być woda,
-  a od innych budynków i pól dzieli go co najmniej ${TOWN.buildingGapM} m. Budynek można obrócić przed postawieniem;
+  a od innych budynków i pól dzieli go co najmniej ${TOWN.buildingGapM} m. Poza kołem zamku można budować do
+  ${TOWN.buildingReachM} m od każdego własnego budynku (także rozpoczętego) — przy stawianiu żółta przerywana linia pokazuje
+  granicę. Budynek można obrócić przed postawieniem i **w trakcie budowy** (R albo przycisk w panelu);
   drzwi wyznaczają, gdzie podchodzą ludzie. Limit: ${TOWN.maxBuildings} budynków na stronę.
 - **Droga** to linia od punktu do punktu na siatce ${ROADS.cellM} m; kosztuje ${fixed(ROADS.stonePerCell * (10 / ROADS.cellM))} kamienia za 10 m.
   Ludzie sami wybierają najszybszą trasę (drogą idą ${fixed(ROADS.roadSpeedFactor)}× szybciej) i omijają budynki oraz wodę.

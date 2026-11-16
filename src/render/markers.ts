@@ -1,8 +1,9 @@
 import { Color, DoubleSide, DynamicDrawUsage, InstancedMesh, Matrix4, MeshBasicNodeMaterial, MeshStandardNodeMaterial, PlaneGeometry, Quaternion, RingGeometry, type Scene, Vector3 } from 'three/webgpu';
-import { TOWN } from '../config.ts';
+import { MAP, TOWN } from '../config.ts';
+import { reachOf } from '../sim/placement.ts';
 import { placeX, placeZ, type Regiment } from '../sim/regiment.ts';
 import { heightAtM, townX, townZ } from '../sim/terrain.ts';
-import { PLAYER } from '../sim/types.ts';
+import { type BuildingKind, PLAYER } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
@@ -23,6 +24,11 @@ const PLOT_SELECTED = new Color(0xffffff);
 const TILE_OK = new Color(0x9fe08a);
 const TILE_BAD = new Color(0xe0604a);
 const MAX_TILES = 400;
+/** The outline of where the player may build: a dash every few metres round the land within reach. */
+const MAX_DASHES = 3000;
+const DASH_EVERY_M = 9;
+const REACH_COLOUR = new Color(0xf2d27a);
+const MAX_EDGE = MAP.halfM - 2;
 
 /** Flat rectangles to draw on the ground this frame: the road being drawn, a farm's fields-to-be. */
 export interface GroundTiles {
@@ -37,6 +43,7 @@ export class Markers {
   private readonly rings: InstancedMesh;
   private readonly plots: InstancedMesh;
   private readonly tiles: InstancedMesh;
+  private readonly reach: InstancedMesh;
   private readonly m = new Matrix4();
   private readonly p = new Vector3();
   private readonly q = new Quaternion();
@@ -62,7 +69,9 @@ export class Markers {
     this.plots.name = 'building ring';
     this.tiles = new InstancedMesh(new PlaneGeometry(1, 1).rotateX(-Math.PI / 2), new MeshBasicNodeMaterial({ name: 'tiles', transparent: true, opacity: 0.5, depthWrite: false, side: DoubleSide, fog: false }), MAX_TILES);
     this.tiles.name = 'ground tiles';
-    for (const mesh of [this.banners, this.rings, this.plots, this.tiles]) {
+    this.reach = new InstancedMesh(new PlaneGeometry(5.5, 1.1).rotateX(-Math.PI / 2), flat, MAX_DASHES);
+    this.reach.name = 'build reach';
+    for (const mesh of [this.banners, this.rings, this.plots, this.tiles, this.reach]) {
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -73,6 +82,51 @@ export class Markers {
     this.rings.renderOrder = 2;
     this.plots.renderOrder = 2;
     this.tiles.renderOrder = 2;
+    this.reach.renderOrder = 2;
+  }
+
+  /**
+   * While a building is being placed: the edge of the land it may go on — the keep's circle for its kind
+   * and the ring of TOWN.buildingReachM round each of the player's own buildings (built or begun), drawn
+   * as one outline (a dash only where no other circle covers it). Nothing for trades that may go anywhere.
+   */
+  updateReach(world: World, kind: BuildingKind | null, cameraDistanceM: number): void {
+    // Thicker and sparser from far off, so the outline reads at every zoom.
+    const grow = Math.max(1, cameraDistanceM / 90);
+    let dashes = 0;
+    const town = world.towns[PLAYER];
+    const keepR = kind ? reachOf(kind, town.keepLevel) : 0;
+    if (kind && Number.isFinite(keepR)) {
+      const circles: [number, number, number][] = [[townX(PLAYER), townZ(PLAYER), keepR]];
+      for (const b of town.plots) if (b && b.kind !== 'tower') circles.push([b.x, b.z, TOWN.buildingReachM]);
+      for (let i = 0; i < circles.length && dashes < MAX_DASHES; i++) {
+        const [cx, cz, r] = circles[i] as [number, number, number];
+        const n = Math.max(12, Math.ceil((2 * Math.PI * r) / (DASH_EVERY_M * grow)));
+        for (let k = 0; k < n && dashes < MAX_DASHES; k++) {
+          const a = (k / n) * Math.PI * 2;
+          const x = cx + Math.sin(a) * r;
+          const z = cz + Math.cos(a) * r;
+          if (Math.abs(x) > MAX_EDGE || Math.abs(z) > MAX_EDGE) continue;
+          let covered = false;
+          for (let j = 0; j < circles.length && !covered; j++) {
+            if (j === i) continue;
+            const [ox, oz, or] = circles[j] as [number, number, number];
+            covered = (x - ox) * (x - ox) + (z - oz) * (z - oz) < (or - 0.5) * (or - 0.5);
+          }
+          if (covered) continue;
+          this.p.set(x, heightAtM(x, z) + 0.3, z);
+          // Along the circle: the dash's long side on the tangent.
+          this.q.setFromAxisAngle(this.up, a);
+          this.s.set(grow, 1, grow);
+          this.reach.setMatrixAt(dashes, this.m.compose(this.p, this.q, this.s));
+          this.reach.setColorAt(dashes, REACH_COLOUR);
+          dashes++;
+        }
+      }
+    }
+    this.reach.count = dashes;
+    this.reach.instanceMatrix.needsUpdate = true;
+    if (this.reach.instanceColor) this.reach.instanceColor.needsUpdate = true;
   }
 
   private ring(i: number, x: number, z: number, scale: number, colour: Color): void {
