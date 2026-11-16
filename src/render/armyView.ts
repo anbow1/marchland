@@ -111,7 +111,10 @@ export interface RiggedModel {
   triangles: number[];
 }
 
-type Clip = { start: number; frames: number; travelM?: number };
+/** `lower`: a raise-to-aim clip played backwards after the shot (held at aim a moment, then lowered). */
+type Clip = { start: number; frames: number; travelM?: number; lower?: boolean };
+/** Share of a lowering blow spent still at aim, the bolt just loosed. */
+const HOLD_AFTER_SHOT = 0.3;
 
 interface SkinnedKind {
   frame: InstancedBufferAttribute;
@@ -417,8 +420,10 @@ export class ArmyView {
     const k = this.kinds.get(kind);
     // The blow: a sword's slash or a polearm's thrust.
     // The blows: a sword's slash, a polearm's thrust or chop, a bow's loose. With several, the men take turns.
-    const strikes = model.clips.filter((c) => /slash|thrust|stab|recoil|chop/.test(c.name.toLowerCase()));
-    const strike = strikes[0];
+    const strikes: Clip[] = model.clips
+      .filter((c) => /slash|thrust|stab|recoil|chop|lower/.test(c.name.toLowerCase()))
+      .map((c) => ({ start: c.start, frames: c.frames, lower: c.name.toLowerCase() === 'lower' }));
+    const strike = model.clips.find((c) => /slash|thrust|stab|recoil|chop|lower/.test(c.name.toLowerCase()));
     const block = model.clips.find((c) => c.name.toLowerCase().includes('block'));
     if (!k || !strike || !block) return false;
     const named = (name: string): Clip | null => model.clips.find((c) => c.name.toLowerCase() === name) ?? null;
@@ -538,7 +543,15 @@ export class ArmyView {
     // the halberd's thrust, is played faster).
     const blow = sk.strikes[s.slot % sk.strikes.length] as Clip;
     const strikeS = Math.min(blow.frames / sk.fps, s.regiment.def.attackIntervalS * 0.9);
-    if (s.sinceAttackS < strikeS) return blow.start + Math.min(blow.frames - 1, Math.floor((s.sinceAttackS / strikeS) * blow.frames));
+    if (s.sinceAttackS < strikeS) {
+      const t = s.sinceAttackS / strikeS;
+      if (blow.lower) {
+        // The bolt is loosed at the top of the raise: held at aim a moment, then the raise run backwards.
+        if (t < HOLD_AFTER_SHOT) return blow.start + blow.frames - 1;
+        return blow.start + Math.max(0, blow.frames - 1 - Math.floor(((t - HOLD_AFTER_SHOT) / (1 - HOLD_AFTER_SHOT)) * blow.frames));
+      }
+      return blow.start + Math.min(blow.frames - 1, Math.floor(t * blow.frames));
+    }
     const hurtS = timeS - (s.hurtAtS ?? -1e9);
     if (sk.impact && hurtS >= 0 && hurtS < sk.impact.frames / sk.fps) return at(sk.impact, hurtS);
     const r = s.regiment;

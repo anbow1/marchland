@@ -283,6 +283,49 @@ def add_box(centre, size, colour, metal, rough, team, bone, pos, nor, col, surf,
         tris.append([base + a, base + cc, base + d])
 
 
+def add_oriented_box(centre, axes, size, colour, metal, rough, team, bone, pos, nor, col, surf, skin, wts, tris):
+    """A box along three axes (unit vectors, character rest space) about its centre, riding on one bone."""
+    u, v, w = axes
+    base = len(pos)
+    for du in (-1, 1):
+        for dv in (-1, 1):
+            for dw in (-1, 1):
+                p = centre + u * (du * size[0] / 2) + v * (dv * size[1] / 2) + w * (dw * size[2] / 2)
+                pos.append(to_game_point(p))
+                d = (u * du + v * dv + w * dw).normalized()
+                nor.append([-d.x, d.z, d.y])
+                col.append([srgb_to_linear(x) for x in colour])
+                surf.append([metal, rough, team])
+                skin.append([BONES.index(bone), 0, 0, 0])
+                wts.append([1.0, 0.0, 0.0, 0.0])
+    # Corner k = du*4 + dv*2 + dw over (-1, 1): the same faces as box().
+    for a, b, cc, d in [(0, 1, 3, 2), (4, 6, 7, 5), (0, 4, 5, 1), (2, 3, 7, 6), (0, 2, 6, 4), (1, 5, 7, 3)]:
+        tris.append([base + a, base + b, base + cc])
+        tris.append([base + a, base + cc, base + d])
+
+
+def add_crossbow(char_rest, aim_mats, *mesh):
+    """The crossbow held as the aiming clip holds a gun: the stock from the right fist towards the left hand
+    as they stand at the end of the raise, taken back into the right hand's rest frame so it rides with it;
+    the steel bow across the stock's front, level."""
+    r_rest = head_of(char_rest["RightHand"])
+    l_rest = head_of(char_rest["LeftHand"])
+    m_r = aim_mats[ORDER.index("RightHand")]
+    m_l = aim_mats[ORDER.index("LeftHand")]
+    rot = m_r.to_3x3()
+    inv = rot.inverted()
+    along = (inv @ ((m_l @ l_rest.to_4d()).xyz - (m_r @ r_rest.to_4d()).xyz)).normalized()
+    up = (inv @ Vector((0, 0, 1))).normalized()
+    side = along.cross(up).normalized()
+    up = side.cross(along).normalized()
+    fist = r_rest + (head_of(char_rest["RightHandMiddle1"]) - r_rest) * 0.8
+    axes = (along, side, up)
+    add_oriented_box(fist + along * 0.2, axes, (0.8, 0.06, 0.08), (0.36, 0.24, 0.12), 0.0, 0.8, 0.0, "RightHand", *mesh)  # stock
+    add_oriented_box(fist + along * 0.58 + up * 0.03, axes, (0.05, 0.74, 0.05), (0.55, 0.56, 0.58), 1.0, 0.35, 0.0, "RightHand", *mesh)  # bow
+    add_oriented_box(fist + along * 0.42 + up * 0.05, axes, (0.01, 0.62, 0.01), (0.85, 0.82, 0.72), 0.0, 0.9, 0.0, "RightHand", *mesh)  # string
+    add_oriented_box(fist - along * 0.16, axes, (0.12, 0.08, 0.1), (1, 1, 1), 0.0, 0.7, 1.0, "RightHand", *mesh)  # butt wrap
+
+
 def add_bow(hand, *mesh):
     """A longbow upright in the left fist as the T pose holds it (the arm out along +X): the stave through
     the fist, its limbs bending a little towards the man, the string on his side of it."""
@@ -470,6 +513,10 @@ def main() -> None:
         pass
     elif arms == "bow":
         add_bow(head_of(char_rest["LeftHand"]), *mesh)
+    elif arms == "crossbow":
+        # Aimed as at the end of the raise (the clip named 'draw'), the last frame.
+        draw = next(c for c in clip_meta if c["name"] == "draw")
+        add_crossbow(char_rest, all_frames[draw["start"] + draw["frames"] - 1], *mesh)
     else:
         add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE, "tools": AXE + MALLET, "crossbow": CROSSBOW}[arms])
     # Feet on the ground.

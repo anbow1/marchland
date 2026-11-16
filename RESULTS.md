@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Kusznicy: strzał na końcu przyłożenia, kusza w obu rękach
+
+- Strzał pada na końcu „Rifle Down To Aim” (podniesienie do celu kończy się w chwili strzału); po
+  strzale kusznik trzyma kuszę w celu przez 30% czasu ciosu, potem ją opuszcza — ten sam klip od końca
+  (klip `lower`). Wcześniej po strzale klip szedł od nowa: kusza najpierw opadała, potem znów szła w górę.
+- Kusza celowała w górę: klipy z karabinem trzymają broń w dłoni inaczej niż miecz, więc stały kierunek
+  „jak miecz” był zły. Teraz `rigged.py` liczy kierunek kolby z ostatniej klatki celowania (od prawej
+  dłoni do lewej), przelicza go do układu prawej dłoni w pozie spoczynkowej i składa kuszę z obróconych
+  brył (`add_oriented_box`): kolba wzdłuż, łuczysko w poprzek, poziomo. Na zrzucie: poziomo na
+  wysokości barku.
+- Testy 94/94; WebGPU 0 błędów.
+
 ## 2026-11-16 · Kusznicy na własnej postaci
 
 - Kusznicy: „.Fuse Warrior” (jak pikinierzy, górna zbroja w barwach), kusza z gry w prawej dłoni
