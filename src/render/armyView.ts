@@ -127,6 +127,40 @@ interface SkinnedKind {
   deaths: Clip[];
   /** A bowman's draw before a shot (his strike is the loose and the bow's recoil). */
   draw: Clip | null;
+  /** Whether he carries a shield; and the frame of his blow with the weapon furthest forward (a pike
+   * levelled, a sword out), held by men without a shield on guard and by a pike wall. */
+  shield: boolean;
+  reach: number;
+}
+
+/** The frame of a clip in which a weapon's tip (a vertex on its joint, the furthest forward at rest)
+ * reaches furthest forward (−Z) while staying about chest high. */
+function reachFrame(model: RiggedModel, clip: Clip): number {
+  const joint = model.bones.indexOf('Sword_joint');
+  if (joint < 0) return clip.start;
+  const n = model.positions.length / 3;
+  let tip = -1;
+  for (let i = 0; i < n; i++) {
+    if (model.skin[i * 4] !== joint) continue;
+    if (tip < 0 || (model.positions[i * 3 + 2] as number) < (model.positions[tip * 3 + 2] as number)) tip = i;
+  }
+  if (tip < 0) return clip.start;
+  const [x, y, z] = [model.positions[tip * 3] as number, model.positions[tip * 3 + 1] as number, model.positions[tip * 3 + 2] as number];
+  const nb = model.bones.length;
+  let best = clip.start;
+  let bestZ = Number.POSITIVE_INFINITY;
+  for (let f = clip.start; f < clip.start + clip.frames; f++) {
+    const o = (f * nb + joint) * 12 + 8;
+    const tz = (model.frames[o] as number) * x + (model.frames[o + 1] as number) * y + (model.frames[o + 2] as number) * z + (model.frames[o + 3] as number);
+    const ty = (model.frames[o - 4] as number) * x + (model.frames[o - 3] as number) * y + (model.frames[o - 2] as number) * z + (model.frames[o - 1] as number);
+    // Levelled, not raised: a tip above chest height counts against the frame.
+    const score = tz + Math.max(0, ty - 1.6) * 1.5;
+    if (score < bestZ) {
+      bestZ = score;
+      best = f;
+    }
+  }
+  return best;
 }
 
 /** Ground covered by one cycle (two steps) of the walk and of the run as the game plays them. The walk
@@ -397,6 +431,8 @@ export class ArmyView {
       impact: named('impact'),
       deaths,
       draw: named('draw'),
+      shield: model.skin.some((b, i) => i % 4 === 0 && b === model.bones.indexOf('Shield_joint')),
+      reach: reachFrame(model, strike),
     };
     return true;
   }
@@ -464,10 +500,12 @@ export class ArmyView {
       return sk.idle ? cycle(sk.idle, timeS / (sk.idle.frames / sk.fps) + s.slot * 0.37) : sk.guard;
     }
     if (r.stance === 'shields') return sk.blockHeld;
+    if (r.stance === 'pikeWall') return sk.reach;
     const fighting = s.target !== null || s.sinceAttackS < AT_EASE_AFTER_S || hurtS < AT_EASE_AFTER_S;
     // At ease each man is somewhere else in the idle, so a rank does not breathe as one.
     if (!fighting && sk.idle) return cycle(sk.idle, timeS / (sk.idle.frames / sk.fps) + s.slot * 0.37);
-    return sk.guard;
+    // On guard: behind the shield if he has one, else with his weapon levelled at the enemy.
+    return sk.shield ? sk.guard : sk.reach;
   }
 
   update(world: World): void {

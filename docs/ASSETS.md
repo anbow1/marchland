@@ -45,7 +45,7 @@ samym stylu albo realistyczne CC0/CC BY.
 | Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | jeśli armaty zamiast balist |
 | Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
 | Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | **w grze**: świnie w chlewni |
-| Medieval Gatehouse, Medieval castle (wieża), Saxon warrior | Daniel74 i in., Blendswap | CC0 | brama zamku, wieże, milicja |
+| Medieval Gatehouse, Medieval castle (wieża), Saxon warrior | Daniel74 i in., Blendswap | CC0 | w zapasie: brama i wieża bez tekstur (do pomalowania skanem kamienia), wojownik bez szkieletu |
 
 Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjnej), „Knight Face Reval”
 (postać Paladin z Mixamo wrzucona ponownie przez kogoś innego), „Knight medieval no textures”

@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Piki opuszczone: szyk z pikami i garda bez tarczy
+
+- Pikinierzy i halabardnicy w walce i w szyku z pikami stali w gardzie z tarczą, której nie mają.
+  Teraz przy wczytaniu modelu wybierana jest klatka ciosu, w której grot jest najdalej z przodu
+  i nie wyżej niż na piersi (kara za grot powyżej 1,6 m): pikinier klatka 45 ze „Stabbing”
+  (grot 2,7 m przed nim, 2,2 m nad ziemią — klip to pchnięcie znad głowy), halabardnik klatka 9.
+  Tę pozę trzyma szyk z pikami (`pikeWall`) i garda każdego bez tarczy; z tarczą bez zmian.
+- Modele z Blendswapa (brama, wieża, wojownik saski) przejrzane: brama i wieża bez tekstur, wojownik
+  bez szkieletu (18 tys. tr.) — w zapasie; zamek i mury mają już spójny zestaw.
+- Testy 86/86; zrzut szyku z pikami.
+
 ## 2026-11-16 · Kowal przy warsztacie
 
 - Nowe narzędzie `tools/blender/baked.py`: postać z dowolnym szkieletem i własną animacją, bez
