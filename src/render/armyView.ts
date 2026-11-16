@@ -108,6 +108,8 @@ interface RiggedModel {
   triangles: number[];
 }
 
+type Clip = { start: number; frames: number };
+
 interface SkinnedKind {
   frame: InstancedBufferAttribute;
   fps: number;
@@ -116,7 +118,21 @@ interface SkinnedKind {
   strikeFrames: number;
   guard: number;
   blockHeld: number;
+  /** The clips the file may also carry: standing at ease, walking, running, flinching, falling dead (one or more). */
+  idle: Clip | null;
+  walk: Clip | null;
+  run: Clip | null;
+  impact: Clip | null;
+  deaths: Clip[];
 }
+
+/** Ground covered by one cycle (two steps) of the walk and of the run as the game plays them. The walk
+ * as baked covers 1.6 m; the run 3.4 m at a sprint, played shorter so that men at a charge's 2.7 m/s step
+ * briskly rather than in slow motion. */
+const WALK_CYCLE_M = 1.6;
+const RUN_CYCLE_M = 2.5;
+/** Men are at ease out of a fight this long after their last blow or wound. */
+const AT_EASE_AFTER_S = 5;
 
 /**
  * The skinned soldiers' material: each vertex is moved by up to four bones whose matrices for the man's
@@ -170,7 +186,10 @@ function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
 }
 
 /** The kinds on a skinned body, and the file each one's body comes from. */
-const SKINNED_KINDS: readonly [UnitKind, string][] = [['swordsmen', 'soldiers/swordsman.json']];
+const SKINNED_KINDS: readonly [UnitKind, string][] = [
+  ['swordsmen', 'soldiers/swordsman.json'],
+  ['halberdiers', 'soldiers/halberdier.json'],
+];
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
@@ -291,9 +310,12 @@ export class ArmyView {
   /** Puts a kind on a skinned body with its clips; false if the file lacks what the game needs. */
   private useRigged(kind: UnitKind, model: RiggedModel): boolean {
     const k = this.kinds.get(kind);
-    const strike = model.clips.find((c) => c.name.toLowerCase().includes('slash'));
+    // The blow: a sword's slash or a polearm's thrust.
+    const strike = model.clips.find((c) => /slash|thrust|stab/.test(c.name.toLowerCase()));
     const block = model.clips.find((c) => c.name.toLowerCase().includes('block'));
     if (!k || !strike || !block) return false;
+    const named = (name: string): Clip | null => model.clips.find((c) => c.name.toLowerCase() === name) ?? null;
+    const deaths = model.clips.filter((c) => c.name.toLowerCase().startsWith('death'));
     const nb = model.bones.length;
     const frames = model.frames.length / (nb * 12);
     // The bone texture: three texels (the matrix's rows) a bone, a row a frame.
@@ -352,17 +374,31 @@ export class ArmyView {
     k.mesh.geometry = g;
     k.mesh.material = skinnedMaterial(bones);
     old.dispose();
-    k.skinned = { frame, fps: strike.fps, strikeStart: strike.start, strikeFrames: strike.frames, guard: block.start, blockHeld: block.start + Math.floor(block.frames * 0.5) };
+    k.skinned = {
+      frame,
+      fps: strike.fps,
+      strikeStart: strike.start,
+      strikeFrames: strike.frames,
+      guard: block.start,
+      blockHeld: block.start + Math.floor(block.frames * 0.5),
+      idle: named('idle'),
+      walk: named('walk'),
+      run: named('run'),
+      impact: named('impact'),
+      deaths,
+    };
     return true;
   }
 
   /** Writes one man into slot `i` of his kind's mesh. */
-  private write(k: KindMesh, i: number, s: Soldier): void {
+  private write(k: KindMesh, i: number, s: Soldier, timeS: number): void {
     const r = s.regiment;
     let fall = 0;
     let y = heightAtM(s.x, s.z);
+    const sk = k.skinned;
     if (!s.alive) {
-      fall = Math.min(1, s.deadS / FALL_S) * (Math.PI / 2);
+      // A body with a death clip falls as the clip falls; others topple over whole.
+      if (!sk || sk.deaths.length === 0) fall = Math.min(1, s.deadS / FALL_S) * (Math.PI / 2);
       y -= Math.max(0, s.deadS - (ARMY.bodySeconds - SINK_S)) * 0.45;
     }
     const p = k.place.array as Float32Array;
@@ -382,13 +418,37 @@ export class ArmyView {
     a[i * 4 + 2] = strike * STRIKE_RAD;
     a[i * 4 + 3] = fall;
     (k.side.array as Float32Array)[i] = r.side;
-    const sk = k.skinned;
     if (sk) {
-      // The clip frame: the blow from its start while it lasts, the shield up behind a shield wall, else on guard.
-      const strikeS = sk.strikeFrames / sk.fps;
-      const frame = s.alive && s.sinceAttackS < strikeS ? sk.strikeStart + Math.min(sk.strikeFrames - 1, Math.floor(s.sinceAttackS * sk.fps)) : r.stance === 'shields' ? sk.blockHeld : sk.guard;
-      (sk.frame.array as Float32Array)[i] = frame;
+      if (sk.walk) a[i * 4 + 1] = 0; // the clip walks; no swing of the legs on top
+      (sk.frame.array as Float32Array)[i] = this.skinnedFrame(sk, s, speed, timeS);
     }
+  }
+
+  /** The clip frame a man of a skinned kind shows. In order: falling dead, the blow while it lasts, a
+   * flinch when hurt, the walk or the run when on the move (in step with the ground he covers), the shield
+   * up behind a shield wall, on guard near a fight, else at ease. */
+  private skinnedFrame(sk: SkinnedKind, s: Soldier, speed: number, timeS: number): number {
+    const at = (c: Clip, t: number): number => c.start + Math.min(c.frames - 1, Math.floor(t * sk.fps));
+    const cycle = (c: Clip, phase: number): number => c.start + Math.floor((((phase % 1) + 1) % 1) * c.frames) % c.frames;
+    if (!s.alive) {
+      const death = sk.deaths[s.slot % Math.max(1, sk.deaths.length)];
+      return death ? at(death, s.deadS) : sk.guard;
+    }
+    // The whole blow fits between two blows: a long one (the halberd's thrust) is played faster.
+    const strikeS = Math.min(sk.strikeFrames / sk.fps, s.regiment.def.attackIntervalS * 0.9);
+    if (s.sinceAttackS < strikeS) return sk.strikeStart + Math.min(sk.strikeFrames - 1, Math.floor((s.sinceAttackS / strikeS) * sk.strikeFrames));
+    const hurtS = timeS - (s.hurtAtS ?? -1e9);
+    if (sk.impact && hurtS >= 0 && hurtS < sk.impact.frames / sk.fps) return at(sk.impact, hurtS);
+    const r = s.regiment;
+    if (speed > 0.25) {
+      if (sk.run && speed > (r.def.walkSpeedMs + r.def.runSpeedMs) / 2) return cycle(sk.run, s.strideM / RUN_CYCLE_M);
+      if (sk.walk) return cycle(sk.walk, s.strideM / WALK_CYCLE_M);
+    }
+    if (r.stance === 'shields') return sk.blockHeld;
+    const fighting = s.target !== null || s.sinceAttackS < AT_EASE_AFTER_S || hurtS < AT_EASE_AFTER_S;
+    // At ease each man is somewhere else in the idle, so a rank does not breathe as one.
+    if (!fighting && sk.idle) return cycle(sk.idle, timeS / (sk.idle.frames / sk.fps) + s.slot * 0.37);
+    return sk.guard;
   }
 
   update(world: World): void {
@@ -398,7 +458,7 @@ export class ArmyView {
       for (const s of r.soldiers) {
         if (!s.alive && s.deadS >= ARMY.bodySeconds) continue;
         if (k.mesh.count >= CAPACITY) break;
-        this.write(k, k.mesh.count++, s);
+        this.write(k, k.mesh.count++, s, world.timeS);
       }
     }
     this.writeGarrisons(world);

@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · M4, krok 4: miecznicy i halabardnicy chodzą, biegną, obrywają i padają
+
+- Z przesłanych animacji Mixamo upieczone na rycerza Thosta: postawa (idle), marsz, bieg, trafienie
+  i dwie śmierci, obok cięcia i bloku. W grze klatka zależy od stanu: martwy — jedna z dwóch śmierci
+  (na zmianę w szeregu, zamiast przewracania całej bryły), cios, drgnięcie po ranie (nowe pole
+  `hurtAtS` w symulacji, tylko do widoku), marsz albo bieg w takt pokonanej drogi (cykl 1,6 m
+  marszu jak w nagraniu, bieg skrócony do 2,5 m, żeby 2,7 m/s szarży nie szło w zwolnionym tempie),
+  tarcza w górę w murze tarcz, garda przy walce, poza walką spokojna postawa przesunięta w fazie
+  u każdego, żeby szereg nie oddychał równo.
+- Halabardnicy dostali ten sam szkielet z własną halabardą (`rigged.py --halberd`) i cios
+  „Upward Thrust”; długi cios gra się szybciej, tak by mieścił się między dwoma uderzeniami.
+- Plik miecznika 1,6 MB (480 kB po gzip) po zaokrągleniu macierzy do 4 miejsc; halabardnika podobny.
+- W zapasie: Stabbing, Double Dagger Stab, chód z celowaniem (łucznicy), Idle 1–2, drugi blok.
+- Testy 86/86; wygląd sprawdzony na zrzutach z bliska (SwiftShader).
+
 ## 2026-11-16 · Drogi jak polne trakty
 
 - Drogi nie są już szarym brukiem: to ubita, jasna, piaszczysta ziemia (kolor ok. sRGB 180·152·116,

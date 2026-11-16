@@ -12,13 +12,15 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 | Co | Źródło | Licencja | Gdzie |
 |---|---|---|---|
 | Rycerz w zbroi płytowej (miecznicy, halabardnicy) | „Rigged Knight in Armor”, Xali, Blendswap | CC0 | w grze (`public/soldiers/knight.json`) |
-| Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | w grze: miecznicy (`public/soldiers/swordsman.json`) |
+| Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | w grze: miecznicy (`swordsman.json`) i halabardnicy z halabardą (`halberdier.json`) |
 | Wojownik w skórze/przeszywanicy, szkielet Mixamo | „.Fuse Warrior”, Leonardo Carvalho, Sketchfab | CC BY 4.0 | do wpięcia (lekka piechota) |
 | Rycerz w płycie z płaszczem (bez szkieletu) | „Medieval knight”, 3dUVpro, Sketchfab | CC BY 4.0 | dowódca / jeździec |
 | Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | w grze: jazda (`public/soldiers/horse.json`), jeździec to rycerz Xali w siodle (`rider.json`) |
 | Jeździec i koń w zbroi (posąg, 120 tys. tr.) | „1964.88 Armor for Man and Horse”, Cleveland Museum of Art | CC0 | ciężka jazda po uproszczeniu |
 | Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | do sprawdzenia |
-| Animacje: cięcie mieczem z tarczą, blok (×2) | Mixamo | Mixamo | w grze (miecznicy) |
+| Animacje miecz i tarcza: cięcie, blok, postawa, marsz, bieg, trafienie, śmierć ×2 | Mixamo | Mixamo | w grze (miecznicy, halabardnicy) |
+| Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
+| Stabbing, Double Dagger Stab, Standing Aim Walk Forward/Right, Idle 1–2, Block (drugi) | Mixamo | Mixamo | w zapasie (pikinierzy, łucznicy) |
 
 Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjnej), „Knight Face Reval”
 (postać Paladin z Mixamo wrzucona ponownie przez kogoś innego), „Knight medieval no textures”
@@ -29,14 +31,10 @@ Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjn
 ### Animacje (Mixamo: FBX, **Without Skin**, 30 kl./s, przy ruchu zaznaczyć **In Place**)
 
 Wspólne dla żołnierzy:
-1. Sword And Shield Idle (postawa)
-2. Sword And Shield Walk (marsz)
-3. Sword And Shield Run (bieg)
-4. Sword And Shield Death (śmierć) — najlepiej dwie różne
-5. Sword And Shield Impact (trafienie)
+1.–5. ~~Idle, Walk, Run, Death ×2, Impact (miecz i tarcza)~~ — są, w grze
 
 Broń drzewcowa (pikinierzy, halabardnicy, milicja):
-6. Spear Thrust / Standing Melee Attack (pchnięcie)
+6. ~~Pchnięcie~~ — jest (Upward Thrust); przydałoby się jeszcze pchnięcie oburącz z biodra (pikinierzy)
 7. Spear Walk albo Rifle Walk / Two-handed Walk (marsz z drzewcem)
 
 Łucznicy i kusznicy:

@@ -54,6 +54,7 @@ export function topMorale(world: World, r: Regiment): number {
 
 export function wound(world: World, victim: Soldier, damage: number, bySide: Side, by: Regiment | null): void {
   victim.hp -= damage;
+  victim.hurtAtS = world.timeS;
   if (victim.hp <= 0) kill(world, victim, bySide, by);
 }
 

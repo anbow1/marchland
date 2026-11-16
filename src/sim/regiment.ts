@@ -20,6 +20,8 @@ export interface Soldier {
   attackCooldownS: number;
   /** Seconds since the last blow was struck (drives the swing animation); large when idle. */
   sinceAttackS: number;
+  /** When he was last hurt (world time; for the view's flinch). */
+  hurtAtS?: number;
   /** Enemy he is fighting, if any. */
   target: Soldier | null;
   /** Counts down to his next look for an enemy. */

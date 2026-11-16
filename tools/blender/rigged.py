@@ -1,6 +1,9 @@
 """Bakes a Mixamo-rigged character and Mixamo animations into the game's skinned soldier.
 
-    bl/bin/python -I tools/blender/rigged.py <character.gltf> <out.json> <clip.fbx>...
+    bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--halberd] <clip.fbx>...
+
+With --halberd the man carries a halberd in his sword hand instead of sword and shield (the clips' sword
+joint holds it: a 2.4 m shaft, more of it ahead of the hand than behind, the axe and spike at its head).
 
 The character ("knight for game project (old)", Thomas.Osterhammel, Sketchfab, CC BY 4.0, see
 CREDITS.md) stands in an A pose and looks along -X; the clips (Mixamo, without skin) were made on a
@@ -180,7 +183,17 @@ def box(cx, cy, cz, sx, sy, sz):
     return corners, faces
 
 
-def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris):
+HALBERD = [
+    # Along the sword's line (-Y ahead of the grip at y 0.16): the shaft from 0.9 m behind to 1.5 m ahead.
+    ("Sword_joint", (-0.79, -0.44, 1.41), (0.035, 2.4, 0.035), (0.20, 0.13, 0.07), 0.0, 0.8, 0.0),  # shaft
+    ("Sword_joint", (-0.79, -1.75, 1.41), (0.025, 0.34, 0.012), (0.55, 0.56, 0.58), 1.0, 0.3, 0.0),  # spike
+    ("Sword_joint", (-0.79, -1.42, 1.50), (0.012, 0.26, 0.2), (0.55, 0.56, 0.58), 1.0, 0.3, 0.0),  # axe blade
+    ("Sword_joint", (-0.79, -1.45, 1.33), (0.012, 0.07, 0.12), (0.55, 0.56, 0.58), 1.0, 0.3, 0.0),  # back hook
+    ("Sword_joint", (-0.79, -1.2, 1.41), (0.05, 0.1, 0.05), (1, 1, 1), 0.0, 0.7, 1.0),  # tassel in the side's colour
+]
+
+
+def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris, polearm=None):
     """The sword in the right hand and the shield on the left forearm, where the clips' paladin held them in
     their T pose (sword along -Y, the shield flat along the forearm), moved to the character's hand."""
     steel = (0.55, 0.56, 0.58)
@@ -193,6 +206,8 @@ def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris)
         ("Shield_joint", (0.57, 0.11, 1.50), (0.44, 0.66, 0.04), (1, 1, 1), 0.0, 0.7, 1.0),  # face, in the side's colour
         ("Shield_joint", (0.57, 0.11, 1.475), (0.47, 0.69, 0.02), wood, 0.0, 0.8, 0.0),  # rim and back
     ]
+    if polearm:
+        parts = polearm
     for joint, c, s, colour, metal, rough, team in parts:
         hand = WEAPONS[joint]
         corners, faces = box(*c, *s)
@@ -281,7 +296,8 @@ def bake_frames(char_rest, clip_path, hips_ratio):
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1:]
     char_path, out = args[0], args[1]
-    clips = args[2:]
+    halberd = "--halberd" in args
+    clips = [a for a in args[2:] if not a.startswith("--")]
     rig, G, char_rest = load_character(char_path)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G)
     hips_char = head_of(char_rest["Hips"]).z
@@ -298,7 +314,7 @@ def main() -> None:
         clip_meta.append({"name": name, "start": len(all_frames), "frames": len(frames), "fps": fps})
         all_frames += frames
     char_hand = {hand: head_of(char_rest[hand]) for hand in WEAPONS.values()}
-    add_weapons(anim_hand, char_hand, pos, nor, col, surf, skin, wts, tris)
+    add_weapons(anim_hand, char_hand, pos, nor, col, surf, skin, wts, tris, HALBERD if halberd else None)
     # Feet on the ground.
     floor = min(p[1] for p in pos)
     for p in pos:
@@ -308,7 +324,7 @@ def main() -> None:
     for mats in all_frames:
         for m in mats:
             g = lift.inverted() @ P @ m @ P.inverted() @ lift
-            flat += [round(g[r][c], 5) for r in range(3) for c in range(4)]
+            flat += [round(g[r][c], 4) for r in range(3) for c in range(4)]
     r4 = lambda v: [round(x, 4) for x in v]  # noqa: E731
     data = {
         "source": "knight for game project (old), Thomas.Osterhammel (Sketchfab), CC BY 4.0; clips from Mixamo",
