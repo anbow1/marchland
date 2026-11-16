@@ -1,4 +1,4 @@
-import { BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, InstancedMesh, Matrix4, type MeshStandardNodeMaterial, Quaternion, type Scene, Vector3 } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Matrix4, type MeshStandardNodeMaterial, Quaternion, type Scene, Vector3 } from 'three/webgpu';
 import { PEOPLE } from '../config.ts';
 import type { Person } from '../sim/people.ts';
 import { heightAtM } from '../sim/terrain.ts';
@@ -6,6 +6,7 @@ import { RESOURCE_IDS, type ResourceId, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
+import { boneTexture, interleave, type RiggedModel, skinnedMaterial } from './armyView.ts';
 import { groundUnder } from './townView.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
@@ -228,6 +229,23 @@ const GOOD_SHAPE: Record<ResourceId, [LoadShape, number]> = {
 /** How big a load is (its longest side, metres) and where it rides: on the shoulder, like the built sack. */
 const LOAD_SIZE_M = 0.5;
 const LOAD_AT: [number, number, number] = [0.1, 1.45, -0.08];
+/** With the modelled townsfolk the load is held before the chest in both hands (their box walk). */
+const LOAD_IN_HANDS: [number, number, number] = [0, 0.95, 0.36];
+/** The workshops whose men dig (fields, quarries, mines, the woods); the fisher casts; the rest lift and set down. */
+const DIGGERS: ReadonlySet<string> = new Set(['farm', 'vineyard', 'quarry', 'ironMine', 'woodcutter']);
+
+type Clip = { start: number; frames: number; fps: number; travelM?: number };
+/** The townsman's clips by name (public/people/townsman.json). */
+interface TownsmanClips {
+  boxwalk: Clip;
+  boxidle: Clip;
+  walk: Clip;
+  idle: Clip;
+  pickup: Clip;
+  putdown: Clip;
+  digging: Clip;
+  fishing: Clip;
+}
 /** Goods waiting in a yard to be carried off: a piece (0.6 m) for every few units, at most a row of six
  * along the front of the plot, right of the door (the door looks along the building's +Z). */
 const YARD_PIECE_M = 0.6;
@@ -255,9 +273,14 @@ export class PeopleView {
   private readonly yardShapes = new Map<LoadShape, InstancedMesh>();
   private readonly shapeTints = new Map<ResourceId, Color>();
   private readonly prepare: (mesh: InstancedMesh) => InstancedMesh;
+  /** The modelled townsfolk (one skinned mesh for both sides), once loaded; until then the built figures. */
+  private folk: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: TownsmanClips } | null = null;
   private readonly material: MeshStandardNodeMaterial;
 
-  constructor(scene: Scene, lib: SurfaceLibrary) {
+  constructor(
+    private readonly scene: Scene,
+    lib: SurfaceLibrary,
+  ) {
     const material: MeshStandardNodeMaterial = surfaceMaterial(lib, 'people');
     this.material = material;
     material.roughness = 0.85;
@@ -296,13 +319,83 @@ export class PeopleView {
   }
 
   /** The modelled loads: one instanced mesh a shape; a shape whose file fails keeps the built sack. */
+  async loadTownsfolk(base: string): Promise<void> {
+    try {
+      const model = (await (await fetch(`${base}people/townsman.json`)).json()) as RiggedModel;
+      const named = Object.fromEntries(model.clips.map((c) => [c.name, c])) as unknown as TownsmanClips;
+      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing'] as const) if (!named[k]) return;
+      const n = model.positions.length / 3;
+      const g = new BufferGeometry();
+      interleave(g, [
+        ['position', 3, model.positions],
+        ['normal', 3, model.normals],
+        ['color', 3, model.colours],
+        ['aSurface', 3, model.surface],
+      ]);
+      interleave(g, [
+        ['aSkin', 4, model.skin],
+        ['aWeight', 4, model.weights],
+        ['aPart', 4, new Float32Array(n * 4)],
+      ]);
+      g.setIndex(model.triangles);
+      g.computeBoundingSphere();
+      const capacity = 2 * PEOPLE.maxPerSide;
+      const instanced = (size: number): InstancedBufferAttribute => {
+        const a = new InstancedBufferAttribute(new Float32Array(capacity * size), size);
+        a.setUsage(DynamicDrawUsage);
+        return a;
+      };
+      const place = instanced(4);
+      const frame = instanced(1);
+      const side = instanced(1);
+      g.setAttribute('aPlace', place);
+      g.setAttribute('aAnim', instanced(4));
+      g.setAttribute('aSide', side);
+      g.setAttribute('aFrame', frame);
+      const mesh = new InstancedMesh(g, skinnedMaterial(boneTexture(model)), capacity);
+      mesh.name = 'townsfolk';
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.scene.add(mesh);
+      this.folk = { mesh, place, frame, side, clips: named };
+    } catch {
+      this.folk = null;
+    }
+  }
+
+  /** A townsman's frame: what he does, and his own place in the clip so no two move as one. */
+  private folkFrame(c: TownsmanClips, person: Person, world: World, index: number, carted: boolean): number {
+    const cycle = (clip: Clip, phase: number): number => clip.start + (Math.floor((((phase % 1) + 1) % 1) * clip.frames) % clip.frames);
+    const looped = (clip: Clip, offsetS: number): number => cycle(clip, (world.timeS + offsetS) / (clip.frames / clip.fps));
+    const laden = person.load !== null || carted;
+    if (person.speedMs > 0.05) {
+      const clip = laden ? c.boxwalk : c.walk;
+      return cycle(clip, person.strideM / Math.max(0.5, clip.travelM ?? 1.4));
+    }
+    const offset = index * 1.37;
+    if (person.act === 'build') return looped(c.digging, offset);
+    if (person.act === 'work') {
+      const kind = person.work >= 0 ? world.towns[person.side].plots[person.work]?.kind : undefined;
+      if (kind === 'fisher') return looped(c.fishing, offset);
+      if (kind && DIGGERS.has(kind)) return looped(c.digging, offset);
+      // Lifting and setting down by turns.
+      const pickS = c.pickup.frames / c.pickup.fps;
+      const t = (world.timeS + offset) % (pickS + c.putdown.frames / c.putdown.fps);
+      return t < pickS ? c.pickup.start + Math.floor(t * c.pickup.fps) : c.putdown.start + Math.min(c.putdown.frames - 1, Math.floor((t - pickS) * c.putdown.fps));
+    }
+    return laden ? looped(c.boxidle, offset) : looped(c.idle, offset);
+  }
+
   async loadGoods(base: string): Promise<void> {
     await Promise.all(
       LOAD_SHAPES.map(async (shape) => {
         try {
           const model = (await (await fetch(`${base}props/goods/${shape}.json`)).json()) as PropModel;
           const scale = LOAD_SIZE_M / Math.max(...(model.size as number[]));
-          const g = propGeometry(model, LOAD_AT[0], LOAD_AT[2], null, scale, LOAD_AT[1]);
+          const at = this.folk ? LOAD_IN_HANDS : LOAD_AT;
+          const g = propGeometry(model, at[0], at[2], null, scale, at[1]);
           const mesh = this.prepare(new InstancedMesh(g, this.material, 2 * PEOPLE.maxPerSide));
           mesh.name = `loads ${shape}`;
           this.shapes.set(shape, mesh);
@@ -394,27 +487,47 @@ export class PeopleView {
     let loads = 0;
     const shapeCounts = new Map<LoadShape, number>();
     const carts = [0, 0];
+    let folk = 0;
+    const folkCapacity = 2 * PEOPLE.maxPerSide;
     for (let i = 0; i < world.people.length; i++) {
       const person = world.people[i] as Person;
       if (!person.alive) continue;
-      const pose = this.poseOf(person, world.timeS, i);
-      const counts = this.counts[person.side] as Record<Pose, number>;
-      const mesh = (this.poses[person.side] as Record<Pose, InstancedMesh>)[pose];
-      const at = counts[pose];
-      if (at >= PEOPLE.maxPerSide) continue;
-      // A small bob on the passing step.
-      const bob = pose === 'walkA' || pose === 'walkB' ? 0.03 : 0;
-      this.p.set(person.x, heightAtM(person.x, person.z) + bob, person.z);
-      this.q.setFromAxisAngle(this.up, person.headingRad);
-      this.m.compose(this.p, this.q, this.s);
-      mesh.setMatrixAt(at, this.m);
-      // No two tunics quite the same brown.
-      const shade = 0.82 + ((i * 37) % 11) * 0.03;
-      mesh.setColorAt(at, this.tint.setRGB(shade, shade * (0.94 + ((i * 13) % 7) * 0.02), shade * 0.95));
-      counts[pose] = at + 1;
       // A carrier on an errand takes the town's cart along; the load rides in it.
       const level = world.towns[person.side].transportLevel;
       const carted = person.role === 'carrier' && person.errand !== 'none' && level >= 2;
+      const pose = this.poseOf(person, world.timeS, i);
+      const ground = heightAtM(person.x, person.z);
+      if (this.folk) {
+        if (folk >= folkCapacity) continue;
+        const f = this.folk;
+        const pl = f.place.array as Float32Array;
+        pl[folk * 4] = person.x;
+        pl[folk * 4 + 1] = ground;
+        pl[folk * 4 + 2] = person.z;
+        // The model looks along -Z; the figure's frame (and a heading) along +Z.
+        pl[folk * 4 + 3] = person.headingRad + Math.PI;
+        (f.side.array as Float32Array)[folk] = person.side;
+        (f.frame.array as Float32Array)[folk] = this.folkFrame(f.clips, person, world, i, carted);
+        folk++;
+        this.p.set(person.x, ground, person.z);
+        this.q.setFromAxisAngle(this.up, person.headingRad);
+        this.m.compose(this.p, this.q, this.s);
+      } else {
+        const counts = this.counts[person.side] as Record<Pose, number>;
+        const mesh = (this.poses[person.side] as Record<Pose, InstancedMesh>)[pose];
+        const at = counts[pose];
+        if (at >= PEOPLE.maxPerSide) continue;
+        // A small bob on the passing step.
+        const bob = pose === 'walkA' || pose === 'walkB' ? 0.03 : 0;
+        this.p.set(person.x, ground + bob, person.z);
+        this.q.setFromAxisAngle(this.up, person.headingRad);
+        this.m.compose(this.p, this.q, this.s);
+        mesh.setMatrixAt(at, this.m);
+        // No two tunics quite the same brown.
+        const shade = 0.82 + ((i * 37) % 11) * 0.03;
+        mesh.setColorAt(at, this.tint.setRGB(shade, shade * (0.94 + ((i * 13) % 7) * 0.02), shade * 0.95));
+        counts[pose] = at + 1;
+      }
       if (carted) {
         const k = level >= 3 ? 1 : 0;
         const mesh = this.carts[k] as InstancedMesh;
@@ -448,6 +561,12 @@ export class PeopleView {
           loads++;
         }
       }
+    }
+    if (this.folk) {
+      this.folk.mesh.count = folk;
+      this.folk.place.needsUpdate = true;
+      this.folk.frame.needsUpdate = true;
+      this.folk.side.needsUpdate = true;
     }
     for (const side of [0, 1] as const satisfies readonly Side[]) {
       for (const pose of POSES) {

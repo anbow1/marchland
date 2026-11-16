@@ -1,9 +1,10 @@
 """Bakes a Mixamo-rigged character and Mixamo animations into the game's skinned soldier.
 
     bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
-        [--height 1.8] [--source "credit"] [--team <image name part>] <clip.fbx>...
+        [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
+        <clip.fbx>...
 
---arms: what the man carries (the game's own simple shapes): sword and shield (the default), a halberd or
+--arms: what the man carries (the game's own simple shapes; "none" for nothing): sword and shield (the default), a halberd or
 a pike in the sword hand (a shaft along the sword's line, more of it ahead of the hand than behind), or a
 longbow upright in the left fist. --height: the character is scaled to stand this tall (metres), whatever
 units it came in. --source: the credit written into the file. --team: the garment (by its texture's name)
@@ -324,7 +325,8 @@ def bake_frames(char_rest, clip_path, hips_ratio):
     aw = anim.matrix_world
     def rest_world(n):
         return aw @ bones[n].matrix_local
-    a_rest_rot = {n: rest_world(n).to_3x3().normalized().to_quaternion() for n in list(KEEP) + list(WEAPONS)}
+    # Clips made without a weapon have no weapon joints: those then follow the hand that would hold them.
+    a_rest_rot = {n: rest_world(n).to_3x3().normalized().to_quaternion() for n in list(KEEP) + [j for j in WEAPONS if j in bones]}
     a_rest_head = {n: aw @ bones[n].head_local for n in bones}
     # The character's rest turned onto the clip's rest, bone by bone (directions from head to the child's head).
     align = {}
@@ -374,6 +376,9 @@ def bake_frames(char_rest, clip_path, hips_ratio):
             m.translation = h - r @ h_rest
             mats.append(m)
         for joint, hand in WEAPONS.items():
+            if joint not in bones:
+                mats.append(mats[ORDER.index(hand)].copy())
+                continue
             pb = pose[bones[joint].name]
             world = aw @ pb.matrix
             delta = world.to_3x3().normalized().to_quaternion() @ a_rest_rot[joint].inverted()
@@ -397,7 +402,11 @@ def main() -> None:
     height_m = float(option("--height", "1.99"))
     source = option("--source", "knight for game project (old), Thomas.Osterhammel (Sketchfab), CC BY 4.0")
     team_garment = option("--team", None)
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team") if n in args}
+    global TEAM_SHARE, TARGET_TRIS
+    TEAM_SHARE = float(option("--team-share", str(TEAM_SHARE)))
+    TARGET_TRIS = int(option("--tris", str(TARGET_TRIS)))
+    step = int(option("--step", "1"))  # every step-th frame (a clip's fps divided by it)
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
@@ -412,11 +421,15 @@ def main() -> None:
         if abs(ratio - 1) > 1e-3:
             frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, ratio)
         anim_hand = anim_hand or hands
+        frames = frames[::step]
+        fps = fps / step
         clip_meta.append({"name": name, "start": len(all_frames), "frames": len(frames), "fps": fps, "travelM": round(travel, 3)})
         all_frames += frames
     char_hand = {hand: head_of(char_rest[hand]) for hand in WEAPONS.values()}
     mesh = (pos, nor, col, surf, skin, wts, tris)
-    if arms == "bow":
+    if arms == "none":
+        pass
+    elif arms == "bow":
         add_bow(head_of(char_rest["LeftHand"]), *mesh)
     else:
         add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE}[arms])

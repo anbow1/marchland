@@ -102,7 +102,10 @@ export class WorldView {
     const models = await this.town.loadModels(import.meta.env.BASE_URL);
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
-    await Promise.all([this.people.loadCarts(import.meta.env.BASE_URL), this.people.loadGoods(import.meta.env.BASE_URL)]);
+    // The modelled townsfolk cost up to 400 000 triangles a frame: the phone preset keeps the built figures.
+    await Promise.all([this.people.loadCarts(import.meta.env.BASE_URL), quality === 'low' ? Promise.resolve() : this.people.loadTownsfolk(import.meta.env.BASE_URL)]);
+    // After the townsfolk: their loads are held in the hands, not on the shoulder.
+    await this.people.loadGoods(import.meta.env.BASE_URL);
     this.vines = new VinesView(scene, surfaces);
     this.crops = new CropsView(scene);
     this.smoke = new SmokeView(scene);

@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Ludzie w mieście z modeli i animacji
+
+- Tragarze, robotnicy i budowniczowie nie są już figurami z pudełek: „.Fuse Civilian 2” w lżejszej
+  wersji (1200 trójkątów, tunika w barwach strony w 35%), 8 klipów Mixamo próbkowanych co drugą
+  klatkę (15 kl./s): chód z pudłem i postawa z pudłem (z ładunkiem albo z taczką), zwykły chód
+  i postawa (bez ładunku), podnoszenie i odkładanie na zmianę (warsztaty), kopanie (budowa, pola,
+  winnica, kamieniołom, kopalnia, drwal), zarzucanie wędki (rybak). Każdy w innym miejscu klipu,
+  krok w takt drogi (`travelM`: chód z pudłem 1,3 m, chód 1,5 m).
+- Ładunek niesiony przed piersią w obu rękach zamiast na ramieniu.
+- `rigged.py`: `--arms none`, klipy bez kości broni (te idą za dłonią), `--tris`, `--team-share`,
+  `--step` (co która klatka). Plik 1,7 MB (490 kB gzip).
+- Koszt: do 340 ludzi × 1200 tr. ≈ 400 tys. trójkątów; ustawienie „niska” (telefony) zostaje przy
+  figurach z pudełek. WebGPU: 0 błędów, 133 potoki (+2). Testy 86/86; zrzuty z bliska.
+
 ## 2026-11-16 · Poprawka: skinowani żołnierze i kowal na WebGPU
 
 - Pomiar `tools/measure/load.mjs` na ścieżce WebGPU (tej, której używa prawdziwa karta) wykazał:

@@ -67,12 +67,16 @@ Broń drzewcowa (pikinierzy, halabardnicy, milicja):
 9. Crossbow / Rifle Aim + Shoot (kusza, jeśli jest)
 
 Tragarze, rzemieślnicy, rolnicy (ludzie w mieście):
-10. Walking (zwykły chód), Carrying / Box Walk (chód z ładunkiem), Idle
-11. Pick Up / Put Down (podnoszenie i odkładanie)
-12. Hammering / Building, Chopping (rąbanie), Digging / Pick Axe (kopanie), Harvesting / Plant (żniwa, sadzenie), Sitting (opcjonalnie)
+10. ~~Box Walk, Box Idle~~ — są, w grze; brakuje zwykłego **Walking** (bez broni; teraz chód z mieczem i tarczą)
+11. ~~Pick Up / Put Down~~ — są, w grze
+12. ~~Digging~~, ~~Fishing Cast~~ — są, w grze; brakuje: **Hammering** (budowa), **Chopping** (drwal), **Harvesting / Plant** (żniwa, sadzenie)
 
 Jazda:
 13. Horse Riding (jeździec w siodle) — jeśli Mixamo ma; inaczej poza siedząca
+
+### Dostarczone 16.11 wieczorem — do sprawdzenia
+„bar patrons outfits”, „5 piece scalemail armor (metahuman rigged)”, „medieval clothing free”: ubrania
+i zbroja do dopasowania na szkielet (MetaHuman to inny szkielet niż Mixamo) — w kolejce.
 
 ### Postacie (ze szkieletem Mixamo, CC0/CC BY)
 14. Chłop / chłopka (tunika, kaptur, fartuch) — tragarze, rolnicy
