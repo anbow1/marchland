@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Trawa ze źdźbeł przy kamerze, łąka w połaciach
+
+- **Źdźbła z gier FPS**: wspólne pole trawy (`render/grassField.ts`, to samo co w Field Line,
+  Castaway Lagoon, Tanks i Ridgeline — prawdziwe źdźbła z krzywych Béziera, układane przez GPU w
+  płytkach wokół kamery, trzy pierścienie, trzy rysowania, płynne zanikanie z odległością, wiatr).
+  Ustawienia jak w Tanks dla kamery z góry, mocniej: szersze, pochylone źdźbła czytają się jako kępy.
+  Rośnie na siatce samego terenu (nic nie wisi), gęstość czytana w shaderze z mapy pokrycia i mapy
+  robót: bez trawy w lesie, na skałach, na mulistych brzegach, na drogach, podwórzach i polach —
+  nowa droga jest od razu goła. Widoczne przy kamerze niżej niż 95 m nad ziemią (wyżej źdźbło jest
+  mniejsze od piksela); 520 źdźbeł na płytkę 4 m do 52 m na wysokiej jakości, 220 do 34 m na niskiej.
+- **Łąka z daleka**: połacie kilkudziesięciometrowe — ciemniejsze bujne zagłębienia, jaśniejsze
+  płowiejące wzniesienia — mocniejszy szczegół trawy na średnich odległościach, lekko mniejsze
+  nasycenie; już nie jedna warstwa zielonej farby.
+
 ## 2026-11-16 · M4, krok 1: miecznicy i halabardnicy w zbroi płytowej z modelu
 
 - **„Rigged Knight in Armor”** (Xali, BlendSwap, CC0) przez `tools/blender/soldiers.py`: sztywne płyty

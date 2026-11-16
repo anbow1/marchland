@@ -16,6 +16,17 @@ import { layerOf, type SurfaceId, type SurfaceLibrary } from './surfaces.ts';
 // noise, so a hundred repeats across the screen do not read as a grid
 // (GUIDE §2b: flat ground, tiling).
 
+/** The terrain's height grid and its cover map, for what grows on it. */
+export interface TerrainGrid {
+  heights: Float32Array;
+  originX: number;
+  originZ: number;
+  cellM: number;
+  samples: number;
+  cover: DataTexture;
+  extentM: number;
+}
+
 /** The mesh reaches this far beyond the playable square on every side. */
 export const TERRAIN_MARGIN_M = 320;
 const CELL_M = 4;
@@ -218,7 +229,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.12)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.08)));
   const distanceM = positionWorld.sub(cameraPosition).length();
   /** How much the fine scans still add on top of the aerial photograph: all of it near, a little far away. */
-  const detailShare = float(1).sub(smoothstep(DETAIL_NEAR_M, DETAIL_FAR_M, distanceM)).mul(0.7).add(0.2);
+  const detailShare = float(1).sub(smoothstep(DETAIL_NEAR_M, DETAIL_FAR_M, distanceM)).mul(0.6).add(0.4);
   const luminance = vec3(0.2126, 0.7152, 0.0722);
   /** A fine scan as a ratio round 1 (the scan over its own average): blades and clumps, not a colour of its own. */
   const detailOf = (id: SurfaceId): Node<'vec3'> => {
@@ -262,7 +273,15 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const colour = mix(scanned, cornColour, smoothstep(0.03, 0.09, corn).mul(soil));
   // A slow drift of tone, so one meadow is not one green.
   const tone = float(0.8).add(smoothstep(0.3, 0.7, fine).mul(0.2)).add(coarse.mul(0.12)).add(patch.mul(0.1));
-  material.colorNode = colour.mul(tone);
+  // Swathes tens of metres across, as a meadow seen from a hill: darker lush hollows, pale sunlit
+  // rises going a little straw-coloured. Turf only (where the wild grass shows), and a touch less
+  // saturated overall, so the land does not read as one coat of green paint.
+  const swathe = noiseAt(140, 0.29, 0.61);
+  const wildShare = float(1).sub(forest).mul(float(1).sub(rock)).mul(float(1).sub(earth)).mul(float(1).sub(soil)).mul(float(1).sub(paved));
+  const swatheTint = mix(vec3(0.78, 0.86, 0.8), vec3(1.14, 1.1, 0.86), smoothstep(0.25, 0.75, swathe));
+  const turf = colour.mul(tone).mul(mix(vec3(1), swatheTint, wildShare));
+  const grey = turf.dot(luminance);
+  material.colorNode = mix(turf, vec3(grey), wildShare.mul(0.12));
   if (lib.detailed) {
     const bump = blend((id) => texture(lib.normal, uvOf(id, 1)).depth(int(layerOf(id))).rgb).mul(2).sub(1);
     // Fade the bumps out with distance: far away they only shimmer.
@@ -276,6 +295,12 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   }
   const mesh = new Mesh(geometry, material);
   mesh.name = 'terrain';
+  // What the grass field needs (grassView.ts): the mesh's own height grid (rows along +Z, x fastest; each
+  // cell cut from (i+1, j) to (i, j+1), as PlaneGeometry splits it) and the cover map.
+  const heights = new Float32Array(position.count);
+  for (let i = 0; i < position.count; i++) heights[i] = position.getY(i);
+  const grass: TerrainGrid = { heights, originX: -extentM / 2, originZ: -extentM / 2, cellM: extentM / cells, samples: cells + 1, cover, extentM };
+  mesh.userData['grid'] = grass;
   mesh.receiveShadow = true;
   return mesh;
 }
