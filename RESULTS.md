@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · M4, krok 2: animacje szkieletowe na GPU — miecznicy tną i trzymają gardę
+
+- `tools/blender/rigged.py`: postać ze szkieletem Mixamo („knight for game project (old)”, Thost,
+  CC BY 4.0) i klipy Mixamo (cięcie mieczem z tarczą, blok). Postać stoi w pozie „A” i patrzy wzdłuż
+  −X, klipy są na postaci w pozie „T” patrzącej wzdłuż −Y: ruch przenoszony kość po kości — kość bierze
+  obrót tej samej kości klipu od jej spoczynku, po wyrównaniu kierunków spoczynkowych (żeby różnica A/T
+  nie przeszła na zamach); biodra tylko w pionie (w miejscu), w skali wzrostu. 22 kości ciała + 2 kości
+  broni z klipów; miecz i tarcza (w barwach strony) to proste kształty gry, zawieszone tak, jak trzymał
+  je paladyn z klipów (zmierzone, nie skopiowane). Siatka 3 449 trójkątów, kolory z tekstury.
+- W grze: macierze kości w teksturze (3 teksele na kość, wiersz na klatkę: 72 × 64), shader skinningu
+  (4 kości na wierzchołek) — każdy żołnierz wybiera klatkę: cięcie od początku przy każdym ciosie,
+  tarcza w górze przy ścianie tarcz, garda poza tym; nadal jedno rysowanie na rodzaj. Dopóki nie ma
+  klipu chodu, nogi chodzą wahadłem jak dotąd. Miecznicy na tym ciele; halabardnicy na rycerzu z płyt.
+- Trawa niższa (do ~45 cm): przy ludziach 1,8 m sięgała kolan.
+- Testy: 86 / 86.
+
 ## 2026-11-16 · Łąka z daleka bez cętek, jaśniejsza; lista potrzebnych modeli
 
 - Z daleka łąka była w cętkach: drobny wzór zdjęcia łąki (kępy i wytarcia po 2–3 m) i drobny szum

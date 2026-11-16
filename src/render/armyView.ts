@@ -1,5 +1,5 @@
-import { abs, attribute, cos, Fn, mix, normalLocal, sin, vec3 } from 'three/tsl';
-import { Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
+import { abs, attribute, cos, Fn, int, ivec2, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
+import { BufferAttribute, BufferGeometry, Color, DataTexture, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
 import { ARMY, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
@@ -43,6 +43,8 @@ interface KindMesh {
   place: InstancedBufferAttribute;
   /** Per man: stride phase, stride strength, strike angle, fall angle. */
   anim: InstancedBufferAttribute;
+  /** A modelled, skinned kind: each man's frame in its clips, and where the clips lie. */
+  skinned?: SkinnedKind;
   /** Per man: 0 or 1, which side he fights for. */
   side: InstancedBufferAttribute;
 }
@@ -91,6 +93,84 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
   m.roughnessNode = surface.y;
   return m;
 }
+
+/** A skinned body and its clips as tools/blender/rigged.py writes them. */
+interface RiggedModel {
+  bones: string[];
+  clips: { name: string; start: number; frames: number; fps: number }[];
+  frames: number[];
+  positions: number[];
+  normals: number[];
+  colours: number[];
+  surface: number[];
+  skin: number[];
+  weights: number[];
+  triangles: number[];
+}
+
+interface SkinnedKind {
+  frame: InstancedBufferAttribute;
+  fps: number;
+  /** The strike: first frame and length; the guard (the first frame of the block); the block held up. */
+  strikeStart: number;
+  strikeFrames: number;
+  guard: number;
+  blockHeld: number;
+}
+
+/**
+ * The skinned soldiers' material: each vertex is moved by up to four bones whose matrices for the man's
+ * frame are read from a texture (three texels a bone, a row a frame), so every man of the kind is still
+ * one draw. While no walk is baked, the legs swing about the hips as the boxes' did; then the man is
+ * turned, felled and placed as the others are.
+ */
+function skinnedMaterial(bones: DataTexture): MeshStandardNodeMaterial {
+  const m = new MeshStandardNodeMaterial({ name: 'skinned footman' });
+  const skin = attribute('aSkin', 'vec4') as Node<'vec4'>;
+  const weight = attribute('aWeight', 'vec4') as Node<'vec4'>;
+  const part = attribute('aPart', 'vec4') as Node<'vec4'>;
+  const surface = attribute('aSurface', 'vec3') as Node<'vec3'>;
+  const place = attribute('aPlace', 'vec4') as Node<'vec4'>;
+  const anim = attribute('aAnim', 'vec4') as Node<'vec4'>;
+  const side = attribute('aSide', 'float') as Node<'float'>;
+  const frame = attribute('aFrame', 'float') as Node<'float'>;
+  const teams = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1])] as const;
+  const row = (bone: Node<'float'>, r: number): Node<'vec4'> => textureLoad(bones, ivec2(int(bone).mul(3).add(r), int(frame))) as Node<'vec4'>;
+  /** A point (w 1) or a direction (w 0) through the four bones. */
+  const skinned = (v: Node<'vec3'>, w: number): Node<'vec3'> => {
+    const v4 = vec4(v, w);
+    const one = (bone: Node<'float'>, k: Node<'float'>): Node<'vec3'> => vec3(row(bone, 0).dot(v4), row(bone, 1).dot(v4), row(bone, 2).dot(v4)).mul(k);
+    return one(skin.x, weight.x).add(one(skin.y, weight.y)).add(one(skin.z, weight.z)).add(one(skin.w, weight.w));
+  };
+  const pose = (v: Node<'vec3'>): Node<'vec3'> => {
+    const cf = cos(anim.w);
+    const sf = sin(anim.w);
+    const fallen = vec3(v.x, v.y.mul(cf).sub(v.z.mul(sf)), v.y.mul(sf).add(v.z.mul(cf)));
+    const cy = cos(place.w);
+    const sy = sin(place.w);
+    return vec3(fallen.x.mul(cy).add(fallen.z.mul(sy)), fallen.y, fallen.z.mul(cy).sub(fallen.x.mul(sy)));
+  };
+  m.positionNode = Fn(() => {
+    const p = skinned(attribute('position', 'vec3') as Node<'vec3'>, 1);
+    // The legs walk about the hips (part: pivot height, pivot depth, swing); a clip with a walk will take over.
+    const angle = part.z.mul(sin(anim.x)).mul(anim.y).mul(WALK_SWING_RAD);
+    const c = cos(angle);
+    const s = sin(angle);
+    const ry = p.y.sub(part.x);
+    const rz = p.z.sub(part.y);
+    const bob = abs(sin(anim.x)).mul(anim.y).mul(0.05);
+    const swung = vec3(p.x, part.x.add(ry.mul(c)).add(rz.mul(s)).add(bob), part.y.sub(ry.mul(s)).add(rz.mul(c)));
+    normalLocal.assign(pose(skinned(attribute('normal', 'vec3') as Node<'vec3'>, 0).normalize()));
+    return pose(swung).add(place.xyz);
+  })();
+  m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, mix(vec3(teams[0].r, teams[0].g, teams[0].b), vec3(teams[1].r, teams[1].g, teams[1].b), side), surface.z);
+  m.metalnessNode = surface.x;
+  m.roughnessNode = surface.y;
+  return m;
+}
+
+/** The kinds on a skinned body, and the file each one's body comes from. */
+const SKINNED_KINDS: readonly [UnitKind, string][] = [['swordsmen', 'soldiers/swordsman.json']];
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
@@ -160,7 +240,17 @@ export class ArmyView {
       return 0;
     }
     let changed = 0;
+    for (const [kind, file] of SKINNED_KINDS) {
+      try {
+        const response = await fetch(freshUrl(base, file));
+        if (!response.ok) throw new Error(String(response.status));
+        if (this.useRigged(kind, (await response.json()) as RiggedModel)) changed++;
+      } catch (error) {
+        console.warn(`[soldiers] no skinned ${kind} (${String(error)}): it keeps its figure`);
+      }
+    }
     for (const kind of PLATE_KINDS) {
+      if (this.kinds.get(kind)?.skinned) continue;
       const k = this.kinds.get(kind);
       if (!k) continue;
       const geometry = soldierGeometryOnBody(kind, body);
@@ -174,6 +264,74 @@ export class ArmyView {
       changed++;
     }
     return changed;
+  }
+
+  /** Puts a kind on a skinned body with its clips; false if the file lacks what the game needs. */
+  private useRigged(kind: UnitKind, model: RiggedModel): boolean {
+    const k = this.kinds.get(kind);
+    const strike = model.clips.find((c) => c.name.toLowerCase().includes('slash'));
+    const block = model.clips.find((c) => c.name.toLowerCase().includes('block'));
+    if (!k || !strike || !block) return false;
+    const nb = model.bones.length;
+    const frames = model.frames.length / (nb * 12);
+    // The bone texture: three texels (the matrix's rows) a bone, a row a frame.
+    const data = new Float32Array(nb * 3 * frames * 4);
+    for (let f = 0; f < frames; f++) {
+      for (let b = 0; b < nb; b++) {
+        for (let r = 0; r < 3; r++) {
+          const src = (f * nb + b) * 12 + r * 4;
+          const dst = (f * nb * 3 + b * 3 + r) * 4;
+          for (let c = 0; c < 4; c++) data[dst + c] = model.frames[src + c] as number;
+        }
+      }
+    }
+    const bones = new DataTexture(data, nb * 3, frames, RGBAFormat, FloatType);
+    bones.magFilter = bones.minFilter = NearestFilter;
+    bones.needsUpdate = true;
+    // The legs' limb per vertex (by its heaviest bone), swinging about the hips while there is no walk clip.
+    const legSide = model.bones.map((b) => (/^Left(UpLeg|Leg|Foot|ToeBase)$/.test(b) ? -1 : /^Right(UpLeg|Leg|Foot|ToeBase)$/.test(b) ? 1 : 0));
+    const n = model.positions.length / 3;
+    const upLeg = model.bones.indexOf('LeftUpLeg');
+    let hipY = 0;
+    let hipZ = 0;
+    let hips = 0;
+    for (let i = 0; i < n; i++) {
+      if (model.skin[i * 4] !== upLeg) continue;
+      hipY = Math.max(hipY, model.positions[i * 3 + 1] as number);
+      hipZ += model.positions[i * 3 + 2] as number;
+      hips++;
+    }
+    hipZ = hips > 0 ? hipZ / hips : 0;
+    const part = new Float32Array(n * 4);
+    for (let i = 0; i < n; i++) {
+      const s = legSide[model.skin[i * 4] as number] ?? 0;
+      if (s === 0) continue;
+      part[i * 4] = hipY;
+      part[i * 4 + 1] = hipZ;
+      part[i * 4 + 2] = s;
+    }
+    const g = new BufferGeometry();
+    g.setAttribute('position', new BufferAttribute(new Float32Array(model.positions), 3));
+    g.setAttribute('normal', new BufferAttribute(new Float32Array(model.normals), 3));
+    g.setAttribute('color', new BufferAttribute(new Float32Array(model.colours), 3));
+    g.setAttribute('aSurface', new BufferAttribute(new Float32Array(model.surface), 3));
+    g.setAttribute('aSkin', new BufferAttribute(new Float32Array(model.skin), 4));
+    g.setAttribute('aWeight', new BufferAttribute(new Float32Array(model.weights), 4));
+    g.setAttribute('aPart', new BufferAttribute(part, 4));
+    g.setIndex(model.triangles);
+    g.computeBoundingSphere();
+    const frame = new InstancedBufferAttribute(new Float32Array(CAPACITY), 1);
+    frame.setUsage(DynamicDrawUsage);
+    g.setAttribute('aPlace', k.place);
+    g.setAttribute('aAnim', k.anim);
+    g.setAttribute('aSide', k.side);
+    g.setAttribute('aFrame', frame);
+    const old = k.mesh.geometry;
+    k.mesh.geometry = g;
+    k.mesh.material = skinnedMaterial(bones);
+    old.dispose();
+    k.skinned = { frame, fps: strike.fps, strikeStart: strike.start, strikeFrames: strike.frames, guard: block.start, blockHeld: block.start + Math.floor(block.frames * 0.5) };
+    return true;
   }
 
   /** Writes one man into slot `i` of his kind's mesh. */
@@ -202,6 +360,13 @@ export class ArmyView {
     a[i * 4 + 2] = strike * STRIKE_RAD;
     a[i * 4 + 3] = fall;
     (k.side.array as Float32Array)[i] = r.side;
+    const sk = k.skinned;
+    if (sk) {
+      // The clip frame: the blow from its start while it lasts, the shield up behind a shield wall, else on guard.
+      const strikeS = sk.strikeFrames / sk.fps;
+      const frame = s.alive && s.sinceAttackS < strikeS ? sk.strikeStart + Math.min(sk.strikeFrames - 1, Math.floor(s.sinceAttackS * sk.fps)) : r.stance === 'shields' ? sk.blockHeld : sk.guard;
+      (sk.frame.array as Float32Array)[i] = frame;
+    }
   }
 
   update(world: World): void {
@@ -216,6 +381,7 @@ export class ArmyView {
     }
     this.writeGarrisons(world);
     for (const k of this.kinds.values()) {
+      if (k.skinned) k.skinned.frame.needsUpdate = true;
       k.place.needsUpdate = true;
       k.anim.needsUpdate = true;
       k.side.needsUpdate = true;

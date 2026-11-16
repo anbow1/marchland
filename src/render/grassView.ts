@@ -51,7 +51,7 @@ export class GrassView {
         // Seen from a strategy camera tens of metres up: fewer, broader, leaning blades read as tufts of
         // grass rather than a fine carpet (the Tanks settings, a little stronger again).
         widthScale: 3.6,
-        heightScale: 1.4,
+        heightScale: 0.9,
         leanScale: 2.0,
         rootShade: 0.88,
         // Linear albedo near the meadow the ground shader paints (its photograph's greens).
