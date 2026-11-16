@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Komputer korzysta z nowych budynków; limit 64 budynków
+
+- Komputer stawia na końcu listy (po rozbudowie gospodarki i wojska): kaplicę, studnię, targ, browar,
+  karczmę, myśliwego i leśnika. Na targu sprzedaje po 10 sztuk tego, czego ma ≥ 120 (zboże, mąka,
+  winogrona, wino, piwo, skóry, ruda, kiełbasy — nigdy drewna, kamienia, desek, chleba ani uzbrojenia),
+  gdy złota ma mniej niż 120.
+- Limit budynków na stronę 48 → 64: przy nowych rodzajach komputer stawał na 48 (nie postawił
+  studni ani dalszych), gracz też szybko by go dobił. W 70-minutowej partii komputer–komputer obie
+  strony mają wszystkie nowe budynki (54 budynki), w karczmach przybywa piwa.
+- Tempo z bezczynnym graczem bez zmian: 36,6 / 40,3 min. Testy 94/94; WebGPU 0 błędów.
+
 ## 2026-11-16 · Kusznicy: strzał na końcu przyłożenia, kusza w obu rękach
 
 - Strzał pada na końcu „Rifle Down To Aim” (podniesienie do celu kończy się w chwili strzału); po

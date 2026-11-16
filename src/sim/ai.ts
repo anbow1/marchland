@@ -1,12 +1,12 @@
 import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTrade, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, isEngaged, type Regiment } from './regiment.ts';
 import { facingToEnemy, FORWARD_X, FORWARD_Z, rallyX, rallyZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
 import { wallCells } from './nav.ts';
-import { type BuildingKind, COMPUTER, enemyOf, PLAYER, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
+import { type BuildingKind, COMPUTER, enemyOf, PLAYER, RESOURCE_IDS, type Side, type UnitKind, type ResourceId } from './types.ts';
 import { findRegiment, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -106,6 +106,14 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'farm',
   'house',
   'house',
+  // A grown town's comforts, last: they cost the early army nothing.
+  'chapel',
+  'well',
+  'market',
+  'brewery',
+  'tavern',
+  'hunter',
+  'forester',
 ];
 
 const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'cannon', 'heavyCavalry', 'archers', 'mortar', 'swordsmen'];
@@ -133,8 +141,21 @@ function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 
   return 'built';
 }
 
+/**
+ * At the market, when gold runs short: a lot of whatever the town has far too much of (never timber, stone,
+ * planks, food or arms it may need) goes for gold, one lot a call.
+ */
+function sellSurplus(world: World, ai: AiState): boolean {
+  const town = world.towns[ai.side];
+  if (town.stock.gold >= AI.marketSellBelowGold) return false;
+  let best: ResourceId | null = null;
+  for (const good of AI.marketSells) if (town.stock[good] >= AI.marketSurplus && (best === null || town.stock[good] > town.stock[best])) best = good;
+  return best !== null && cmdTrade(world, ai.side, best, false) === 'ok';
+}
+
 function runTown(world: World, ai: AiState): void {
   const town = world.towns[ai.side];
+  if (sellSurplus(world, ai)) return;
   // The wall across the approach, once the keep stands at its second level and the stone is in: it costs no
   // gold and waits for nothing else.
   if (!ai.walled && town.keepLevel >= 2 && town.stock.stone >= AI.wallStone) {

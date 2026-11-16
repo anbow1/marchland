@@ -83,7 +83,7 @@ Rules common to all buildings:
 - **Free placement.** A building goes anywhere within 280 m of its side's keep (farms and vineyards
   340 m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than 90 m to the enemy's) where the ground under it rises no more than 2.2 m, is not
-  water, and is 1.5 m clear of other buildings and of farm strips. A side may have 48 buildings.
+  water, and is 1.5 m clear of other buildings and of farm strips. A side may have 64 buildings.
 - **Three levels.** Level 3 is the top. A level costs ×1 / ×1.5 / ×2.5 of the base price and works
   ×1 / ×1.6 / ×2.3 as fast; an upgrade takes 15 builder-seconds once its timber and stone are on site.
 - **Built by hand.** Gold is paid at once; timber and stone are carried from the keep to the site, and

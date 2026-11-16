@@ -90,7 +90,7 @@ i drogi są decyzją gracza, a nie ozdobą.
   a od innych budynków i pól dzieli go co najmniej 1.5 m. Poza kołem zamku można budować do
   70 m od każdego własnego budynku (także rozpoczętego) — przy stawianiu żółta przerywana linia pokazuje
   granicę. Budynek można obrócić przed postawieniem i **w trakcie budowy** (R albo przycisk w panelu);
-  drzwi wyznaczają, gdzie podchodzą ludzie. Limit: 48 budynków na stronę.
+  drzwi wyznaczają, gdzie podchodzą ludzie. Limit: 64 budynków na stronę.
 - **Droga** to linia od punktu do punktu na siatce 2 m; kosztuje 1.7 kamienia za 10 m.
   Ludzie sami wybierają najszybszą trasę (drogą idą 1.4× szybciej) i omijają budynki oraz wodę.
 - Komputer stawia według tych samych reguł: rzemiosło i chaty w pierścieniach wokół zamku, zagrody

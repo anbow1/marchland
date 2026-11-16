@@ -81,7 +81,7 @@ export const MAP = {
 
 export const TOWN = {
   /** Buildings a side may have at once. */
-  maxBuildings: 48,
+  maxBuildings: 64,
   /** A side builds within this distance of its own keep, and no nearer than this to the enemy's. */
   territoryRadiusM: 280,
   /** Besides the keep's circle, a side may build this near any of its own finished buildings: the town grows outward. */
@@ -781,6 +781,10 @@ export const POINTS = {
 } as const;
 
 export const AI = {
+  /** The market: below this much gold the computer sells a lot of a good it has at least `marketSurplus` of. */
+  marketSellBelowGold: 120,
+  marketSurplus: 120,
+  marketSells: ['grain', 'flour', 'grapes', 'wine', 'ale', 'hide', 'ironOre', 'sausage'] as const,
   thinkIntervalS: 1,
   /** The computer forms a pike wall when enemy horse come this near, and raises shields for this long after an arrow strikes. */
   pikeWallAtM: 55,
