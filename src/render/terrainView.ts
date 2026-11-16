@@ -57,7 +57,8 @@ const STEEP_FULL = 0.7;
  */
 const SEASON_TINT: Partial<Record<SurfaceId, readonly [number, number, number]>> = {
   // The drone photograph is of lush grass under a grey sky; a touch warmer for an afternoon sun.
-  pasture: [0.8, 0.98, 0.76],
+  // Sunlit summer meadow: lighter and warmer than the photograph's overcast green.
+  pasture: [1.2, 1.28, 0.7],
   // The litter scan is near black under a strategy camera's exposure.
   forest_floor: [0.6, 0.7, 0.46],
   // Grey rock reads as snow from above unless it is darkened and greened by lichen.
@@ -225,7 +226,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   // and a scatter of flowering weeds a few metres across.
   const lush = smoothstep(0.42, 0.66, noiseAt(57, 0.13, 0.81));
   const sere = smoothstep(0.52, 0.76, noiseAt(33, 0.63, 0.27));
-  const weeds = smoothstep(0.66, 0.78, noiseAt(6.5, 0.41, 0.07)).mul(smoothstep(0.45, 0.6, coarse));
+  const weeds = smoothstep(0.66, 0.78, noiseAt(6.5, 0.41, 0.07)).mul(smoothstep(0.45, 0.6, coarse)).mul(float(1).sub(smoothstep(30, 120, positionWorld.sub(cameraPosition).length())));
   const grassTint = mix(mix(vec3(1), vec3(0.72, 0.9, 0.62), lush.mul(0.6)), vec3(1.22, 1.12, 0.7), sere.mul(float(1).sub(lush)).mul(0.12)).mul(mix(vec3(1), vec3(1.2, 1.16, 0.82), weeds.mul(0.08)));
   const distanceM = positionWorld.sub(cameraPosition).length();
   /** How much the fine scans still add on top of the aerial photograph: all of it near, a little far away. */
@@ -245,7 +246,9 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const pastureRaw = untiled('pasture', 1, 0.17);
   // A little of the photograph's contrast taken back: its bare spots are glaring under a strong sun.
   const pastureMean = texture(lib.colour, uvOf('pasture', 1)).depth(int(layerOf('pasture'))).level(float(FLAT_MIP)).rgb;
-  const pastureMix = mix(pastureMean, pastureRaw, 0.6);
+  // Its clumps and worn spots up close; from further off they would only freckle the land, so they fade
+  // into the photograph's average, and the meadow reads in broad swathes as it does from a hill.
+  const pastureMix = mix(pastureMean, pastureRaw, float(1).sub(smoothstep(35, 170, distanceM)).mul(0.55).add(0.08));
   // The photograph's bare, sun-burnt spots read as yellow blotches from a strategy camera: keep their
   // brightness, take their yellow (no more red than four fifths of the green, little blue).
   const pastureGreen = vec3(min(pastureMix.x, pastureMix.y.mul(0.78)), pastureMix.y, min(pastureMix.z, pastureMix.y.mul(0.55)));
@@ -272,7 +275,9 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   // A sown strip is corn edge to edge (its growth only sets the colour): no patchy half-sown look.
   const colour = mix(scanned, cornColour, smoothstep(0.03, 0.09, corn).mul(soil));
   // A slow drift of tone, so one meadow is not one green.
-  const tone = float(0.8).add(smoothstep(0.3, 0.7, fine).mul(0.2)).add(coarse.mul(0.12)).add(patch.mul(0.1));
+  // The fine part of it (tufts, a few metres) only near the camera: from afar it too reads as freckles.
+  const nearShare = float(1).sub(smoothstep(40, 150, distanceM));
+  const tone = float(0.86).add(smoothstep(0.3, 0.7, fine).sub(0.5).mul(0.2).mul(nearShare)).add(coarse.mul(0.08).mul(nearShare.mul(0.6).add(0.4))).add(patch.mul(0.12));
   // Swathes tens of metres across, as a meadow seen from a hill: darker lush hollows, pale sunlit
   // rises going a little straw-coloured. Turf only (where the wild grass shows), and a touch less
   // saturated overall, so the land does not read as one coat of green paint.
@@ -281,7 +286,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const swatheTint = mix(vec3(0.78, 0.86, 0.8), vec3(1.14, 1.1, 0.86), smoothstep(0.25, 0.75, swathe));
   const turf = colour.mul(tone).mul(mix(vec3(1), swatheTint, wildShare));
   const grey = turf.dot(luminance);
-  material.colorNode = mix(turf, vec3(grey), wildShare.mul(0.12));
+  material.colorNode = mix(turf, vec3(grey), wildShare.mul(0.06));
   if (lib.detailed) {
     const bump = blend((id) => texture(lib.normal, uvOf(id, 1)).depth(int(layerOf(id))).rgb).mul(2).sub(1);
     // Fade the bumps out with distance: far away they only shimmer.

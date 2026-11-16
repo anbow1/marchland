@@ -56,8 +56,8 @@ export class GrassView {
         rootShade: 0.88,
         // Linear albedo near the meadow the ground shader paints (its photograph's greens).
         colours: {
-          meadow: [0.11, 0.24, 0.035],
-          beach: [0.22, 0.24, 0.07],
+          meadow: [0.15, 0.29, 0.04],
+          beach: [0.27, 0.29, 0.08],
           sedge: [0.09, 0.19, 0.05],
           dry: [0.26, 0.25, 0.08],
         },

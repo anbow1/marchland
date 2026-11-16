@@ -18,7 +18,7 @@ npm run build
 Status: playable from the first building to the fall of a keep. The ground,
 walls and roofs are scanned CC0 surfaces; soldiers, horses, engines, buildings
 and trees are still geometry made in code. What comes next:
-[`docs/GAMEPLAY.md`](docs/GAMEPLAY.md) (the gameplay plan and milestones),
+[`docs/GAMEPLAY.md`](docs/GAMEPLAY.md) (the gameplay plan and milestones), [`docs/ASSETS.md`](docs/ASSETS.md) (models and animations: what we have and what we still need),
 [`docs/BLENDER.md`](docs/BLENDER.md) (models and animations to make in Blender,
 with the file contract) and [`docs/ROUTINE.md`](docs/ROUTINE.md) (routine tasks
 written out for a weaker model); what was measured is in [`RESULTS.md`](RESULTS.md).

@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Łąka z daleka bez cętek, jaśniejsza; lista potrzebnych modeli
+
+- Z daleka łąka była w cętkach: drobny wzór zdjęcia łąki (kępy i wytarcia po 2–3 m) i drobny szum
+  tonu z wysoka zlewały się w plamki. Teraz drobny wzór zanika z odległością (35–170 m) do średniego
+  koloru zdjęcia, szum tonu tylko blisko kamery; zostają duże połacie. Zieleń jaśniejsza i cieplejsza
+  (słoneczna łąka letnia), źdźbła dopasowane. Z bliska bez zmian (kępy źdźbeł).
+- `docs/ASSETS.md`: co jest, co odrzucone (licencje) i lista animacji oraz postaci do znalezienia.
+
 ## 2026-11-16 · Trawa ze źdźbeł przy kamerze, łąka w połaciach
 
 - **Źdźbła z gier FPS**: wspólne pole trawy (`render/grassField.ts`, to samo co w Field Line,

@@ -1,0 +1,64 @@
+# Marchland — modele i animacje: co jest, czego szukamy
+
+Aktualizowane przy każdej zmianie. Warunki dla każdego pliku: licencja **CC0** albo **CC BY**
+(Sketchfab, Blendswap, Quaternius, KayKit, Poly Haven) lub animacje z **Mixamo** (pobierane przez
+właściciela projektu; w repozytorium tylko przeliczone ruchy kości). Nie bierzemy modeli wyciągniętych
+z gier ani modów (np. „… Mod” do Total War) ani cudzych postaci wrzuconych ponownie pod inną licencją.
+Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`), do ~20 tys. trójkątów
+(i tak upraszczamy do 2–3 tys.), ze stopami na ziemi.
+
+## Jest (w grze albo gotowe do użycia)
+
+| Co | Źródło | Licencja | Gdzie |
+|---|---|---|---|
+| Rycerz w zbroi płytowej (miecznicy, halabardnicy) | „Rigged Knight in Armor”, Xali, Blendswap | CC0 | w grze (`public/soldiers/knight.json`) |
+| Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | do wpięcia |
+| Wojownik w skórze/przeszywanicy, szkielet Mixamo | „.Fuse Warrior”, Leonardo Carvalho, Sketchfab | CC BY 4.0 | do wpięcia (lekka piechota) |
+| Rycerz w płycie z płaszczem (bez szkieletu) | „Medieval knight”, 3dUVpro, Sketchfab | CC BY 4.0 | dowódca / jeździec |
+| Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | do wpięcia (jazda) |
+| Jeździec i koń w zbroi (posąg, 120 tys. tr.) | „1964.88 Armor for Man and Horse”, Cleveland Museum of Art | CC0 | ciężka jazda po uproszczeniu |
+| Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | do sprawdzenia |
+| Animacje: cięcie mieczem z tarczą, blok (×2) | Mixamo | Mixamo | do wpięcia |
+
+Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjnej), „Knight Face Reval”
+(postać Paladin z Mixamo wrzucona ponownie przez kogoś innego), „Knight medieval no textures”
+(zostaje w zapasie: bez szkieletu, 38 tys. tr.).
+
+## Szukamy — lista dla właściciela projektu
+
+### Animacje (Mixamo: FBX, **Without Skin**, 30 kl./s, przy ruchu zaznaczyć **In Place**)
+
+Wspólne dla żołnierzy:
+1. Sword And Shield Idle (postawa)
+2. Sword And Shield Walk (marsz)
+3. Sword And Shield Run (bieg)
+4. Sword And Shield Death (śmierć) — najlepiej dwie różne
+5. Sword And Shield Impact (trafienie)
+
+Broń drzewcowa (pikinierzy, halabardnicy, milicja):
+6. Spear Thrust / Standing Melee Attack (pchnięcie)
+7. Spear Walk albo Rifle Walk / Two-handed Walk (marsz z drzewcem)
+
+Łucznicy i kusznicy:
+8. Standing Draw Arrow, Standing Aim Recoil (łuk)
+9. Crossbow / Rifle Aim + Shoot (kusza, jeśli jest)
+
+Tragarze, rzemieślnicy, rolnicy (ludzie w mieście):
+10. Walking (zwykły chód), Carrying / Box Walk (chód z ładunkiem), Idle
+11. Pick Up / Put Down (podnoszenie i odkładanie)
+12. Hammering / Building, Chopping (rąbanie), Digging / Pick Axe (kopanie), Harvesting / Plant (żniwa, sadzenie), Sitting (opcjonalnie)
+
+Jazda:
+13. Horse Riding (jeździec w siodle) — jeśli Mixamo ma; inaczej poza siedząca
+
+### Postacie (ze szkieletem Mixamo, CC0/CC BY)
+14. Chłop / chłopka (tunika, kaptur, fartuch) — tragarze, rolnicy
+15. Rzemieślnik (kowal w fartuchu, cieśla) — może być ten sam chłop z innym ubraniem
+16. Łucznik w kapturze i przeszywanicy
+17. Pikinier / włócznik w kolczudze lub skórze, z hełmem (kapalin, łebka)
+18. Kusznik (przeszywanica, hełm)
+
+### Konie i machiny
+19. Koń ze szkieletem i animacjami chodu/kłusu/galopu (CC0/CC BY) — najlepiej; bez szkieletu też się przyda
+20. Wóz konny / wózek ręczny (transport poziom 2–3)
+21. Działo / bombarda (jeśli wchodzą armaty zamiast balist)
