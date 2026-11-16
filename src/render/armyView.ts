@@ -10,13 +10,17 @@ import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
-import { soldierGeometry } from './soldierGeometry.ts';
+import { type BodyModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
+import { freshUrl } from '../version.ts';
 
 // Every soldier on the field, one instanced mesh per kind of unit. The CPU
 // writes nine numbers per man (place, heading, stride, strike, fall, side);
 // the vertex shader swings legs, arms and weapons about the pivots stored in
 // the geometry and puts the man where he stands. Arrows are a seventh
 // instanced mesh.
+
+/** The kinds that fight in plate, on the modelled knight's body. */
+const PLATE_KINDS: readonly UnitKind[] = ['swordsmen', 'halberdiers'];
 
 /** Men of one kind on the field at once: both sides at the limit, plus the fallen still shown. */
 const CAPACITY = 2 * ARMY.maxSoldiersPerSide + 40;
@@ -139,6 +143,37 @@ export class ArmyView {
     this.stones.frustumCulled = false;
     this.stones.castShadow = true;
     scene.add(this.stones);
+  }
+
+  /**
+   * Puts the kinds that wear plate on the modelled knight (public/soldiers/knight.json, from
+   * tools/blender/soldiers.py). Without the file they keep their figures from code, with a warning.
+   */
+  async loadBodies(base: string): Promise<number> {
+    let body: BodyModel;
+    try {
+      const response = await fetch(freshUrl(base, 'soldiers/knight.json'));
+      if (!response.ok) throw new Error(String(response.status));
+      body = (await response.json()) as BodyModel;
+    } catch (error) {
+      console.warn(`[soldiers] no knight model (${String(error)}): soldiers keep their figures from code`);
+      return 0;
+    }
+    let changed = 0;
+    for (const kind of PLATE_KINDS) {
+      const k = this.kinds.get(kind);
+      if (!k) continue;
+      const geometry = soldierGeometryOnBody(kind, body);
+      // The per-man attributes move over to the new body: the shader reads them from the geometry.
+      geometry.setAttribute('aPlace', k.place);
+      geometry.setAttribute('aAnim', k.anim);
+      geometry.setAttribute('aSide', k.side);
+      const old = k.mesh.geometry;
+      k.mesh.geometry = geometry;
+      old.dispose();
+      changed++;
+    }
+    return changed;
   }
 
   /** Writes one man into slot `i` of his kind's mesh. */

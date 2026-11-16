@@ -102,6 +102,7 @@ export class WorldView {
     this.walls = new WallView(scene, surfaces);
     await this.walls.loadModel(import.meta.env.BASE_URL);
     this.army = new ArmyView(scene);
+    await this.army.loadBodies(import.meta.env.BASE_URL);
     this.markers = new Markers(scene);
     shareStaticInstanceShaders(this.stage.renderer, scene);
     for (const s of land.scattered) this.clearings.add(s.mesh, s.reachM);

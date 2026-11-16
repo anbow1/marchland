@@ -1,4 +1,4 @@
-import { BufferAttribute, type BufferGeometry } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry } from 'three/webgpu';
 import type { UnitKind } from '../sim/types.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 
@@ -68,11 +68,20 @@ const POLE_M = { spear: 2.2, pike: 4.6, halberd: 2.4, lance: 3.4 } as const;
  * A man standing with his feet at `y0`; `mounted` spreads the legs round a horse. With `rigged` false
  * (an engine's crew, drawn away from the model's middle) his limbs carry no pivots and stay still.
  */
-function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true): void {
+function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true, body = true): void {
   const b = f.b;
   const hip = y0 + 0.86;
   const shoulder = y0 + 1.44;
   const limb = (part: Part): Part => (rigged ? part : BODY);
+  if (!body) {
+    // The body is a modelled one (a knight in plate): only the surcoat in the side's colours, front and
+    // back, over the breastplate, and the weapon and shield below.
+    f.team();
+    b.box(0, hip - 0.02, -0.19, 0.38, 0.56, 0.025, WHITE);
+    b.box(0, hip - 0.02, 0.16, 0.38, 0.56, 0.025, WHITE);
+    arms(f, kit, y0, limb);
+    return;
+  }
   // Legs: opposite phases.
   const legX = mounted ? 0.36 : 0.11;
   for (const side of [-1, 1]) {
@@ -99,19 +108,28 @@ function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true): 
   } else if (kit.head === 'hood') {
     b.box(0, shoulder + 0.2, 0.02, 0.27, 0.16, 0.28, kit.tunic);
   }
-  // Left arm and shield.
+  // Left arm.
   const leftArm: Part = limb([shoulder, 0, -0.5, 0]);
   f.cloth(leftArm);
   b.box(-0.3, shoulder - 0.58, 0, 0.13, 0.58, 0.14, kit.mail ? STEEL : kit.tunic);
+  // Right arm.
+  f.cloth(limb([shoulder, 0, 0.5, -0.45]));
+  b.box(0.3, shoulder - 0.58, 0, 0.13, 0.58, 0.14, kit.mail ? STEEL : kit.tunic);
+  arms(f, kit, y0, limb);
+}
+
+/** What a man carries: his shield on the left arm and his weapon in the right hand (they swing with the arms). */
+function arms(f: Figure, kit: Kit, y0: number, limb: (part: Part) => Part): void {
+  const b = f.b;
+  const hip = y0 + 0.86;
+  const shoulder = y0 + 1.44;
   if (kit.shield) {
     f.team(limb([shoulder, 0, -0.15, 0]));
     b.box(-0.36, y0 + 0.78, -0.17, 0.5, 0.72, 0.06, WHITE);
     f.steel(limb([shoulder, 0, -0.15, 0]));
     b.box(-0.36, y0 + 1.07, -0.21, 0.14, 0.14, 0.04, STEEL);
   }
-  // Right arm swings forward to strike; the weapon swings down with it.
-  f.cloth(limb([shoulder, 0, 0.5, -0.45]));
-  b.box(0.3, shoulder - 0.58, 0, 0.13, 0.58, 0.14, kit.mail ? STEEL : kit.tunic);
+  // The weapon swings down with the right arm.
   const weapon: Part = limb([shoulder - 0.5, -0.1, 0.12, 1]);
   if (kit.weapon === 'spear' || kit.weapon === 'pike' || kit.weapon === 'halberd' || kit.weapon === 'lance') {
     const length = POLE_M[kit.weapon];
@@ -263,8 +281,11 @@ export function soldierGeometry(kind: UnitKind): BufferGeometry {
   } else {
     man(f, KITS[kind], 0, false);
   }
-  const g = f.b.build('extra');
-  // Split the builder's seven extra values into the two attributes the shader reads.
+  return finish(f.b.build('extra'));
+}
+
+/** Splits the builder's seven extra values into the two attributes the shader reads. */
+function finish(g: BufferGeometry): BufferGeometry {
   const extra = g.getAttribute('extra') as BufferAttribute;
   const part = new Float32Array(extra.count * 4);
   const surface = new Float32Array(extra.count * 3);
@@ -275,5 +296,73 @@ export function soldierGeometry(kind: UnitKind): BufferGeometry {
   g.deleteAttribute('extra');
   g.setAttribute('aPart', new BufferAttribute(part, 4));
   g.setAttribute('aSurface', new BufferAttribute(surface, 3));
+  return g;
+}
+
+/** A modelled body (tools/blender/soldiers.py): limbs per vertex and the joints they turn about. */
+export interface BodyModel {
+  pivots: { hipY: number; hipZ: number; shoulderY: number; shoulderZ: number };
+  positions: number[];
+  normals: number[];
+  colours: number[];
+  surface: number[];
+  limbs: number[];
+  triangles: number[];
+}
+
+/**
+ * A soldier on a modelled body: the body's triangles with each limb set to swing about its joint as the
+ * boxes' did (legs in opposite phases, the right arm striking), and the kind's weapon, shield and surcoat
+ * from the code. Foot soldiers only: a rider sits.
+ */
+export function soldierGeometryOnBody(kind: UnitKind, body: BodyModel): BufferGeometry {
+  const f = new Figure();
+  man(f, KITS[kind as keyof typeof KITS], 0, false, true, false);
+  const extras = finish(f.b.build('extra'));
+  const { hipY, hipZ, shoulderY, shoulderZ } = body.pivots;
+  // Per limb: (pivot height, pivot depth, walk swing, strike swing), as man() gives the boxes.
+  const PARTS: readonly (readonly [number, number, number, number])[] = [
+    [0, 0, 0, 0],
+    [hipY, hipZ, -1, 0],
+    [hipY, hipZ, 1, 0],
+    [shoulderY, shoulderZ, -0.5, 0],
+    [shoulderY, shoulderZ, 0.5, -0.45],
+  ];
+  const n = body.triangles.length;
+  const m = extras.getAttribute('position').count;
+  const position = new Float32Array((n + m) * 3);
+  const normal = new Float32Array((n + m) * 3);
+  const color = new Float32Array((n + m) * 3);
+  const part = new Float32Array((n + m) * 4);
+  const surface = new Float32Array((n + m) * 3);
+  for (let k = 0; k < n; k++) {
+    const v = body.triangles[k] as number;
+    for (let a = 0; a < 3; a++) {
+      position[k * 3 + a] = body.positions[v * 3 + a] as number;
+      normal[k * 3 + a] = body.normals[v * 3 + a] as number;
+      color[k * 3 + a] = body.colours[v * 3 + a] as number;
+    }
+    const p = PARTS[body.limbs[v] as number] ?? (PARTS[0] as readonly [number, number, number, number]);
+    for (let a = 0; a < 4; a++) part[k * 4 + a] = p[a] as number;
+    surface[k * 3] = body.surface[v * 2] as number;
+    surface[k * 3 + 1] = body.surface[v * 2 + 1] as number;
+    surface[k * 3 + 2] = 0;
+  }
+  const copy = (name: string, out: Float32Array, size: number): void => {
+    const src = extras.getAttribute(name).array as Float32Array;
+    out.set(src.subarray(0, m * size), n * size);
+  };
+  copy('position', position, 3);
+  copy('normal', normal, 3);
+  copy('color', color, 3);
+  copy('aPart', part, 4);
+  copy('aSurface', surface, 3);
+  const g = new BufferGeometry();
+  g.setAttribute('position', new BufferAttribute(position, 3));
+  g.setAttribute('normal', new BufferAttribute(normal, 3));
+  g.setAttribute('color', new BufferAttribute(color, 3));
+  g.setAttribute('aPart', new BufferAttribute(part, 4));
+  g.setAttribute('aSurface', new BufferAttribute(surface, 3));
+  g.computeBoundingSphere();
   return g;
 }

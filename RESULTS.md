@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · M4, krok 1: miecznicy i halabardnicy w zbroi płytowej z modelu
+
+- **„Rigged Knight in Armor”** (Xali, BlendSwap, CC0) przez `tools/blender/soldiers.py`: sztywne płyty
+  na kościach i kolczuga z wagami → każdy wierzchołek dostaje kończynę (tułów, nogi, ręce) po kości,
+  ręce opuszczone z pozy „A”, siatka przerzedzona do 3 189 trójkątów, 1,8 m, przodem do −Z, materiały
+  jako kolory z metalicznością i szorstkością (`public/soldiers/knight.json`).
+- W grze ciało rycerza dostają miecznicy i halabardnicy; broń, tarcza i napierśnik w barwach strony z
+  kodu; kończyny poruszają się tym samym shaderem co dotąd (jedno rysowanie na rodzaj).
+- Drugi model („Knight medieval no textures”, CC0, 38 tys. trójkątów, 20 kości) odłożony jako
+  wariant; kolczuga rycerza ma dziury pod płytami, więc lżej zbrojnych z niego się nie zrobi.
+
 ## 2026-11-16 · Aktywna pauza, kolejka rozkazów, mur komputera, gospodarka kamienia
 
 - **Aktywna pauza (Spacja lub ⏸)**: bitwa staje, rozkazy można wydawać; baner na górze.
