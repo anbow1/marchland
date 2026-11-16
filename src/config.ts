@@ -16,16 +16,16 @@ export const MAP = {
   sizeM: 560,
   halfM: 280,
   /** Town centres sit on the diagonal, this far from the origin on each axis (the first place a keep may stand). */
-  townOffsetM: 212,
+  townOffsetM: 232,
   /**
    * The places the player's keep may stand, (x, z), one picked before the game (src/sim/layout.ts): in
    * the south-west corner, up the west edge, along the south edge. The computer's is always the same
    * place turned half a circle about the middle.
    */
   startSites: [
-    [-212, 212],
-    [-212, 128],
-    [-128, 212],
+    [-232, 232],
+    [-236, 140],
+    [-140, 236],
   ],
   /** Ground is level inside this radius of a keep, then blends into the hills. */
   townFlatRadiusM: 26,
@@ -100,8 +100,8 @@ export const TOWN = {
   waterReachM: 16,
   depositReachM: 15,
   /** The lakes: each side's lies this far from its keep (towards the enemy, and to one side), with this radius and depth. */
-  lakeForwardM: 55,
-  lakeSideM: 80,
+  lakeForwardM: 70,
+  lakeSideM: 62,
   lakeRadiusM: 27,
   lakeDepthM: 2.4,
   /** Outcrops of building stone and of iron ore: radius of each. */

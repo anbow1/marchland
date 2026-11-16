@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Zamki bliżej narożników
+
+- Miejsca startowe (−232, 232), (−236, 140), (−140, 236) zamiast (−212, 212), (−212, 128), (−128, 212):
+  zamek 44–48 m od krawędzi, reszta mapy przed nim. Za zamkiem w narożniku jest już krawędź mapy,
+  więc złoża kamienia i rudy przeniesione na boki, trochę do przodu (zawsze ≥ 23 m od krawędzi), a
+  jezioro bliżej przodu (70 m do przodu, 62 m w bok; sięga 258 z 280 m). Zamki dzielą 656 m (róg) lub
+  549 m (zachód/południe). Rzeka z dala od zamków, jeziora i złóż; las najbliżej 84 m.
+- Tempo zburzenia bezczynnego gracza 41,5 / 34,9 min (w limicie 42). Testy: 86 / 86.
+
 ## 2026-11-16 · M4, krok 3: jazda na modelowanym koniu, jeździec w siodle
 
 - `tools/blender/horse.py`: „Armored Horse” (naminoff, CC BY 4.0) bez szkieletu → 3 591 trójkątów,

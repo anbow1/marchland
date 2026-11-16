@@ -322,10 +322,12 @@ function layOutDeposits(): Deposit[] {
   for (const side of [0, 1] as const) {
     const t = turnOf(side);
     const at = (forwardM: number, sideM: number): [number, number] => [townX(side) + t * (FORWARD_X * forwardM + SIDE_X * sideM), townZ(side) + t * (FORWARD_Z * forwardM + SIDE_Z * sideM)];
-    // Behind the keep, but no further than the corner allows: the keeps stand near the map's corners.
-    const [sx, sz] = at(-40, -34);
-    const [ox, oz] = at(-40, 34);
-    out.push({ kind: 'stone', x: sx, z: sz }, { kind: 'ore', x: ox, z: oz });
+    // Either side of the keep and a little ahead: behind it, in the corner, is the map's edge. Never closer
+    // to the edge than their own size and a cart's turn.
+    const inside = (v: number): number => Math.max(-MAP.halfM + TOWN.depositRadiusM + 10, Math.min(MAP.halfM - TOWN.depositRadiusM - 10, v));
+    const [sx, sz] = at(30, -66);
+    const [ox, oz] = at(30, 66);
+    out.push({ kind: 'stone', x: inside(sx), z: inside(sz) }, { kind: 'ore', x: inside(ox), z: inside(oz) });
     // A second outcrop out on the flank, at the edge of the side's reach: ore on the player's, stone on the computer's.
     const [fx, fz] = at(118, 96);
     out.push({ kind: side === 0 ? 'ore' : 'stone', x: fx, z: fz });
