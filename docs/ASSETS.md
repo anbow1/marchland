@@ -33,7 +33,7 @@ samym stylu albo realistyczne CC0/CC BY.
 
 | Co | Źródło | Licencja | Plan |
 |---|---|---|---|
-| „.Fuse Civilian 2” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze: łucznicy** (`archer.json`); dalej kusznicy, tragarze |
+| „.Fuse Civilian 2” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze**: łucznicy (`archer.json`), ludzie w mieście (`townsman.json`) |
 | Longbow Aiming Pack (naciąganie, celowanie, chód z celowaniem ×4, idle) | Mixamo | Mixamo | **w grze**: naciąganie, odrzut, postawa łuczników |
 | Walk With Rifle, Rifle Walk | Mixamo | Mixamo | **w grze**: Rifle Walk = marsz pikinierów |
 | „Archer Shooting Arrow from Bow in Battle” (szkielet + animacja) | LasquetiSpice, Sketchfab | CC BY 4.0 | łucznik, porównanie |
@@ -64,7 +64,7 @@ Broń drzewcowa (pikinierzy, halabardnicy, milicja):
 
 Łucznicy i kusznicy:
 8. Standing Draw Arrow, Standing Aim Recoil (łuk)
-9. Crossbow / Rifle Aim + Shoot (kusza, jeśli jest)
+9. ~~Rifle Down To Aim~~ — jest, w grze (kusznicy); przydałby się jeszcze strzał z odrzutem („Shooting”)
 
 Tragarze, rzemieślnicy, rolnicy (ludzie w mieście):
 10. ~~Box Walk, Box Idle, Walking~~ — są, w grze
@@ -77,6 +77,14 @@ Jazda:
 ### Dostarczone 16.11 wieczorem — do sprawdzenia
 „bar patrons outfits”, „5 piece scalemail armor (metahuman rigged)”, „medieval clothing free”: ubrania
 i zbroja do dopasowania na szkielet (MetaHuman to inny szkielet niż Mixamo) — w kolejce.
+
+### Sprawdzone 16.11, nie do użycia od ręki
+- „Horse Rigged (Game Ready)” (abhayexe, CC BY 4.0): szkielet Biped, ale jedna 60-sekundowa ścieżka
+  sklejona z pojedynczych ruchów (stanie, kilka kroków różnej długości, zryw, upadek, stanie dęba) —
+  bez zapętlonego chodu, kłusu ani galopu. Potrzebny koń z osobnymi pętlami (np. CC0 „Ultimate Animated
+  Animal Pack” Quaterniusa: Walk, Gallop, Idle).
+- „Medieval woman figure” (oba pliki, mikurban, CC BY 4.0): bez szkieletu. Potrzebna kobieta ze
+  szkieletem Mixamo (np. z serii .Fuse albo z samego Mixamo).
 
 ### Postacie (ze szkieletem Mixamo, CC0/CC BY)
 14. Chłop / chłopka (tunika, kaptur, fartuch) — tragarze, rolnicy
