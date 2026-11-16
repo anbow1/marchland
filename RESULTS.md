@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Łąka bez plam w średnim zbliżeniu
+
+- Z wysoka i z bliska łąka wyglądała dobrze, ale ze średniej wysokości (kamera 30–80 m) jak rozlana
+  farba w jasne plamy. Sprawdzone na zrzutach: plamy to kępy i wytarte miejsca ze zdjęcia łąki
+  z drona, powiększone do 1–3 m. Teraz zdjęcie daje szczegół tylko do ~12 m od kamery i do 40 m
+  przechodzi w swój średni kolor; dalej łąkę rysuje drobne ziarno skanu trawy, kępy źdźbeł przy
+  kamerze i szerokie pasma tonu. Testy 86/86.
+
 ## 2026-11-16 · Głowy na miejscu
 
 - Miecznicy i halabardnicy wyglądali, jakby nie mieli głowy: w modelu rycerza końcówki kości

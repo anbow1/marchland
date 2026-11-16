@@ -249,9 +249,10 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const pastureRaw = untiled('pasture', 1, 0.17);
   // A little of the photograph's contrast taken back: its bare spots are glaring under a strong sun.
   const pastureMean = texture(lib.colour, uvOf('pasture', 1)).depth(int(layerOf('pasture'))).level(float(FLAT_MIP)).rgb;
-  // Its clumps and worn spots up close; from further off they would only freckle the land, so they fade
-  // into the photograph's average, and the meadow reads in broad swathes as it does from a hill.
-  const pastureMix = mix(pastureMean, pastureRaw, float(1).sub(smoothstep(35, 170, distanceM)).mul(0.55).add(0.08));
+  // Its clumps and worn spots only right by the camera: from a middling height they are pale blotches a
+  // metre or three across, like spilt paint, so by 40 m they have faded into the photograph's average and
+  // the meadow reads by the grain of the grass scan and the broad swathes below.
+  const pastureMix = mix(pastureMean, pastureRaw, float(1).sub(smoothstep(12, 40, distanceM)).mul(0.5).add(0.03));
   // The photograph's bare, sun-burnt spots read as yellow blotches from a strategy camera: keep their
   // brightness, take their yellow (no more red than four fifths of the green, little blue).
   const pastureGreen = vec3(min(pastureMix.x, pastureMix.y.mul(0.78)), pastureMix.y, min(pastureMix.z, pastureMix.y.mul(0.55)));
