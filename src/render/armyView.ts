@@ -10,7 +10,7 @@ import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
-import { type BodyModel, cavalryGeometryOnModels, engineGeometryOnModel, type GunModel, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
+import { type BodyModel, cavalryGeometryOnModels, engineGeometryOnModel, type GunModel, gunCrewSpots, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
 import { freshUrl } from '../version.ts';
 
 // Every soldier on the field, one instanced mesh per kind of unit. The CPU
@@ -282,10 +282,15 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
+  private readonly scene: Scene;
+  /** The guns' crews as modelled townsmen (people/townsman.json), once loaded; the size of each gun's model. */
+  private crew: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: Record<'idle' | 'walk' | 'pickup' | 'putdown', Clip & { fps: number }> } | null = null;
+  private readonly gunSizes = new Map<'cannon' | 'mortar', number[]>();
   private readonly arrows: InstancedMesh;
   private readonly stones: InstancedMesh;
 
   constructor(scene: Scene) {
+    this.scene = scene;
     const footman = soldierMaterial(false);
     const horseman = soldierMaterial(true);
     const identity = new Matrix4();
@@ -379,6 +384,8 @@ export class ArmyView {
     } catch (error) {
       console.warn(`[soldiers] no modelled horsemen (${String(error)}): they keep their figures`);
     }
+    // The guns' crews: modelled townsmen drawn on their own, or (without the file) men built into each gun.
+    await this.loadCrew(base);
     // The guns from their models (public/props), each with its crew.
     for (const kind of ['cannon', 'mortar'] as const) {
       const k = this.kinds.get(kind);
@@ -386,7 +393,9 @@ export class ArmyView {
       try {
         const response = await fetch(freshUrl(base, `props/${kind}.json`));
         if (!response.ok) throw new Error(`${kind} ${response.status}`);
-        const geometry = engineGeometryOnModel(kind, (await response.json()) as GunModel);
+        const model = (await response.json()) as GunModel;
+        this.gunSizes.set(kind, model.size);
+        const geometry = engineGeometryOnModel(kind, model, this.crew === null);
         geometry.setAttribute('aPlace', k.place);
         geometry.setAttribute('aAnim', k.anim);
         geometry.setAttribute('aSide', k.side);
@@ -413,6 +422,108 @@ export class ArmyView {
       changed++;
     }
     return changed;
+  }
+
+  /** The crew model: the townsman with his clips, one instanced skinned mesh for every gun's men. */
+  private async loadCrew(base: string): Promise<void> {
+    try {
+      const response = await fetch(freshUrl(base, 'people/townsman.json'));
+      if (!response.ok) throw new Error(`townsman ${response.status}`);
+      const model = (await response.json()) as RiggedModel;
+      const named = (name: string) => model.clips.find((c) => c.name === name);
+      const [idle, walk, pickup, putdown] = [named('idle'), named('walk'), named('pickup'), named('putdown')];
+      if (!idle || !walk || !pickup || !putdown) throw new Error('townsman lacks a clip');
+      const n = model.positions.length / 3;
+      const g = new BufferGeometry();
+      interleave(g, [
+        ['position', 3, model.positions],
+        ['normal', 3, model.normals],
+        ['color', 3, model.colours],
+        ['aSurface', 3, model.surface],
+      ]);
+      interleave(g, [
+        ['aSkin', 4, model.skin],
+        ['aWeight', 4, model.weights],
+        ['aPart', 4, new Float32Array(n * 4)],
+      ]);
+      g.setIndex(model.triangles);
+      g.computeBoundingSphere();
+      const capacity = 120;
+      const instanced = (size: number): InstancedBufferAttribute => {
+        const a = new InstancedBufferAttribute(new Float32Array(capacity * size), size);
+        a.setUsage(DynamicDrawUsage);
+        return a;
+      };
+      const place = instanced(4);
+      const frame = instanced(1);
+      const side = instanced(1);
+      g.setAttribute('aPlace', place);
+      g.setAttribute('aAnim', instanced(4));
+      g.setAttribute('aSide', side);
+      g.setAttribute('aFrame', frame);
+      const mesh = new InstancedMesh(g, skinnedMaterial(boneTexture(model)), capacity);
+      mesh.name = 'gun crews';
+      mesh.count = 0;
+      mesh.frustumCulled = false;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.scene.add(mesh);
+      this.crew = { mesh, place, frame, side, clips: { idle, walk, pickup, putdown } };
+    } catch (error) {
+      console.warn(`[soldiers] no modelled gun crews (${String(error)}): they stay built into the guns`);
+      this.crew = null;
+    }
+  }
+
+  /** Each living gun's crew about it: walking beside it on the march, loading after a shot, else at ease. */
+  private writeCrews(world: World): void {
+    const crew = this.crew;
+    if (!crew) return;
+    const p = crew.place.array as Float32Array;
+    const f = crew.frame.array as Float32Array;
+    const sides = crew.side.array as Float32Array;
+    const { idle, walk, pickup, putdown } = crew.clips;
+    const cycle = (c: Clip & { fps: number }, phase: number): number => c.start + (Math.floor((((phase % 1) + 1) % 1) * c.frames) % c.frames);
+    let n = 0;
+    for (const r of world.regiments) {
+      if (!r.def.engine) continue;
+      const kind = r.kind as 'cannon' | 'mortar';
+      const size = this.gunSizes.get(kind);
+      if (!size) continue;
+      const spots = gunCrewSpots(kind, size);
+      for (const s of r.soldiers) {
+        if (!s.alive) continue;
+        const w = s.headingRad + Math.PI;
+        const c = Math.cos(w);
+        const sn = Math.sin(w);
+        const speed = Math.hypot(s.vx, s.vz);
+        for (let k = 0; k < spots.length && n < crew.mesh.instanceMatrix.count; k++) {
+          const [x, z, turn] = spots[k] as [number, number, number];
+          const wx = s.x + x * c + z * sn;
+          const wz = s.z + z * c - x * sn;
+          p[n * 4] = wx;
+          p[n * 4 + 1] = heightAtM(wx, wz);
+          p[n * 4 + 2] = wz;
+          p[n * 4 + 3] = w + turn;
+          sides[n] = r.side;
+          const offset = s.slot * 1.9 + k * 0.7;
+          let frame: number;
+          if (speed > 0.25) frame = cycle(walk, s.strideM / Math.max(0.5, walk.travelM ?? 1.6));
+          else if (s.sinceAttackS < r.def.reloadS * 0.8) {
+            // Loading: the ball lifted from the pile, then set in.
+            const pickS = pickup.frames / pickup.fps;
+            const t = (s.sinceAttackS + offset) % (pickS + putdown.frames / putdown.fps);
+            frame = t < pickS ? pickup.start + Math.floor(t * pickup.fps) : putdown.start + Math.min(putdown.frames - 1, Math.floor((t - pickS) * putdown.fps));
+          } else frame = cycle(idle, (world.timeS + offset) / (idle.frames / idle.fps));
+          f[n] = frame;
+          n++;
+        }
+      }
+    }
+    crew.mesh.count = n;
+    crew.place.needsUpdate = true;
+    crew.frame.needsUpdate = true;
+    crew.side.needsUpdate = true;
   }
 
   /** Puts a kind on a skinned body with its clips; false if the file lacks what the game needs. */
@@ -587,6 +698,7 @@ export class ArmyView {
       }
     }
     this.writeGarrisons(world);
+    this.writeCrews(world);
     for (const k of this.kinds.values()) {
       if (k.skinned) k.skinned.frame.needsUpdate = true;
       k.place.needsUpdate = true;

@@ -230,8 +230,16 @@ export interface GunModel {
   triangles: number[];
 }
 
-/** A gun from its model (barrel along −Z, on the ground) with its crew and a small flag in the side's colour. */
-export function engineGeometryOnModel(kind: 'cannon' | 'mortar', model: GunModel): BufferGeometry {
+/** Where a gun's crew stand about it, in the gun's own space (x, z, turn): beside the carriage and behind. */
+export function gunCrewSpots(kind: 'cannon' | 'mortar', size: readonly number[]): [number, number, number][] {
+  const back = (size[2] as number) / 2 + 0.2;
+  const side = (size[0] as number) / 2 + 0.6;
+  return kind === 'cannon' ? [[side, 0.6, 0.3], [-side, 0.2, -0.3]] : [[side, 0.9, 0.4], [-side, 0.6, -0.5], [0.4, back + 0.9, 0.2]];
+}
+
+/** A gun from its model (barrel along −Z, on the ground) with a small flag in the side's colour, and its crew
+ * built in unless they are drawn as modelled men of their own (`crew` false). */
+export function engineGeometryOnModel(kind: 'cannon' | 'mortar', model: GunModel, crew = true): BufferGeometry {
   const f = new Figure();
   f.cloth();
   f.b.model(model, 0, 0, 0, 0, 1);
@@ -239,8 +247,7 @@ export function engineGeometryOnModel(kind: 'cannon' | 'mortar', model: GunModel
   const back = (model.size[2] as number) / 2 + 0.2;
   f.b.box(0, 0, back, 0.05, 1.6, 0.05, WOOD_DARK);
   f.b.box(0.25, 1.15, back, 0.5, 0.35, 0.03, WHITE);
-  const side = (model.size[0] as number) / 2 + 0.6;
-  gunCrew(f, kind === 'cannon' ? [[side, 0.6, 0.3], [-side, 0.2, -0.3]] : [[side, 0.9, 0.4], [-side, 0.6, -0.5], [0.4, back + 0.9, 0.2]]);
+  if (crew) gunCrew(f, gunCrewSpots(kind, model.size));
   return finish(f.b.build('extra'));
 }
 

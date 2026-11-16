@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-16 · Obsługa dział jako postacie ze szkieletem
+
+- Przy armacie stoi dwóch, przy moździerzu trzech mieszczan (ta sama postać co w mieście,
+  `people/townsman.json`, tunika w barwach strony) — jedna instancjonowana siatka ze szkieletem dla
+  obsługi wszystkich dział. W marszu idą obok działa (klip `walk` w takt kroku), po strzale ładują
+  (podnoszą i wkładają: `pickup` + `putdown`, każdy z innym przesunięciem), poza tym stoją (`idle`).
+  Gdy działo zginie, jego obsługa znika razem z nim.
+- Bryłowa obsługa (pudełka) zostaje tylko na wypadek braku pliku postaci.
+- Testy 94/94; WebGPU 0 błędów; bitwa: 137 potoków.
+
 ## 2026-11-16 · Komputer korzysta z nowych budynków; limit 64 budynków
 
 - Komputer stawia na końcu listy (po rozbudowie gospodarki i wojska): kaplicę, studnię, targ, browar,
