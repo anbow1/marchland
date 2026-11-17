@@ -1,6 +1,6 @@
 import { ARMY, CAMPAIGN, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
-import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
+import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCellAt, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
@@ -487,6 +487,26 @@ export function cmdAttackBuilding(world: World, regimentId: number, targetSide: 
   r.order = 'attackBuilding';
   r.targetSide = targetSide;
   r.targetPlot = plot;
+  r.targetRegimentId = -1;
+  r.run = false;
+  return 'ok';
+}
+
+/**
+ * Batter a stretch of enemy wall at (x, z) until it falls: guns and mortars above all (their stones
+ * break walls), though any shooters may be sent. They go within range and fire at the spot.
+ */
+export function cmdBombard(world: World, regimentId: number, x: number, z: number): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (r.def.missileRangeM <= 0) return 'notThisUnit';
+  const cell = wallCellAt(world.nav, x, z);
+  if (cell < 0 || world.nav.wallSide[cell] === r.side) return 'needsWall';
+  if (r.def.defenceOnly && !inHomeLand(r.side, x, z)) return 'defenceOnly';
+  if (r.stance === 'pikeWall') r.stance = 'normal';
+  r.order = 'bombard';
+  r.bombardX = x;
+  r.bombardZ = z;
   r.targetRegimentId = -1;
   r.run = false;
   return 'ok';

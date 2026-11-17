@@ -198,6 +198,8 @@ export const WALLS = {
   meleeFactor: 0.6,
   /** A stone damages wall cells this far from where it lands, besides any it hits. */
   siegeRadiusM: 2.5,
+  /** Only a shot this heavy (a gun's ball, a mortar's stone) breaks wall where it lands. */
+  breakingShotMin: 10,
 } as const;
 
 /**

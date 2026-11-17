@@ -753,7 +753,7 @@ export class Hud {
     if (isEngaged(r)) return T.state.fighting;
     if (r.order === 'move') return r.run ? T.runningState : T.state.move;
     if (r.order === 'attackRegiment') return T.state.attack;
-    if (r.order === 'attackBuilding') return T.state.siege;
+    if (r.order === 'attackBuilding' || r.order === 'bombard') return T.state.siege;
     return T.state.hold;
   }
 
@@ -821,11 +821,18 @@ export class Hud {
 
   /** The selected regiments' ranks, formation, stance and shooting: each row only if one of them can. */
   private formationHtml(world: World, selected: ReadonlySet<number>): string {
-    const regs = world.regiments.filter((r) => selected.has(r.id) && r.aliveMen > 0 && !r.def.engine);
-    if (regs.length === 0) return '';
-    const first = regs[0] as (typeof regs)[number];
     const button = (act: string, value: string, label: string, on: boolean, tip: string): string =>
       `<button class="choice${on ? ' on' : ''}" data-act="${act}" data-arg="${value}" data-tip="${tip}">${label}</button>`;
+    // Guns and mortars: when to fire, and how to send them (no ranks or stances for a gun crew).
+    const engines = world.regiments.filter((r) => selected.has(r.id) && r.aliveMen > 0 && r.def.engine);
+    let gunsHtml = '';
+    if (engines.length > 0) {
+      const gun = engines[0] as (typeof engines)[number];
+      gunsHtml = `<div class="row"><span class="label">${T.fireLabel}</span>${button('fire', '1', T.fireAtWill, gun.fireAtWill, T.formationTips.fire)}${button('fire', '0', T.fireOnOrder, !gun.fireAtWill, T.formationTips.fire)}</div><div class="row"><span class="small">${T.gunOrders}</span></div>`;
+    }
+    const regs = world.regiments.filter((r) => selected.has(r.id) && r.aliveMen > 0 && !r.def.engine);
+    if (regs.length === 0) return gunsHtml ? `<div class="formations">${gunsHtml}</div>` : '';
+    const first = regs[0] as (typeof regs)[number];
     let html = '<div class="formations">';
     const run = this.actions.runMode();
     html += `<div class="row"><span class="label">${T.paceLabel}</span>${button('pace', '0', T.paceWalk, !run, T.paceTip)}${button('pace', '1', T.paceRun, run, T.paceTip)}</div>`;
@@ -845,7 +852,7 @@ export class Hud {
     if (regs.some((r) => r.def.missileRangeM > 0)) {
       const shooter = regs.find((r) => r.def.missileRangeM > 0) as (typeof regs)[number];
       html += `<div class="row"><span class="label">${T.fireLabel}</span>${button('fire', '1', T.fireAtWill, shooter.fireAtWill, T.formationTips.fire)}${button('fire', '0', T.fireOnOrder, !shooter.fireAtWill, T.formationTips.fire)}</div>`;
-    }
+    } else if (engines.length > 0) html += gunsHtml;
     return `${html}</div>`;
   }
 

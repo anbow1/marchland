@@ -5,6 +5,25 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Działa: ostrzał murów, odrzut, dym i huk
+
+- **Rozkaz „ostrzał”** (`cmdBombard`, rozkaz `bombard`): zaznaczone działa lub moździerze plus prawy przycisk
+  na wrogi mur.
+  - Podjeżdżają na zasięg, strzelają w to miejsce aż do wyłomu, potem czekają na rozkaz.
+  - Inni zaznaczeni idą dalej jak zwykle.
+  - Wcześniej działa w ogóle nie mogły celować w mur, a kula armatnia (bez rozprysku) nie niszczyła muru nawet przy trafieniu.
+  - Teraz każdy ciężki pocisk (`WALLS.breakingShotMin` = 10 obrażeń oblężniczych) kruszy mur w miejscu upadku.
+  - Strzały łuczników nadal nie.
+- **Panel dział**: „strzelaj sam / na rozkaz” i podpowiedź, jak wydawać im rozkazy (wcześniej panel dla dział był pusty).
+- **Wystrzał**:
+  - działo odskakuje 0,9 m przy strzale i wraca w ciągu 1,6 s (moździerz prawie stoi);
+  - błysk u wylotu lufy, a potem ławica białego dymu prochowego, która puchnie, wznosi się i rzednie przez 4,5 s
+    (moździerz wyrzuca słup w górę; `shotSmokeView.ts`);
+  - dźwięk z syntezy: trzask, przetaczający się huk (szum za zamykającym się filtrem dolnoprzepustowym)
+    i spadające w tonie uderzenie; moździerz brzmi głucho i niżej.
+- Bramy mają w tekstach 10 m.
+- Test: wrogie działa robią wyłom w murze gracza, nie celują we własny mur, a piechota nie dostaje rozkazu ostrzału. Testy 109/109.
+
 ## 2026-11-17 · Zwierzęta, wozy, szare budowy, większa mapa, kolczugi, menu na tablet
 
 - **Zwierzęta**: kanciaste świnie i konie zniknęły z modeli chlewni i stajni (`buildings.py`,

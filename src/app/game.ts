@@ -1,9 +1,9 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
-import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
+import { cellX, cellZ, gateCells, roadCells, wallCellAt, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, nearestOwnBuildingM, reachOf, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type ResourceId, type Side, type UnitKind } from '../sim/types.ts';
@@ -332,6 +332,14 @@ export class Game implements ControlTarget {
         break;
       case 'arrowShot':
         this.sound.play('arrow', distanceM);
+        break;
+      case 'gunShot':
+        this.sound.play('cannon', distanceM);
+        this.view.gunSmoke(e.x, e.z, false);
+        break;
+      case 'mortarShot':
+        this.sound.play('mortar', distanceM);
+        this.view.gunSmoke(e.x, e.z, true);
         break;
       case 'stoneFall':
       case 'arrowHit':
@@ -851,7 +859,7 @@ export class Game implements ControlTarget {
       return;
     }
     if (this.selected.size === 0 || !this.ground(screenX, screenY, this.hit)) return;
-    const ids = [...this.selected];
+    let ids = [...this.selected];
     // An order without Shift replaces whatever was queued.
     this.queueing = queued;
     if (!queued) for (const id of ids) cmdClearQueue(this.world, id);
@@ -873,6 +881,18 @@ export class Game implements ControlTarget {
       }
       this.report(result);
       return;
+    }
+    // On an enemy wall: the shooters among the chosen batter it (guns and mortars break it); the others march up.
+    const wall = faceToX === null ? wallCellAt(this.world.nav, x, z) : -1;
+    if (wall >= 0 && this.world.nav.wallSide[wall] !== PLAYER) {
+      const shooters = ids.filter((id) => (findRegiment(this.world, id)?.def.missileRangeM ?? 0) > 0);
+      if (shooters.length > 0) {
+        let result: CommandResult = 'ok';
+        for (const id of shooters) result = cmdBombard(this.world, id, x, z);
+        this.report(result);
+        if (shooters.length === ids.length) return;
+        ids = ids.filter((id) => !shooters.includes(id));
+      }
     }
     const plot = this.plotAt(x, z, COMPUTER);
     if (plot >= -1 && faceToX === null) {

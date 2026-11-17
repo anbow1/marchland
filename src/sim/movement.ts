@@ -120,6 +120,12 @@ export function buildingRadiusM(plot: number): number {
   return plot < 0 ? TOWN.keepRadiusM : TOWN.buildingRadiusM;
 }
 
+/** True while the enemy wall a bombard order is aimed at still stands. */
+export function wallStandsAt(world: World, r: Regiment): boolean {
+  const cell = wallCellAt(world.nav, r.bombardX, r.bombardZ);
+  return cell >= 0 && world.nav.wallSide[cell] !== r.side;
+}
+
 /** True while the target of an attackBuilding order still stands. */
 export function buildingStands(world: World, side: Side, plot: number): boolean {
   const town = world.towns[side];
@@ -173,6 +179,18 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       goalZ = buildingZ(world, r.targetSide, r.targetPlot);
       faceGoal = true;
       stopDistanceM = isArcher(r) ? reachM(r, goalX, goalZ) * 0.8 : buildingRadiusM(r.targetPlot) + 1.5;
+    }
+  } else if (r.order === 'bombard') {
+    if (!wallStandsAt(world, r)) {
+      holdHere(r);
+      goalX = r.destX;
+      goalZ = r.destZ;
+      goalFacing = r.destFacingRad;
+    } else {
+      goalX = r.bombardX;
+      goalZ = r.bombardZ;
+      faceGoal = true;
+      stopDistanceM = reachM(r, goalX, goalZ) * 0.8;
     }
   } else if (r.order === 'hold' && isEngaged(r)) {
     // Fighting without orders: turn to face whoever attacked first.

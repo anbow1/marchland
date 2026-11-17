@@ -1,5 +1,6 @@
 import { WorkersView } from '../render/workersView.ts';
 import { AnimalsView } from '../render/animalsView.ts';
+import { ShotSmokeView } from '../render/shotSmokeView.ts';
 import { Vector3 } from 'three/webgpu';
 import { heightAtM } from '../sim/terrain.ts';
 import type { BuildingKind } from '../sim/types.ts';
@@ -55,6 +56,7 @@ export class WorldView {
   private army!: ArmyView;
   private workers!: WorkersView;
   private animals!: AnimalsView;
+  private shotSmoke!: ShotSmokeView;
   private markers!: Markers;
   private people!: PeopleView;
   private vines!: VinesView;
@@ -119,6 +121,7 @@ export class WorldView {
     await this.walls.loadModel(import.meta.env.BASE_URL);
     this.workers = new WorkersView(scene);
     await this.workers.load(import.meta.env.BASE_URL);
+    this.shotSmoke = new ShotSmokeView(scene);
     this.animals = new AnimalsView(scene);
     await this.animals.load(import.meta.env.BASE_URL);
     this.army = new ArmyView(scene);
@@ -173,9 +176,15 @@ export class WorldView {
     this.army.update(world);
     this.workers.update(world);
     this.animals.update(world, this.people.harnessed, this.people.harnessedCount);
+    this.shotSmoke.update(frameSeconds);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);
     this.markers.updateReach(world, ghost ? ghost.kind : null, pose.distanceM);
     this.stage.render();
+  }
+
+  /** A gun or a mortar fired from (x, z): its flash and smoke. */
+  gunSmoke(x: number, z: number, mortar: boolean): void {
+    this.shotSmoke.shot(x, z, mortar);
   }
 
   /** Screen position (CSS pixels) of a world point; false when it is behind the camera. */

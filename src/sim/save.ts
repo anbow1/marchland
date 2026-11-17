@@ -189,6 +189,8 @@ function upgrade(world: World): World {
       r.def = UNITS[now];
     }
     r.xp ??= 0;
+    r.bombardX ??= 0;
+    r.bombardZ ??= 0;
     r.paceCapMs ??= 0;
     r.route ??= [];
     r.routeAt ??= 0;

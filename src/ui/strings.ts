@@ -137,6 +137,7 @@ interface Strings {
   /** The build tab's groups, and the switches for the resource bar and the banners. */
   buildGroups: Record<'town' | 'food' | 'goods' | 'arms' | 'defence', string>;
   compactBar: string;
+  gunOrders: string;
   closeNote: string;
   gfxProblem: string;
   listTip: string;
@@ -351,7 +352,7 @@ const pl: Strings = {
     towerFull: 'Wieża ma już pełną załogę.',
     notThisUnit: 'Ten oddział tego nie umie.',
     needsKeep: 'Najpierw rozbuduj zamek: koszary nie mogą być wyższe niż on pozwala.',
-    needsWall: 'Bramę stawia się we własnym murze: wskaż prosty odcinek co najmniej 6 m.',
+    needsWall: 'Bramę stawia się we własnym murze: wskaż prosty odcinek co najmniej 10 m.',
     defenceOnly: 'Milicja broni tylko miasta i okolic. Przezbrój ją przy koszarach, żeby ruszyła dalej.',
     gameOver: 'Gra skończona.',
   },
@@ -484,6 +485,7 @@ const pl: Strings = {
   buildingsTab: 'Budynki',
   buildGroups: { town: 'Osada', food: 'Żywność', goods: 'Surowce', arms: 'Broń i wojsko', defence: 'Obrona i drogi' },
   compactBar: 'Zasoby: same ikony albo ikony z nazwami',
+  gunOrders: 'Działa: prawy przycisk na wrogi mur — ostrzał, aż runie wyłom; na budynek albo oddział — atak; na ziemię — przejazd. Strzelają z miejsca, nie w ruchu.',
   closeNote: 'Zamknij',
   gfxProblem: 'Grafika nie ruszyła na tym urządzeniu. Zrób zrzut tego okna i wyślij go: to pomoże naprawić błąd.',
   listTip: 'Kliknij: pokaż następny budynek tego rodzaju i otwórz jego panel.',
@@ -632,7 +634,7 @@ const pl: Strings = {
   hintWallStart: 'Mur: wskaż początek. Prawy przycisk / Esc: koniec.',
   hintWallEnd: 'Mur: wskaż koniec odcinka.',
   gate: 'Brama',
-  gateAbout: 'Brama w twoim murze (6 m): twoi ludzie i żołnierze przez nią przechodzą, dla wroga to mur — mocniejszy niż zwykły. Kliknij we własny mur.',
+  gateAbout: 'Brama w twoim murze (10 m): twoi ludzie i żołnierze przez nią przechodzą, dla wroga to mur — mocniejszy niż zwykły. Kliknij we własny mur.',
   hintGate: 'Brama: kliknij we własny mur. Prawy przycisk / Esc: koniec.',
   garrison: 'Załoga',
   ungarrison: 'Wyprowadź załogę',
@@ -731,7 +733,7 @@ const en: Strings = {
     towerFull: 'The tower is fully manned.',
     notThisUnit: 'This regiment cannot do that.',
     needsKeep: 'Raise the keep first: the barracks may rise no higher than it allows.',
-    needsWall: 'A gate goes into your own wall: point at a straight stretch at least 6 m long.',
+    needsWall: 'A gate goes into your own wall: point at a straight stretch at least 10 m long.',
     defenceOnly: 'Militia only defends the town and its land. Re-arm it at the barracks to take it further.',
     gameOver: 'The game is over.',
   },
@@ -864,6 +866,7 @@ const en: Strings = {
   buildingsTab: 'Buildings',
   buildGroups: { town: 'Town', food: 'Food', goods: 'Materials', arms: 'Arms & army', defence: 'Defence & roads' },
   compactBar: 'Resources: icons only, or icons with names',
+  gunOrders: 'Guns: right-click an enemy wall to batter it until it breaches; a building or regiment to attack it; the ground to move. They fire standing, not on the move.',
   closeNote: 'Close',
   gfxProblem: 'The graphics did not start on this device. Take a screenshot of this box and send it: it helps fix the fault.',
   listTip: 'Click: go to the next building of this kind and open its panel.',
@@ -1012,7 +1015,7 @@ const en: Strings = {
   hintWallStart: 'Wall: point at the start. Right button / Esc: done.',
   hintWallEnd: 'Wall: point at the end of the stretch.',
   gate: 'Gate',
-  gateAbout: 'A gate in your wall (6 m): your people and soldiers pass through it; to the enemy it is wall, and stronger. Click your own wall.',
+  gateAbout: 'A gate in your wall (10 m): your people and soldiers pass through it; to the enemy it is wall, and stronger. Click your own wall.',
   hintGate: 'Gate: click your own wall. Right button / Esc: done.',
   garrison: 'Garrison',
   ungarrison: 'Bring the garrison out',

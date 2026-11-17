@@ -113,6 +113,8 @@ export interface RiggedModel {
 
 /** `lower`: a raise-to-aim clip played backwards after the shot (held at aim a moment, then lowered). */
 type Clip = { start: number; frames: number; travelM?: number; lower?: boolean };
+/** Seconds a gun takes to leap back from its shot and be run up again. */
+const RECOIL_S = 1.6;
 /** Share of a lowering blow spent still at aim, the bolt just loosed. */
 const HOLD_AFTER_SHOT = 0.3;
 
@@ -805,9 +807,16 @@ export class ArmyView {
       y -= Math.max(0, s.deadS - (ARMY.bodySeconds - SINK_S)) * 0.45;
     }
     const p = k.place.array as Float32Array;
-    p[i * 4] = s.x;
+    // A gun leaps back on its trail as it fires and is run up again over a second or so (a mortar barely
+    // stirs on its bed).
+    let back = 0;
+    if (r.def.engine && s.alive && s.sinceAttackS < RECOIL_S) {
+      const t = s.sinceAttackS / RECOIL_S;
+      back = (r.def.missileHighArc ? 0.12 : 0.9) * (t < 0.08 ? t / 0.08 : (1 - t) ** 2);
+    }
+    p[i * 4] = s.x - Math.sin(s.headingRad) * back;
     p[i * 4 + 1] = y;
-    p[i * 4 + 2] = s.z;
+    p[i * 4 + 2] = s.z - Math.cos(s.headingRad) * back;
     // The models face −Z; a heading h looks along (sin h, cos h): turn by h + π.
     p[i * 4 + 3] = s.headingRad + Math.PI;
     const a = k.anim.array as Float32Array;

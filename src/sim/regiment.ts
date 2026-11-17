@@ -34,7 +34,7 @@ export interface Soldier {
   wallCell: number;
 }
 
-export type OrderKind = 'hold' | 'move' | 'attackRegiment' | 'attackBuilding';
+export type OrderKind = 'hold' | 'move' | 'attackRegiment' | 'attackBuilding' | 'bombard';
 export type RegimentState = 'formed' | 'routing';
 
 /** How a regiment stands: a block of ranks, a wedge for a charge (horse), or open order against arrows. */
@@ -72,6 +72,9 @@ export interface Regiment {
   /** Target of an attackBuilding order: the side, and the plot (-1 = the keep). */
   targetSide: Side;
   targetPlot: number;
+  /** Target of a bombard order: a point of an enemy wall the shooters batter until it falls. */
+  bombardX: number;
+  bombardZ: number;
   morale: number;
   state: RegimentState;
   /** A routing regiment that will never rally. */
@@ -270,6 +273,8 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     targetRegimentId: -1,
     targetSide: side,
     targetPlot: -1,
+    bombardX: 0,
+    bombardZ: 0,
     morale: def.morale,
     state: 'formed',
     shattered: false,

@@ -6,10 +6,10 @@ const SPEED_OF_SOUND_MS = 343;
 /** Distance at which a sound has fallen to half its loudness. */
 const HALF_GAIN_M = 70;
 
-export type SoundKind = 'clash' | 'arrow' | 'thud' | 'horn' | 'hornLow' | 'fanfare' | 'build' | 'click' | 'deny';
+export type SoundKind = 'clash' | 'arrow' | 'cannon' | 'mortar' | 'thud' | 'horn' | 'hornLow' | 'fanfare' | 'build' | 'click' | 'deny';
 
 /** Least seconds between two sounds of one kind: a melee would otherwise be one long noise. */
-const MIN_GAP_S: Record<SoundKind, number> = { clash: 0.07, arrow: 0.05, thud: 0.12, horn: 1.5, hornLow: 1.5, fanfare: 3, build: 0.3, click: 0.03, deny: 0.2 };
+const MIN_GAP_S: Record<SoundKind, number> = { clash: 0.07, arrow: 0.05, cannon: 0.15, mortar: 0.2, thud: 0.12, horn: 1.5, hornLow: 1.5, fanfare: 3, build: 0.3, click: 0.03, deny: 0.2 };
 
 export class Sound {
   private ctx: AudioContext | null = null;
@@ -65,6 +65,18 @@ export class Sound {
       case 'arrow':
         this.burst(at, 0.16, 5200, 1.2, gain * 0.22);
         break;
+      case 'cannon':
+        // The crack of the charge, the boom rolling after it, and the low thump under both.
+        this.burst(at, 0.06, 1800, 0.8, gain * 0.7);
+        this.rumble(at, 1.4, 260, gain * 1.1);
+        this.drop(at, 0.5, 90, 38, gain * 0.9);
+        break;
+      case 'mortar':
+        // Duller and deeper: the charge in a short barrel, aimed at the sky.
+        this.burst(at, 0.05, 900, 0.8, gain * 0.45);
+        this.rumble(at, 1.1, 160, gain * 1.0);
+        this.drop(at, 0.6, 70, 30, gain * 1.0);
+        break;
       case 'thud':
         this.burst(at, 0.14, 220, 1.5, gain * 0.6);
         break;
@@ -107,6 +119,44 @@ export class Sound {
     g.gain.exponentialRampToValueAtTime(0.0008, at + seconds);
     src.connect(filter).connect(g).connect(this.master as GainNode);
     src.start(at, Math.random() * 0.5, seconds + 0.02);
+  }
+
+  /** Noise through a low-pass that closes as it fades: a boom rolling away. */
+  private rumble(at: number, seconds: number, hz: number, level: number): void {
+    const ctx = this.ctx as AudioContext;
+    const src = ctx.createBufferSource();
+    src.buffer = this.noise;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.frequency.value = hz;
+    filter.frequency.setValueAtTime(hz, at);
+    filter.frequency.exponentialRampToValueAtTime(hz * 0.3, at + seconds);
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setValueAtTime(level, at);
+    g.gain.exponentialRampToValueAtTime(0.0008, at + seconds);
+    // Longer than the second of noise: it loops.
+    src.loop = true;
+    src.connect(filter).connect(g).connect(this.master as GainNode);
+    src.start(at, Math.random() * 0.3);
+    src.stop(at + seconds + 0.02);
+  }
+
+  /** A sine whose pitch falls fast: the thump of a charge going off. */
+  private drop(at: number, seconds: number, fromHz: number, toHz: number, level: number): void {
+    const ctx = this.ctx as AudioContext;
+    const osc = ctx.createOscillator();
+    osc.type = 'sine';
+    osc.frequency.value = fromHz;
+    osc.frequency.setValueAtTime(fromHz, at);
+    osc.frequency.exponentialRampToValueAtTime(toHz, at + seconds);
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setValueAtTime(level, at);
+    g.gain.exponentialRampToValueAtTime(0.0008, at + seconds);
+    osc.connect(g).connect(this.master as GainNode);
+    osc.start(at);
+    osc.stop(at + seconds + 0.02);
   }
 
   /** A tone through a low-pass, with a soft attack and release. */

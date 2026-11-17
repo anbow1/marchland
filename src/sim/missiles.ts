@@ -121,7 +121,9 @@ function launch(world: World, side: Side, shot: Shot, x0: number, y0: number, z0
     a.buildingSide = buildingSide;
     a.buildingPlot = buildingPlot;
     a.shooterId = shot.shooterId;
-    world.events.push('arrowShot', x0, z0, side);
+    // A gun's report and smoke, a mortar's thump, or the twang of a bow.
+    const heavy = shot.siegeDamage >= WALLS.breakingShotMin;
+    world.events.push(heavy ? (shot.highArc ? 'mortarShot' : 'gunShot') : 'arrowShot', x0, z0, side);
     return true;
   }
   return false;
@@ -173,6 +175,8 @@ function land(world: World, a: Arrow): void {
     splash(world, a, x, z);
     return;
   }
+  // A gun's ball breaks the wall it strikes (an arrow's siege damage is for burning thatch, not stone).
+  if (a.siegeDamage >= WALLS.breakingShotMin) breakWalls(world, a, x, z);
   let victim: Soldier | null = null;
   let bestD2 = MISSILE.hitRadiusM * MISSILE.hitRadiusM;
   for (const r of world.regiments) {
@@ -260,6 +264,22 @@ function shootAtRegiment(world: World, r: Regiment, target: Regiment): void {
   }
 }
 
+/** Each man (a gun, a crew) in range lets fly at a point: a stretch of enemy wall to be broken. */
+function shootAtPoint(world: World, r: Regiment, x: number, z: number): void {
+  const shot = shotOf(r);
+  for (const s of r.soldiers) {
+    if (!s.alive || s.target || s.attackCooldownS > 0) continue;
+    const distanceM = hypot2(x - s.x, z - s.z);
+    if (distanceM > reachM(r, x, z) || distanceM < r.def.missileMinRangeM) continue;
+    const y0 = heightAtM(s.x, s.z) + MISSILE.chestHeightM;
+    if (launch(world, r.side, shot, s.x, y0, s.z, x + world.rng.gauss() * 0.7, heightAtM(x, z) + 1.5, z + world.rng.gauss() * 0.7, r.targetSide, AT_SOLDIERS)) {
+      s.sinceAttackS = 0;
+      s.headingRad = Math.atan2(x - s.x, z - s.z);
+    }
+    s.attackCooldownS = r.def.reloadS * world.rng.range(0.85, 1.15);
+  }
+}
+
 function shootAtBuilding(world: World, r: Regiment): void {
   const bx = buildingX(world, r.targetSide, r.targetPlot);
   const bz = buildingZ(world, r.targetSide, r.targetPlot);
@@ -289,6 +309,10 @@ function stepArchers(world: World, r: Regiment, dtSeconds: number): void {
   if (isEngaged(r) || r.speedMs > 0.3) return;
   if (r.order === 'attackBuilding' && buildingStands(world, r.targetSide, r.targetPlot)) {
     shootAtBuilding(world, r);
+    return;
+  }
+  if (r.order === 'bombard') {
+    shootAtPoint(world, r, r.bombardX, r.bombardZ);
     return;
   }
   const target = findRegiment(world, r.fireTargetId);

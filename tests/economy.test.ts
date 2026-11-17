@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ARMY, BUILDINGS, CHAPEL, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, GATHER, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTrade, cmdTurnSite, lotPrice, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBombard, cmdBuild, cmdTrade, cmdTurnSite, lotPrice, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
 import { buildingCost, carryCapacity, ordersFilled, wantedForOrders, workState } from '../src/sim/economy.ts';
@@ -939,6 +939,26 @@ describe('walls and watchtowers', () => {
     expect(cmdMove(world, theirs.id, x - 25, gz, null, false)).toBe('ok');
     run(world, 4);
     for (const s of theirs.soldiers) if (s.alive) expect(s.x).toBeGreaterThan(x - 1.5);
+  });
+
+  it('guns sent against a wall batter it down; a wall of their own side cannot be their mark', () => {
+    const world = rich(quietWorld());
+    const x = townX(PLAYER) + 40;
+    expect(cmdBuildWall(world, PLAYER, x, townZ(PLAYER) - 40, x, townZ(PLAYER) + 10)).toBe('ok');
+    const wz = townZ(PLAYER) - 15;
+    expect(wallCellAt(world.nav, x, wz)).toBeGreaterThanOrEqual(0);
+    const guns = spawnRegiment(world, COMPUTER, 'cannon', x + 140, wz, -Math.PI / 2);
+    const foot = spawnRegiment(world, COMPUTER, 'swordsmen', x + 140, wz + 30, -Math.PI / 2);
+    expect(cmdBombard(world, foot.id, x, wz)).toBe('notThisUnit');
+    expect(cmdBombard(world, guns.id, x + 20, wz)).toBe('needsWall');
+    const own = spawnRegiment(world, PLAYER, 'cannon', x - 100, wz, Math.PI / 2);
+    expect(cmdBombard(world, own.id, x, wz)).toBe('needsWall');
+    expect(cmdBombard(world, guns.id, x, wz)).toBe('ok');
+    runUntil(world, 400, () => wallCellAt(world.nav, x, wz) < 0);
+    expect(wallCellAt(world.nav, x, wz)).toBe(-1);
+    // The breach made, they stand and wait for orders.
+    run(world, 2);
+    expect(guns.order).toBe('hold');
   });
 
   it('a watchtower takes up to four archers, shoots from its top, and lets them out again', () => {
