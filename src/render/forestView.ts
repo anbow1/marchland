@@ -224,7 +224,7 @@ export function buildForest(quality: Quality, lib: SurfaceLibrary): Forest {
  */
 function buildBushes(quality: Quality, geometry: BufferGeometry, material: MeshStandardNodeMaterial): InstancedMesh[] {
   const rng = new Rng(MAP.terrainSeed + 211);
-  const half = MAP.halfM + 120;
+  const half = MAP.halfM + 60;
   const keep = quality === 'high' ? 1 : 0.5;
   const byChunk = new Map<string, number[]>();
   let n = 0;

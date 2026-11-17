@@ -167,14 +167,17 @@ export function orderedGoodsFor(kind: UnitKind): Cost {
   return out;
 }
 
-/** Orders the arms for `count` regiments of a kind: added to what is already ordered (an unlimited good becomes limited). */
+/** Orders the arms for `count` regiments of a kind: added to what is already ordered (an unlimited good stays unlimited). */
 export function cmdOrderRegiments(world: World, side: Side, kind: UnitKind, count: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   const orders = world.towns[side].orders;
   const goods = orderedGoodsFor(kind);
   for (const id of RESOURCE_IDS) {
     const n = goods[id] ?? 0;
-    if (n > 0) orders[id] = (orders[id] ?? 0) + n * count;
+    // An unlimited good stays unlimited (iron, stone for the guns): ordering one regiment's worth must not
+    // stop its workshop once that much is made.
+    const left = orders[id];
+    if (n > 0 && left !== undefined) orders[id] = left + n * count;
   }
   return 'ok';
 }

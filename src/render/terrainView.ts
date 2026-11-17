@@ -28,7 +28,7 @@ export interface TerrainGrid {
 }
 
 /** The mesh reaches this far beyond the playable square on every side. */
-export const TERRAIN_MARGIN_M = 320;
+export const TERRAIN_MARGIN_M = 120;
 const CELL_M = 4;
 /** Edge of the cover map in texels: about 1.35 m each over the whole mesh. */
 const COVER_PX = 768;

@@ -163,7 +163,7 @@ function lakeGrid(side: Side): BufferGeometry {
 function riverGrid(): BufferGeometry {
   const step = 2;
   const across = MAP.riverHalfWidthM + 5;
-  const reach = MAP.halfM + 300;
+  const reach = MAP.halfM + 120;
   const ns = Math.ceil((2 * reach) / step) + 1;
   const na = Math.ceil((2 * across) / 1.5) + 1;
   const positions = new Float32Array(ns * na * 3);
@@ -286,7 +286,7 @@ function buildRocks(lib: SurfaceLibrary): InstancedMesh[] {
     }
   }
   // Loose rocks: more on high and steep ground, none in the woods, the water or the towns' own yards.
-  const half = MAP.halfM + 120;
+  const half = MAP.halfM + 60;
   for (let gz = -half; gz < half; gz += 14) {
     for (let gx = -half; gx < half; gx += 14) {
       const x = gx + rng.range(0, 14);
@@ -320,7 +320,7 @@ function buildBushes(lib: SurfaceLibrary): InstancedMesh[] {
   const turn = new Quaternion();
   const up = new Vector3(0, 1, 0);
   // Thickets: bushes gather where a slow noise is high, and thin out to nothing between.
-  const half = MAP.halfM + 100;
+  const half = MAP.halfM + 60;
   for (let gz = -half; gz < half; gz += 5) {
     for (let gx = -half; gx < half; gx += 5) {
       const x = gx + rng.range(0, 5);

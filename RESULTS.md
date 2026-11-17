@@ -5,6 +5,46 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Zwierzęta, wozy, szare budowy, większa mapa, kolczugi, menu na tablet
+
+- **Zwierzęta**: kanciaste świnie i konie zniknęły z modeli chlewni i stajni (`buildings.py`,
+  `buildingGeometry.ts`). Nowy `src/render/animalsView.ts`:
+  - w chlewni 3–5 świń z modelu (`props/pig.json`) chodzi po zagrodzie i odpoczywa, omijając koryto i słomę;
+  - w stajni 2–3 konie jazdy (`warhorse.json`, kości) chodzą, stoją i skubią trawę;
+  - każde zwierzę ma własny zegar, a kolejne miejsca wynikają z hasza: bez stanu w symulacji.
+- **Wozy**: koń przy wozie (poziom transportu 3) to ten sam animowany koń; krok liczony z drogi tragarza, na postoju stoi.
+  - Wozy trzymają odstęp (`CARTS` w config): wóz staje, gdy inny wóz jego miasta jest do 5,5 m przed nim
+    (taczka 2,6 m), w tym samym pasie, jadąc w tę samą stronę albo stojąc.
+  - Wozy z naprzeciwka mijają się, a po 4 s czekania wóz i tak jedzie dalej, więc kolejka nie stoi w nieskończoność.
+  - Koszt: pary wozów jednego miasta raz na krok symulacji, kilkadziesiąt sztuk.
+- **Budowa na szaro**: budynek w budowie jest wyszarzony (kolor odbarwiony o 85%) aż do ostatniej warstwy.
+- **Większa mapa**: obszar gry 680 m zamiast 560 m przy tych samych miejscach zamków.
+  - Za zamkiem w rogu jest ok. 100 m terenu zamiast 40 m.
+  - Pas terenu za mapą zwężony z 320 m do 120 m, a kamienie, krzaki i drzewa ozdobne do 60–100 m.
+  - Las w obszarze gry jest losowany jak dotąd (to samo ziarno, ta sama kolejność).
+  - Kamera sięga 1430 m.
+- **Kolczugi przestały powstawać**: zamówienie wyposażenia oddziału (np. armaty: żelazo) zamieniało
+  nielimitowane żelazo w zamówienie na liczbę sztuk. Po jego wykonaniu huta stała na „0”, a płatnerz czekał na żelazo.
+  - Teraz zamówienie oddziału nie ogranicza surowców bez limitu.
+  - Warsztat z zamówieniem 0 pracuje dalej, gdy jego towaru potrzebują otwarte zamówienia dalej w łańcuchu
+    (`wantedForOrders`: 36 kolczug = 72 żelaza, minus zapas).
+- **Leśnik szkodził**: podlewając sadzonkę posadzoną przed chwilą przez drwala, cofał jej czas posadzenia
+  przed ścięcie drzewa. Gra brała ją wtedy za goły pień i leśnik sadził od nowa.
+  - Teraz oba zegary cofają się razem.
+  - Test liczy całe odrośnięte drewno.
+- **Brama** ma 5 kratek (10 m) zamiast 3: front oddziału (6 szeregów) przechodzi bez tłoku; model jest rozciągnięty.
+- **Tablet**:
+  - pasek zasobów przełączany przyciskiem „Aa” (same ikony albo z nazwami; na ekranie dotykowym startuje z ikonami);
+  - budowa w pięciu grupach (Osada, Żywność, Surowce, Broń i wojsko, Obrona i drogi);
+  - × zamyka komunikat u góry do czasu zmiany treści, a dotknięcie powiadomienia je chowa;
+  - ustawienie Niska rysuje 1 piksel na piksel CSS (na iPadzie 4× mniej pikseli);
+  - modelowani mieszczanie także na Niskiej, zamiast klocków.
+- **Raport grafiki**: gdy w pierwszych sekundach przeglądarka zgłosi błąd grafiki (shader, utracony kontekst),
+  gra pokazuje okienko do zrobienia zrzutu: renderer, GPU, przeglądarka i komunikaty.
+  - Przycisk „WebGL2” uruchamia grę ponownie z `?gl`.
+  - `?gfxreport` pokazuje okienko zawsze.
+- Testy 108/108.
+
 ## 2026-11-17 · Poprawki budowania: granica mapy, leśnik i myśliwy
 
 - Chata obok zamku „za daleko”: zamek w rogu (−232, 232) ma tylko ok. 40 m do brzegu terenu, na którym wolno

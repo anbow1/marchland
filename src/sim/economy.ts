@@ -363,13 +363,36 @@ export function carryPace(town: Town): number {
   return (TRANSPORT[town.transportLevel - 1] ?? TRANSPORT[0]).pace;
 }
 
-/** True when every good in `outputs` has an order and none is left to make. */
+/**
+ * How much of a good the town's open orders for the goods made from it still call for, beyond what lies in
+ * the keep: an order for 36 mail wants 72 iron, so the smelter works on although iron itself is ordered to 0.
+ * Only finite orders count (an unlimited workshop takes what it gets).
+ */
+export function wantedForOrders(town: Town, good: ResourceId): number {
+  let wanted = 0;
+  for (const kind of Object.keys(BUILDINGS) as BuildingKind[]) {
+    const recipe = BUILDINGS[kind].recipe;
+    const per = recipe?.inputs[good] ?? 0;
+    if (!recipe || per === 0) continue;
+    for (const out of RESOURCE_IDS) {
+      const made = recipe.outputs[out] ?? 0;
+      const left = town.orders[out];
+      if (made === 0 || left === undefined || left <= 0) continue;
+      // Less what of that good is already made: those need no more of this one.
+      wanted += (Math.max(0, left - town.stock[out]) * per) / made;
+    }
+  }
+  return Math.max(0, wanted - town.stock[good]);
+}
+
+/** True when every good in `outputs` has an order, none is left to make, and no open order needs it as an input. */
 export function ordersFilled(town: Town, outputs: Cost): boolean {
   let any = false;
   for (const id of RESOURCE_IDS) {
     if ((outputs[id] ?? 0) === 0) continue;
     const left = town.orders[id];
     if (left === undefined || left > 0) return false;
+    if (wantedForOrders(town, id) > 0) return false;
     any = true;
   }
   return any;

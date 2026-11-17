@@ -1,4 +1,5 @@
 import { WorkersView } from '../render/workersView.ts';
+import { AnimalsView } from '../render/animalsView.ts';
 import { Vector3 } from 'three/webgpu';
 import { heightAtM } from '../sim/terrain.ts';
 import type { BuildingKind } from '../sim/types.ts';
@@ -53,6 +54,7 @@ export class WorldView {
   private town!: TownView;
   private army!: ArmyView;
   private workers!: WorkersView;
+  private animals!: AnimalsView;
   private markers!: Markers;
   private people!: PeopleView;
   private vines!: VinesView;
@@ -71,7 +73,8 @@ export class WorldView {
 
   constructor(canvas: HTMLCanvasElement, quality: Quality) {
     // Phones render at 2× device pixels and let the governor lower the scale (rules §9).
-    this.stage = new Stage(canvas, { quality, maxPixelRatio: 2 });
+    // Low (tablets, phones): a pixel per CSS pixel, a quarter of a Retina screen's; the HUD stays sharp.
+    this.stage = new Stage(canvas, { quality, maxPixelRatio: quality === 'low' ? 1 : 2 });
   }
 
   async load(onProgress: (share: number) => void): Promise<void> {
@@ -102,8 +105,9 @@ export class WorldView {
     const models = await this.town.loadModels(import.meta.env.BASE_URL);
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
-    // The modelled townsfolk cost up to 400 000 triangles a frame: the phone preset keeps the built figures.
-    await Promise.all([this.people.loadCarts(import.meta.env.BASE_URL), quality === 'low' ? Promise.resolve() : this.people.loadTownsfolk(import.meta.env.BASE_URL)]);
+    // The modelled townsfolk (about 1 500 triangles each, a few hundred people at most) on every preset:
+    // the built figures read as blocks.
+    await Promise.all([this.people.loadCarts(import.meta.env.BASE_URL), this.people.loadTownsfolk(import.meta.env.BASE_URL)]);
     // After the townsfolk: their loads are held in the hands, not on the shoulder.
     await this.people.loadGoods(import.meta.env.BASE_URL);
     this.vines = new VinesView(scene, surfaces);
@@ -115,6 +119,8 @@ export class WorldView {
     await this.walls.loadModel(import.meta.env.BASE_URL);
     this.workers = new WorkersView(scene);
     await this.workers.load(import.meta.env.BASE_URL);
+    this.animals = new AnimalsView(scene);
+    await this.animals.load(import.meta.env.BASE_URL);
     this.army = new ArmyView(scene);
     await this.army.loadBodies(import.meta.env.BASE_URL);
     this.markers = new Markers(scene);
@@ -166,6 +172,7 @@ export class WorldView {
     this.smoke.update(this.smokeSources, this.town.smokeSources(world, this.smokeSources), frameSeconds);
     this.army.update(world);
     this.workers.update(world);
+    this.animals.update(world, this.people.harnessed, this.people.harnessedCount);
     this.markers.update(world, selected, selectedPlot, pose.yawRad, tiles);
     this.markers.updateReach(world, ghost ? ghost.kind : null, pose.distanceM);
     this.stage.render();

@@ -1,11 +1,11 @@
-import { Box3, type BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Scene } from 'three/webgpu';
+import { Box3, type BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
 import { TOWN } from '../config.ts';
 import type { Building } from '../sim/economy.ts';
 import { heightAtM, townX, townZ } from '../sim/terrain.ts';
 import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { positionWorld, uniform } from 'three/tsl';
+import { dot, mix, positionWorld, uniform, vec3 } from 'three/tsl';
 import { buildingGeometry, keepGeometry } from './buildingGeometry.ts';
 import { type PropModel, setCannonModel, setPigModel, surfacePaint } from './buildingParts.ts';
 import { MeshBuilder } from './meshBuilder.ts';
@@ -82,6 +82,11 @@ export class TownView {
     this.siteMaterial = surfaceMaterial(lib, 'building site');
     const cut = uniform(UNCUT).onObjectUpdate((frame) => (frame.object?.userData['cutY'] as number | undefined) ?? UNCUT);
     this.siteMaterial.maskNode = positionWorld.y.lessThan(cut);
+    // A site not yet finished is drawn grey (its own colours washed out), so it reads as unbuilt at a glance;
+    // it takes its colours when the last course is laid.
+    const own = this.siteMaterial.colorNode as Node<'vec3'>;
+    const grey = dot(own, vec3(0.299, 0.587, 0.114)).mul(1.1);
+    this.siteMaterial.colorNode = mix(own, vec3(grey), 0.85);
     for (const side of [0, 1] as const satisfies readonly Side[]) {
       const tx = townX(side);
       const tz = townZ(side);

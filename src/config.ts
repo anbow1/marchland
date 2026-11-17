@@ -13,8 +13,8 @@ export const SIM = {
 
 export const MAP = {
   /** Playable square, centred on the origin. */
-  sizeM: 560,
-  halfM: 280,
+  sizeM: 680,
+  halfM: 340,
   /** Town centres sit on the diagonal, this far from the origin on each axis (the first place a keep may stand). */
   townOffsetM: 232,
   /**
@@ -205,7 +205,8 @@ export const WALLS = {
  * soldiers pass through it; to the enemy it is wall, and takes this many blows to break.
  */
 export const GATE = {
-  cells: 3,
+  /** Ten metres: a regiment's front (six files) goes through without crowding at the posts. */
+  cells: 5,
   cost: { wood: 20, stone: 12 },
   hp: 400,
   /** The leaves swing open while one of the side's own men is this close. */
@@ -840,10 +841,17 @@ export const AI = {
   freeHandsPerBuilding: 0.15,
 } as const;
 
+/**
+ * Carts on the roads keep their distance: one stands while another of its town is within `wagonGapM` (a
+ * horse and wagon) or `barrowGapM` (a handcart) ahead and within `laneM` to the side, going its way or
+ * standing; after `queueS` it goes on regardless.
+ */
+export const CARTS = { wagonGapM: 5.5, barrowGapM: 2.6, laneM: 1.8, queueS: 4 };
+
 export const CAMERA = {
   minDistanceM: 25,
-  /** Far enough to see the whole 560 m map at once on a wide screen. */
-  maxDistanceM: 1180,
+  /** Far enough to see the whole 680 m map at once on a wide screen. */
+  maxDistanceM: 1430,
   startDistanceM: 110,
   /** Pitch below the horizon: flatter up close to see the ranks, nearly straight down from afar to read the map. */
   pitchNearRad: 0.68,

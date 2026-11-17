@@ -57,12 +57,12 @@ samym stylu albo realistyczne CC0/CC BY.
 | „Bandit Armor and Clothes” (szkielet MakeHuman) | wolkoed, Sketchfab | CC BY 4.0 | czeka: potrzebne mapowanie kości MakeHuman |
 | „Medieval Civilian 3” | Leonardo Carvalho, Sketchfab | Sketchfab Standard | **nie**: licencja nie pozwala udostępniać siatki w repozytorium |
 | „Parameswara Chronicles: Portugese Knight” | (Sketchfab) | „CC BY” | **nie**: ponowne wrzucenie postaci Paladin J Nordstrom z Mixamo — pobrana wprost z Mixamo, w grze jako jeździec |
-| „Horse” (szkielet, chód, galop, postój, skubanie trawy) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: konie jazdy (`warhorse.json`) |
+| „Horse” (szkielet, chód, galop, postój, skubanie trawy) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: konie jazdy, konie w stajni i konie zaprzężone do wozów (`warhorse.json`, `animalsView.ts`) |
 | „Horse” (drugi: galop, postój, upadek; 70 kości bez nazw) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: tylko upadek, przeniesiony na konia jazdy (`horsefall.py`) |
 | „Medieval Castle” (mury z basztami, brama z barbakanem nad fosą, donżon na dużym dziedzińcu; 64 tys. tr., Draco + Meshopt) | Uğur Yakışık (Sketchfab) | CC BY 4.0 | twierdza misji 5 kampanii (`fortress_1.glb`, 30 tys. tr., 130 × 112 m) |
 | Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | **w grze**: armata i moździerz (kula rysowana własna); obsługa to mieszczanie ze szkieletem |
 | Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
-| Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | **w grze**: świnie w chlewni |
+| Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | **w grze**: świnie chodzące po zagrodzie chlewni (`animalsView.ts`) |
 | Medieval Gatehouse, Medieval castle (wieża), Saxon warrior | Daniel74 i in., Blendswap | CC0 | w zapasie: brama i wieża bez tekstur (do pomalowania skanem kamienia), wojownik bez szkieletu |
 
 Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjnej), „Knight Face Reval”
@@ -149,11 +149,11 @@ powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
 | `house` | 1, 2, 3 | 4936 / 5368 / 8124 |
 | `ironMine` | 1, 2, 3 | 2628 / 2788 / 2788 |
 | `keep` | 1 | 21790 |
-| `pigFarm` | 1, 2, 3 | 1348 / 1496 / 1644 |
+| `pigFarm` | 1, 2, 3 | 756 / 756 / 756 |
 | `quarry` | 1, 2, 3 | 1764 / 1896 / 2028 |
 | `smelter` | 1, 2, 3 | 2132 / 2168 / 2168 |
 | `smithy` | 1, 2, 3 | 2566 / 12000 / 12000 |
-| `stable` | 1, 2, 3 | 1424 / 1660 / 1660 |
+| `stable` | 1, 2, 3 | 952 / 952 / 952 |
 | `tannery` | 1, 2, 3 | 1460 / 1644 / 1644 |
 | `tower` | 1, 2, 3 | 6620 / 6700 / 7016 |
 | `vineyard` | 1, 2, 3 | 1764 / 1820 / 1876 |

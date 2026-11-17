@@ -117,15 +117,15 @@
  },
  "pigFarm:1": {
   "file": "pigFarm_1.glb",
-  "triangles": 1348
+  "triangles": 756
  },
  "pigFarm:2": {
   "file": "pigFarm_2.glb",
-  "triangles": 1496
+  "triangles": 756
  },
  "pigFarm:3": {
   "file": "pigFarm_3.glb",
-  "triangles": 1644
+  "triangles": 756
  },
  "quarry:1": {
   "file": "quarry_1.glb",
@@ -165,15 +165,15 @@
  },
  "stable:1": {
   "file": "stable_1.glb",
-  "triangles": 1424
+  "triangles": 952
  },
  "stable:2": {
   "file": "stable_2.glb",
-  "triangles": 1660
+  "triangles": 952
  },
  "stable:3": {
   "file": "stable_3.glb",
-  "triangles": 1660
+  "triangles": 952
  },
  "tannery:1": {
   "file": "tannery_1.glb",

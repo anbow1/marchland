@@ -134,6 +134,11 @@ interface Strings {
   transportRaised: string;
   needsKeepLevel: string;
   buildingsTab: string;
+  /** The build tab's groups, and the switches for the resource bar and the banners. */
+  buildGroups: Record<'town' | 'food' | 'goods' | 'arms' | 'defence', string>;
+  compactBar: string;
+  closeNote: string;
+  gfxProblem: string;
   listTip: string;
   underConstructionShort: string;
   idleShort: string;
@@ -477,6 +482,10 @@ const pl: Strings = {
   transportRaised: 'Transport ulepszony',
   needsKeepLevel: 'wymaga zamku poziomu',
   buildingsTab: 'Budynki',
+  buildGroups: { town: 'Osada', food: 'Żywność', goods: 'Surowce', arms: 'Broń i wojsko', defence: 'Obrona i drogi' },
+  compactBar: 'Zasoby: same ikony albo ikony z nazwami',
+  closeNote: 'Zamknij',
+  gfxProblem: 'Grafika nie ruszyła na tym urządzeniu. Zrób zrzut tego okna i wyślij go: to pomoże naprawić błąd.',
   listTip: 'Kliknij: pokaż następny budynek tego rodzaju i otwórz jego panel.',
   underConstructionShort: 'w budowie',
   idleShort: 'stoi',
@@ -853,6 +862,10 @@ const en: Strings = {
   transportRaised: 'Transport improved',
   needsKeepLevel: 'needs keep level',
   buildingsTab: 'Buildings',
+  buildGroups: { town: 'Town', food: 'Food', goods: 'Materials', arms: 'Arms & army', defence: 'Defence & roads' },
+  compactBar: 'Resources: icons only, or icons with names',
+  closeNote: 'Close',
+  gfxProblem: 'The graphics did not start on this device. Take a screenshot of this box and send it: it helps fix the fault.',
   listTip: 'Click: go to the next building of this kind and open its panel.',
   underConstructionShort: 'building',
   idleShort: 'idle',

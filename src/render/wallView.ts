@@ -123,7 +123,8 @@ export class WallView {
       body.receiveShadow = true;
       body.position.set(g.x, heightAtM(g.x, g.z), g.z);
       body.rotation.y = YAW[g.dir] as number;
-      body.scale.set(STRETCH[g.dir] as number, 1, 1);
+      // The model spans three cells: a wider gate (GATE.cells) stretches it, the leaves with it.
+      body.scale.set(((STRETCH[g.dir] as number) * g.cells.length) / 3, 1, 1);
       const leaves = model.parts.map((part) => {
         const leaf = new Mesh(part.geometry, this.gateMaterial);
         leaf.position.copy(part.pivot);

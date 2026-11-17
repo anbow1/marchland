@@ -79,6 +79,18 @@ const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
   ['hide', 'leatherArmor', 'ironOre', 'iron', 'weapon', 'mailArmor', 'bow', 'horse'],
 ];
 
+/** The build tab's groups: a short row at a time, so the panel leaves the map in view. */
+type BuildGroup = 'town' | 'food' | 'goods' | 'arms' | 'defence';
+const BUILD_GROUPS: Record<BuildGroup, readonly BuildingKind[]> = {
+  town: ['house', 'storehouse', 'market', 'tavern', 'chapel', 'well'],
+  food: ['farm', 'fisher', 'windmill', 'bakery', 'hunter', 'pigFarm', 'butcher', 'vineyard', 'winery', 'brewery'],
+  goods: ['woodcutter', 'sawmill', 'forester', 'quarry', 'ironMine', 'smelter', 'tannery'],
+  arms: ['smithy', 'armourer', 'fletcher', 'stable', 'barracks', 'foundry'],
+  defence: ['tower'],
+};
+const GROUP_OF = new Map<BuildingKind, BuildGroup>(Object.entries(BUILD_GROUPS).flatMap(([g, kinds]) => kinds.map((k) => [k, g as BuildGroup] as const)));
+const COMPACT_KEY = 'marchland.compactBar';
+
 const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', cannon: '⇶', mortar: '☄' };
 
 const MAX_CARDS = 48;
@@ -141,6 +153,8 @@ export class Hud {
   /** A standing line at the top: the tutorial's step, or the defence's clock. */
   private readonly banner: HTMLElement;
   private bannerHtml = '';
+  /** The banner the player closed: not shown again until it changes. */
+  private bannerClosed = '';
   private readonly cards: HTMLElement[] = [];
   private readonly cardKeys: string[] = [];
   private readonly debug: HTMLElement;
@@ -179,7 +193,28 @@ export class Hud {
         this.chips.set(id, chip.querySelector('b') as HTMLElement);
       }
     }
+    // Icons only, or icons with their names (touch screens start with icons only: more map in view).
+    let compact = matchMedia('(pointer: coarse)').matches;
+    try {
+      const kept = localStorage.getItem(COMPACT_KEY);
+      if (kept !== null) compact = kept === '1';
+    } catch {
+      // No storage: the default.
+    }
+    root.classList.toggle('compact', compact);
     const right = el('div', 'chips right', top);
+    const names = el('button', 'speed', right) as HTMLButtonElement;
+    names.textContent = 'Aa';
+    names.title = T.compactBar;
+    names.addEventListener('click', () => {
+      const now = !root.classList.contains('compact');
+      root.classList.toggle('compact', now);
+      try {
+        localStorage.setItem(COMPACT_KEY, now ? '1' : '0');
+      } catch {
+        // Not kept: this game only.
+      }
+    });
     this.peopleChip = el('span', 'chip', right);
     this.foodChip = el('span', 'chip', right);
     this.armyChip = el('span', 'chip', right);
@@ -221,6 +256,11 @@ export class Hud {
       if (act?.dataset['act'] === 'tribute') {
         e.stopPropagation();
         this.actions.payTribute();
+      } else if (act?.dataset['act'] === 'closeBanner') {
+        // Closed until it says something else.
+        e.stopPropagation();
+        this.bannerClosed = this.bannerHtml;
+        this.banner.style.display = 'none';
       }
     });
     const cardLayer = el('div', 'cards', root);
@@ -301,6 +341,9 @@ export class Hud {
         this.actions.jump(x as number, z as number);
         break;
       }
+      case 'group':
+        if (arg in BUILD_GROUPS) this.buildGroup = arg as BuildGroup;
+        break;
       case 'tab':
         this.tab = arg === 'army' ? 'army' : arg === 'prod' ? 'prod' : arg === 'list' ? 'list' : 'build';
         break;
@@ -392,14 +435,21 @@ export class Hud {
     this.banner.classList.toggle('act', interactive);
     if ((html ?? '') === this.bannerHtml) return;
     this.bannerHtml = html ?? '';
-    this.banner.style.display = html ? 'block' : 'none';
-    this.banner.innerHTML = html ?? '';
+    this.banner.style.display = html && html !== this.bannerClosed ? 'block' : 'none';
+    this.banner.innerHTML = html ? `<button class="x" data-act="closeBanner" title="${T.closeNote}">×</button>${html}` : '';
   }
 
   /** A message for a few seconds; with a place, a "show" link that turns the camera there. */
   toast(text: string, tone: 'good' | 'bad' | 'plain' = 'plain', at: readonly [number, number] | null = null): void {
     const node = el('div', `toast ${tone}`, this.toasts);
     node.textContent = text;
+    node.title = T.closeNote;
+    // A touch on the note puts it away (its "show" link still jumps there).
+    node.addEventListener('pointerdown', (e) => {
+      if ((e.target as HTMLElement).closest('button')) return;
+      e.stopPropagation();
+      node.remove();
+    });
     if (at) {
       const link = el('button', 'link', node);
       link.textContent = T.show;
@@ -479,13 +529,26 @@ export class Hud {
   }
 
   /** The list of buildings to place, and the road. */
+  private buildGroup: BuildGroup = 'town';
+
   private buildHtml(town: Town, tool: string): string {
-    let html = `<div class="row wrap"><span class="label">${T.build}</span>`;
-    for (const kind of BUILDING_KINDS) {
+    // The group of the building in hand stays open (a hot key may pick one from another group).
+    const inHand = GROUP_OF.get(tool as BuildingKind);
+    if (inHand) this.buildGroup = inHand;
+    else if (tool === 'road' || tool === 'wall' || tool === 'gate') this.buildGroup = 'defence';
+    const group = this.buildGroup;
+    let html = '<div class="row groups">';
+    for (const g of Object.keys(BUILD_GROUPS) as BuildGroup[]) html += `<button class="group${g === group ? ' on' : ''}" data-act="group" data-arg="${g}">${T.buildGroups[g]}</button>`;
+    html += '</div><div class="row wrap">';
+    for (const kind of BUILD_GROUPS[group]) {
       const off = canAffordBuilding(town.stock, kind, 1) ? '' : ' off';
       const on = tool === kind ? ' on' : '';
       const recipe = recipeText(kind);
       html += `<button class="option${off}${on}" data-act="build" data-arg="${kind}" data-tip="${T.buildings[kind].name}: ${T.buildings[kind].about}${recipe ? ` (${recipe})` : ''}"><span class="name">${T.buildings[kind].name}</span><span class="costs">${costHtml(town, kind, 1)}</span></button>`;
+    }
+    if (group !== 'defence') {
+      html += `<button class="option${this.gridOn ? ' on' : ''}" data-act="grid" data-tip="${T.gridTip}"><span class="name">${T.grid} (T)</span><span class="costs"><span class="small">${this.gridOn ? T.gridOn : T.gridOff}</span></span></button>`;
+      return `${html}</div>`;
     }
     const perTen = (ROADS.stonePerCell * 10) / ROADS.cellM;
     html += `<button class="option${tool === 'road' ? ' on' : ''}" data-act="road" data-tip="${T.road}: ${T.roadAbout}"><span class="name">${T.road}</span><span class="costs"><span class="cost"><i class=\"ico\">${resourceIcon('stone')}</i>${perTen.toFixed(1)} / 10 m</span></span></button>`;

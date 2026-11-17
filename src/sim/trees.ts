@@ -13,6 +13,8 @@ import { forestCoverAt, heightAtM } from './terrain.ts';
 /** Trees are planted on a jittered grid of this pitch, out to this far beyond the playable square. */
 const PITCH_M = 6.5;
 export const DECOR_MARGIN_M = 170;
+/** Trees beyond the playable square are kept this far out (the ground beyond is drawn 120 m). */
+const DECOR_KEPT_M = 100;
 
 export interface TreeList {
   count: number;
@@ -58,6 +60,9 @@ function plant(): TreeList {
       const species = pick < 0.35 + heightAtM(x, z) * 0.06 ? 0 : 1;
       const tall = rng.range(0.9, 1.2);
       const g = shade * rng.range(0.94, 1.06);
+      // Drawn over the old, wider margin (the same seed, the same wood inside), but only kept as far out
+      // as the ground is drawn.
+      if (Math.abs(x) > MAP.halfM + DECOR_KEPT_M || Math.abs(z) > MAP.halfM + DECOR_KEPT_M) continue;
       out.push([x, z, heightAtM(x, z) - 0.15, size, tall, yaw, shade, g, shade * 0.95, species, inside ? 1 : 0, decor]);
     }
   }
@@ -252,8 +257,16 @@ export function treeToTend(stand: Stand, x: number, z: number, reachM: number, n
 
 /** The forester's care: a sapling by a bare stump, or a sapling brought on by FORESTRY.tendBoostS. */
 export function tendTree(stand: Stand, i: number, nowS: number): void {
-  if ((stand.plantedS[i] as number) < (stand.felledS[i] as number)) stand.plantedS[i] = nowS;
-  else stand.plantedS[i] = (stand.plantedS[i] as number) - FORESTRY.tendBoostS;
+  const felled = stand.felledS[i] as number;
+  const planted = stand.plantedS[i] as number;
+  if (planted < felled) stand.plantedS[i] = nowS;
+  else {
+    // Both clocks back together: a sapling set just before (by the woodcutter, while the forester walked
+    // over) must not come out planted before its tree was felled, which reads as a bare stump again.
+    const back = Math.min(FORESTRY.tendBoostS, felled);
+    stand.felledS[i] = felled - back;
+    stand.plantedS[i] = planted - back;
+  }
   stand.claimedS[i] = -1e9;
   stand.version += 1;
 }

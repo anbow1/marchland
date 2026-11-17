@@ -17,6 +17,7 @@ import type { Quality } from './render/stage.ts';
 import { Menu } from './ui/menu.ts';
 import { Sound } from './ui/sound.ts';
 import { startOffline } from './ui/offline.ts';
+import { reportGraphics, watchGraphics } from './ui/gfxReport.ts';
 import { loadProgress, missionWon } from './ui/campaignStore.ts';
 import { carryOut, MISSIONS } from './sim/campaign.ts';
 
@@ -47,6 +48,7 @@ const menu = new Menu(document.getElementById('ui') as HTMLElement);
 const sound = new Sound();
 const autostart = params.has('autostart');
 startOffline();
+watchGraphics();
 
 function askedQuality(): Quality | null {
   const q = params.get('q');
@@ -214,6 +216,9 @@ async function run(): Promise<void> {
   if (loadSave && savedText) game.loadSaved(loadWorld(savedText));
   game.setEdgeScroll(settings.edgeScroll && !autostart);
   menu.hide();
+  // Graphics errors in the first seconds (shaders refused, a lost context): a report to photograph.
+  // `?gfxreport` shows it regardless, to see what a device reports.
+  window.setTimeout(() => reportGraphics(document.body, view.stage.backendName, params.has('gfxreport')), 6000);
 
   const openMenu = (): void => {
     if (game.world.winner !== -1) return;

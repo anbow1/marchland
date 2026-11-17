@@ -1,4 +1,4 @@
-import { PEOPLE, ROADS, TOWN, UNITS, WINE, WELL } from '../config.ts';
+import { CARTS, PEOPLE, ROADS, TOWN, UNITS, WINE, WELL } from '../config.ts';
 import { type Building, housingCapacity, isBuilt, type Town } from './economy.ts';
 import { cancelErrand, stepCarrier } from './errands.ts';
 import { findPath, speedFactorAt } from './nav.ts';
@@ -64,6 +64,8 @@ export interface Person {
   goalX: number;
   goalZ: number;
   navVersion: number;
+  /** Seconds he has stood behind another cart (carts keep their distance, but not for ever). Absent in old saves. */
+  queueS?: number;
 }
 
 /** Where people come and go: before the keep's gate (towards the enemy), or outside a building's door. A building that is gone sends them to the keep. */
@@ -113,6 +115,7 @@ export function spawnPerson(world: World, side: Side, x: number, z: number, home
     goalX: x,
     goalZ: z,
     navVersion: -1,
+    queueS: 0,
   };
   world.people.push(p);
   return p;
@@ -144,6 +147,10 @@ export function walkTo(world: World, p: Person, tx: number, tz: number, dtSecond
     p.goalZ = tz;
     p.navVersion = nav.version;
   }
+  if (cartAhead(world, p, dtSeconds)) {
+    p.speedMs = 0;
+    return false;
+  }
   const speedMs = PEOPLE.walkSpeedMs * pace * speedFactorAt(nav, p.x, p.z);
   let left = speedMs * dtSeconds;
   while (left > 0 && p.pathAt < p.pathLen) {
@@ -167,6 +174,47 @@ export function walkTo(world: World, p: Person, tx: number, tz: number, dtSecond
   p.strideM += speedMs * dtSeconds;
   p.speedMs = speedMs;
   return false;
+}
+
+/** The carriers of this step who take a cart along (a handcart or a horse and wagon), rebuilt every step. */
+const carts: Person[] = [];
+
+/** Whether a carrier walks with the town's cart: on an errand, once the town has handcarts (transport level 2). */
+export function hasCart(world: World, p: Person): boolean {
+  return p.role === 'carrier' && p.errand !== 'none' && world.towns[p.side].transportLevel >= 2;
+}
+
+/**
+ * A cart keeps its distance: it stands while another cart of its town is close ahead going its way (or
+ * standing there, unloading). Carts meeting head on pass, each on its own right. After CARTS.queueS behind
+ * one it goes on anyway, so no queue stands for ever. A few dozen carts at most: the pairs are cheap.
+ */
+function cartAhead(world: World, p: Person, dtSeconds: number): boolean {
+  if (carts.length < 2 || !hasCart(world, p)) return false;
+  const wagon = world.towns[p.side].transportLevel >= 3;
+  const gapM = wagon ? CARTS.wagonGapM : CARTS.barrowGapM;
+  const fx = Math.sin(p.headingRad);
+  const fz = Math.cos(p.headingRad);
+  let blocked = false;
+  for (const o of carts) {
+    if (o === p || o.side !== p.side) continue;
+    const dx = o.x - p.x;
+    const dz = o.z - p.z;
+    const ahead = dx * fx + dz * fz;
+    if (ahead <= 0.3 || ahead > gapM) continue;
+    if (Math.abs(dx * fz - dz * fx) > CARTS.laneM) continue;
+    // Coming the other way: they pass.
+    if (o.speedMs > 0 && Math.sin(o.headingRad) * fx + Math.cos(o.headingRad) * fz < 0) continue;
+    blocked = true;
+    break;
+  }
+  if (!blocked) {
+    p.queueS = 0;
+    return false;
+  }
+  p.queueS = (p.queueS ?? 0) + dtSeconds;
+  // Waited long enough: on through (until the way ahead clears, which sets the clock back).
+  return (p.queueS ?? 0) < CARTS.queueS;
 }
 
 /** 1 for a fed person, half that for one whose larder is empty. */
@@ -373,6 +421,8 @@ export function stepPeople(world: World, dtSeconds: number): void {
     for (const town of world.towns) assignRoles(world, town);
   }
   // Reused: a new pair every step was garbage.
+  carts.length = 0;
+  for (const p of world.people) if (p.alive && hasCart(world, p)) carts.push(p);
   const living = livingScratch;
   living[0] = 0;
   living[1] = 0;

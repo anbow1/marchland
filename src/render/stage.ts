@@ -67,7 +67,9 @@ export class Stage {
     readonly settings: StageSettings,
   ) {
     installWebGpuCompat();
-    this.renderer = new WebGPURenderer({ canvas, antialias: false, powerPreference: 'high-performance', trackTimestamp: true });
+    // `?gl` forces the WebGL2 path (a device whose WebGPU starts but draws nothing).
+    const forceWebGL = new URLSearchParams(location.search).has('gl');
+    this.renderer = new WebGPURenderer({ canvas, antialias: false, powerPreference: 'high-performance', trackTimestamp: true, forceWebGL });
     this.renderer.inspector = this.passTimer;
     this.renderer.outputColorSpace = SRGBColorSpace;
     // Khronos PBR Neutral: keeps hue and saturation through the curve, where ACES greyed the scans.

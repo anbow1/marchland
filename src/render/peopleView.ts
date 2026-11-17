@@ -128,7 +128,19 @@ interface PropModel {
 const BARROW_Z = 1.1;
 const WAGON_X = 1.0;
 const WAGON_Z = -0.3;
-const WAGON_HORSE_Z = 1.15;
+/** The modelled wagon's horse (the cavalry's, animated; drawn by AnimalsView): its middle between the shafts. */
+export const DRAFT_HORSE_X = WAGON_X;
+export const DRAFT_HORSE_Z = 1.3;
+
+/** A wagon's horse this frame: where, which way, and how far its carrier has walked (for its step). */
+export interface Harnessed {
+  x: number;
+  y: number;
+  z: number;
+  headingRad: number;
+  strideM: number;
+  moving: boolean;
+}
 
 /** A prop moved by (dx, dz), unindexed, with the plain-colour layer the people's material expects, and
  * optionally a built shape alongside (the wagon's horse). */
@@ -164,18 +176,6 @@ function propGeometry(model: PropModel, dx: number, dz: number, extra: BufferGeo
   g.setAttribute('aLayer', new BufferAttribute(layer, 2));
   g.computeBoundingSphere();
   return g;
-}
-
-/** The plain horse of the wagon, standing between the shafts. */
-function wagonHorse(): BufferGeometry {
-  const b = new MeshBuilder(0, PLAIN);
-  const x = WAGON_X;
-  const hz = WAGON_HORSE_Z;
-  b.box(x, 0.9, hz, 0.5, 0.6, 1.6, HORSE_COAT);
-  b.box(x, 1.35, hz + 0.85, 0.26, 0.65, 0.36, HORSE_COAT);
-  b.box(x, 1.8, hz + 1.15, 0.22, 0.26, 0.55, HORSE_COAT);
-  for (const dx of [-0.17, 0.17]) for (const dz of [-0.6, 0.6]) b.box(x + dx, 0, hz + dz, 0.13, 0.95, 0.15, HORSE_COAT);
-  return b.build();
 }
 
 /** Colours of the goods as they look in a sack or a bundle (sRGB). */
@@ -473,6 +473,10 @@ export class PeopleView {
     );
   }
 
+  /** The horses of this frame's wagons, for AnimalsView to draw: `harnessedCount` of them are in use. */
+  readonly harnessed: Harnessed[] = Array.from({ length: 2 * PEOPLE.maxPerSide }, () => ({ x: 0, y: 0, z: 0, headingRad: 0, strideM: 0, moving: false }));
+  harnessedCount = 0;
+
   /** Whether the carts are the modelled ones (their loads sit a little differently). */
   private modelled = false;
 
@@ -481,7 +485,8 @@ export class PeopleView {
     try {
       const get = async (name: string): Promise<PropModel> => (await (await fetch(`${base}props/${name}.json`)).json()) as PropModel;
       const [barrow, wagon] = await Promise.all([get('handcart'), get('wagon')]);
-      const shapes = [propGeometry(barrow, 0, BARROW_Z, null), propGeometry(wagon, WAGON_X, WAGON_Z, wagonHorse())];
+      // The wagon's horse is not built in: the animated one walks between the shafts (`harnessed`).
+      const shapes = [propGeometry(barrow, 0, BARROW_Z, null), propGeometry(wagon, WAGON_X, WAGON_Z, null)];
       this.carts.forEach((mesh, k) => {
         const old = mesh.geometry;
         mesh.geometry = shapes[k] as BufferGeometry;
@@ -550,6 +555,7 @@ export class PeopleView {
     let loads = 0;
     const shapeCounts = new Map<LoadShape, number>();
     const carts = [0, 0];
+    this.harnessedCount = 0;
     const folkCapacity = 2 * PEOPLE.maxPerSide;
     for (const f of this.men) f.count = 0;
     for (const f of this.women) f.count = 0;
@@ -605,6 +611,17 @@ export class PeopleView {
           mesh.setMatrixAt(carts[k] as number, this.m);
           mesh.setColorAt(carts[k] as number, this.tint.setRGB(1, 1, 1));
           carts[k] = (carts[k] as number) + 1;
+          if (k === 1 && this.modelled && this.harnessedCount < this.harnessed.length) {
+            const h = this.harnessed[this.harnessedCount++] as Harnessed;
+            const c = Math.cos(person.headingRad);
+            const sn = Math.sin(person.headingRad);
+            h.x = person.x + DRAFT_HORSE_X * c + DRAFT_HORSE_Z * sn;
+            h.z = person.z - DRAFT_HORSE_X * sn + DRAFT_HORSE_Z * c;
+            h.y = heightAtM(h.x, h.z);
+            h.headingRad = person.headingRad;
+            h.strideM = person.strideM;
+            h.moving = person.speedMs > 0;
+          }
         }
       }
       if (person.load && loads < this.loads.instanceMatrix.count) {

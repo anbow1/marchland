@@ -262,15 +262,11 @@ const BUILDERS: Record<BuildingKind, Build> = {
     if (level >= 2) P.stall(b, 1.6, 3.4, P.CANVAS_BLUE, P.BREAD);
     for (let i = 0; i < 3; i++) b.box(4.2, 0.05 + i * 0.3, 3.4, 0.9, 0.3, 0.5, P.CANVAS_PALE);
   },
-  pigFarm: (b, level) => {
+  pigFarm: (b) => {
     // A low sty and a muddy pen.
     P.house(b, { cx: -2.8, cz: -3.0, sx: 4.6, sz: 3.2, wallH: 1.6, wall: P.BOARDS, roof: P.THATCH, hip: 1.0, pitch: 1.3 });
     P.yard(b, 1.0, 1.6, 9.0, 6.2, P.MUD, false, false);
-    P.animal(b, -1.4, 0.4, 1.2, 0.8, P.PIG);
-    P.animal(b, 1.8, 2.6, 1.3, 0.85, P.PIG);
-    P.animal(b, 3.4, 0.2, 1.1, 0.75, P.PIG);
-    if (level >= 2) P.animal(b, 0.2, 3.6, 1.2, 0.8, P.PIG);
-    if (level >= 3) P.animal(b, -2.6, 2.8, 1.0, 0.7, P.PIG);
+    // The pigs walk the pen on their own (animalsView.ts).
     P.trough(b, 2.6, -0.9);
     P.haystack(b, 2.8, -3.6, 0.9);
   },
@@ -357,14 +353,12 @@ const BUILDERS: Record<BuildingKind, Build> = {
     for (let i = 0; i < 4 + level * 2; i++) b.box(-3.9 + i * 0.3, 0.1, 2.8, 0.06, 1.85, 0.06, P.BOARDS);
     b.log(3.4, 0.25, -0.2, 0.24, 2.6, 7, P.LOG);
   },
-  stable: (b, level) => {
+  stable: (b) => {
     // A long low stable under a hipped thatch, stall doors, and a paddock.
     P.house(b, { cx: -0.2, cz: -3.0, sx: 9.6, sz: 3.6, wallH: 2.4, wall: P.BOARDS, roof: P.THATCH, hip: 1.1, pitch: 1.35 });
     for (let i = 0; i < 4; i++) b.box(-3.4 + i * 2.2, 0.4, -1.12, 1.2, 1.9, 0.08, P.BOARDS_DARK);
     P.yard(b, 0, 2.4, 9.6, 5.0, 0);
-    P.animal(b, -1.8, 2.0, 2.1, 1.6, P.HORSE);
-    P.animal(b, 2.2, 3.2, 2.0, 1.55, P.HORSE_PALE);
-    if (level >= 2) P.animal(b, 0.4, 0.8, 2.0, 1.55, 0x3d2f26);
+    // The horses walk the paddock on their own (animalsView.ts).
     P.trough(b, -3.4, 0.8);
     P.haystack(b, 3.6, 0.6, 0.9);
   },

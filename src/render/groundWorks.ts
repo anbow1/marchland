@@ -11,7 +11,7 @@ import type { World } from '../sim/world.ts';
 // so a road is a road on any slope, with no geometry to float or sink.
 
 /** Edge of the texture in texels: about 0.8 m each. */
-const WORKS_PX = 512;
+const WORKS_PX = 640;
 /** Least seconds between two redraws (corn grows slowly). */
 const REDRAW_GAP_S = 0.5;
 

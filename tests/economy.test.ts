@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, BUILDINGS, CHAPEL, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { ARMY, BUILDINGS, CHAPEL, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, GATHER, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTrade, cmdTurnSite, lotPrice, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
-import { buildingCost, carryCapacity, workState } from '../src/sim/economy.ts';
+import { buildingCost, carryCapacity, ordersFilled, wantedForOrders, workState } from '../src/sim/economy.ts';
 import { grownTreesNear } from '../src/sim/trees.ts';
 import { barracksLevel, createTown, housingCapacity, isBuilt, keepRationDemandPerSecond, stepEconomy, type Town } from '../src/sim/economy.ts';
 import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
@@ -214,30 +214,29 @@ describe('a living town', () => {
     expect(h.out.meat + town.stock.meat).toBeGreaterThan(0);
     expect(h.out.hide + town.stock.hide).toBeGreaterThan(0);
 
-    // A woodcutter fells and plants; with a forester beside him the saplings grow back sooner.
+    // A woodcutter fells and plants; with a forester beside him more wood grows back.
     const grownBy = (withForester: boolean): number => {
       const w = rich(quietWorld());
       const cutter = w.towns[PLAYER].plots[build(w, 'woodcutter')];
       if (!cutter) throw new Error('no woodcutter');
       if (withForester) {
-        // Beside the woodcutter: the first free ground round his hut.
+        // Beside the woodcutter, on the side of his woods: the first free ground round his hut, nearest that way first.
+        const toWoods = Math.atan2(cutter.spotX - cutter.x, cutter.spotZ - cutter.z);
         let placed = false;
         for (let r = 14; r <= 40 && !placed; r += 4) {
           for (let k = 0; k < 16 && !placed; k++) {
-            const a = (k / 16) * Math.PI * 2;
+            const a = toWoods + (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * ((Math.PI * 2) / 16);
             placed = cmdBuild(w, PLAYER, 'forester', cutter.x + Math.sin(a) * r, cutter.z + Math.cos(a) * r, 0) === 'ok';
           }
         }
         expect(placed).toBe(true);
       }
       run(w, 900);
-      let young = 0;
-      let growth = 0;
-      for (const i of w.stand.changed) {
-        young++;
-        growth += growthOf(w.stand, i, w.timeS);
-      }
-      return young > 0 ? growth / young : 1;
+      // How much of the felled wood has grown back: every tree felled (eight logs each) less what its
+      // sapling still lacks. The forester plants by bare stumps and brings the saplings on.
+      let wood = w.towns[PLAYER].made.wood / GATHER.woodcutter.amount;
+      for (const i of w.stand.changed) wood -= 1 - growthOf(w.stand, i, w.timeS);
+      return wood;
     };
     expect(grownBy(true)).toBeGreaterThan(grownBy(false));
   });
@@ -725,6 +724,24 @@ describe('orders, transport and reach', () => {
     expect(town.orders.weapon).toBe(2 * UNITS.pikemen.men);
     expect(town.orders.leatherArmor).toBe(2 * UNITS.pikemen.men);
     expect(town.orders.wood).toBeUndefined();
+    // A gun's iron stays unlimited: one gun ordered must not stop the smelter once its iron is made.
+    expect(cmdOrderRegiments(world, PLAYER, 'cannon', 1)).toBe('ok');
+    expect(town.orders.iron).toBeUndefined();
+  });
+
+  it('an order for mail keeps the smelter at work although iron itself is ordered to nought', () => {
+    const town = quietWorld().towns[PLAYER];
+    town.stock.iron = 0;
+    town.stock.mailArmor = 0;
+    town.orders.iron = 0;
+    town.orders.mailArmor = 0;
+    expect(ordersFilled(town, { iron: 2 })).toBe(true);
+    town.orders.mailArmor = 36;
+    expect(wantedForOrders(town, 'iron')).toBe(72);
+    expect(ordersFilled(town, { iron: 2 })).toBe(false);
+    // Iron enough in the keep for the mail still to make: the smelter may rest.
+    town.stock.iron = 80;
+    expect(ordersFilled(town, { iron: 2 })).toBe(true);
   });
 
   it('transport is raised a level at a time: handcarts, then wagons once the keep allows', () => {

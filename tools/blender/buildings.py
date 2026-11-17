@@ -430,7 +430,7 @@ BUILDERS["vineyard"] = vineyard
 BUILDERS["winery"] = winery
 
 
-from parts import HIDE, HORSE_BAY, HORSE_GREY, MEAT, WATER, cart, fence, haystack, horse, pig, target_butt, trough  # noqa: E402
+from parts import HIDE, MEAT, WATER, cart, fence, haystack, target_butt, trough  # noqa: E402
 
 
 def quarry(k, level):
@@ -539,8 +539,7 @@ def pig_farm(k, level):
     fence(k, -4.2, 1.6, -4.2, -3.6)
     fence(k, -4.2, -3.6, 4.2, -3.6)
     fence(k, 4.2, -3.6, 4.2, 1.6)
-    for i in range(3 + level):
-        pig(k, -3.0 + i * 1.3 + k.jitter(0.3), -1.0 + k.jitter(1.6), turn=k.jitter(3.1), scale=0.9 + k.jitter(0.15))
+    # The pigs are not part of the model: the game walks the pig model about the pen (src/render/animalsView.ts).
     trough(k, 2.8, -0.2, 1.8, turn=1.5708)
     haystack(k, 3.2, 3.0, 0.9)
     k.box(-3.4, 1.0, 0, 1.2, 0.9, 0.5, "straw#c9b678", bevel=0.15)
@@ -646,10 +645,7 @@ def stable(k, level):
     fence(k, -4.0, 0.6, -4.0, -4.0)
     fence(k, -4.0, -4.0, 4.0, -4.0)
     fence(k, 4.0, -4.0, 4.0, 0.6)
-    horse(k, -2.0, -2.0, 0.6, HORSE_BAY, grazing=True)
-    horse(k, 1.8, -2.4, -1.2, HORSE_GREY)
-    if level >= 2:
-        horse(k, 0.0, -1.0, 2.6, HORSE_BAY)
+    # The horses are not part of the model: the game walks the cavalry's horse about the paddock (src/render/animalsView.ts).
     trough(k, 3.0, -0.6, 1.6)
     haystack(k, -3.0, 0.2, 0.7)
     return {}
