@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Czaprak i opończa dopasowane do ciała, tarcza w kształcie, ciemna grzywa
+
+- Czaprak (lekka jazda) i kropierz (ciężka jazda, od piersi po zad, ze złotym obrębieniem) nie są już
+  pudełkami: to trójkąty skóry samego konia z obszaru, który przykrywa tkanina, odsunięte o 2,5–3,5 cm
+  wzdłuż normalnych i na tych samych kościach — leżą na koniu i ruszają się z nim w galopie.
+- Opończa jeźdźca to trójkąty jego tułowia i ud (bez ramion), od połowy uda do kołnierza, 2 cm nad
+  zbroją, w barwach strony — zamiast dwóch płaskich płyt z przodu i z tyłu.
+- Tarcza (wszystkie postacie z tarczą rysowane z kodu, także jeźdźcy): tarcza trójkątna — płaska u góry,
+  boki zbiegają się w szpic, wygięta do przodu, ze stalowym obrzeżem — zamiast prostopadłościanu.
+- Grzywa i ogon zrobiły się białe, gdy `baked.py` przestał brać przezroczyste teksele: tekstura włosia
+  jest w 99% przezroczysta, a karty włosów trafiają w jasne puste miejsca. Teraz wierzchołek bez żadnego
+  kryjącego teksela bierze średni kolor pasm (kryjących tekseli obrazu) — ciemny brąz.
+- Testy 94/94; WebGPU 0 błędów; bitwa: 141 potoków.
+
 ## 2026-11-16 · Mieszczanki
 
 - Co trzecia osoba w mieście to kobieta: Erika Archer z Mixamo (przysłana razem z „Box Walk Arc”),

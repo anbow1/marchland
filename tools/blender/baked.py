@@ -153,6 +153,18 @@ def main() -> None:
         o = (y * w + x) * 4
         return px[o], px[o + 1], px[o + 2], px[o + 3]
 
+    strand_cache = {}
+
+    def strand_colour(img):
+        """The mean of an image's opaque texels (a hair texture's strands)."""
+        if img.name not in strand_cache:
+            sample(img, 0, 0)  # loads its pixels into the cache
+            px = cache[img.name][2]
+            n = len(px) // 4
+            opaque = [i for i in range(0, n, 17) if px[i * 4 + 3] >= 0.5] or list(range(0, n, 17))
+            strand_cache[img.name] = [sum(px[i * 4 + k] for i in opaque) / len(opaque) for k in range(3)]
+        return strand_cache[img.name]
+
     world_pos, nor, col, skin, wts, tris = [], [], [], [], [], []
     for o in meshes:
         ev = o.evaluated_get(dg)
@@ -172,6 +184,10 @@ def main() -> None:
                 a[1] += c[1]
                 a[2] += c[2]
                 a[3] += 1
+            # Hair cards land mostly between strands: their vertices take the strands' mean colour instead.
+            strands = strand_colour(img)
+            for v in range(len(me.vertices)):
+                acc.setdefault(v, [*strands, 1])
         names = {g.index: g.name for g in o.vertex_groups}
         nworld = o.matrix_world.to_3x3().inverted().transposed()
         base = len(world_pos)

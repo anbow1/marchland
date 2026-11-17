@@ -1,6 +1,6 @@
 import { BufferAttribute, BufferGeometry } from 'three/webgpu';
 import type { UnitKind } from '../sim/types.ts';
-import { MeshBuilder } from './meshBuilder.ts';
+import { MeshBuilder, type Vec3 } from './meshBuilder.ts';
 
 // Soldiers and horses from boxes, true to scale (a man 1.8 m, a horse 1.6 m at
 // the withers), facing −Z. Limbs carry a pivot and swing factors per vertex so
@@ -68,7 +68,7 @@ const POLE_M = { spear: 2.2, pike: 4.6, halberd: 2.4, lance: 3.4 } as const;
  * A man standing with his feet at `y0`; `mounted` spreads the legs round a horse. With `rigged` false
  * (an engine's crew, drawn away from the model's middle) his limbs carry no pivots and stay still.
  */
-function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true, body = true): void {
+function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true, body = true, coat = true): void {
   const b = f.b;
   const hip = y0 + 0.86;
   const shoulder = y0 + 1.44;
@@ -76,9 +76,11 @@ function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true, b
   if (!body) {
     // The body is a modelled one (a knight in plate): only the surcoat in the side's colours, front and
     // back, over the breastplate, and the weapon and shield below.
-    f.team();
-    b.box(0, hip - 0.02, -0.19, 0.38, 0.56, 0.025, WHITE);
-    b.box(0, hip - 0.02, 0.16, 0.38, 0.56, 0.025, WHITE);
+    if (coat) {
+      f.team();
+      b.box(0, hip - 0.02, -0.19, 0.38, 0.56, 0.025, WHITE);
+      b.box(0, hip - 0.02, 0.16, 0.38, 0.56, 0.025, WHITE);
+    }
     arms(f, kit, y0, limb);
     return;
   }
@@ -118,16 +120,58 @@ function man(f: Figure, kit: Kit, y0: number, mounted: boolean, rigged = true, b
   arms(f, kit, y0, limb);
 }
 
+/**
+ * A heater shield: flat along the top, its sides running down into a point, bowed forward, with a rim in
+ * `rimHex`. Faces the man's front (−Z); `cx`, `y0`, `cz`: the middle of its bottom point.
+ */
+function heater(f: Figure, cx: number, y0: number, cz: number, width: number, height: number, faceHex: number, rimHex: number, face: () => void, rim: () => void): void {
+  const b = f.b;
+  const half = width / 2;
+  const shoulderV = height * 0.45;
+  const bow = width * 0.12;
+  const thick = 0.025;
+  // The outline, from the top left round by the right and the point back to the top left.
+  const outline: [number, number][] = [[-half, height], [half, height]];
+  for (let i = 0; i <= 6; i++) {
+    const a = (i / 6) * (Math.PI / 2);
+    outline.push([half * Math.cos(a), shoulderV * (1 - Math.sin(a))]);
+  }
+  for (let i = 5; i >= 0; i--) {
+    const a = (i / 6) * (Math.PI / 2);
+    outline.push([-half * Math.cos(a), shoulderV * (1 - Math.sin(a))]);
+  }
+  const at = (u: number, v: number, side: number): Vec3 => [cx + u, y0 + v, cz + side * (thick / 2) - bow * (1 - (u / half) ** 2)];
+  // A triangle turned to face `towards` (−1: forward, +1: back).
+  const facing = (a: Vec3, c: Vec3, d: Vec3, towards: number, hex: number): void => {
+    const nz = (c[0] - a[0]) * (d[1] - a[1]) - (c[1] - a[1]) * (d[0] - a[0]);
+    if (nz * towards > 0) b.tri(a, c, d, hex);
+    else b.tri(a, d, c, hex);
+  };
+  const centre: [number, number] = [0, height * 0.6];
+  face();
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < outline.length; i++) {
+      const p = outline[i] as [number, number];
+      const q = outline[(i + 1) % outline.length] as [number, number];
+      facing(at(centre[0], centre[1], side), at(p[0], p[1], side), at(q[0], q[1], side), side, faceHex);
+    }
+  }
+  rim();
+  for (let i = 0; i < outline.length; i++) {
+    const p = outline[i] as [number, number];
+    const q = outline[(i + 1) % outline.length] as [number, number];
+    b.quad(at(p[0], p[1], -1), at(q[0], q[1], -1), at(q[0], q[1], 1), at(p[0], p[1], 1), rimHex);
+  }
+}
+
 /** What a man carries: his shield on the left arm and his weapon in the right hand (they swing with the arms). */
 function arms(f: Figure, kit: Kit, y0: number, limb: (part: Part) => Part): void {
   const b = f.b;
   const hip = y0 + 0.86;
   const shoulder = y0 + 1.44;
   if (kit.shield) {
-    f.team(limb([shoulder, 0, -0.15, 0]));
-    b.box(-0.36, y0 + 0.78, -0.17, 0.5, 0.72, 0.06, WHITE);
-    f.steel(limb([shoulder, 0, -0.15, 0]));
-    b.box(-0.36, y0 + 1.07, -0.21, 0.14, 0.14, 0.04, STEEL);
+    const part = limb([shoulder, 0, -0.15, 0]);
+    heater(f, -0.36, y0 + 0.74, -0.17, 0.5, 0.74, WHITE, STEEL, () => f.team(part), () => f.steel(part));
   }
   // The weapon swings down with the right arm.
   const weapon: Part = limb([shoulder - 0.5, -0.1, 0.12, 1]);
@@ -398,7 +442,13 @@ export interface Saddle {
   y: number;
   z: number;
   halfWidth?: number;
+  /** The horse's cloth is cut from its own skin elsewhere; the rider's surcoat is cut here from his body
+   * (both lie on the body they cover, not as boxes). */
+  fitted?: boolean;
 }
+
+/** A surcoat fitted to a modelled rider: his torso and thighs, a little out from the plate. */
+const SURCOAT_OUT_M = 0.022;
 
 /**
  * A horseman on modelled bodies: the horse with its legs walking in diagonal pairs, the knight seated in
@@ -411,8 +461,8 @@ export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse:
   const dy = saddle.y - rider.pivots.hipY;
   const dz = saddle.z - rider.pivots.hipZ;
   // The code's figure measures from the feet: its hips (0.86 up) in the saddle.
-  man(f, KITS[kind as keyof typeof KITS], saddle.y - 0.86, true, true, false);
-  if (saddle.halfWidth !== undefined) {
+  man(f, KITS[kind as keyof typeof KITS], saddle.y - 0.86, true, true, false, !saddle.fitted);
+  if (saddle.halfWidth !== undefined && !saddle.fitted) {
     // The cloth: over the back under the saddle and down both flanks; a heavy horseman's longer and deeper.
     const heavy = kind === 'heavyCavalry';
     const [length, drop] = heavy ? [1.1, 0.62] : [0.7, 0.4];
@@ -435,7 +485,16 @@ export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse:
   const nh = horse ? horse.triangles.length : 0;
   const nr = rider.triangles.length;
   const m = extras.getAttribute('position').count;
-  const total = nh + nr + m;
+  // The surcoat: whole triangles of his body (not the arms) between mid-thigh and the collar.
+  const coat: number[] = [];
+  if (saddle.fitted) {
+    const { hipY, shoulderY } = rider.pivots;
+    for (let k = 0; k + 2 < nr; k += 3) {
+      const corners = [rider.triangles[k], rider.triangles[k + 1], rider.triangles[k + 2]] as number[];
+      if (corners.every((v) => rider.limbs[v] === 0 && (rider.positions[v * 3 + 1] as number) > hipY - 0.22 && (rider.positions[v * 3 + 1] as number) < shoulderY - 0.03)) coat.push(...corners);
+    }
+  }
+  const total = nh + nr + m + coat.length;
   const position = new Float32Array(total * 3);
   const normal = new Float32Array(total * 3);
   const color = new Float32Array(total * 3);
@@ -476,6 +535,16 @@ export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse:
   copy('color', color, 3);
   copy('aPart', part, 4);
   copy('aSurface', surface, 3);
+  for (let k = 0; k < coat.length; k++) {
+    const v = coat[k] as number;
+    const o = nh + nr + m + k;
+    const [px, py, pz] = [rider.positions[v * 3] as number, rider.positions[v * 3 + 1] as number, rider.positions[v * 3 + 2] as number];
+    const [qx, qy, qz] = [rider.normals[v * 3] as number, rider.normals[v * 3 + 1] as number, rider.normals[v * 3 + 2] as number];
+    position.set([px + qx * SURCOAT_OUT_M, py + qy * SURCOAT_OUT_M + dy, pz + qz * SURCOAT_OUT_M + dz], o * 3);
+    normal.set([qx, qy, qz], o * 3);
+    color.set([0.85, 0.84, 0.8], o * 3);
+    surface.set([0, 0.92, 0.88], o * 3);
+  }
   const g = new BufferGeometry();
   g.setAttribute('position', new BufferAttribute(position, 3));
   g.setAttribute('normal', new BufferAttribute(normal, 3));

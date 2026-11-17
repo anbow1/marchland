@@ -26,8 +26,8 @@
   gallop:0:16,graze:595:746 --saddle Spine2_04 --centre --height 1.95` from **"Horse"** by **MAXDESIGN-3D**
   (https://sketchfab.com/3d-models/horse-6d0f9c1ce82f41048a282b6c47a50684), licensed **CC BY 4.0**: thinned
   to about 3 000 triangles, colours from its textures, 40 bones; its own animation (one take) cut into
-  standing, walking, galloping and grazing loops. The rider (`rider.json`), his kit and the saddle cloth in the
-  side's colours ride on its back bone.
+  standing, walking, galloping and grazing loops. The rider (`rider.json`) and his kit ride on its back bone; the
+  saddle cloth or caparison is cut from the horse's own skin and moves on its bones.
 - `horse.json` — the earlier horse, used only when `warhorse.json` is missing, made by `tools/blender/horse.py` from **"Armored Horse"** by
   **naminoff** (https://sketchfab.com/3d-models/armored-horse-98c3f1c40a6b422dba76bf5403e0a3d8), licensed
   **CC BY 4.0**: thinned to about 3 600 triangles, colours taken from its textures, legs walking in

@@ -142,6 +142,47 @@ interface SkinnedKind {
   horse?: { idle: Clip; walk: Clip; gallop: Clip; graze: Clip | null };
 }
 
+/**
+ * A horse's cloth in the side's colours, cut from its own skin: every triangle of its body within the cloth's
+ * reach, a little out along the normals and on the same bones, so it lies on the horse and moves with it. A
+ * light horseman's is a saddle blanket; a heavy one's a caparison from chest to croup, with a gilt hem.
+ */
+function caparison(horse: RiggedModel & { saddle: { y: number; z: number } }, heavy: boolean): { positions: number[]; normals: number[]; colours: number[]; surface: number[]; skin: number[]; weights: number[]; triangles: number[] } {
+  const { y: sy, z: sz } = horse.saddle;
+  const [front, back, drop, out] = heavy ? [0.85, 0.75, 0.62, 0.035] : [0.36, 0.34, 0.4, 0.025];
+  const hemY = sy - drop + 0.07;
+  const n = horse.positions.length / 3;
+  const inside = (i: number): boolean => {
+    const y = horse.positions[i * 3 + 1] as number;
+    const dz = (horse.positions[i * 3 + 2] as number) - sz;
+    return dz > -front && dz < back && y > sy - drop && y < sy + 0.06;
+  };
+  const map = new Int32Array(n).fill(-1);
+  const c = { positions: [] as number[], normals: [] as number[], colours: [] as number[], surface: [] as number[], skin: [] as number[], weights: [] as number[], triangles: [] as number[] };
+  for (let t = 0; t + 2 < horse.triangles.length; t += 3) {
+    const tri = [horse.triangles[t], horse.triangles[t + 1], horse.triangles[t + 2]] as number[];
+    if (!tri.every(inside)) continue;
+    for (const v of tri) {
+      if (map[v] === -1) {
+        map[v] = c.skin.length / 4;
+        const [nx, ny, nz] = [horse.normals[v * 3] as number, horse.normals[v * 3 + 1] as number, horse.normals[v * 3 + 2] as number];
+        const y = horse.positions[v * 3 + 1] as number;
+        c.positions.push((horse.positions[v * 3] as number) + nx * out, y + ny * out, (horse.positions[v * 3 + 2] as number) + nz * out);
+        c.normals.push(nx, ny, nz);
+        const hem = heavy && y < hemY;
+        c.colours.push(...(hem ? [0.62, 0.46, 0.14] : [0.85, 0.84, 0.8]));
+        c.surface.push(hem ? 0.5 : 0, hem ? 0.45 : 0.92, hem ? 0 : 0.88);
+        for (let k = 0; k < 4; k++) {
+          c.skin.push(horse.skin[v * 4 + k] as number);
+          c.weights.push(horse.weights[v * 4 + k] as number);
+        }
+      }
+      c.triangles.push(map[v] as number);
+    }
+  }
+  return c;
+}
+
 /** A horse gallops above this speed (m/s), walks below it; a gallop cycle as played covers this much ground
  * (the take's 3.6 m would show a charge at a march's speed in slow motion). */
 const GALLOP_FROM_MS = 1.8;
@@ -560,39 +601,46 @@ export class ArmyView {
       const y = horse.positions[i * 3 + 1] as number;
       if (Math.abs((horse.positions[i * 3 + 2] as number) - horse.saddle.z) < 0.35 && y > horse.saddle.y - 0.6) halfWidth = Math.max(halfWidth, Math.abs(horse.positions[i * 3] as number));
     }
-    const saddle: Saddle = { y: horse.saddle.y, z: horse.saddle.z, halfWidth };
+    const saddle: Saddle = { y: horse.saddle.y, z: horse.saddle.z, halfWidth, fitted: true };
     const man = cavalryGeometryOnModels(kind, rider, null, saddle);
     const nr = man.getAttribute('position').count;
-    const total = nh + nr;
-    const join = (size: number, a: ArrayLike<number>, b: ArrayLike<number>): Float32Array => {
+    const cloth = caparison(horse, kind === 'heavyCavalry');
+    const nc = cloth.skin.length / 4;
+    const total = nh + nc + nr;
+    // The horse, its cloth (on the horse's bones), then the rider and his kit (on the saddle's bone).
+    const join = (size: number, a: ArrayLike<number>, c: ArrayLike<number>, b: ArrayLike<number>): Float32Array => {
       const out = new Float32Array(total * size);
       out.set(Array.from(a).slice(0, nh * size));
-      out.set(Array.from(b).slice(0, nr * size), nh * size);
+      out.set(Array.from(c).slice(0, nc * size), nh * size);
+      out.set(Array.from(b).slice(0, nr * size), (nh + nc) * size);
       return out;
     };
     const skin = new Float32Array(total * 4);
     const weights = new Float32Array(total * 4);
     skin.set(horse.skin);
     weights.set(horse.weights);
-    for (let i = nh; i < total; i++) {
+    skin.set(cloth.skin, nh * 4);
+    weights.set(cloth.weights, nh * 4);
+    for (let i = nh + nc; i < total; i++) {
       skin[i * 4] = horse.saddle.bone;
       weights[i * 4] = 1;
     }
     const g = new BufferGeometry();
     interleave(g, [
-      ['position', 3, join(3, horse.positions, man.getAttribute('position').array)],
-      ['normal', 3, join(3, horse.normals, man.getAttribute('normal').array)],
-      ['color', 3, join(3, horse.colours, man.getAttribute('color').array)],
-      ['aSurface', 3, join(3, horse.surface, man.getAttribute('aSurface').array)],
+      ['position', 3, join(3, horse.positions, cloth.positions, man.getAttribute('position').array)],
+      ['normal', 3, join(3, horse.normals, cloth.normals, man.getAttribute('normal').array)],
+      ['color', 3, join(3, horse.colours, cloth.colours, man.getAttribute('color').array)],
+      ['aSurface', 3, join(3, horse.surface, cloth.surface, man.getAttribute('aSurface').array)],
     ]);
     interleave(g, [
       ['aSkin', 4, skin],
       ['aWeight', 4, weights],
-      ['aPart', 4, join(4, new Float32Array(nh * 4), man.getAttribute('aPart').array)],
+      ['aPart', 4, join(4, new Float32Array(nh * 4), new Float32Array(nc * 4), man.getAttribute('aPart').array)],
     ]);
-    const index = new Uint32Array(horse.triangles.length + nr);
+    const index = new Uint32Array(horse.triangles.length + cloth.triangles.length + nr);
     index.set(horse.triangles);
-    for (let i = 0; i < nr; i++) index[horse.triangles.length + i] = nh + i;
+    index.set(cloth.triangles.map((v) => v + nh), horse.triangles.length);
+    for (let i = 0; i < nr; i++) index[horse.triangles.length + cloth.triangles.length + i] = nh + nc + i;
     g.setIndex(new BufferAttribute(index, 1));
     g.computeBoundingSphere();
     man.dispose();
