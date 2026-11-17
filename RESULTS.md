@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Kusznicy: prawdziwy strzał (Firing Rifle)
+
+- Strzał kusznika to teraz klip „Firing Rifle” z Mixamo (1,2 s: wymierzona broń, strzał, odrzut) zamiast
+  przyłożenia puszczonego od końca. Kolejność jak u łuczników: tuż przed strzałem podnosi kuszę do celu
+  („Rifle Down To Aim”), strzela z odrzutem, a między strzałami trzyma ją opuszczoną. Kusza, jak
+  wcześniej, złożona z pozy wymierzenia; na zrzucie poziomo na wysokości barku.
+- Testy 94/94.
+
 ## 2026-11-17 · Pięć postaci w mieście; włosy bez artefaktów
 
 - Mieszczanie mają cztery ciała na zmianę (dotychczasowy .Fuse Civilian 2, brodaty .Fuse Civilian 1, Svend

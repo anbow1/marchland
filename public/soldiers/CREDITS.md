@@ -34,4 +34,5 @@
   diagonal pairs about the shoulder and the hip.
 - `crossbowman.json` — the crossbowmen, made by `rigged.py --arms crossbow` from **".Fuse Warrior"** by
   **Leonardo Carvalho** (Sketchfab), licensed **CC BY 4.0**; the crossbow is the game's own. Motion from
-  Mixamo ("Rifle Down To Aim", "Rifle Walk" and the sword-and-shield set).
+  Mixamo ("Firing Rifle" for the shot, "Rifle Down To Aim" to raise it, "Rifle Walk" and the sword-and-shield
+  set).
