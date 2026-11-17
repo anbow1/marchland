@@ -59,6 +59,28 @@ DEFAULT = "plaster#d8cfc0"
 # timbers are gone with the textures; the town's own houses say more.
 MODELS = {
     "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke_from": ["rubble#b8a89a", "ember#ff7a2a"]},
+    # The enemy's fortress for the campaign's last mission (Medieval Castle, Uğur Yakışık): curtain walls with corner
+    # towers, a gatehouse and barbican over a moat, a keep in a large courtyard. Not a building of the town
+    # lists (kind 'fortress'): the mission places it. Its piles of cannon balls go; the stone is dressed ashlar.
+    "castle": {
+        "kind": "fortress",
+        "levels": [1],
+        "fit_m": 130,
+        "turn_deg": 0,
+        "budget": 30000,
+        "min_part_m": 0.2,
+        "drop": r"CannonBall",
+        "surfaces": [
+            (r"bastion|rampart|basecastle|castleup", "ashlar#bccae6"),
+            (r"stairs", "rubble#bdb6aa"),
+            (r"rope", "beam#b09a78"),
+            (r"bridgecontrol", "beam#8a7258"),
+            (r"wooddoor", "boards"),
+            (r"metaldoor", "iron#4a4c50"),
+            (r"castleground", None),
+            (r"envoi|envori", "dirt"),
+        ],
+    },
 }
 
 

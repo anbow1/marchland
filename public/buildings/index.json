@@ -83,6 +83,10 @@
   "file": "fletcher_3.glb",
   "triangles": 3540
  },
+ "fortress:1": {
+  "file": "fortress_1.glb",
+  "triangles": 29999
+ },
  "house:1": {
   "file": "house_1.glb",
   "triangles": 4936

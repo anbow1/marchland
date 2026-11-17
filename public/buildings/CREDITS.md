@@ -34,3 +34,14 @@ licensed under **CC BY 4.0** (http://creativecommons.org/licenses/by/4.0/).
 Changes (`tools/blender/convert.py`): textures removed and each material given one of the game's
 surfaces by its name; thinned from 33 000 to 12 000 triangles; scaled to 10.5 m; smoke points added
 at the chimney and the hearth.
+
+## fortress_1.glb — the enemy's fortress in the campaign's last mission
+
+From **Medieval Castle** by **Uğur Yakışık** (Sketchfab), licensed under **CC BY 4.0**
+(http://creativecommons.org/licenses/by/4.0/).
+
+Changes (`tools/blender/convert.py castle`): the source's Draco and Meshopt compression undone; textures removed and
+every face given one of the game's surfaces (dressed stone for the walls, towers and keep, rubble for the
+stairs, timber for the drawbridge's gear and doors); the piles of cannon balls and the ground plate removed;
+thinned from 64 000 to 30 000 triangles; scaled to 130 m across, the gate towards the game's +Z.
+

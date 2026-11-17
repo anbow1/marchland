@@ -154,4 +154,4 @@ Oba układy przydadzą się też w potyczce, więc menu „Mapa” urośnie z tr
 | Misja 2 (obóz: 3 oddziały, 2 zagony wracające co 5 min) | ✔ grywalna; palisada i namioty obozu — później |
 | Misja 3 (układ *Dolina*, przejęcie osady) | do zrobienia |
 | Misja 4 (ruiny, odbudowa, zagony) | do zrobienia |
-| Misja 5 (układ *Twierdza*, mury scenariuszem, wypady, odsiecz) | do zrobienia |
+| Misja 5 (układ *Twierdza*, mury scenariuszem, wypady, odsiecz) | model twierdzy gotowy (`fortress_1.glb`, „Medieval Castle”, Uğur Yakışık, CC BY 4.0); misja do zrobienia |

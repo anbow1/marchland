@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Twierdza do misji 5: „Medieval Castle”
+
+- Model od właściciela projektu: „Medieval Castle”, Uğur Yakışık (Sketchfab, CC BY 4.0), 64 tys. trójkątów,
+  skompresowany Draco i Meshopt (Blender w kontenerze nie ma tych dekoderów: rozpakowany narzędziem
+  glTF-Transform). Mury z czterema basztami, brama z dwiema basztami i barbakanem nad fosą, schody na
+  mury, donżon z czterema wieżyczkami i iglicą na dużym dziedzińcu.
+- `tools/blender/convert.py castle` → `public/buildings/fortress_1.glb`: kamień ciosany w odcieniu murów gry,
+  schody z kamienia łamanego, drewno mostu i drzwi; bez stosów kul i płyty gruntu (dziedziniec to teren gry);
+  30 tys. trójkątów, 1,1 MB, 130 × 112 m, 48 m z iglicą. Rodzaj „fortress” nie jest budynkiem miasta: gra go
+  nie wczytuje, dopóki nie postawi go misja 5.
+
 ## 2026-11-17 · Kampania, etap 1: misje 1 i 2, armia 200, oddziały do 20
 
 - **Tryb „Kampania”** w menu: lista pięciu misji z gwiazdkami (następna odblokowana po wygraniu

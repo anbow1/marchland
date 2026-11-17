@@ -59,6 +59,7 @@ samym stylu albo realistyczne CC0/CC BY.
 | „Parameswara Chronicles: Portugese Knight” | (Sketchfab) | „CC BY” | **nie**: ponowne wrzucenie postaci Paladin J Nordstrom z Mixamo — pobrana wprost z Mixamo, w grze jako jeździec |
 | „Horse” (szkielet, chód, galop, postój, skubanie trawy) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: konie jazdy (`warhorse.json`) |
 | „Horse” (drugi: galop, postój, upadek; 70 kości bez nazw) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: tylko upadek, przeniesiony na konia jazdy (`horsefall.py`) |
+| „Medieval Castle” (mury z basztami, brama z barbakanem nad fosą, donżon na dużym dziedzińcu; 64 tys. tr., Draco + Meshopt) | Uğur Yakışık (Sketchfab) | CC BY 4.0 | twierdza misji 5 kampanii (`fortress_1.glb`, 30 tys. tr., 130 × 112 m) |
 | Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | **w grze**: armata i moździerz (kula rysowana własna); obsługa to mieszczanie ze szkieletem |
 | Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
 | Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | **w grze**: świnie w chlewni |
