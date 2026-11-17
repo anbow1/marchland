@@ -1,6 +1,6 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
@@ -109,6 +109,10 @@ export class Game implements ControlTarget {
       turnSite: (plot) => this.report(cmdTurnSite(this.world, PLAYER, plot, this.gridOn ? 2 : 1)),
       upgradeKeep: () => this.report(cmdUpgradeKeep(this.world, PLAYER)),
       setFormation: (what, value) => {
+        if (what === 'pace') {
+          this.setPace(value === '1');
+          return;
+        }
         // Every selected regiment that can; a word only when none of them could.
         let any = false;
         let last: CommandResult = 'notThisUnit';
@@ -160,6 +164,7 @@ export class Game implements ControlTarget {
         this.sound.play('click');
       },
       halt: () => this.haltSelected(),
+      runMode: () => this.runMode,
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
       orderRegiment: (id) => this.attackRegiment(id),
@@ -534,6 +539,8 @@ export class Game implements ControlTarget {
 
   /** Buildings on the grid: TOWN.gridM squares, lined up with the road cells, one corner at the keep. */
   private gridOn = true;
+  /** The player's orders go at the run (pace buttons, B). */
+  private runMode = false;
 
   private snap(v: number, origin: number): number {
     return origin + Math.round((v - origin) / TOWN.gridM) * TOWN.gridM;
@@ -760,7 +767,22 @@ export class Game implements ControlTarget {
     this.hud.selectionBox(x0, y0, x1, y1, visible);
   }
 
+  /**
+   * March or run: the selected regiments on the move change pace at once, and the player's next orders
+   * go at that pace (two quick clicks always run). Engines keep marching.
+   */
+  private setPace(run: boolean): void {
+    this.runMode = run;
+    for (const id of this.selected) {
+      const r = this.world.regiments.find((q) => q.id === id);
+      if (r && r.order === 'move' && !(run && r.def.engine)) cmdPace(this.world, id, run);
+    }
+    this.sound.play('click');
+    this.hud.toast(run ? T.paceRunNow : T.paceWalkNow);
+  }
+
   order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null, queued = false): void {
+    run = run || this.runMode;
     // The right button puts down whatever is being placed.
     if (this.tool) {
       this.dropTool();
@@ -1037,6 +1059,7 @@ export class Game implements ControlTarget {
     this.sound.unlock();
     if (this.groupKey(action)) return;
     if (action === 'halt') this.haltSelected();
+    else if (action === 'pace') this.setPace(!this.runMode);
     else if (action === 'selectAll') this.selectAll();
     else if (action === 'debug') this.hud.debugVisible = !this.hud.debugVisible;
     else if (action === 'turnBuilding') {

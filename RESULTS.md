@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Marsz albo bieg: przełącznik tempa
+
+- W panelu zaznaczonego wojska wiersz **Tempo: Marsz | Bieg**, na klawiaturze **B**. Zmienia tempo od
+  razu dla zaznaczonych oddziałów w drodze (`cmdPace`) i dla kolejnych rozkazów gracza; dwa kliknięcia
+  nadal zawsze wysyłają biegiem, a do ataku podchodzi się biegiem jak dotąd. Działa też na dotyku (iPad),
+  gdzie dwuklik był niewygodny. Działa nie biegną. Na karcie oddziału stan „biegnie” zamiast „maszeruje”.
+- Animacje szły za tym już wcześniej: piechota gra chód w marszu i bieg w biegu (klip biegu od połowy
+  między szybkością marszu a biegu). Konie galopują w obu tempach (wolniej w marszu, 3,6 m/s, pełnym
+  galopem w biegu, 7,5–8,5 m/s), bo w nagraniu konia nie ma kłusu, a stęp jest za wolny na marsz jazdy;
+  sprawdzone w nagraniu: galop, stęp, postój, skubanie, bez kłusu.
+- Bieg męczy (cienki pasek pod morale), a zmęczenie obniża szybkość i walkę, jak dotąd.
+- Test: oddział w marszu po rozkazie biegu wyprzedza drugi o ponad 15 m w 20 s i się męczy, po powrocie
+  do marszu przestaje; działo odmawia biegu. Testy 95/95.
+
 ## 2026-11-17 · Playbook, pełny spis assetów, paczka gotowych assetów
 
 - `docs/PLAYBOOK.md`: jak gra jest zrobiona, z odnośnikami do plików: architektura, renderer i światło,

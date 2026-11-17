@@ -23,7 +23,7 @@ export interface HudActions {
   /** Brings a tower's garrison out. */
   ungarrison(plot: number): void;
   /** Ranks, formation, stance or shooting for the selected regiments. */
-  setFormation(what: 'ranks' | 'formation' | 'stance' | 'fire', value: string): void;
+  setFormation(what: 'ranks' | 'formation' | 'stance' | 'fire' | 'pace', value: string): void;
   /** Turns the map: −1 left, +1 right. */
   rotateCamera(direction: number): void;
   upgrade(plot: number): void;
@@ -48,6 +48,8 @@ export interface HudActions {
   togglePause(): void;
   selectPlot(plot: number): void;
   halt(): void;
+  /** Whether the player's orders go at the run (the pace buttons and B). */
+  runMode(): boolean;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
   /** The order button pressed on a regiment's card: attack it, if it is an enemy. */
@@ -280,6 +282,7 @@ export class Hud {
       case 'formation':
       case 'stance':
       case 'fire':
+      case 'pace':
         this.actions.setFormation(name, arg);
         break;
       case 'show': {
@@ -670,7 +673,7 @@ export class Hud {
     if (world.towns[r.side].recruitQueue.some((o) => o.reinforceId === r.id)) return T.reinforcingState;
     if (r.rearmTo !== null) return `${T.rearmingState} → ${T.units[r.rearmTo].name} (${Math.ceil(r.rearmLeftS)} s)`;
     if (isEngaged(r)) return T.state.fighting;
-    if (r.order === 'move') return T.state.move;
+    if (r.order === 'move') return r.run ? T.runningState : T.state.move;
     if (r.order === 'attackRegiment') return T.state.attack;
     if (r.order === 'attackBuilding') return T.state.siege;
     return T.state.hold;
@@ -741,6 +744,8 @@ export class Hud {
     const button = (act: string, value: string, label: string, on: boolean, tip: string): string =>
       `<button class="choice${on ? ' on' : ''}" data-act="${act}" data-arg="${value}" data-tip="${tip}">${label}</button>`;
     let html = '<div class="formations">';
+    const run = this.actions.runMode();
+    html += `<div class="row"><span class="label">${T.paceLabel}</span>${button('pace', '0', T.paceWalk, !run, T.paceTip)}${button('pace', '1', T.paceRun, run, T.paceTip)}</div>`;
     const foot = regs.filter((r) => !r.def.cavalry);
     if (foot.length > 0) {
       const ranks = Math.ceil((foot[0] as (typeof foot)[number]).initialMen / (foot[0] as (typeof foot)[number]).files);

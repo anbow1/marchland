@@ -52,7 +52,7 @@ All three documents are in Polish.
 | Zoom | wheel (towards the cursor), + / − | pinch |
 | Turn the camera | Q / E | — |
 | Select | left click on a soldier or his card; drag a box; Shift adds; Ctrl+A the whole army | tap |
-| Order a march | right click; twice for a run; drag to set the front | tap the ground; twice for a run |
+| Order a march | right click; twice for a run; drag to set the front; B (or the Pace buttons) switches march / run for the selected and for the next orders | tap the ground; twice for a run; the Pace buttons |
 | Order an attack | right click an enemy regiment, its card, a building or the keep | tap it |
 | Halt | H | the Halt button |
 | Build, upgrade, recruit | click a plot or a building in your town, then the panel | the same |

@@ -26,6 +26,14 @@ interface Strings {
   play: string;
   /** Before the build stamp in the menus. */
   version: string;
+  /** March or run (the selected regiments, and the next orders). */
+  paceLabel: string;
+  paceWalk: string;
+  paceRun: string;
+  paceTip: string;
+  paceWalkNow: string;
+  paceRunNow: string;
+  runningState: string;
   /** A newer version was fetched for offline play: it starts next time, or now. */
   updateReady: string;
   updateNow: string;
@@ -432,7 +440,7 @@ const pl: Strings = {
   needsBarracksLevel: 'koszary poz.',
   needsFoundryLevel: 'ludwisarnia poz.',
   hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
-  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Shift: do kolejki. Spacja: pauza. Ctrl+cyfra: grupa i jej szyk.',
+  hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia albo B: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Shift: do kolejki. Spacja: pauza. Ctrl+cyfra: grupa i jej szyk.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
   fed: 'Miasto znów ma co jeść.',
   routed: 'Nasz oddział ucieka!',
@@ -450,7 +458,7 @@ const pl: Strings = {
     'Kółko myszy: zoom (do widoku całej mapy) · środkowy przycisk: przesuwanie mapy · prawy przycisk przeciągnięty albo Q / E: obrót',
     'Budowa: wybierz budynek, R obraca, lewy przycisk stawia, prawy anuluje · G: droga',
     'Lewy przycisk: zaznacz · przeciągnij: ramka · Shift: dodaj',
-    'Prawy przycisk (klik): marsz / atak · dwa kliknięcia: bieg · Ctrl + przeciągnięcie prawym: front',
+    'Prawy przycisk (klik): marsz / atak · dwa kliknięcia: bieg · B: marsz albo bieg · Ctrl + przeciągnięcie prawym: front',
     'H: stój · Ctrl+A: całe wojsko · Esc: odznacz / pauza · F3: pomiar',
     'Ctrl+1…9: zapamiętaj grupę · 1…9: zaznacz (dwa razy: kamera do niej) · dwuklik oddziału: wszystkie tego rodzaju na ekranie · Ctrl+F5…F8: zapamiętaj widok, F5…F8: wróć',
     'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
@@ -493,6 +501,13 @@ const pl: Strings = {
     cannon: 'Dobre na: oddziały z daleka, mury i budynki. Słabe na: każdego, kto podejdzie blisko.',
     mortar: 'Dobry na: mury, budynki, zbite szyki. Słaby na: wszystko z bliska.',
   },
+  paceLabel: 'Tempo',
+  paceWalk: 'Marsz',
+  paceRun: 'Bieg',
+  paceTip: 'Marsz albo bieg (B): od razu dla zaznaczonych w drodze i dla kolejnych rozkazów. Bieg jest szybszy, ale męczy (cienki pasek pod morale), a zmęczeni walczą słabiej. Dwa kliknięcia zawsze wysyłają biegiem; do ataku podchodzi się biegiem.',
+  paceWalkNow: 'Rozkazy: marszem',
+  paceRunNow: 'Rozkazy: biegiem',
+  runningState: 'biegnie',
   updateReady: 'Pobrano nową wersję gry — włączy się przy następnym uruchomieniu.',
   updateNow: 'Uruchom teraz',
   menu: 'Menu',
@@ -761,7 +776,7 @@ const en: Strings = {
   needsBarracksLevel: 'barracks lvl',
   needsFoundryLevel: 'foundry lvl',
   hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
-  hintArmy: 'Right click: march. Double click: run. Hold right and drag: line and facing. On an enemy: attack. Shift: queue. Space: pause. Ctrl+digit: group and its formation.',
+  hintArmy: 'Right click: march. Double click or B: run. Hold right and drag: line and facing. On an enemy: attack. Shift: queue. Space: pause. Ctrl+digit: group and its formation.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
   fed: 'The town has food again.',
   routed: 'Our regiment is running!',
@@ -779,7 +794,7 @@ const en: Strings = {
     'Mouse wheel: zoom (out to the whole map) · middle button: move the map · right drag or Q / E: turn',
     'Building: pick a building, R turns it, left button places, right button cancels · G: road',
     'Left button: select · drag: box · Shift: add',
-    'Right click: march / attack · double click: run · Ctrl + right drag: set the front',
+    'Right click: march / attack · double click: run · B: march or run · Ctrl + right drag: set the front',
     'H: halt · Ctrl+A: whole army · Esc: deselect / pause · F3: measurements',
     'Ctrl+1…9: keep a group · 1…9: select it (twice: camera to it) · double-click a regiment: all of its kind on screen · Ctrl+F5…F8: keep a view, F5…F8: go back to it',
     'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
@@ -822,6 +837,13 @@ const en: Strings = {
     cannon: 'Good against: regiments from afar, buildings. Poor against: anyone who comes close.',
     mortar: 'Good against: walls, buildings, packed ranks. Poor against: anything close.',
   },
+  paceLabel: 'Pace',
+  paceWalk: 'March',
+  paceRun: 'Run',
+  paceTip: 'March or run (B): at once for the selected regiments on the move, and for the next orders. Running is faster but tires the men (the thin bar under morale), and tired men fight worse. Two quick clicks always run; an attack closes at the run.',
+  paceWalkNow: 'Orders: at the march',
+  paceRunNow: 'Orders: at the run',
+  runningState: 'running',
   updateReady: 'A new version of the game is downloaded — it starts next time.',
   updateNow: 'Restart now',
   menu: 'Menu',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CAPTAIN, ELEVATION, MAP, MISSILE, MORALE, POINTS, UNITS, VETERANS } from '../src/config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdHalt, cmdMove, cmdMoveGroup, cmdQueue, cmdRanks, cmdStance } from '../src/sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdHalt, cmdMove, cmdMoveGroup, cmdPace, cmdQueue, cmdRanks, cmdStance } from '../src/sim/commands.ts';
 import { launchElevationRad, reachM } from '../src/sim/missiles.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { frontageM, hasCaptain, type Regiment, slotX, slotZ, veteranRank } from '../src/sim/regiment.ts';
@@ -60,6 +60,27 @@ describe('formation and movement', () => {
     expect(runner.anchorZ).toBeGreaterThan(walker.anchorZ * 1.5);
     expect(runner.fatigue).toBeGreaterThan(0.2);
     expect(walker.fatigue).toBe(0);
+  });
+
+  it('a marching regiment breaks into a run on the pace order; an engine does not run', () => {
+    const world = emptyWorld();
+    const walker = spawnRegiment(world, PLAYER, 'swordsmen', -30, 0, 0);
+    const switched = spawnRegiment(world, PLAYER, 'swordsmen', -10, 0, 0);
+    cmdMove(world, walker.id, -30, 200, null, false);
+    cmdMove(world, switched.id, -10, 200, null, false);
+    run(world, 5);
+    expect(cmdPace(world, switched.id, true)).toBe('ok');
+    run(world, 20);
+    expect(switched.anchorZ).toBeGreaterThan(walker.anchorZ + 15);
+    expect(switched.fatigue).toBeGreaterThan(0);
+    expect(walker.fatigue).toBe(0);
+    // And back to the march: no more tiring on the way.
+    expect(cmdPace(world, switched.id, false)).toBe('ok');
+    const tired = switched.fatigue;
+    run(world, 5);
+    expect(switched.fatigue).toBeLessThanOrEqual(tired);
+    const gun = spawnRegiment(world, PLAYER, 'cannon', 30, 0, 0);
+    expect(cmdPace(world, gun.id, true)).toBe('notThisUnit');
   });
 
   it('a group order forms a line with the archers behind', () => {

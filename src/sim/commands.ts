@@ -396,6 +396,18 @@ export function cmdMove(world: World, regimentId: number, x: number, z: number, 
   return 'ok';
 }
 
+/**
+ * March or run: at once for a regiment on the move, and for the order it is on. Engines only march.
+ * (An attack still closes at the run whatever the pace; see movement.ts.)
+ */
+export function cmdPace(world: World, regimentId: number, run: boolean): CommandResult {
+  const r = commandable(world, regimentId);
+  if (typeof r === 'string') return r;
+  if (run && r.def.engine) return 'notThisUnit';
+  r.run = run;
+  return 'ok';
+}
+
 export function cmdAttackRegiment(world: World, regimentId: number, targetId: number): CommandResult {
   const r = commandable(world, regimentId);
   if (typeof r === 'string') return r;
