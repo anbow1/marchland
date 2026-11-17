@@ -18,7 +18,8 @@ npm run build
 ## Play it: web, iPad, Windows — offline after the first start
 
 Every push to `main` publishes the game at **https://anbow1.github.io/FPS/marchland/**
-(`.github/workflows/marchland-web.yml`; once: Settings → Pages → Source: *GitHub Actions*).
+(`.github/workflows/marchland-web.yml`, pushed to the `gh-pages` branch; once: Settings → Pages →
+Source: *Deploy from a branch* → `gh-pages`, `/ (root)`).
 Its service worker (`src/ui/offline.ts`, `tools/pwa/`) keeps every file on the device after the first
 visit, so it plays without the internet; a new version downloads in the background, only the files
 that changed, and starts next time (or at once from the note at the top of the screen). Saves stay.

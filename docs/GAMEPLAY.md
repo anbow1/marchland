@@ -235,8 +235,7 @@ jednostka nie wygrywa z każdą inną; każda ma kontrę tańszą od siebie.
    zbudowania drugi tryb: korzysta z gotowych fal komputera.
 3. **Samouczek** — pierwsze 8 minut potyczki z podpowiedziami wyzwalanymi
    stanem gry („zboże leży pod polem — brakuje tragarzy”).
-4. Później: **kampania** pięciu map z przenoszeniem weteranów i trzema
-   zadaniami dodatkowymi na mapę.
+4. **Kampania** pięciu misji z przenoszeniem wojska — propozycja do decyzji: `CAMPAIGN.md`.
 
 ## 9. Interfejs
 

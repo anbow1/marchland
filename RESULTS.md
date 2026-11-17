@@ -5,6 +5,13 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Propozycja kampanii
+
+- `docs/CAMPAIGN.md`: pięć misji właściciela projektu (trybut, obóz za rzeką, odbicie osady, odbudowa i
+  wielka armia, twierdza) zbudowanych z tego, co gra ma; dwie nowe mapy (*Dolina*, *Twierdza*), miejsca
+  startu ze scenariusza, sześć nowych mechanik (scenariusz z wyzwalaczami, trybut, obóz bez miasta, armia
+  200 / oddział 20 z łączeniem, przejęcie osady i ruiny, mury scenariuszem) i cztery pytania do decyzji.
+
 ## 2026-11-17 · Gra offline: iPad z ekranu początkowego, Windows jako .exe, aktualizacje różnicowe
 
 - **Tryb offline** (`src/ui/offline.ts`, `tools/pwa/`): po budowie powstaje `dist/sw.js` z listą wszystkich
@@ -20,7 +27,9 @@ jeszcze nie mierzyłem.
 - **Ikona i manifest**: tarcza z wieżą (`public/icons/`), `manifest.webmanifest`, znaczniki Apple (pełny
   ekran z ekranu początkowego iPada).
 - **GitHub Pages** (`.github/workflows/marchland-web.yml`): każdy push do `main` z Marchland publikuje
-  https://anbow1.github.io/FPS/marchland/. Jednorazowo trzeba włączyć Pages (źródło: GitHub Actions).
+  https://anbow1.github.io/FPS/marchland/ przez gałąź `gh-pages` (jeden commit, nadpisywany). Pierwsza
+  wersja z artefaktem Pages padła: limit miejsca na artefakty Actions na koncie jest wyczerpany, a gałąź go
+  nie używa. Jednorazowo trzeba włączyć Pages: źródło „Deploy from a branch”, `gh-pages`, `/ (root)`.
 - **Windows** (`desktop/`, `.github/workflows/marchland-desktop.yml`): Electron 45 jako okno na ten adres;
   `Marchland.exe` (przenośny, 110 MB, bez podpisu) w wydaniu *marchland-windows*. Sprawdzone pod Xvfb:
   pierwsze uruchomienie zapisało 162 pliki w 2 s; z wyłączonym serwerem gra wstaje z dysku; bez internetu
