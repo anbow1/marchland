@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Jeździec jedzie w takt konia (bez klipu jazdy)
+
+- Mixamo nie ma animacji jazdy konnej (jest tylko siedzenie na krześle, nogi razem, do konia nie pasuje), więc
+  jazda jest liczona: do kości konia dochodzi jedna — jeźdźca — wyliczona klatka po klatce z kości grzbietu
+  i obrotu wokół bioder jeźdźca (szczyt grzbietu). W galopie pochyla się do przodu (~8°) i buja ±5° raz na
+  każdy skok konia, w stępie lekko, dwa razy na krok; na postoju i przy skubaniu trawy siedzi prosto. Cios
+  ramienia z bronią działa jak wcześniej, na tym.
+- Testy 94/94.
+
 ## 2026-11-17 · Kusznicy: prawdziwy strzał (Firing Rifle)
 
 - Strzał kusznika to teraz klip „Firing Rifle” z Mixamo (1,2 s: wymierzona broń, strzał, odrzut) zamiast

@@ -1,5 +1,5 @@
 import { abs, attribute, cos, Fn, int, ivec2, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
-import { BufferAttribute, BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
+import { BufferAttribute, BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, Vector3, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
 import { ARMY, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
@@ -181,6 +181,43 @@ function caparison(horse: RiggedModel & { saddle: { y: number; z: number } }, he
     }
   }
   return c;
+}
+
+/** How the rider sits each gait: leaning forward (radians, negative: forward) and swaying about his hips that
+ * much, that many times a loop of the horse's clip (once a bound in the gallop, twice a stride in the walk). */
+const RIDE = { gallop: { lean: -0.14, sway: 0.09, beats: 1 }, walk: { lean: -0.03, sway: 0.03, beats: 2 } };
+
+/**
+ * The horse's bones and one more, the rider's: in every frame the saddle bone's matrix with the rider rocked
+ * about his hips (the top of the horse's back) as the gait has it, so he rides in step with this horse's own
+ * motion — no riding clip needed. Upright at a stand or grazing.
+ */
+function withRider(horse: RiggedModel & { saddle: { bone: number; y: number; z: number } }, walk: Clip, gallop: Clip): RiggedModel {
+  const nb = horse.bones.length;
+  const frames = horse.frames.length / (nb * 12);
+  const out = new Array<number>(frames * (nb + 1) * 12);
+  const pivot = new Vector3(0, horse.saddle.y, horse.saddle.z);
+  const toPivot = new Matrix4().makeTranslation(pivot.x, pivot.y, pivot.z);
+  const fromPivot = new Matrix4().makeTranslation(-pivot.x, -pivot.y, -pivot.z);
+  const saddle = new Matrix4();
+  const rock = new Matrix4();
+  const lean = (f: number): number => {
+    for (const [clip, ride] of [[gallop, RIDE.gallop], [walk, RIDE.walk]] as const) {
+      if (f >= clip.start && f < clip.start + clip.frames) return ride.lean + ride.sway * Math.sin(((f - clip.start) / clip.frames) * Math.PI * 2 * ride.beats);
+    }
+    return 0;
+  };
+  for (let f = 0; f < frames; f++) {
+    for (let i = 0; i < nb * 12; i++) out[f * (nb + 1) * 12 + i] = horse.frames[f * nb * 12 + i] as number;
+    const m = (f * nb + horse.saddle.bone) * 12;
+    const row = (k: number): number => horse.frames[m + k] as number;
+    saddle.set(row(0), row(1), row(2), row(3), row(4), row(5), row(6), row(7), row(8), row(9), row(10), row(11), 0, 0, 0, 1);
+    rock.makeRotationX(lean(f)).premultiply(toPivot).multiply(fromPivot);
+    const e = saddle.multiply(rock).elements;
+    const o = (f * (nb + 1) + nb) * 12;
+    for (let r = 0; r < 3; r++) for (let c = 0; c < 4; c++) out[o + r * 4 + c] = e[c * 4 + r] as number;
+  }
+  return { ...horse, bones: [...horse.bones, 'Rider'], frames: out };
 }
 
 /** A horse gallops above this speed (m/s), walks below it; a gallop cycle as played covers this much ground
@@ -622,7 +659,7 @@ export class ArmyView {
     skin.set(cloth.skin, nh * 4);
     weights.set(cloth.weights, nh * 4);
     for (let i = nh + nc; i < total; i++) {
-      skin[i * 4] = horse.saddle.bone;
+      skin[i * 4] = horse.bones.length; // the rider's own bone, added below
       weights[i * 4] = 1;
     }
     const g = new BufferGeometry();
@@ -652,7 +689,7 @@ export class ArmyView {
     g.setAttribute('aFrame', frame);
     const old = k.mesh.geometry;
     k.mesh.geometry = g;
-    k.mesh.material = skinnedMaterial(boneTexture(horse), true);
+    k.mesh.material = skinnedMaterial(boneTexture(withRider(horse, walk, gallop)), true);
     old.dispose();
     k.skinned = {
       frame,
