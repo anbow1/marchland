@@ -21,8 +21,11 @@
 - `archer.json` — the archers, made by `rigged.py --arms bow` from **".Fuse Civilian 2"** by **Leonardo
   Carvalho** (Sketchfab), licensed **CC BY 4.0**: the tunic dyed in the side's colour; the bow is the
   game's own. Motion from Mixamo (the Longbow Aiming Pack and the sword-and-shield set).
-- `rider.json` — the same knight seated in the saddle (`soldiers.py --seated`), for the light and heavy
-  cavalry.
+- `rider.json` — the light and heavy cavalry's rider: **Paladin J Nordstrom**, a character from **Mixamo** (Adobe),
+  seated in the saddle by `rigged.py --seated --arms none --height 1.8 --tris 3200 --gain 2.5` (thighs forward and
+  apart, arms to the lance and the reins), thinned to about 3 200 triangles, colours from its texture brightened;
+  its own sword and shield left out. Lance, shield and surcoat in the side's colours are the game's own. The raw
+  Mixamo file is not part of this repository. (Before: the Xali knight above, `soldiers.py --seated`.)
 - `warhorse.json` — the cavalry's horse, made by `tools/blender/baked.py --clips idle:351:413,walk:74:107,
   gallop:0:16,graze:595:746 --saddle Spine2_04 --centre --height 1.95` from **"Horse"** by **MAXDESIGN-3D**
   (https://sketchfab.com/3d-models/horse-6d0f9c1ce82f41048a282b6c47a50684), licensed **CC BY 4.0**: thinned

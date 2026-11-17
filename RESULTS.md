@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Jeźdźcy: Paladin z Mixamo w siodle
+
+- Przesłany „Stabbing” ze skórą to ten sam ruch, co pchnięcie pikinierów (klatki identyczne), ale z postacią
+  **Paladin J Nordstrom** pobraną wprost z Mixamo — zamiast odrzuconego „Portugese Knight” (to była ta sama
+  postać wrzucona ponownie). Paladin zastępuje w siodle najstarszego, sztywnego rycerza Xali: hełm
+  garnczkowy, ciemna płyta ze złotymi obszyciami, nad nią jak dotąd wapenrok w barwach strony.
+- `rigged.py --seated`: zamiast klipów jedna poza — uda 45° do przodu i 20° na boki koni, łydki prawie
+  pionowo w długich strzemionach, prawe przedramię do kopii, lewe do wodzy pod tarczą — zapisana w formacie
+  jeźdźca (`BodyModel`: części ciała i stawy, `soldierGeometry.ts`). Ręce dalej uderzają wokół barku.
+  `--gain 2.5` rozjaśnia oczernioną stal, żeby z kamery nie była sylwetką.
+- `rigged.py` ogólnie: pomija siatki związane tylko ze stawami broni (własny miecz i tarcza postaci z Mixamo,
+  niezależnie od nazwy siatki — u Paladina nazwy są pomieszane), a bez mapy metaliczności czyta mapę odbić
+  (specular) jako to, ile metalu widać.
+- Testy 94/94; WebGPU w bitwie: 0 błędów, 147 potoków, 179 modułów shaderów.
+
 ## 2026-11-17 · Miecznicy w pełnej zbroi; tarcza trójkątna u żołnierzy ze szkieletem
 
 - Miecznicy na „Medieval Knight (Sculpture)” (by__Rx, CC BY 4.0): pełna płytowa zbroja ze złotą przyłbicą.

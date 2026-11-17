@@ -11,16 +11,18 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 
 | Co | Źródło | Licencja | Gdzie |
 |---|---|---|---|
-| Rycerz w zbroi płytowej (miecznicy, halabardnicy) | „Rigged Knight in Armor”, Xali, Blendswap | CC0 | w grze (`public/soldiers/knight.json`) |
-| Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | w grze: miecznicy (`swordsman.json`) i halabardnicy z halabardą (`halberdier.json`) |
+| Rycerz w zbroi płytowej | „Rigged Knight in Armor”, Xali, Blendswap | CC0 | zapas: gdy brak postaci ze szkieletem (`public/soldiers/knight.json`) |
+| Rycerz ciężki, szkielet Mixamo, ~9 tys. tr. | „knight for game project (old)”, Thost, Sketchfab | CC BY 4.0 | w grze: halabardnicy z halabardą (`halberdier.json`) |
 | Wojownik w skórze/przeszywanicy, szkielet Mixamo | „.Fuse Warrior”, Leonardo Carvalho, Sketchfab | CC BY 4.0 | w grze: pikinierzy (`pikeman.json`) |
 | Rycerz w płycie z płaszczem (bez szkieletu) | „Medieval knight”, 3dUVpro, Sketchfab | CC BY 4.0 | dowódca / jeździec |
-| Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | w grze: jazda (`public/soldiers/horse.json`), jeździec to rycerz Xali w siodle (`rider.json`) |
+| Koń w zbroi (bez szkieletu) | „Armored Horse”, naminoff, Sketchfab | CC BY 4.0 | zapas: gdy brak `warhorse.json` (`public/soldiers/horse.json`) |
+| Paladin J Nordstrom (postać ze skórą, przy klipie „Stabbing”) | Mixamo | Mixamo | **w grze**: jeździec jazdy w siodle (`rider.json`, `rigged.py --seated`) |
 | Jeździec i koń w zbroi (posąg, 120 tys. tr.) | „1964.88 Armor for Man and Horse”, Cleveland Museum of Art | CC0 | ciężka jazda po uproszczeniu |
-| Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | do sprawdzenia |
+| Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | sprawdzone; w grze ich tuniki (niżej) |
 | Animacje miecz i tarcza: cięcie, blok, postawa, marsz, bieg, trafienie, śmierć ×2 | Mixamo | Mixamo | w grze (miecznicy, halabardnicy) |
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
-| Stabbing, Double Dagger Stab, Standing Aim Walk Forward/Right, Idle 1–2, Block (drugi) | Mixamo | Mixamo | w zapasie (pikinierzy, łucznicy) |
+| Stabbing | Mixamo | Mixamo | w grze: cios pikinierów |
+| Double Dagger Stab, Standing Aim Walk Forward/Right, Idle 1–2, Block (drugi) | Mixamo | Mixamo | w zapasie |
 
 ### Zasoby i towary (pobrane z GitHuba KayKit, CC0) — w grze
 
@@ -48,7 +50,7 @@ samym stylu albo realistyczne CC0/CC BY.
 | „Hospitalier Knight” (szkielet Mixamo) | everlasting17th, Sketchfab | CC BY 4.0 | sprawdzony jako halabardnicy — **nie**: bez hełmu, białe nogawice, wygląda współcześnie |
 | „Bandit Armor and Clothes” (szkielet MakeHuman) | wolkoed, Sketchfab | CC BY 4.0 | czeka: potrzebne mapowanie kości MakeHuman |
 | „Medieval Civilian 3” | Leonardo Carvalho, Sketchfab | Sketchfab Standard | **nie**: licencja nie pozwala udostępniać siatki w repozytorium |
-| „Parameswara Chronicles: Portugese Knight” | (Sketchfab) | „CC BY” | **nie**: ponowne wrzucenie postaci Paladin J Nordstrom z Mixamo — lepiej pobrać ją wprost z Mixamo |
+| „Parameswara Chronicles: Portugese Knight” | (Sketchfab) | „CC BY” | **nie**: ponowne wrzucenie postaci Paladin J Nordstrom z Mixamo — pobrana wprost z Mixamo, w grze jako jeździec |
 | „Horse” (szkielet, chód, galop, postój, skubanie trawy) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: konie jazdy (`warhorse.json`) |
 | Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | **w grze**: armata i moździerz (kula rysowana własna); obsługa to mieszczanie ze szkieletem |
 | Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
@@ -61,26 +63,19 @@ Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjn
 
 ## Szukamy — lista dla właściciela projektu
 
-### Animacje (Mixamo: FBX, **Without Skin**, 30 kl./s, przy ruchu zaznaczyć **In Place**)
+Stan na 17.11: wszystko, co niezbędne, już jest w grze — żołnierze każdego rodzaju, ludzie w mieście (mężczyźni
+i kobieta), koń z chodem i galopem, jeździec, budynki, wozy, działa. Zostały rzeczy **opcjonalne**:
 
-Wspólne dla żołnierzy:
-1.–5. ~~Idle, Walk, Run, Death ×2, Impact (miecz i tarcza)~~ — są, w grze
+1. **Upadek konia** (śmierć konia pod jeźdźcem) — teraz koń przewraca się obliczonym obrotem. Klip konia
+   ze szkieletem tego samego konia (MAXDESIGN-3D) albo inny koń z osobnymi pętlami i upadkiem (CC0/CC BY).
+2. **Druga kobieta w innym stroju** (szkielet Mixamo albo Unreal, CC0/CC BY) — dziś wszystkie mieszczanki to
+   jedna postać.
+3. Pchnięcie oburącz z biodra dla pikinierów (Mixamo; „Stabbing” to pchnięcie znad głowy) — tylko jeśli się
+   trafi.
+4. Towary do obejść w stylu KayKit: ryby w koszu, winogrona w koszu, sztabki żelaza, ruda, snopki zboża.
 
-Broń drzewcowa (pikinierzy, halabardnicy, milicja):
-6. ~~Pchnięcie~~ — jest (Upward Thrust); przydałoby się jeszcze pchnięcie oburącz z biodra (pikinierzy)
-7. Spear Walk albo Rifle Walk / Two-handed Walk (marsz z drzewcem)
-
-Łucznicy i kusznicy:
-8. Standing Draw Arrow, Standing Aim Recoil (łuk)
-9. ~~Rifle Down To Aim~~ — jest, w grze (kusznicy); przydałby się jeszcze strzał z odrzutem („Shooting”)
-
-Tragarze, rzemieślnicy, rolnicy (ludzie w mieście):
-10. ~~Box Walk, Box Idle, Walking~~ — są, w grze
-11. ~~Pick Up / Put Down~~ — są, w grze
-12. ~~Digging~~, ~~Fishing Cast~~, ~~Great Sword Attack (rąbanie), Heavy Weapon Swing (młot)~~ — są, w grze; ~~Harvesting~~ — jest, w grze
-
-Jazda:
-13. Horse Riding (jeździec w siodle) — jeśli Mixamo ma; inaczej poza siedząca
+Animacje z Mixamo: FBX, **Without Skin** (albo ze skórą, jeśli chodzi też o postać), 30 kl./s, przy ruchu
+zaznaczone **In Place**.
 
 ### Dostarczone 16.11 wieczorem — do sprawdzenia
 „bar patrons outfits”, „5 piece scalemail armor (metahuman rigged)”, „medieval clothing free”: ubrania
@@ -94,14 +89,8 @@ i zbroja do dopasowania na szkielet (MetaHuman to inny szkielet niż Mixamo) —
 - „Medieval woman figure” (oba pliki, mikurban, CC BY 4.0): bez szkieletu. Potrzebna kobieta ze
   szkieletem Mixamo (np. z serii .Fuse albo z samego Mixamo).
 
-### Postacie (ze szkieletem Mixamo, CC0/CC BY)
-14. Chłop / chłopka (tunika, kaptur, fartuch) — tragarze, rolnicy
-15. Rzemieślnik (kowal w fartuchu, cieśla) — może być ten sam chłop z innym ubraniem
-16. Łucznik w kapturze i przeszywanicy
-17. Pikinier / włócznik w kolczudze lub skórze, z hełmem (kapalin, łebka)
-18. Kusznik (przeszywanica, hełm)
+### Zrealizowane z dawnej listy
+Chłopi i rzemieślnicy (.Fuse Civilian 1–2, Svend, Revna, kowal), łucznik, pikinier i kusznik (.Fuse),
+koń ze szkieletem i pętlami (MAXDESIGN-3D), wozy (NoodlePoodle, 3dAssetsForGames), działa (Lyskilde,
+ViktorKom), jazda bez klipu jazdy (jeździec kołysze się w takt konia).
 
-### Konie i machiny
-19. Koń ze szkieletem i animacjami chodu/kłusu/galopu (CC0/CC BY) — najlepiej; bez szkieletu też się przyda
-20. Wóz konny / wózek ręczny (transport poziom 2–3)
-21. Działo / bombarda (jeśli wchodzą armaty zamiast balist)

@@ -4,6 +4,12 @@
         [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
         [--tool-clips name,name] [--tool2-clips name,name] [--team-below 0.12]
         <clip.fbx>...
+    bl/bin/python -I tools/blender/rigged.py -- <character.fbx> <rider.json> --seated --arms none [--height 1.8] [--tris 3200]
+        [--gain 2.5]
+
+--seated: no clips, one pose: the character in the saddle (thighs forward and apart, shins down, the arms down
+to the lance and the reins), written as the game's rider body (limbs and pivots, soldierGeometry.ts BodyModel). --gain: its colours brightened
+(a blackened plate that would read as a silhouette from the camera).
 
 --arms: what the man carries (the game's own simple shapes; "none" for nothing): sword and shield (the default), a halberd or
 a pike in the sword hand (a shaft along the sword's line, more of it ahead of the hand than behind), or a
@@ -19,7 +25,8 @@ Any Mixamo-rigged character will do (glTF, or an FBX from Mixamo with its skin),
 (pelvis, spine_01, clavicle_l, thigh_l...: read as the same bones in Mixamo's names): it is turned to look the clips' way from where its hips put its
 left, and its end bones (HeadTop_End, Toe_End) may be missing or lie at the origin. Rigid parts with no
 weights (a helmet, a hat, hair) ride on the head; other unweighted parts (its own sword, shield) are left
-out.
+out, and so are meshes bound only to weapon joints (a Mixamo character's own sword and shield, whatever their
+mesh is called). With no metal map, a specular map (a Mixamo character's) is read as how much metal shows.
 
 The character ("knight for game project (old)", Thomas.Osterhammel, Sketchfab, CC BY 4.0, see
 CREDITS.md) stands in an A pose and looks along -X; the clips (Mixamo, without skin) were made on a
@@ -123,7 +130,10 @@ def body_meshes():
     for o in bpy.context.scene.objects:
         if o.type != "MESH" or o.name == "Icosphere" or o.name in STRAY:
             continue
-        if len(o.vertex_groups) > 0 or any(k in o.name.lower() for k in ON_HEAD):
+        groups = [plain(g.name) for g in o.vertex_groups]
+        if groups and all(g.endswith("_joint") for g in groups):
+            continue  # its own weapon or shield, bound to a weapon joint (a Mixamo character's, whatever the mesh is called)
+        if groups or any(k in o.name.lower() for k in ON_HEAD):
             out.append(o)
     return out
 
@@ -234,7 +244,7 @@ def bake_mesh(rig, G, team_garment=None):
         world = G @ o.matrix_world
         nworld = world.to_3x3().inverted().transposed()
         mat = me.materials[0] if me.materials else None
-        base_img = mr_img = None
+        base_img = mr_img = spec_img = None
         if mat and mat.node_tree:
             for n in mat.node_tree.nodes:
                 # The image wired into the shader's base colour (an FBX's images have no telling names).
@@ -246,6 +256,10 @@ def bake_mesh(rig, G, team_garment=None):
                         base_img = n.image
                     if "metallicRoughness" in n.image.name and mr_img is None:
                         mr_img = n.image
+            for n in mat.node_tree.nodes:
+                # No metal map, a specular one (a Mixamo character's): read as how much metal shows there.
+                if n.type == "TEX_IMAGE" and n.image and mr_img is None and spec_img is None and any(l.to_socket.name.startswith("Specular") for l in n.outputs[0].links):
+                    spec_img = n.image
         uv = me.uv_layers.active.data if me.uv_layers.active else None
         # Without a texture (a beard, a bun of hair): the material's own colour, matt.
         plain_colour = [0.5, 0.5, 0.5]
@@ -263,7 +277,13 @@ def bake_mesh(rig, G, team_garment=None):
             c = sample(base_img, u, v)
             if c[3] < 0.5:
                 continue  # a see-through texel between a hair card's strands: its colour is meaningless
-            m = sample(mr_img, u, v) if mr_img else (0, 0.6, 0.0)
+            if mr_img:
+                m = sample(mr_img, u, v)
+            elif spec_img:
+                metal = min(1.0, 3.0 * sample(spec_img, u, v)[0])
+                m = (0, 0.7 - 0.35 * metal, metal)
+            else:
+                m = (0, 0.6, 0.0)
             a = acc.setdefault(loop.vertex_index, [0, 0, 0, 0, 0, 0, 0])
             a[0] += c[0]; a[1] += c[1]; a[2] += c[2]; a[3] += m[2]; a[4] += m[1]; a[5] += 1
             if TEAM_BELOW is not None and 0.2126 * srgb_to_linear(c[0]) + 0.7152 * srgb_to_linear(c[1]) + 0.0722 * srgb_to_linear(c[2]) < TEAM_BELOW:
@@ -604,6 +624,73 @@ def bake_frames(char_rest, clip_path, hips_ratio):
     return frames, fps, anim_rest_hand, a_rest_head["Hips"].z, travel
 
 
+# In the saddle (--seated): the thighs come forward about the hip and part round the horse's barrel, the shins
+# hang nearly straight in long stirrups; the arms come down from the T, the right forearm forward to the lance,
+# the left to the reins under the shield. Directions in the game's space (Y up, forward -Z, his left -X).
+SEAT_LIFT_RAD = math.radians(45)
+SEAT_SPREAD_RAD = math.radians(20)
+SEAT_ARMS = {
+    # side: (upper arm, forearm), unnormalised directions with x for his right (+X); the left side mirrors x.
+    "Right": ((0.24, -1.0, -0.22), (0.12, -0.6, -1.0)),
+    "Left": ((0.2, -1.0, -0.18), (0.25, -0.5, -1.0)),
+}
+
+
+def seated(char_rest, pos, nor, skin, wts):
+    """Poses the bind-pose mesh (game space) in the saddle; returns the limb per vertex and the pivots."""
+    head = {n: Vector(to_game_point(head_of(m))) for n, m in char_rest.items()}
+    mats = {n: Matrix.Identity(4) for n in BONES}
+
+    def about(point, rot):
+        return Matrix.Translation(point) @ rot.to_4x4() @ Matrix.Translation(-point)
+
+    for side, sign in (("Left", -1), ("Right", 1)):
+        hip, knee, foot = head[side + "UpLeg"], head[side + "Leg"], head[side + "Foot"]
+        thigh = Matrix.Rotation(sign * SEAT_SPREAD_RAD, 3, "Z") @ Matrix.Rotation(SEAT_LIFT_RAD, 3, "X")
+        m_thigh = about(hip, thigh)
+        knee_now = m_thigh @ knee
+        shin_now = (m_thigh.to_3x3() @ (foot - knee)).normalized()
+        shin_to = Vector((sign * math.sin(SEAT_SPREAD_RAD * 0.6), -1.0, 0.05)).normalized()
+        m_shin = about(knee_now, shin_now.rotation_difference(shin_to).to_matrix()) @ m_thigh
+        mats[side + "UpLeg"] = m_thigh
+        for n in (side + "Leg", side + "Foot", side + "ToeBase"):
+            mats[n] = m_shin
+        upper, fore = SEAT_ARMS[side]
+        upper = Vector((sign * upper[0], upper[1], upper[2])).normalized()
+        fore = Vector((sign * fore[0], fore[1], fore[2])).normalized()
+        sh, el, hand = head[side + "Arm"], head[side + "ForeArm"], head[side + "Hand"]
+        m_arm = about(sh, (el - sh).normalized().rotation_difference(upper).to_matrix())
+        el_now = m_arm @ el
+        fore_now = (m_arm.to_3x3() @ (hand - el)).normalized()
+        m_fore = about(el_now, fore_now.rotation_difference(fore).to_matrix()) @ m_arm
+        mats[side + "Arm"] = m_arm
+        mats[side + "ForeArm"] = m_fore
+        mats[side + "Hand"] = m_fore
+    limbs = []
+    arm_bones = {3: {"LeftArm", "LeftForeArm", "LeftHand"}, 4: {"RightArm", "RightForeArm", "RightHand"}}
+    for i in range(len(pos)):
+        p, n = Vector(pos[i]), Vector(nor[i])
+        q, r = Vector(), Vector()
+        share = {3: 0.0, 4: 0.0}
+        for b, w in zip(skin[i], wts[i]):
+            if w <= 0:
+                continue
+            m = mats[BONES[b]]
+            q += w * (m @ p)
+            r += w * (m.to_3x3() @ n)
+            for limb, names in arm_bones.items():
+                if BONES[b] in names:
+                    share[limb] += w
+        pos[i] = list(q)
+        nor[i] = list(r.normalized()) if r.length > 0 else list(n)
+        limbs.append(3 if share[3] > 0.5 else 4 if share[4] > 0.5 else 0)
+    hips = (head["LeftUpLeg"] + head["RightUpLeg"]) / 2
+    shoulders = (head["LeftArm"] + head["RightArm"]) / 2
+    pivots = {"hipY": hips.y, "hipZ": hips.z, "shoulderY": shoulders.y, "shoulderZ": shoulders.z,
+              "shoulderX": abs(head["RightArm"].x - head["LeftArm"].x) / 2}
+    return limbs, pivots
+
+
 def main() -> None:
     args = sys.argv[sys.argv.index("--") + 1:]
     char_path, out = args[0], args[1]
@@ -624,10 +711,36 @@ def main() -> None:
     tool2_clips = set(filter(None, option("--tool2-clips", "").split(",")))
     if arms == "tools":
         WEAPONS["Shield_joint"] = "RightHand"
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below") if n in args}
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
+    if "--seated" in args:
+        # A rider (the game's body format, soldierGeometry.ts BodyModel): one pose, limbs instead of bones.
+        floor = min(p[1] for p in pos)
+        for p in pos:
+            p[1] -= floor
+        gain = float(option("--gain", "1"))
+        for c in col:
+            c[:] = [min(1.0, x * gain) for x in c]
+        for n in char_rest:
+            char_rest[n] = Matrix.Translation((0, 0, -floor)) @ char_rest[n]
+        limbs, pivots = seated(char_rest, pos, nor, skin, wts)
+        r4 = lambda v: [round(x, 4) for x in v]  # noqa: E731
+        data = {
+            "source": source + "; seated by rigged.py --seated",
+            "pivots": {k: round(v, 4) for k, v in pivots.items()},
+            "positions": [x for p in pos for x in r4(p)],
+            "normals": [x for n in nor for x in r4(n)],
+            "colours": [x for c in col for x in r4(c)],
+            "surface": [x for s in surf for x in r4(s[:2])],
+            "limbs": limbs,
+            "triangles": [i for t in tris for i in t],
+        }
+        with open(out, "w") as f:
+            json.dump(data, f, separators=(",", ":"))
+        print(f"seated: {len(pos)} vertices, {len(tris)} triangles, pivots {data['pivots']}")
+        return
     hips_char = head_of(char_rest["Hips"]).z
     all_frames, clip_meta = [], []
     anim_hand = None
