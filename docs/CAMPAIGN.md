@@ -79,7 +79,13 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 - **Działa** łamią mury i bramy (to już działa: armata i moździerz mają obrażenia oblężnicze).
 - **Wróg też atakuje:** wypady z bramy na Twoje działa, a w 15. minucie odsiecz od tyłu, dowodzona
   przez charakter *Rycerz*. Są więc obie wersje naraz: Ty szturmujesz, a komputer atakuje Ciebie.
-- **Wygrana:** zamek wroga zburzony. **Przegrana:** cała armia rozbita albo stracony obóz z koszarami.
+- **Przebieg (17.11, według właściciela projektu)**, na modelu zamku z dużym dziedzińcem, który dostarczy:
+  1. *Podejście*: armia z obozu pod mury, pod ostrzałem wież.
+  2. *Wypad*: gdy działa staną w zasięgu, z bramy wychodzi wypad na nie (i odsiecz od tyłu w 15. minucie).
+  3. *Zdobycie zamku*: wyłom albo rozbita brama, wejście na dziedziniec.
+  4. *Ostatni bój na dziedzińcu*: tam czeka gwardia pana zamku, ciężka jazda (2–3 pełne oddziały).
+- **Wygrana:** gwardia na dziedzińcu rozbita (nie trzeba burzyć donżonu). **Przegrana:** cała armia rozbita
+  albo stracony obóz z koszarami.
 - **Gwiazdka:** wyłom zrobiony w mniej niż 10 minut, bez utraty dział.
 
 ## 2. Ciągłość między misjami
