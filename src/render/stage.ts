@@ -109,14 +109,17 @@ export class Stage {
   }
 
   private buildPipeline(): void {
-    const high = this.settings.quality === 'high';
+    // Temporal anti-aliasing wants a velocity target, and for an instanced mesh that means last frame's
+    // instance matrix too: four more vertex attributes, past the 16 WebGL2 allows (iPad Safari refused the
+    // skinned figures at 19). On WebGL2, and on Low, FXAA without velocity.
+    const temporal = this.settings.quality === 'high' && this.backendName === 'WebGPU';
     const scenePass = pass(this.scene, this.camera, { type: HalfFloatType });
-    scenePass.setMRT(mrt({ output, velocity }));
+    if (temporal) scenePass.setMRT(mrt({ output, velocity }));
     const colour = scenePass.getTextureNode('output');
-    const depth = scenePass.getTextureNode('depth');
-    const motion = scenePass.getTextureNode('velocity');
     const pipeline = new RenderPipeline(this.renderer);
-    if (high) {
+    if (temporal) {
+      const depth = scenePass.getTextureNode('depth');
+      const motion = scenePass.getTextureNode('velocity');
       const aa = traa(colour, depth, motion, this.camera);
       // Sun on helmets and blades is the only thing bright enough to bloom.
       const lit = aa.add(bloom(aa, 0.04, 0.3, 0));

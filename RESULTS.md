@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · iPad (Safari, WebGL2): za dużo atrybutów wierzchołków
+
+- Raport grafiki z iPada (Safari 18.5, WebGL2): „Attribute location out of range” na pozycjach 16–18.
+- Przyczyna: postać ze szkieletem ma 15 atrybutów (pozycja, normalna, kolor, macierz instancji = 4, plus 8 własnych).
+  Cel prędkości (velocity) dla wygładzania TRAA dokłada do każdej siatki instancyjnej poprzednią macierz instancji (4).
+  Razem 19, a WebGL2 pozwala na 16.
+  - Cel prędkości był włączony także na ustawieniu Niska, choć tam służył tylko FXAA.
+- Teraz cel prędkości i TRAA (z bloom i wyostrzeniem) działają tylko na WebGPU przy ustawieniu Wysoka.
+  Na WebGL2 i na Niskiej scena idzie przez FXAA, a postacie mieszczą się w 15 atrybutach.
+- Testy 109/109.
+
 ## 2026-11-17 · Tablet z Adreno 510: WebGPU odrzucał potoki
 
 - Raport grafiki z tabletu (Chrome 156, Android 10, Adreno 510 przez WebGPU) pokazał dwa błędy:
