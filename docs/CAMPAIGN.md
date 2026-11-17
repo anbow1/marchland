@@ -64,8 +64,16 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 
 *Czas zakończyć tę wojnę pod murami jego zamku.*
 
-- **Mapa:** nowa, *Twierdza* (§4): zamek wroga poziomu 3 na wzgórzu, kamienny mur wokół, dwie bramy i
-  sześć wież z kusznikami, za murem jego miasto, które pracuje i werbuje. Ty startujesz w obozie na
+- **Mapa:** nowa, *Twierdza* (§4): na wzgórzu **twierdza większa i bardziej obronna niż zwykły zamek**
+  (życzenie właściciela projektu, 17.11), za murami jego miasto, które pracuje i werbuje:
+  - **donżon** poziomu 3 powiększony (ok. 1,4 × zwykłego) i z trzykrotną wytrzymałością; jeśli znajdzie się
+    model dużego zamku (CC0/CC BY, do ok. 30 tys. trójkątów), zastąpi on donżon;
+  - **dwa pierścienie murów**: zewnętrzny (ok. 90 m od donżonu) z 8 wieżami i wewnętrzny (ok. 45 m) z 4
+    wieżami, w każdej wieży 4 kuszników; mur twierdzy dwa razy wytrzymalszy od zwykłego, więc na niego
+    trzeba moździerzy, armaty biorą bramy;
+  - **brama główna jako wieża bramna** (model „Medieval Gatehouse”, CC0, leży w zapasie) w murze
+    zewnętrznym, druga, zwykła brama w wewnętrznym, bez prostej drogi między nimi;
+  - stromy stok wzgórza tylko od strony bramy łagodny: podejście prowadzi pod ostrzałem wież. Ty startujesz w obozie na
   skraju mapy z armią przeniesioną z misji 4 (do 200 ludzi), z koszarami i ludwisarnią, ale bez miasta.
   Uzupełnienia kosztują złoto ze skarbca.
 - **Działa** łamią mury i bramy (to już działa: armata i moździerz mają obrażenia oblężnicze).
