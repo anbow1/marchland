@@ -7,6 +7,9 @@ z gier ani modów (np. „… Mod” do Total War) ani cudzych postaci wrzuconyc
 Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`), do ~20 tys. trójkątów
 (i tak upraszczamy do 2–3 tys.), ze stopami na ziemi.
 
+Jak assety trafiają do gry i jak są rysowane: `PLAYBOOK.md`. Formaty plików: `../asset-pack/FORMATS.md`.
+Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (`../asset-pack/README.md`).
+
 ## Jest (w grze albo gotowe do użycia)
 
 | Co | Źródło | Licencja | Gdzie |
@@ -95,3 +98,65 @@ Chłopi i rzemieślnicy (.Fuse Civilian 1–2, Svend, Revna, kowal), łucznik, p
 koń ze szkieletem i pętlami (MAXDESIGN-3D), wozy (NoodlePoodle, 3dAssetsForGames), działa (Lyskilde,
 ViktorKom), jazda bez klipu jazdy (jeździec kołysze się w takt konia).
 
+## Spis plików w grze (`public/`)
+
+Stan z 17.11, ze wszystkimi klipami. Źródło każdego pliku: tabela wyżej i `public/*/CREDITS.md`; tekstury
+powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
+
+| Plik | Rodzaj | Trójkąty | Kości | Klipy (klatki) |
+|---|---|---|---|---|
+| `people/smith.json` | szkielet | 2994 | 40 | work (193) |
+| `people/townsman-beard.json` | szkielet | 1643 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `people/townsman-linen.json` | szkielet | 1646 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `people/townsman-wool.json` | szkielet | 1647 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `people/townsman.json` | szkielet | 1244 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `people/townswoman-dress.json` | szkielet | 1645 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `people/townswoman-worker.json` | szkielet | 1641 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `people/townswoman.json` | szkielet | 1645 | 24 | boxwalk (19), boxidle (95), walk (16), idle (77), pickup (144), putdown (156), digging (73), fishing (132), chop (19), swing (79), harvest (37) |
+| `props/cannon.json` | bryła (prop) | 1494 | — | — |
+| `props/goods/arrows.json` | bryła (prop) | 260 | — | — |
+| `props/goods/barrel.json` | bryła (prop) | 240 | — | — |
+| `props/goods/bread.json` | bryła (prop) | 400 | — | — |
+| `props/goods/crate.json` | bryła (prop) | 132 | — | — |
+| `props/goods/lumber.json` | bryła (prop) | 220 | — | — |
+| `props/goods/meat.json` | bryła (prop) | 400 | — | — |
+| `props/goods/sack.json` | bryła (prop) | 92 | — | — |
+| `props/goods/stone.json` | bryła (prop) | 220 | — | — |
+| `props/handcart.json` | bryła (prop) | 522 | — | — |
+| `props/mortar.json` | bryła (prop) | 1185 | — | — |
+| `props/pig.json` | bryła (prop) | 320 | — | — |
+| `props/wagon.json` | bryła (prop) | 1200 | — | — |
+| `soldiers/archer.json` | szkielet | 3477 | 24 | recoil (22), draw (31), block_1 (18), idle (154), walk (32), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/crossbowman.json` | szkielet | 3443 | 24 | recoil (36), draw (27), block_1 (18), idle (154), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/halberdier.json` | szkielet | 3449 | 24 | upward_thrust (71), chop (37), greatslash (56), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/horse.json` | koń bez szkieletu (części) | 3591 | — | — |
+| `soldiers/knight.json` | ciało z częściami (limbs) | 3189 | — | jedna poza |
+| `soldiers/pikeman.json` | szkielet | 3431 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/rider.json` | ciało z częściami (limbs) | 3199 | — | jedna poza |
+| `soldiers/swordsman.json` | szkielet | 3523 | 24 | slash (46), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/warhorse.json` | szkielet + siodło | 2999 | 40 | idle (62), walk (33), gallop (16), graze (151), fall (25) |
+
+| Budynek (`buildings/<nazwa>_<poziom>.glb`) | Poziomy | Trójkąty |
+|---|---|---|
+| `armourer` | 1, 2, 3 | 4690 / 4858 / 4858 |
+| `bakery` | 1, 2, 3 | 8220 / 8828 / 8916 |
+| `barracks` | 1, 2, 3 | 4768 / 4944 / 4944 |
+| `butcher` | 1, 2, 3 | 3748 / 3924 / 3968 |
+| `farm` | 1, 2, 3 | 3036 / 3152 / 3152 |
+| `fisher` | 1, 2, 3 | 1080 / 1240 / 1400 |
+| `fletcher` | 1, 2, 3 | 3484 / 3512 / 3540 |
+| `house` | 1, 2, 3 | 4936 / 5368 / 8124 |
+| `ironMine` | 1, 2, 3 | 2628 / 2788 / 2788 |
+| `keep` | 1 | 21790 |
+| `pigFarm` | 1, 2, 3 | 1348 / 1496 / 1644 |
+| `quarry` | 1, 2, 3 | 1764 / 1896 / 2028 |
+| `smelter` | 1, 2, 3 | 2132 / 2168 / 2168 |
+| `smithy` | 1, 2, 3 | 2566 / 12000 / 12000 |
+| `stable` | 1, 2, 3 | 1424 / 1660 / 1660 |
+| `tannery` | 1, 2, 3 | 1460 / 1644 / 1644 |
+| `tower` | 1, 2, 3 | 6620 / 6700 / 7016 |
+| `vineyard` | 1, 2, 3 | 1764 / 1820 / 1876 |
+| `windmill` | 1, 2, 3 | 4788 / 4876 / 4964 |
+| `winery` | 1, 2, 3 | 2740 / 3012 / 3012 |
+| `woodcutter` | 1, 2, 3 | 2900 / 3140 / 3392 |
+| `wall.glb`, `gate.glb` | — | odcinek muru 2 m, brama z dwoma skrzydłami |

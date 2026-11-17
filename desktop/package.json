@@ -26,7 +26,12 @@
     },
     "portable": {
       "artifactName": "Marchland.exe"
-    }
+    },
+    "compression": "maximum",
+    "electronLanguages": [
+      "pl",
+      "en-US"
+    ]
   },
   "repository": {
     "type": "git",

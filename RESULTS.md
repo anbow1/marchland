@@ -5,6 +5,23 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Playbook, pełny spis assetów, paczka gotowych assetów
+
+- `docs/PLAYBOOK.md`: jak gra jest zrobiona, z odnośnikami do plików: architektura, renderer i światło,
+  teren i skany powierzchni, trawa i las, przenoszenie ruchu Mixamo (`rigged.py` krok po kroku), własne
+  animacje (`baked.py`, `horsefall.py`), skinning setek postaci na GPU (tekstura klatek, 8 buforów),
+  mieszkańcy, budynki z Blendera i etapy budowy, zasady assetów, pomiary, wydanie offline, tabela pułapek
+  z rozwiązaniami i kolejność pracy nad nową grą z gotowych assetów.
+- `docs/ASSETS.md`: spis wszystkich plików w grze z trójkątami, kośćmi i klipami.
+- **Paczka assetów** (`asset-pack/`, `tools/pack-assets.mjs` → `asset-pack-out/marchland-assets.zip`, 61 MB,
+  zip 28,6 MB): modele i animacje, 18 skanów powierzchni, loader three.js (`rigged`, `body`, `mount`,
+  `prop`, `building` z triplanarem ze skanów), strona z każdym modelem i klipem (three.js r186 w środku,
+  działa bez internetu), skrypty Blendera, playbook, opis formatów, podpisy i zasady licencji (Mixamo: nie
+  publikować paczki jako osobnych assetów). Sprawdzone w Chromium (WebGL2): żołnierze, mieszczanie, koń w
+  galopie z jeźdźcem, działa, wozy, budynki ze skanami.
+- `.exe`: proces publikacji uruchamiany ręcznie; wydanie wymaga zgody na zapis dla Actions (403), a plik
+  (102 MB po kompresji maksymalnej) przekracza limit 100 MB na gałąź `gh-pages`.
+
 ## 2026-11-17 · Propozycja kampanii
 
 - `docs/CAMPAIGN.md`: pięć misji właściciela projektu (trybut, obóz za rzeką, odbicie osady, odbudowa i
