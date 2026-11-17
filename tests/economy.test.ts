@@ -10,7 +10,7 @@ import { findPath, isRoad, wallCellAt } from '../src/sim/nav.ts';
 import { freePeople } from '../src/sim/people.ts';
 import { checkSite } from '../src/sim/placement.ts';
 import { planSite } from '../src/sim/sitePlanner.ts';
-import { DEPOSITS, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, isWater, lakeX, lakeZ, townX, townZ } from '../src/sim/terrain.ts';
 import { claimNearestTree, createStand, fellTree, growthOf, plantTree, stepStand, TREES, woodStands } from '../src/sim/trees.ts';
 import { type BuildingKind, COMPUTER, KEEP, PLAYER } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, type World } from '../src/sim/world.ts';
@@ -180,6 +180,28 @@ describe('a living town', () => {
     runUntil(world, 900, () => finished(world, plot));
     result = cmdTurnSite(world, PLAYER, plot, 1);
     expect(result).toBe('alreadyBuilt');
+  });
+
+  it('a forester and a hunter stand on open ground by the woods, where a woodcutter needs more trees', () => {
+    const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
+    // Open meadow 30–38 m from the nearest woods, within the keep's reach.
+    const woodsWithin = (x: number, z: number, m: number): boolean => {
+      for (let a = 0; a < 24; a++) for (let d = 4; d <= m; d += 4) if (forestCoverAt(x + Math.cos((a * Math.PI) / 12) * d, z + Math.sin((a * Math.PI) / 12) * d) > 0.6) return true;
+      return false;
+    };
+    let spot: [number, number] | null = null;
+    for (let r = 40; r < 200 && !spot; r += 6) {
+      for (let a = 0; a < 48 && !spot; a++) {
+        const x = townX(PLAYER) + Math.cos((a * Math.PI) / 24) * r;
+        const z = townZ(PLAYER) + Math.sin((a * Math.PI) / 24) * r;
+        if (forestCoverAt(x, z) < 0.2 && !woodsWithin(x, z, 28) && woodsWithin(x, z, 38) && checkSite(world, PLAYER, 'house', x, z, 0).result === 'ok') spot = [x, z];
+      }
+    }
+    expect(spot).not.toBeNull();
+    if (!spot) return;
+    expect(checkSite(world, PLAYER, 'forester', spot[0], spot[1], 0).result).toBe('ok');
+    expect(checkSite(world, PLAYER, 'hunter', spot[0], spot[1], 0).result).toBe('ok');
+    expect(checkSite(world, PLAYER, 'woodcutter', spot[0], spot[1], 0).result).toBe('needsForest');
   });
 
   it('a hunter brings meat and hides from the woods; a forester brings the saplings on sooner', () => {

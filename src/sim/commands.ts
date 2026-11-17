@@ -418,7 +418,7 @@ export function canMerge(world: World, intoId: number, fromId: number): CommandR
   if (into.rearmTo !== null || from.rearmTo !== null) return 'notThisUnit';
   if (into.sinceMeleeS < REINFORCE.quietS || from.sinceMeleeS < REINFORCE.quietS) return 'inCombat';
   if (into.aliveMen >= into.maxMen) return 'fullStrength';
-  if (hypot2(into.centreX - from.centreX, into.centreZ - from.centreZ) > CAMPAIGN.mergeRadiusM) return 'tooFar';
+  if (hypot2(into.centreX - from.centreX, into.centreZ - from.centreZ) > CAMPAIGN.mergeRadiusM) return 'apart';
   return 'ok';
 }
 

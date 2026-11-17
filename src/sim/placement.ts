@@ -97,7 +97,7 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
   if (!withinReach(world, side, kind, x, z)) return fail('tooFar');
-  if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('tooFar');
+  if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('offMap');
   if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isImpassable(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');
@@ -110,7 +110,13 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   // A woodcutter's hut stands at the edge of the wood, the others in the open.
   // Felled ground (under half its trees left) may be built on.
   if (need !== 'forest' && forestCoverAt(x, z) > 0.5 && woodStands(world.stand, x, z)) return fail('blocked');
-  if (need === 'forest') {
+  if (need === 'forest' && kind !== 'woodcutter') {
+    // The forester plants (on stumps and clearings as well) and the hunter stalks: woods near enough will do.
+    if (!findNearby(x, z, TOWN.woodsReachM, (px, pz) => forestCoverAt(px, pz) > 0.6, found)) return fail('needsWoods');
+    const d = hypot2(found.x - x, found.z - z) || 1;
+    site.spotX = found.x + ((found.x - x) / d) * (GATHER.woodcutter.reachM * 0.4);
+    site.spotZ = found.z + ((found.z - z) / d) * (GATHER.woodcutter.reachM * 0.4);
+  } else if (need === 'forest') {
     if (!findNearby(x, z, TOWN.forestReachM, (px, pz) => forestCoverAt(px, pz) > 0.6, found)) return fail('needsForest');
     // Enough grown trees in his reach to keep him busy while the saplings he plants grow.
     if (grownTreesNear(world.stand, x, z, FORESTRY.reachM, world.timeS) < FORESTRY.minTrees) return fail('needsForest');

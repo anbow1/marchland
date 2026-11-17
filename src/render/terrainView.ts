@@ -295,7 +295,12 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const swatheTint = mix(vec3(0.78, 0.86, 0.8), vec3(1.14, 1.1, 0.86), smoothstep(0.25, 0.75, swathe));
   const turf = colour.mul(tone).mul(mix(vec3(1), swatheTint, wildShare));
   const grey = turf.dot(luminance);
-  material.colorNode = mix(turf, vec3(grey), wildShare.mul(0.06));
+  // Beyond the land that may be built on (the map's square; checkSite's edge) the ground is a shade darker
+  // and greyer, so the player sees where building stops: a keep near a corner has little room behind it.
+  const edgeM = max(positionWorld.x.abs(), positionWorld.z.abs());
+  const beyond = smoothstep(MAP.halfM - TOWN.buildingRadiusM - 3, MAP.halfM - TOWN.buildingRadiusM - 1, edgeM);
+  const land = mix(turf, vec3(grey), wildShare.mul(0.06));
+  material.colorNode = mix(land, mix(land, vec3(grey), 0.45).mul(0.62), beyond);
   if (lib.detailed) {
     const bump = blend((id) => texture(lib.normal, uvOf(id, 1)).depth(int(layerOf(id))).rgb).mul(2).sub(1);
     // Fade the bumps out with distance: far away they only shimmer.

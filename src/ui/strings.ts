@@ -313,6 +313,9 @@ const pl: Strings = {
   results: {
     cannotAfford: 'Za mało zasobów.',
     tooFar: 'Za daleko: buduj w zasięgu zamku albo do 70 m od własnego budynku (także w budowie).',
+    offMap: 'Poza mapą: za ciemniejszą granicą terenu budować nie wolno.',
+    apart: 'Za daleko od siebie: łączone oddziały muszą stać najwyżej 30 m od siebie.',
+    needsWoods: 'Leśnik i myśliwy muszą stać przy lesie: najwyżej 40 m od jego skraju.',
     blocked: 'Miejsce jest zajęte albo zalane.',
     tooSteep: 'Teren jest zbyt stromy.',
     needsForest: 'Drwal musi stać przy lesie, z co najmniej 20 dorosłymi drzewami w zasięgu.',
@@ -686,6 +689,9 @@ const en: Strings = {
   results: {
     cannotAfford: 'Not enough resources.',
     tooFar: 'Too far: build within the keep\'s reach or up to 70 m from a building of yours.',
+    offMap: 'Off the map: no building beyond the darker edge of the land.',
+    apart: 'Too far apart: regiments to merge must stand within 30 m of each other.',
+    needsWoods: 'A forester or a hunter must stand by the woods: within 40 m of their edge.',
     blocked: 'The place is taken or under water.',
     tooSteep: 'The ground is too steep.',
     needsForest: 'A woodcutter must stand by the forest, with at least 20 grown trees in reach.',

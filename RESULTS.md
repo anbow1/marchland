@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Poprawki budowania: granica mapy, leśnik i myśliwy
+
+- Chata obok zamku „za daleko”: zamek w rogu (−232, 232) ma tylko ok. 40 m do brzegu terenu, na którym wolno
+  budować (280 m od środka mapy), a teren rysuje się dalej bez granicy. Teraz poza tym obszarem ziemia jest
+  ciemniejsza i bardziej szara, a komunikat brzmi „Poza mapą” (`offMap`) zamiast mylącego „Za daleko: buduj w
+  zasięgu zamku”.
+- Leśnik i myśliwy dostawali wymóg drwala (las do 26 m i co najmniej 20 dorosłych drzew) i jego komunikat.
+  Teraz wystarczy im las do 40 m od skraju (`TOWN.woodsReachM`), z własnym komunikatem (`needsWoods`);
+  drwal bez zmian. Łączenie oddziałów stojących za daleko od siebie ma swój komunikat (`apart`) zamiast
+  tekstu o budowaniu.
+- Test: na łące 30–38 m od lasu leśnik i myśliwy mogą stanąć, drwal dostaje „needsForest”. Testy 107/107.
+
 ## 2026-11-17 · Twierdza do misji 5: „Medieval Castle”
 
 - Model od właściciela projektu: „Medieval Castle”, Uğur Yakışık (Sketchfab, CC BY 4.0), 64 tys. trójkątów,

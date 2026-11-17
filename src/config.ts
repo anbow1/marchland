@@ -97,6 +97,8 @@ export const TOWN = {
   maxFootprintRiseM: 2.2,
   /** How near a woodcutter must be to trees, a fisher to water, a quarry or mine to its rock. */
   forestReachM: 26,
+  /** A forester (who plants) and a hunter (who stalks) want woods this near, not a stand of grown timber. */
+  woodsReachM: 40,
   waterReachM: 16,
   depositReachM: 15,
   /** The lakes: each side's lies this far from its keep (towards the enemy, and to one side), with this radius and depth. */
