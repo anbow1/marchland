@@ -17,6 +17,8 @@ import type { Quality } from './render/stage.ts';
 import { Menu } from './ui/menu.ts';
 import { Sound } from './ui/sound.ts';
 import { startOffline } from './ui/offline.ts';
+import { loadProgress, missionWon } from './ui/campaignStore.ts';
+import { carryOut, MISSIONS } from './sim/campaign.ts';
 
 // Entry point: menu, loading, game, end screen. URL switches for measuring
 // (tools/measure/README.md): `?autostart` skips the menu, `&q=high|low` picks
@@ -136,7 +138,9 @@ async function run(): Promise<void> {
   }
   // The kind of game and the computer's character: from the menu, or kept in the address across a reload.
   const askedMode = params.get('mode');
-  let mode: GameMode = askedMode === 'defence' || askedMode === 'tutorial' ? askedMode : 'skirmish';
+  let mode: GameMode = askedMode === 'defence' || askedMode === 'tutorial' || askedMode === 'campaign' ? askedMode : 'skirmish';
+  // The campaign's mission (its map and keeps come in the address with it).
+  let mission = Math.min(MISSIONS.length, Math.max(1, Number(params.get('mission') ?? 1) || 1));
   const askedCharacter = params.get('ai');
   let character: AiCharacter = askedCharacter === 'builder' || askedCharacter === 'raider' ? askedCharacter : 'balanced';
   const settings = loadSettings();
@@ -144,12 +148,26 @@ async function run(): Promise<void> {
   const savedText = readSave();
   const saved = savedText ? saveHeader(savedText) : null;
   if (!autostart && !chosenAlready && !loadSave) {
-    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT, mode, character }, saved);
+    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT, mode, character, mission }, saved, loadProgress());
     difficulty = choice.difficulty;
     quality = askedQuality() ?? choice.quality;
     mode = choice.mode;
     character = choice.character;
     sound.unlock();
+    if (choice.mode === 'campaign' && !choice.load) {
+      // A mission: its own map and keeps, laid out on a reload.
+      mission = choice.mission ?? 1;
+      const def = MISSIONS[mission - 1] ?? MISSIONS[0];
+      params.set('start', String(def?.start ?? 0));
+      params.set('map', def?.layout ?? 'field');
+      params.set('mode', 'campaign');
+      params.set('mission', String(mission));
+      params.set('d', difficulty);
+      params.set('q', quality);
+      params.set('go', '1');
+      location.search = params.toString();
+      return;
+    }
     if (choice.load && saved) {
       loadSave = true;
       // A game saved on another map loads after the page is laid out for that map.
@@ -185,6 +203,8 @@ async function run(): Promise<void> {
     difficulty,
     mode,
     character,
+    // A mission starts from what the one before it carried out (none when it is played anew from the list).
+    campaign: mode === 'campaign' ? { mission, carried: loadProgress().carryInto[mission]?.carried ?? [], gold: loadProgress().carryInto[mission]?.gold ?? 0 } : undefined,
     // Measurements want the full picture at a fixed scale, and no map sliding under a parked cursor.
     governor: !autostart,
     edgeScroll: !autostart,
@@ -215,7 +235,37 @@ async function run(): Promise<void> {
     });
   };
   game.onMenu = openMenu;
-  game.onEnd = (winner) => menu.end(game.world, winner, () => location.reload());
+  game.onEnd = (winner) => {
+    const c = game.world.campaign;
+    if (!c) {
+      menu.end(game.world, winner, () => location.reload());
+      return;
+    }
+    const won = winner === PLAYER;
+    if (won) {
+      const out = carryOut(game.world);
+      missionWon(c.mission, c.stars, out.carried, out.gold);
+    }
+    const nextDef = MISSIONS[c.mission];
+    const go = (n: number): void => {
+      const def = MISSIONS[n - 1] ?? MISSIONS[0];
+      params.set('start', String(def?.start ?? 0));
+      params.set('map', def?.layout ?? 'field');
+      params.set('mode', 'campaign');
+      params.set('mission', String(n));
+      params.set('go', '1');
+      location.search = params.toString();
+    };
+    menu.campaignEnd(game.world, c.mission, won, c.stars, {
+      next: won && nextDef?.ready ? () => go(nextDef.n) : null,
+      retry: () => go(c.mission),
+      list: () => {
+        params.delete('go');
+        params.set('mode', 'campaign');
+        location.search = params.toString();
+      },
+    });
+  };
   // The Android back button and a hidden tab pause the game.
   document.addEventListener('visibilitychange', () => {
     if (document.hidden && !autostart) openMenu();

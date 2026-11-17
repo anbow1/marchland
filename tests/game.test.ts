@@ -5,7 +5,7 @@ import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild } from '../src/sim/comma
 import { townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, UNIT_KINDS } from '../src/sim/types.ts';
 import { createWorld, menAlive, spawnRegiment, stepWorld, type World } from '../src/sim/world.ts';
-import { run, runUntil } from './helpers.ts';
+import { breathe, run, runUntil, runUntilAsync } from './helpers.ts';
 
 function fingerprint(world: World): string {
   const towns = world.towns.map((t) => `${t.keepHp.toFixed(3)}:${t.stock.gold}:${t.plots.filter((b) => b).length}`);
@@ -17,11 +17,11 @@ describe('a whole game', () => {
   // A session is 25–35 minutes (docs/GAMEPLAY.md §1). The computer's militia stays home as a guard, so the
   // first attack waits for regular troops, and the keeps stand 600 m apart near the corners: it razes a
   // town that does nothing at about 40 minutes (seeds 5 and 6), having raised its keep to the second level.
-  it('the computer builds a town, raises an army and razes an idle player within 42 minutes (it raises its keep to the second level on the way)', () => {
+  it('the computer builds a town, raises an army and razes an idle player within 42 minutes (it raises its keep to the second level on the way)', async () => {
     const world = createWorld({ seed: 5, difficulty: 'normal', computerPlays: true });
     let firstRegimentS = -1;
     let peakMen = 0;
-    const seconds = runUntil(world, 42 * 60, () => {
+    const seconds = await runUntilAsync(world, 42 * 60, () => {
       const men = menAlive(world, COMPUTER);
       if (men > 0 && firstRegimentS < 0) firstRegimentS = world.timeS;
       if (men > peakMen) peakMen = men;
@@ -36,8 +36,8 @@ describe('a whole game', () => {
     expect(world.towns[COMPUTER].plots.filter((b) => b !== null).length).toBeGreaterThanOrEqual(12);
   }, 60_000);
 
-  it('two computer players fight each other, and the same seed replays the same game', () => {
-    const play = (seed: number): World => {
+  it('two computer players fight each other, and the same seed replays the same game', async () => {
+    const play = async (seed: number): Promise<World> => {
       const world = createWorld({ seed, difficulty: 'normal', computerPlays: true });
       const second = createAiState(PLAYER);
       // Armies are raised from the towns' people, the militia stays home, and each computer waits for a
@@ -45,11 +45,12 @@ describe('a whole game', () => {
       for (let step = 0; step < 40 * 60 * 60 && world.winner === -1; step++) {
         stepAi(world, second, SIM.stepSeconds);
         stepWorld(world, SIM.stepSeconds);
+        if (step % 600 === 0) await breathe();
       }
       return world;
     };
-    const first = play(11);
-    const again = play(11);
+    const first = await play(11);
+    const again = await play(11);
     // Regular troops only (the militia guards each town): fighting starts late. The number of dead by
     // minute 40 swings widely with small changes to the rules; this checks they fight.
     expect(first.kills[0] + first.kills[1]).toBeGreaterThan(10);

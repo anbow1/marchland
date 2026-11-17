@@ -523,7 +523,7 @@ export const UNITS: Record<UnitKind, UnitDef> = {
 };
 
 export const ARMY = {
-  /** 100 a side: 200 soldiers on the field at most (the brief's ceiling). */
+  /** 100 a side: 200 soldiers on the field at most (the brief's ceiling); the campaign allows CAMPAIGN.maxSoldiersPerSide. */
   maxSoldiersPerSide: 100,
   maxRecruitQueue: 3,
   /** Soldiers may move this much faster than their regiment to regain their place. */
@@ -702,6 +702,31 @@ export type AiCharacter = keyof typeof AI_CHARACTERS;
  * The defence: the player's town alone, waves marching from the enemy's keep every `waveEveryS` from
  * `firstWaveS`, each bigger than the last; standing at `lengthS` wins.
  */
+/** The campaign (docs/CAMPAIGN.md, sim/campaign.ts). */
+export const CAMPAIGN = {
+  /** Soldiers a side may field, and men a regiment may be filled up to at its barracks (recruited at its kind's strength). */
+  maxSoldiersPerSide: 200,
+  regimentMaxMen: 20,
+  /** Regiments carried from one mission to the next, the strongest first. */
+  carryRegiments: 8,
+  /** Of the gold left at a mission's end, this share goes on, at most this much. */
+  carryGoldShare: 0.5,
+  carryGoldMax: 800,
+  /** Two regiments of a kind merge when their middles are this close. */
+  mergeRadiusM: 30,
+  /** Mission 1: what the invader demands and how long he gives. */
+  tribute: { gold: 600, bread: 200, weapon: 40 },
+  tributeSeconds: 900,
+  /** Where the invader camps: this far along the line from the player's keep to the far one. */
+  campAlong: 0.64,
+  /** The invader's host in mission 1 (full regiments of CAMPAIGN.regimentMaxMen). */
+  invaders: ['heavyCavalry', 'heavyCavalry', 'swordsmen', 'swordsmen', 'swordsmen', 'halberdiers', 'halberdiers', 'crossbowmen', 'crossbowmen', 'crossbowmen'],
+  /** Mission 2: what is left in the camp once he has scattered to plunder, and the foragers who come back. */
+  campGarrison: ['swordsmen', 'halberdiers', 'crossbowmen'],
+  foragers: ['lightCavalry', 'swordsmen'],
+  foragersBackEveryS: 300,
+} as const;
+
 export const DEFENCE = {
   firstWaveS: 420,
   waveEveryS: 240,

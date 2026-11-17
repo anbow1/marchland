@@ -120,10 +120,24 @@ Oba układy przydadzą się też w potyczce, więc menu „Mapa” urośnie z tr
 6. Strojenie: każda misja przechodzona przez bota-testera (jak dziś testy całych gier bez gracza), a
    czasy i straty zapisane w `RESULTS.md`.
 
-## 6. Do decyzji właściciela projektu
+## 6. Decyzje (17.11)
 
-1. **Limit 200 i oddziały do 20:** w całej grze (zalecane: jedna zasada) czy tylko w kampanii?
-2. **Misja 1 po terminie:** atak, który można odeprzeć (zalecane), czy od razu przegrana?
-3. **Misja 5:** szturm z wypadami i odsieczą, czyli obie wersje naraz (zalecane), czy do wyboru przed
-   misją: „atakujesz” albo „bronisz obozu”?
-4. **Przenoszenie wojska:** do 8 oddziałów (zalecane), wszystko czy nic?
+1. **Limit 200 i oddziały do 20 w całej kampanii** (w potyczce bez zmian: 100 i 12/8).
+2. **Misja 1 po terminie:** najeźdźca uderza, a szansa obrony to **najwyżej 10 %** (test: 8 oddziałów
+   obrońców przy zamku przegrywa we wszystkich 6 partiach; najeźdźca traci 21–34 ze 200 ludzi).
+3. **Misja 5:** obie wersje naraz (szturm, wypady z bramy, odsiecz od tyłu).
+4. **Przenoszenie:** do 8 oddziałów i połowa złota (do 800).
+
+## 7. Stan
+
+| Element | Stan |
+|---|---|
+| Tryb „Kampania” w menu: lista misji z gwiazdkami, blokada do wygrania poprzedniej, odprawa | ✔ |
+| Scenariusz misji (`src/sim/campaign.ts`): mapa i zamki z adresu, gotowe miasto na start, wróg, cele, gwiazdki | ✔ |
+| Armia 200, oddział uzupełniany do 20 przy koszarach, łączenie oddziałów (przycisk „Połącz”) | ✔ |
+| Przenoszenie wojska i złota, postęp na urządzeniu (`src/ui/campaignStore.ts`), ekran końca misji | ✔ |
+| Misja 1 (trybut, pasek z odliczaniem i przyciskiem zapłaty, najeźdźca 10 × 20 za rzeką) | ✔ grywalna |
+| Misja 2 (obóz: 3 oddziały, 2 zagony wracające co 5 min) | ✔ grywalna; palisada i namioty obozu — później |
+| Misja 3 (układ *Dolina*, przejęcie osady) | do zrobienia |
+| Misja 4 (ruiny, odbudowa, zagony) | do zrobienia |
+| Misja 5 (układ *Twierdza*, mury scenariuszem, wypady, odsiecz) | do zrobienia |

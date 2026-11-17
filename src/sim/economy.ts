@@ -99,6 +99,10 @@ export interface Town {
   /** The town's buildings; a building keeps its place in the list for as long as it stands (null = free). */
   plots: (Building | null)[];
   keepHp: number;
+  /** Soldiers this side may have under arms (ARMY.maxSoldiersPerSide; the campaign's is larger). */
+  armyCap: number;
+  /** No town on this side at all (the invader's camp in the campaign's first missions): no keep, no pay. */
+  absent?: boolean;
   /** The keep's level (1…3) and the seconds left on raising it to the next (0 when no work is under way). */
   keepLevel: number;
   keepUpgradeLeftS: number;
@@ -185,7 +189,7 @@ export function createTown(side: Side, productionFactor = 1): Town {
   for (const id of RESOURCE_IDS) stock[id] = TOWN.startingStock[id] ?? 0;
   const plots: (Building | null)[] = [];
   for (let i = 0; i < TOWN.maxBuildings; i++) plots.push(null);
-  return { side, stock, plots, keepHp: TOWN.keepHp, keepLevel: 1, keepUpgradeLeftS: 0, transportLevel: 1, transportUpgradeLeftS: 0, priority: {}, kindPriority: {}, orders: {}, rationDebt: 0, starving: false, recruitQueue: [], trained: [], reinforced: [], payOwed: 0, unpaid: false, finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
+  return { side, stock, plots, keepHp: TOWN.keepHp, armyCap: ARMY.maxSoldiersPerSide, keepLevel: 1, keepUpgradeLeftS: 0, transportLevel: 1, transportUpgradeLeftS: 0, priority: {}, kindPriority: {}, orders: {}, rationDebt: 0, starving: false, recruitQueue: [], trained: [], reinforced: [], payOwed: 0, unpaid: false, finishedPlots: [], productionFactor, goldRemainder: 0, underArms: 0, keepResidents: 0, keepGrowS: 0, made: emptyStock(), flow: [], flowS: 0 };
 }
 
 /** Price of raising a building to `level` (1 = building it new). */
@@ -429,7 +433,7 @@ export function canRecruit(town: Town, kind: UnitKind, menUnderArms: number): Co
   const def = UNITS[kind];
   if (trainingLevel(town, kind) < def.barracksLevel) return def.trainedAt === 'foundry' ? 'needsFoundry' : 'needsBarracks';
   if (town.recruitQueue.length >= ARMY.maxRecruitQueue) return 'queueFull';
-  if (menUnderArms + queuedMen(town) + def.men > ARMY.maxSoldiersPerSide) return 'armyFull';
+  if (menUnderArms + queuedMen(town) + def.men > town.armyCap) return 'armyFull';
   if (!canAffordUnit(town.stock, kind)) return 'cannotAfford';
   return 'ok';
 }

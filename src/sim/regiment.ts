@@ -48,7 +48,10 @@ export interface Regiment {
   kind: UnitKind;
   def: UnitDef;
   soldiers: Soldier[];
+  /** Places in the formation (the living, the fallen and those in a tower). */
   initialMen: number;
+  /** Men it may be filled up to at its barracks: its kind's strength, or CAMPAIGN.regimentMaxMen in the campaign. */
+  maxMen: number;
   aliveMen: number;
   /** The formation's reference point (middle of the front rank) and facing. */
   anchorX: number;
@@ -251,6 +254,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     def,
     soldiers: [],
     initialMen: def.men,
+    maxMen: def.men,
     aliveMen: def.men,
     anchorX: x,
     anchorZ: z,
@@ -300,26 +304,7 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
     marchFiles: 0,
     queue: [],
   };
-  for (let i = 0; i < def.men; i++) {
-    r.soldiers.push({
-      regiment: r,
-      alive: true,
-      x: 0,
-      z: 0,
-      vx: 0,
-      vz: 0,
-      headingRad: facingRad,
-      hp: def.hp,
-      slot: i,
-      attackCooldownS: (i % 7) * 0.2,
-      sinceAttackS: 999,
-      target: null,
-      searchS: (i % 5) * 0.04,
-      deadS: 0,
-      strideM: i * 0.37,
-      wallCell: -1,
-    });
-  }
+  for (let i = 0; i < def.men; i++) r.soldiers.push(newSoldier(r, i));
   assignSlots(r);
   for (const s of r.soldiers) {
     s.x = slotX(r, s.slot);
@@ -327,6 +312,28 @@ export function createRegiment(id: number, side: Side, kind: UnitKind, x: number
   }
   updateCentre(r);
   return r;
+}
+
+/** A fresh man of the regiment's kind, at full health, his place `i` in it. */
+export function newSoldier(r: Regiment, i: number): Soldier {
+  return {
+    regiment: r,
+    alive: true,
+    x: r.centreX,
+    z: r.centreZ,
+    vx: 0,
+    vz: 0,
+    headingRad: r.facingRad,
+    hp: r.def.hp,
+    slot: i,
+    attackCooldownS: (i % 7) * 0.2,
+    sinceAttackS: 999,
+    target: null,
+    searchS: (i % 5) * 0.04,
+    deadS: 0,
+    strideM: i * 0.37,
+    wallCell: -1,
+  };
 }
 
 /** Recomputes the centroid and bounding radius of the living. */

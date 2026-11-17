@@ -281,6 +281,8 @@ export class TownView {
       // The keep grows with its level; a fallen one is a stump of its walls.
       const size = KEEP_SCALE[town.keepLevel - 1] ?? 1;
       keep.scale.set(size, town.keepHp > 0 ? size : 0.22, size);
+      // No town at all on this side (the invader's camp in the campaign).
+      keep.visible = !town.absent;
       for (let slot = 0; slot < TOWN.maxBuildings; slot++) {
         const b: Building | null = town.plots[slot] ?? null;
         const mesh = (this.slots[side] as Mesh[])[slot] as Mesh;

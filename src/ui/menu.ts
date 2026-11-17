@@ -12,6 +12,8 @@ import type { GameMode } from '../sim/world.ts';
 import type { AiCharacter } from '../config.ts';
 import type { Settings } from './settings.ts';
 import { TEAM_CSS } from '../render/palette.ts';
+import { MISSIONS } from '../sim/campaign.ts';
+import type { CampaignProgress } from './campaignStore.ts';
 
 // The screens over the game: start, loading, pause, and the end.
 
@@ -25,6 +27,20 @@ export interface StartChoice {
   character: AiCharacter;
   /** True when the player chose to load the saved game instead. */
   load?: boolean;
+  /** The campaign's mission chosen (mode 'campaign'). */
+  mission?: number;
+}
+
+/** The campaign's five missions: each with its stars, locked until the one before is won; the chosen one's briefing. */
+function campaignHtml(progress: CampaignProgress, chosen: number): string {
+  let html = `<div class="missions">`;
+  for (const m of MISSIONS) {
+    const open = m.ready && m.n <= progress.unlocked;
+    const stars = progress.stars[m.n - 1] ?? 0;
+    const why = !m.ready ? T.missionSoon : m.n > progress.unlocked ? T.missionLocked : '★'.repeat(stars) + '☆'.repeat(2 - stars);
+    html += `<button class="choice mission${m.n === chosen ? ' on' : ''}${open ? '' : ' off'}" data-name="mission" data-value="${m.n}"${open ? '' : ' disabled'}>${m.n}. ${T.missions[m.n - 1]?.title ?? ''} <span class="small">${why}</span></button>`;
+  }
+  return `${html}</div><p class="briefing">${T.missions[chosen - 1]?.briefing ?? ''}</p><p class="small">${T.carriedNote}</p>`;
 }
 
 /** What the pause menu can do besides going on. */
@@ -101,17 +117,22 @@ export class Menu {
   }
 
   /** The title screen; resolves with the player's choices when they press Play. */
-  start(defaults: StartChoice, saved: SaveHeader | null = null): Promise<StartChoice> {
+  start(defaults: StartChoice, saved: SaveHeader | null = null, progress: CampaignProgress | null = null): Promise<StartChoice> {
     const choice = { ...defaults };
+    const playable = MISSIONS.filter((m) => m.ready && m.n <= (progress?.unlocked ?? 1));
+    choice.mission ??= (playable[playable.length - 1] ?? MISSIONS[0])?.n ?? 1;
+    const campaign = choice.mode === 'campaign';
     const sheet = this.show(
       `<h1>${T.title}</h1><p class="sub">${T.subtitle}</p>` +
         choiceRow(T.difficultyLabel, 'difficulty', [['easy', T.difficulty.easy], ['normal', T.difficulty.normal], ['hard', T.difficulty.hard]], choice.difficulty) +
         choiceRow(T.quality, 'quality', [['high', T.qualityHigh], ['low', T.qualityLow]], choice.quality) +
-        choiceRow(T.modeLabel, 'mode', (['skirmish', 'defence', 'tutorial'] as const).map((m) => [m, T.modes[m]] as const), choice.mode) +
+        choiceRow(T.modeLabel, 'mode', (['skirmish', 'defence', 'tutorial', 'campaign'] as const).map((m) => [m, T.modes[m]] as const), choice.mode) +
+        `<div class="skirmishOnly"${campaign ? ' style="display:none"' : ''}>` +
         choiceRow(T.characterLabel, 'character', (['balanced', 'builder', 'raider'] as const).map((c) => [c, T.characters[c]] as const), choice.character) +
         choiceRow(T.mapLabel, 'map', LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
         choiceRow(T.startLabel, 'start', T.startSites.map((name, i) => [String(i), `${i + 1}. ${name}`] as const), String(choice.start)) +
-        `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div>` +
+        `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div></div>` +
+        `<div class="campaignBox"${campaign ? '' : ' style="display:none"'}>${progress ? campaignHtml(progress, choice.mission) : ''}</div>` +
         `<button class="primary" data-go="1">${T.play}</button>` +
         (saved ? `<button data-load="1">${T.loadGame} <span class="small">(${T.layouts[saved.layout as Layout] ?? saved.layout}, ${Math.floor(saved.timeS / 60)} min)</span></button>` : '') +
         `${helpHtml()}<p class="small">${T.version} ${BUILD}</p>`,
@@ -126,6 +147,16 @@ export class Menu {
         if (name === 'map') choice.map = target.dataset['value'] as Layout;
         if (name === 'mode') choice.mode = target.dataset['value'] as GameMode;
         if (name === 'character') choice.character = target.dataset['value'] as AiCharacter;
+        if (name === 'mode') {
+          const on = choice.mode === 'campaign';
+          (sheet.querySelector('.skirmishOnly') as HTMLElement).style.display = on ? 'none' : '';
+          (sheet.querySelector('.campaignBox') as HTMLElement).style.display = on ? '' : 'none';
+        }
+        if (name === 'mission' && progress) {
+          choice.mission = Number(target.dataset['value']);
+          (sheet.querySelector('.campaignBox') as HTMLElement).innerHTML = campaignHtml(progress, choice.mission);
+          return;
+        }
         if (name === 'start' || name === 'map') (sheet.querySelector('.siteMapBox') as HTMLElement).innerHTML = siteMap(choice.start, choice.map);
         if (name) for (const other of sheet.querySelectorAll(`[data-name="${name}"]`)) other.classList.toggle('on', other === target);
         if (target.dataset['go']) resolve(choice);
@@ -158,6 +189,26 @@ export class Menu {
         for (const other of sheet.querySelectorAll(`[data-name="${name}"]`)) other.classList.toggle('on', other === target);
         actions.changed({ ...settings });
       }
+    });
+  }
+
+  /** The end of a campaign mission: won (its stars, on to the next) or lost (again). */
+  campaignEnd(world: World, mission: number, won: boolean, stars: number, actions: { next: (() => void) | null; retry: () => void; list: () => void }): void {
+    const minutes = Math.floor(world.timeS / 60);
+    const sheet = this.show(
+      `<h1 class="${won ? 'won' : 'lost'}">${won ? T.missionWon : T.missionLost}</h1><p class="sub">${T.missionLabel} ${mission}: ${T.missions[mission - 1]?.title ?? ''}</p>` +
+        (won ? `<p class="stars">${'★'.repeat(stars)}${'☆'.repeat(2 - stars)}</p>` : '') +
+        `<table><tr><td>${T.time}</td><td>${minutes}:${String(Math.floor(world.timeS % 60)).padStart(2, '0')}</td></tr>` +
+        `<tr><td>${T.kills}</td><td>${world.kills[0]}</td></tr><tr><td>${T.losses}</td><td>${world.kills[1]}</td></tr></table>` +
+        (won && actions.next ? `<button class="primary" data-do="next">${T.missionNext}</button>` : '') +
+        `<button${won && actions.next ? '' : ' class="primary"'} data-do="retry">${T.missionRetry}</button><button data-do="list">${T.missionList}</button>` +
+        (won ? `<p class="small">${T.carriedNote}</p>` : ''),
+    );
+    sheet.addEventListener('click', (e) => {
+      const what = (e.target as HTMLElement).dataset['do'];
+      if (what === 'next') actions.next?.();
+      if (what === 'retry') actions.retry();
+      if (what === 'list') actions.list();
     });
   }
 

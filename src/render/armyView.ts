@@ -1,6 +1,6 @@
 import { abs, attribute, cos, Fn, int, ivec2, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
 import { BufferAttribute, BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, Vector3, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
-import { ARMY, MISSILE, TOWER, UNITS } from '../config.ts';
+import { ARMY, CAMPAIGN, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
 import { heightAtM, townX, townZ } from '../sim/terrain.ts';
@@ -23,7 +23,7 @@ import { freshUrl } from '../version.ts';
 const PLATE_KINDS: readonly UnitKind[] = ['swordsmen', 'halberdiers'];
 
 /** Men of one kind on the field at once: both sides at the limit, plus the fallen still shown. */
-const CAPACITY = 2 * ARMY.maxSoldiersPerSide + 40;
+const CAPACITY = 2 * Math.max(ARMY.maxSoldiersPerSide, CAMPAIGN.maxSoldiersPerSide) + 40;
 /** Leg swing at a full stride, and metres of ground one stride cycle covers (foot / horse). */
 const WALK_SWING_RAD = 0.62;
 const FOOT_STRIDE_M = 1.5;

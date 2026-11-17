@@ -289,7 +289,7 @@ function bestTarget(world: World, r: Regiment, withinM: number): Regiment | null
   return best;
 }
 
-function fight(world: World, army: readonly Regiment[], withinM: number, razeKeep: boolean): void {
+export function fight(world: World, army: readonly Regiment[], withinM: number, razeKeep: boolean): void {
   const foe = enemyOf((army[0] as Regiment).side);
   for (const r of army) {
     const current = r.order === 'attackRegiment' ? findRegiment(world, r.targetRegimentId) : null;
@@ -446,7 +446,7 @@ function horseWithin(world: World, side: Side, x: number, z: number, radiusM: nu
  * a wall when enemy horse come near, and break it when they are gone; men with shields raise them while
  * arrows fall on them and nobody is at them hand to hand.
  */
-function adjustStances(world: World, side: Side): void {
+export function adjustStances(world: World, side: Side): void {
   for (const r of world.regiments) {
     if (r.side !== side || r.aliveMen === 0 || r.state !== 'formed' || r.def.engine || r.rearmTo !== null) continue;
     if (r.def.cavalry) {

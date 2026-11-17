@@ -146,9 +146,9 @@ button.link { background: none; border: none; color: #f0d67a; text-decoration: u
 .toast button.link { margin-left: 6px; }
 
 /* A standing line at the top: the tutorial's step, the defence's clock. */
-.banner { position: absolute; top: 92px; left: 50%; transform: translateX(-50%); max-width: min(760px, calc(100vw - 32px)); padding: 6px 14px; background: #1d1e17e6; border: 1px solid #8a7d4a; border-radius: 6px; color: #efe6c8; font-size: 14px; text-align: center; pointer-events: none; }
+.banner { position: absolute; z-index: 6; top: 124px; left: 50%; transform: translateX(-50%); max-width: min(760px, calc(100vw - 32px)); padding: 6px 14px; background: #1d1e17e6; border: 1px solid #8a7d4a; border-radius: 6px; color: #efe6c8; font-size: 14px; text-align: center; pointer-events: none; }
 .banner b { color: #f0d67a; }
-.banner.paused { top: 132px; border-color: #c9ae5a; }
+.banner.paused { top: 164px; border-color: #c9ae5a; }
 
 .formations .row { gap: 4px; align-items: center; margin-top: 3px; }
 .formations .label { min-width: 74px; color: #b9b29c; }
@@ -184,3 +184,16 @@ button.link { background: none; border: none; color: #f0d67a; text-decoration: u
   background: transparent;
   border-color: transparent;
 }
+
+/* The campaign's line at the top with a button (the tribute). */
+.banner.act { pointer-events: auto; }
+.banner button { margin-left: 8px; padding: 3px 10px; border-radius: 5px; border: 1px solid #c9ae5a; background: #3a5f2a; color: #fff; font: inherit; cursor: pointer; }
+.banner .ok { color: #9fd17a; }
+.banner .short { color: #e8a07a; }
+
+/* The campaign's missions in the start menu, and the stars at a mission's end. */
+.missions { display: flex; flex-direction: column; gap: 4px; margin: 6px 0; }
+.missions .mission { text-align: left; }
+.missions .mission.off { opacity: 0.5; cursor: default; }
+.briefing { max-width: 520px; margin: 6px auto; line-height: 1.45; }
+.stars { font-size: 34px; color: #f0d67a; margin: 4px 0; letter-spacing: 6px; }

@@ -1,12 +1,13 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCells } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, nearestOwnBuildingM, reachOf, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
-import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type Side } from '../sim/types.ts';
+import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type ResourceId, type Side, type UnitKind } from '../sim/types.ts';
+import { type CampaignSetup, type CampaignState, canPayTribute, payTribute } from '../sim/campaign.ts';
 import { createWorld, findRegiment, type GameMode, stepWorld, type World } from '../sim/world.ts';
 import { workState } from '../sim/economy.ts';
 import { CpuTimer } from '../render/perf.ts';
@@ -30,6 +31,8 @@ export interface GameOptions {
   /** The kind of game and (skirmish) the computer's character. */
   mode?: GameMode;
   character?: AiCharacter;
+  /** The campaign's mission and what it starts from (mode 'campaign'). */
+  campaign?: CampaignSetup;
   /** Lets the frame governor trade resolution for frame rate. Off for measurements. */
   governor: boolean;
   edgeScroll: boolean;
@@ -87,7 +90,7 @@ export class Game implements ControlTarget {
     private readonly sound: Sound,
     options: GameOptions,
   ) {
-    this.world = createWorld({ seed: options.seed, difficulty: options.difficulty, computerPlays: true, mode: options.mode ?? 'skirmish', character: options.character ?? 'balanced' });
+    this.world = createWorld({ seed: options.seed, difficulty: options.difficulty, computerPlays: true, mode: options.mode ?? 'skirmish', character: options.character ?? 'balanced', campaign: options.campaign });
     if (this.world.mode === 'tutorial') {
       // Enough in the keep to follow every step without waiting on the economy.
       const stock = this.world.towns[PLAYER].stock;
@@ -165,6 +168,11 @@ export class Game implements ControlTarget {
       },
       halt: () => this.haltSelected(),
       runMode: () => this.runMode,
+      payTribute: () => {
+        const c = this.world.campaign;
+        if (c) this.report(payTribute(this.world, c));
+      },
+      merge: (kind) => this.mergeSelected(kind),
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
       orderRegiment: (id) => this.attackRegiment(id),
@@ -219,16 +227,49 @@ export class Game implements ControlTarget {
     this.watchMode();
   }
 
+  /**
+   * The selected regiments of a kind become as few full ones as they can: the largest takes men from the
+   * others in turn, up to its full strength; those that could not join stay as they are.
+   */
+  private mergeSelected(kind: UnitKind): void {
+    const regs = this.world.regiments.filter((r) => this.selected.has(r.id) && r.kind === kind && r.side === PLAYER && r.aliveMen > 0).sort((a, b) => b.aliveMen - a.aliveMen);
+    let any = false;
+    let last: CommandResult = 'notThisUnit';
+    for (let i = 0; i < regs.length; i++) {
+      const into = regs[i] as Regiment;
+      for (let j = i + 1; j < regs.length; j++) {
+        const from = regs[j] as Regiment;
+        if (from.aliveMen === 0 || into.aliveMen >= into.maxMen) continue;
+        const result = cmdMerge(this.world, into.id, from.id);
+        if (result === 'ok') any = true;
+        else last = result;
+      }
+    }
+    for (const r of regs) if (r.aliveMen === 0) this.selected.delete(r.id);
+    if (any) {
+      this.sound.play('click');
+      this.hud.toast(T.merged, 'good');
+    } else this.report(last);
+  }
+
+  private modeSecond = -1;
   private tutorialStep = 0;
 
   /** The tutorial's steps, each done when the town shows it; the defence's clock. Once a second. */
   private watchMode(): void {
-    if (this.world.stepCount % 60 !== 0) return;
+    // Once a game second: the loop may take several steps in a frame, so not by the step count.
+    const second = Math.floor(this.world.timeS);
+    if (second === this.modeSecond) return;
+    this.modeSecond = second;
     const world = this.world;
     if (world.mode === 'defence' && world.defence) {
       const left = Math.max(0, DEFENCE.lengthS - world.timeS);
       const next = Math.max(0, world.defence.nextS - world.timeS);
       this.hud.setBanner(`<b>${T.defenceLeft} ${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}</b> · ${T.wave} ${world.defence.wave} · ${T.nextWave} ${Math.ceil(next)} s`);
+      return;
+    }
+    if (world.campaign) {
+      this.hud.setBanner(this.campaignBanner(world, world.campaign), true);
       return;
     }
     if (world.mode !== 'tutorial') return;
@@ -254,6 +295,27 @@ export class Game implements ControlTarget {
         ? `<b>${T.tutorialTitle}</b> · ${T.tutorialDone}`
         : `<b>${T.tutorialTitle} ${this.tutorialStep + 1}/${steps.length}</b> · ${steps[this.tutorialStep]}`,
     );
+  }
+
+  /** The line at the top in a mission: what it asks and how long is left; the tribute's button. */
+  private campaignBanner(world: World, c: CampaignState): string {
+    const clock = (s: number): string => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+    const title = T.missions[c.mission - 1]?.title ?? '';
+    if (c.mission === 1) {
+      if (c.attacking) return `<b>${title}</b> · ${T.hostComing}`;
+      const stock = world.towns[PLAYER].stock;
+      const goods = Object.entries(c.tribute)
+        .map(([id, n]) => {
+          const have = Math.floor(stock[id as ResourceId]);
+          return `<span class="${have >= (n ?? 0) ? 'ok' : 'short'}">${n} ${T.resources[id as ResourceId].toLowerCase()} (${Math.min(have, n ?? 0)})</span>`;
+        })
+        .join(' · ');
+      const button = canPayTribute(world, c) ? ` <button data-act="tribute" title="${T.tributeTip}">${T.tributePay}</button>` : '';
+      return `<b>${T.tributeTitle}</b> · ${goods} · ${T.tributeLeft} ${clock(Math.max(0, c.dueS - world.timeS))}${button}`;
+    }
+    const enemies = world.regiments.filter((r) => r.side === COMPUTER && r.aliveMen > 0).length;
+    const foragers = c.foragerIds.length > 0 ? ` · ${T.foragersBack} ${clock(Math.max(0, c.foragersBackS))}` : '';
+    return `<b>${title}</b> · ${T.campLeft}: ${enemies}${foragers}`;
   }
 
   private distanceFromCamera(x: number, z: number): number {

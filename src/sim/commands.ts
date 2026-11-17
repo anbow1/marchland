@@ -1,10 +1,10 @@
-import { ARMY, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
+import { ARMY, CAMPAIGN, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
-import { type Formation, frontageM, isArcher, type QueuedOrder, type Regiment, type Stance } from './regiment.ts';
+import { assignSlots, type Formation, frontageM, isArcher, type QueuedOrder, type Regiment, type Stance } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, type Cost, type ResourceId, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
@@ -275,7 +275,7 @@ function atBarracks(world: World, r: Regiment): boolean {
 export function missingMen(r: Regiment): number {
   let inTowers = 0;
   for (const s of r.soldiers) if (!s.alive && s.deadS === 999) inTowers++;
-  return Math.max(0, r.initialMen - r.aliveMen - inTowers);
+  return Math.max(0, Math.max(r.initialMen, r.maxMen) - r.aliveMen - inTowers);
 }
 
 /** What filling a regiment costs: its kind's gold and arms for every new man. */
@@ -314,7 +314,7 @@ export function canReinforce(world: World, regimentId: number): CommandResult {
   if (barracksLevel(town) < r.def.barracksLevel) return 'needsBarracks';
   if (!atDepot(world, r)) return 'notAtBarracks';
   if (town.recruitQueue.length >= ARMY.maxRecruitQueue) return 'queueFull';
-  if (menAlive(world, r.side) + queuedMenOf(world, r.side) + missing > ARMY.maxSoldiersPerSide) return 'armyFull';
+  if (menAlive(world, r.side) + queuedMenOf(world, r.side) + missing > town.armyCap) return 'armyFull';
   const cost = reinforceCost(r);
   for (const id of RESOURCE_IDS) if (town.stock[id] < (cost[id] ?? 0)) return 'cannotAfford';
   if (freePeople(world, r.side) < missing * r.def.crew + PEOPLE.minFreeAfterCallUp) return 'noPeople';
@@ -405,6 +405,56 @@ export function cmdPace(world: World, regimentId: number, run: boolean): Command
   if (typeof r === 'string') return r;
   if (run && r.def.engine) return 'notThisUnit';
   r.run = run;
+  return 'ok';
+}
+
+/** Why `fromId` cannot join `intoId` now; 'ok' if it can. */
+export function canMerge(world: World, intoId: number, fromId: number): CommandResult {
+  const into = commandable(world, intoId);
+  if (typeof into === 'string') return into;
+  const from = commandable(world, fromId);
+  if (typeof from === 'string') return from;
+  if (into.id === from.id || into.side !== from.side || into.kind !== from.kind || into.def.engine) return 'notThisUnit';
+  if (into.rearmTo !== null || from.rearmTo !== null) return 'notThisUnit';
+  if (into.sinceMeleeS < REINFORCE.quietS || from.sinceMeleeS < REINFORCE.quietS) return 'inCombat';
+  if (into.aliveMen >= into.maxMen) return 'fullStrength';
+  if (hypot2(into.centreX - from.centreX, into.centreZ - from.centreZ) > CAMPAIGN.mergeRadiusM) return 'tooFar';
+  return 'ok';
+}
+
+/**
+ * Two regiments of a kind become one: men of `fromId` join `intoId` up to its full strength (its places
+ * grown as needed); any left over stay in `fromId`. Experience, morale and weariness are shared by the men.
+ */
+export function cmdMerge(world: World, intoId: number, fromId: number): CommandResult {
+  const able = canMerge(world, intoId, fromId);
+  if (able !== 'ok') return able;
+  const into = findRegiment(world, intoId) as Regiment;
+  const from = findRegiment(world, fromId) as Regiment;
+  const before = into.aliveMen;
+  let moved = 0;
+  // The captain of the regiment that gives men goes last: he stays with what is left of it.
+  const giving = from.soldiers.filter((s) => s.alive).sort((a, b) => Number(a === from.soldiers[0]) - Number(b === from.soldiers[0]));
+  for (const s of giving) {
+    if (into.aliveMen >= into.maxMen) break;
+    const place = into.soldiers.findIndex((t) => !t.alive && t.deadS !== 999);
+    s.regiment = into;
+    if (place >= 0) into.soldiers[place] = s;
+    else into.soldiers.push(s);
+    from.soldiers.splice(from.soldiers.indexOf(s), 1);
+    from.aliveMen -= 1;
+    into.aliveMen += 1;
+    moved += 1;
+  }
+  into.initialMen = Math.max(into.initialMen, into.soldiers.length);
+  const total = before + moved;
+  into.xp = (into.xp * before + from.xp * moved) / total;
+  into.morale = (into.morale * before + from.morale * moved) / total;
+  into.fatigue = Math.max(into.fatigue, from.fatigue);
+  assignSlots(into);
+  if (from.aliveMen > 0) assignSlots(from);
+  else from.order = 'hold';
+  world.events.push('reinforced', into.centreX, into.centreZ, into.side);
   return 'ok';
 }
 

@@ -1,4 +1,4 @@
-import { UNITS } from '../config.ts';
+import { ARMY, UNITS } from '../config.ts';
 import { RESOURCE_IDS, type UnitKind } from './types.ts';
 import { EventQueue } from './events.ts';
 import { LAYOUT, START } from './layout.ts';
@@ -151,6 +151,7 @@ export function loadWorld(text: string): World {
 function upgrade(world: World): World {
   for (const town of world.towns) {
     town.reinforced ??= [];
+    town.armyCap ??= ARMY.maxSoldiersPerSide;
     town.payOwed ??= 0;
     town.unpaid ??= false;
     town.transportLevel ??= 1;
@@ -197,8 +198,10 @@ function upgrade(world: World): World {
     r.routeCheckS ??= 0;
     r.marchFiles ??= 0;
     r.queue ??= [];
+    r.maxMen ??= r.initialMen;
   }
   for (const a of world.arrows) a.shooterId ??= -1;
+  world.campaign ??= null;
   if (world.ai) world.ai.walled ??= false;
   return world;
 }

@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
+import { BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost, lotPrice } from '../sim/commands.ts';
 import { trainingLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
@@ -50,6 +50,9 @@ export interface HudActions {
   halt(): void;
   /** Whether the player's orders go at the run (the pace buttons and B). */
   runMode(): boolean;
+  /** The campaign: pay the tribute (mission 1); merge the selected regiments of a kind. */
+  payTribute(): void;
+  merge(kind: UnitKind): void;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
   /** The order button pressed on a regiment's card: attack it, if it is an enemy. */
@@ -212,6 +215,14 @@ export class Hud {
     this.toasts = el('div', 'toasts', root);
     this.banner = el('div', 'banner', root);
     this.banner.style.display = 'none';
+    // A banner with a button (the campaign's tribute) takes clicks.
+    this.banner.addEventListener('pointerdown', (e) => {
+      const act = (e.target as HTMLElement).closest('[data-act]') as HTMLElement | null;
+      if (act?.dataset['act'] === 'tribute') {
+        e.stopPropagation();
+        this.actions.payTribute();
+      }
+    });
     const cardLayer = el('div', 'cards', root);
     for (let i = 0; i < MAX_CARDS; i++) {
       const card = el('div', 'card', cardLayer);
@@ -360,6 +371,9 @@ export class Hud {
       case 'halt':
         this.actions.halt();
         break;
+      case 'merge':
+        this.actions.merge(arg as UnitKind);
+        break;
       case 'all':
         this.actions.selectAll();
         break;
@@ -373,8 +387,9 @@ export class Hud {
     this.panelAge = PANEL_REFRESH_S;
   }
 
-  /** Shows a standing line at the top (null hides it). */
-  setBanner(html: string | null): void {
+  /** Shows a standing line at the top (null hides it); `interactive` when it carries a button. */
+  setBanner(html: string | null, interactive = false): void {
+    this.banner.classList.toggle('act', interactive);
     if ((html ?? '') === this.bannerHtml) return;
     this.bannerHtml = html ?? '';
     this.banner.style.display = html ? 'block' : 'none';
@@ -436,7 +451,7 @@ export class Hud {
       if (at !== null && def.trainedAt !== at) continue;
       const level = trainingLevel(town, kind);
       const locked = def.barracksLevel > level;
-      const full = men + def.men > ARMY.maxSoldiersPerSide;
+      const full = men + def.men > town.armyCap;
       const hands = free >= peopleFor(kind) + PEOPLE.minFreeAfterCallUp;
       const off = locked || full || !hands || !canAffordUnit(town.stock, kind) ? ' off' : '';
       const need = locked ? ` (${def.trainedAt === 'foundry' ? T.needsFoundryLevel : T.needsBarracksLevel} ${def.barracksLevel})` : def.barracksLevel === 0 ? ` (${T.atKeep})` : '';
@@ -724,9 +739,14 @@ export class Hud {
       const morale = Math.min(100, Math.max(0, Math.round((r.morale / r.def.morale) * 100)));
       const rank = veteranRank(r);
       const record = `${rank > 0 ? ` · ${T.ranks3[rank]}` : ''}${hasCaptain(r) ? '' : ` · ${T.noCaptain}`}`;
-      html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about} ${T.ranks3[rank]}: ${T.rankTip}"><span class="glyph">${UNIT_GLYPH[r.kind]}${'★'.repeat(rank)}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${r.initialMen} ${T.men} · ${this.stateText(world, r)}${record}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
+      html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about} ${T.ranks3[rank]}: ${T.rankTip}"><span class="glyph">${UNIT_GLYPH[r.kind]}${'★'.repeat(rank)}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${Math.max(r.initialMen, r.maxMen)} ${T.men} · ${this.stateText(world, r)}${record}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
     }
     html += '</div>';
+    // Two or more of a kind chosen (the campaign's regiments grow to twenty): merge them.
+    const kinds = new Map<UnitKind, number>();
+    for (const r of world.regiments) if (selected.has(r.id) && r.side === PLAYER && r.aliveMen > 0 && !r.def.engine && r.maxMen > r.def.men) kinds.set(r.kind, (kinds.get(r.kind) ?? 0) + 1);
+    const pairs = [...kinds].filter(([, n]) => n > 1);
+    if (pairs.length > 0) html += `<div class="row wrap"><span class="label">${T.mergeLabel}</span>${pairs.map(([kind]) => `<button class="option" data-act="merge" data-arg="${kind}" data-tip="${T.mergeTip}"><span class="glyph">${UNIT_GLYPH[kind]}</span><span class="name">${T.units[kind].name}</span></button>`).join('')}</div>`;
     html += this.formationHtml(world, selected);
     // One regiment chosen: what it may be re-armed as.
     if (selected.size === 1) {
@@ -827,7 +847,7 @@ export class Hud {
       this.foodChip.textContent = `${rations} / ${perMinute.toFixed(0)} ${T.rations}`;
       this.foodChip.classList.toggle('alarm', town.starving);
       this.peopleChip.textContent = `${T.people} ${people} (${T.free} ${freePeople(world, PLAYER)})`;
-      this.armyChip.textContent = `${T.army} ${men}/${ARMY.maxSoldiersPerSide}`;
+      this.armyChip.textContent = `${T.army} ${men}/${town.armyCap}`;
       const minutes = Math.floor(world.timeS / 60);
       this.clock.textContent = `${minutes}:${String(Math.floor(world.timeS % 60)).padStart(2, '0')}`;
       this.plotInPanel = selection.plot;

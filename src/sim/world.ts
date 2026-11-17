@@ -1,14 +1,15 @@
 import { doorOfX, doorOfZ } from './placement.ts';
-import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
+import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, CAMPAIGN, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, createDefence, type DefenceState, stepAi, stepDefence } from './ai.ts';
+import { campaignRegiment, type CampaignSetup, type CampaignState, setupCampaign, stepCampaign } from './campaign.ts';
 import { stepMelee, stepMorale } from './combat.ts';
 import { createTown, stepEconomy, type Town } from './economy.ts';
 import { EventQueue } from './events.ts';
 import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
 import { doorX, doorZ, KEEP, type Person, returnHome, spawnPerson, stepPeople } from './people.ts';
-import { assignSlots, createRegiment, forwardX, forwardZ, type Regiment } from './regiment.ts';
+import { assignSlots, createRegiment, forwardX, forwardZ, newSoldier, type Regiment } from './regiment.ts';
 import { cmdMove, inHomeLand, stepQueues } from './commands.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { createStand, type Stand, stepStand } from './trees.ts';
@@ -61,6 +62,8 @@ export interface World {
   mode: GameMode;
   /** The defence's waves; null in other games. */
   defence: DefenceState | null;
+  /** The campaign's mission (sim/campaign.ts); null in other games. */
+  campaign: CampaignState | null;
 }
 
 /** A gate: its side, its wall cells, where its middle is and its line (as nav.wallDir). */
@@ -80,9 +83,11 @@ export interface WorldOptions {
   /** The computer's character (skirmish), and the kind of game: a skirmish, the defence (waves), or the tutorial (alone). */
   character?: AiCharacter;
   mode?: GameMode;
+  /** The campaign's mission and what it starts from (mode 'campaign'). */
+  campaign?: CampaignSetup;
 }
 
-export type GameMode = 'skirmish' | 'defence' | 'tutorial';
+export type GameMode = 'skirmish' | 'defence' | 'tutorial' | 'campaign';
 
 export function createWorld(options: WorldOptions): World {
   const tuning = AI_TUNING[options.difficulty];
@@ -104,7 +109,9 @@ export function createWorld(options: WorldOptions): World {
     mode: options.mode ?? 'skirmish',
     ai: options.computerPlays && (options.mode ?? 'skirmish') === 'skirmish' ? createAiState(COMPUTER, options.character ?? 'balanced') : null,
     defence: options.mode === 'defence' ? createDefence() : null,
-    grid: new SpatialGrid(MAP.halfM + 40, 2, 2 * ARMY.maxSoldiersPerSide + 64),
+    campaign: null,
+    // Room for the campaign's larger armies (CAMPAIGN.maxSoldiersPerSide) in any game.
+    grid: new SpatialGrid(MAP.halfM + 40, 2, 2 * Math.max(ARMY.maxSoldiersPerSide, CAMPAIGN.maxSoldiersPerSide) + 64),
     keepShotCooldownS: [0, 0],
     difficulty: options.difficulty,
     kills: [0, 0],
@@ -118,6 +125,7 @@ export function createWorld(options: WorldOptions): World {
     const town = world.towns[side];
     for (let i = 0; i < PEOPLE.keepResidents; i++) spawnPerson(world, side, doorX(town, KEEP) + (i % 4) - 1.5, doorZ(town, KEEP) + Math.floor(i / 4) - 0.5, KEEP);
   }
+  if (world.mode === 'campaign') world.campaign = setupCampaign(world, options.campaign ?? { mission: 1, carried: [], gold: 0 });
   return world;
 }
 
@@ -211,6 +219,7 @@ function fieldTrained(world: World, town: Town): void {
     const x = rallyX(town.side) + Math.cos(facing) * offsetM - Math.sin(facing) * Math.floor(sameSide / 5) * 9;
     const z = rallyZ(town.side) - Math.sin(facing) * offsetM - Math.cos(facing) * Math.floor(sameSide / 5) * 9;
     const r = spawnRegiment(world, town.side, kind, x, z, facing);
+    if (world.campaign) campaignRegiment(r);
     world.events.push('recruited', r.centreX, r.centreZ, town.side);
   }
   while (town.reinforced.length > 0) joinRegiment(world, town, town.reinforced.shift() as { id: number; men: number; people: number });
@@ -229,6 +238,16 @@ function joinRegiment(world: World, town: Town, order: { id: number; men: number
   const before = r.aliveMen;
   let left = order.men;
   const backM = r.radiusM + 4;
+  // Filled beyond its places (the campaign's regiments grow to CAMPAIGN.regimentMaxMen): new places, as dead men to be filled below.
+  let free = 0;
+  for (const s of r.soldiers) if (!s.alive && s.deadS !== 999) free++;
+  while (free < left && r.soldiers.length < r.maxMen) {
+    const s = newSoldier(r, r.soldiers.length);
+    s.alive = false;
+    r.soldiers.push(s);
+    free++;
+  }
+  r.initialMen = Math.max(r.initialMen, r.soldiers.length);
   for (const s of r.soldiers) {
     if (left === 0) break;
     // Men in a tower are still the regiment's: their places stay theirs.
@@ -259,7 +278,7 @@ function joinRegiment(world: World, town: Town, order: { id: number; men: number
 function payArmy(world: World): void {
   for (const town of world.towns) {
     // The waves of the defence are not the computer's own men: nobody pays them.
-    if (world.defence && town.side === COMPUTER) continue;
+    if ((world.defence && town.side === COMPUTER) || town.absent) continue;
     const perMinute = menAlive(world, town.side) * PAY.goldPerManPerMinute;
     town.payOwed += perMinute / 60;
     const paid = Math.min(Math.floor(town.payOwed), Math.max(0, Math.floor(town.stock.gold)));
@@ -280,6 +299,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
   world.timeS += dtSeconds;
   if (world.ai) stepAi(world, world.ai, dtSeconds);
   if (world.defence) stepDefence(world, world.defence, dtSeconds);
+  if (world.campaign) stepCampaign(world, world.campaign, dtSeconds);
   stepPeople(world, dtSeconds);
   for (const town of world.towns) {
     const wasStarving = town.starving;
@@ -312,7 +332,7 @@ export function stepWorld(world: World, dtSeconds: number): void {
   stepMissiles(world, dtSeconds);
   stepMorale(world, dtSeconds);
   for (const town of world.towns) {
-    if (town.keepHp <= 0 && world.winner === -1) {
+    if (town.keepHp <= 0 && !town.absent && world.winner === -1) {
       world.winner = town.side === PLAYER ? COMPUTER : PLAYER;
       world.events.push('gameOver', 0, 0, world.winner);
     }

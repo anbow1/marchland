@@ -47,7 +47,31 @@ interface Strings {
   /** The choice of where the keeps stand, and the names of the three places. */
   startLabel: string;
   modeLabel: string;
-  modes: Record<'skirmish' | 'defence' | 'tutorial', string>;
+  modes: Record<'skirmish' | 'defence' | 'tutorial' | 'campaign', string>;
+  /** The campaign: its five missions, the menu, the line at the top, the end of a mission. */
+  missions: { title: string; briefing: string }[];
+  campaignTitle: string;
+  missionLabel: string;
+  missionLocked: string;
+  missionSoon: string;
+  missionStart: string;
+  tributeTitle: string;
+  tributeLeft: string;
+  tributePay: string;
+  tributeTip: string;
+  hostComing: string;
+  campLeft: string;
+  foragersBack: string;
+  missionWon: string;
+  missionLost: string;
+  missionNext: string;
+  missionRetry: string;
+  missionList: string;
+  starsLabel: string;
+  carriedNote: string;
+  mergeLabel: string;
+  mergeTip: string;
+  merged: string;
   characterLabel: string;
   characters: Record<'balanced' | 'builder' | 'raider', string>;
   tutorialTitle: string;
@@ -343,7 +367,44 @@ const pl: Strings = {
   difficultyLabel: 'Przeciwnik',
   startLabel: 'Zamek',
   modeLabel: 'Tryb',
-  modes: { skirmish: 'Potyczka', defence: 'Obrona', tutorial: 'Samouczek' },
+  modes: { skirmish: 'Potyczka', defence: 'Obrona', tutorial: 'Samouczek', campaign: 'Kampania' },
+  missions: [
+    {
+      title: 'Trybut',
+      briefing:
+        'Najeźdźca stanął obozem za rzeką: dwieście ludzi, ciężka jazda, miecznicy i kusznicy. Żąda trybutu: 600 złota, 200 chleba i 40 sztuk broni w ciągu 15 minut. Zapłać, a odejdzie. Jeśli nie zapłacisz, uderzy na miasto, a jego armii nie zatrzymasz. Broń trzeba zamówić w zakładce Produkcja, bo kuźnia czeka na zamówienie. Trybut wpłacasz przyciskiem na pasku u góry. Druga gwiazdka: w chwili zapłaty masz co najmniej 4 oddziały.',
+    },
+    {
+      title: 'Obóz za rzeką',
+      briefing:
+        'Najeźdźca wziął trybut i nie odszedł, ale rozpuścił ludzi po wsiach. W obozie zostały trzy oddziały, dwa zagony grabią wioski po obu stronach i co pięć minut jeden z nich wraca do obozu. Przejdź rzekę brodem i rozbij ich, zanim się zbiorą. Wygrana: nie zostaje żaden oddział wroga. Druga gwiazdka: straty poniżej 30 %.',
+    },
+    { title: 'Odbicie osady', briefing: 'W czasie wojny wróg zajął Twoją osadę w dolinie. Zbierz wojsko i odbij ją, zanim nadejdzie odsiecz.' },
+    { title: 'Odbudowa i wielka armia', briefing: 'Osada jest Twoja, ale w ruinach. Odbuduj ją i wystaw armię, jakiej marchia jeszcze nie widziała.' },
+    { title: 'Twierdza', briefing: 'Czas zakończyć tę wojnę pod murami jego zamku: działa na mury, a on uderzy wypadami i odsieczą.' },
+  ],
+  campaignTitle: 'Kampania',
+  missionLabel: 'Misja',
+  missionLocked: 'najpierw wygraj poprzednią',
+  missionSoon: 'wkrótce',
+  missionStart: 'Do boju',
+  tributeTitle: 'Trybut',
+  tributeLeft: 'zostało',
+  tributePay: 'Zapłać trybut',
+  tributeTip: 'Wpłać trybut, gdy wszystko leży w zamku.',
+  hostComing: 'Najeźdźca nadciąga! Jego armii nie zatrzymasz w polu: broń zamku.',
+  campLeft: 'oddziały wroga',
+  foragersBack: 'następny zagon wraca za',
+  missionWon: 'Misja wygrana',
+  missionLost: 'Misja przegrana',
+  missionNext: 'Następna misja',
+  missionRetry: 'Spróbuj jeszcze raz',
+  missionList: 'Lista misji',
+  starsLabel: 'Gwiazdki',
+  carriedNote: 'Do następnej misji idzie najwyżej 8 najsilniejszych oddziałów i połowa złota (do 800).',
+  mergeLabel: 'Połącz',
+  mergeTip: 'Łączy zaznaczone oddziały tego rodzaju stojące blisko siebie (do 30 m), poza walką: ludzie przechodzą do najliczniejszego, do 20 w oddziale.',
+  merged: 'Oddziały połączone',
   characterLabel: 'Przeciwnik gra',
   characters: { balanced: 'z umiarem', builder: 'jak budowniczy', raider: 'jak najeźdźca' },
   tutorialTitle: 'Samouczek',
@@ -679,7 +740,44 @@ const en: Strings = {
   difficultyLabel: 'Opponent',
   startLabel: 'Keep',
   modeLabel: 'Mode',
-  modes: { skirmish: 'Skirmish', defence: 'Defence', tutorial: 'Tutorial' },
+  modes: { skirmish: 'Skirmish', defence: 'Defence', tutorial: 'Tutorial', campaign: 'Campaign' },
+  missions: [
+    {
+      title: 'Tribute',
+      briefing:
+        'The invader has camped across the river: two hundred men, knights, swordsmen and crossbowmen. He demands a tribute: 600 gold, 200 bread and 40 weapons within 15 minutes. Pay, and he goes. If you do not, he falls on the town, and his host cannot be stopped. Weapons must be ordered on the Production tab: the smithy waits for an order. Pay with the button on the bar at the top. Second star: four regiments or more when you pay.',
+    },
+    {
+      title: 'The camp across the river',
+      briefing:
+        'The invader took the tribute and stayed, but sent his men off to plunder. Three regiments hold the camp, two bands of foragers raid the villages on either side, and every five minutes one of them comes back. Cross at a ford and break them before they gather. Won when no enemy regiment is left. Second star: losses under 30 %.',
+    },
+    { title: 'The settlement retaken', briefing: 'In the war the enemy took your settlement in the valley. Raise an army and take it back before his relief comes.' },
+    { title: 'Rebuilding and a great army', briefing: 'The settlement is yours again, in ruins. Rebuild it and raise an army such as the march has never seen.' },
+    { title: 'The fortress', briefing: 'End this war under the walls of his castle: guns on the walls, while he strikes back with sallies and a relief army.' },
+  ],
+  campaignTitle: 'Campaign',
+  missionLabel: 'Mission',
+  missionLocked: 'win the one before first',
+  missionSoon: 'coming soon',
+  missionStart: 'To battle',
+  tributeTitle: 'Tribute',
+  tributeLeft: 'left',
+  tributePay: 'Pay the tribute',
+  tributeTip: 'Pay the tribute once it all lies in the keep.',
+  hostComing: 'The invader is coming! His host cannot be stopped in the field: defend the keep.',
+  campLeft: 'enemy regiments',
+  foragersBack: 'next foragers back in',
+  missionWon: 'Mission won',
+  missionLost: 'Mission lost',
+  missionNext: 'Next mission',
+  missionRetry: 'Try again',
+  missionList: 'Missions',
+  starsLabel: 'Stars',
+  carriedNote: 'Up to the 8 strongest regiments and half the gold (at most 800) go on to the next mission.',
+  mergeLabel: 'Merge',
+  mergeTip: 'Merges the selected regiments of this kind standing close together (within 30 m), out of the fight: the men join the largest, up to 20 a regiment.',
+  merged: 'Regiments merged',
   characterLabel: 'The enemy plays',
   characters: { balanced: 'steadily', builder: 'as a builder', raider: 'as a raider' },
   tutorialTitle: 'Tutorial',

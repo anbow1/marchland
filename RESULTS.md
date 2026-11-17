@@ -5,6 +5,33 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Kampania, etap 1: misje 1 i 2, armia 200, oddziały do 20
+
+- **Tryb „Kampania”** w menu: lista pięciu misji z gwiazdkami (następna odblokowana po wygraniu
+  poprzedniej, 3–5 „wkrótce”) i odprawą. Misja ładuje się z własną mapą i miejscem zamku z adresu
+  (`?mode=campaign&mission=N`), jak każda gra.
+- **`src/sim/campaign.ts`**: scenariusz misji nad zwykłą grą. Na start gotowe miasto (chaty, zagrody, młyn,
+  piekarnia, drwal, kamieniołom, kopalnia, huta, kuźnia, w misji 2 także koszary, chlewnia, garbarnia,
+  płatnerz) z drogami do zamku; wróg bez miasta (`Town.absent`: bez zamku, bez żołdu); cele i gwiazdki.
+- **Misja 1, Trybut** (Przeprawa): najeźdźca 10 oddziałów × 20 (ciężka jazda, miecznicy, halabardnicy,
+  kusznicy) obozuje za rzeką, 64 % drogi do drugiego zamku. Pasek u góry: 600 złota, 200 chleba, 40 broni,
+  ile już jest w zamku, odliczanie 15 min i przycisk „Zapłać trybut”. Po terminie najeźdźca rusza na miasto:
+  w teście 8 oddziałów obrony przegrało 6 z 6 razy (szansa ≤ 10 %, o co prosił właściciel). Druga gwiazdka:
+  co najmniej 4 oddziały w chwili zapłaty.
+- **Misja 2, Obóz za rzeką**: 3 oddziały w obozie, 2 zagony na flankach; co 5 minut jeden zagon wraca do
+  obozu. Wygrana, gdy nie zostaje żaden oddział wroga; druga gwiazdka: straty poniżej 30 %.
+- **Armia 200 i oddziały do 20** (`Town.armyCap`, `Regiment.maxMen`): werbunek jak dotąd (12 pieszych, 8
+  jeźdźców), uzupełnianie przy koszarach do 20 (nowe miejsca w szyku dochodzą same), **łączenie** dwóch
+  oddziałów tego samego rodzaju stojących do 30 m od siebie poza walką (`cmdMerge`, przycisk „Połącz” w
+  panelu): ludzie przechodzą do większego do 20, doświadczenie i morale ważone ludźmi.
+- **Przenoszenie**: po wygranej do 8 najsilniejszych oddziałów (rodzaj, ludzie, doświadczenie) i połowa złota
+  (do 800) idą do następnej misji; postęp na urządzeniu (`marchland.campaign`), osobno od zapisu gry.
+- Pasek misji odświeża się co sekundę gry (wcześniej co 60. krok, który przy kilku krokach na klatkę
+  wypadał rzadko); paski stoją nad chorągiewkami oddziałów i nie zasłaniają liczników.
+- Sprawdzone w przeglądarce: menu kampanii, start misji 1 (miasto, 24/200, najeźdźca na minimapie), pasek
+  trybutu, zapłata, ekran końca z gwiazdką, zapisany postęp z misją 2. Testy 106/106 (nowe:
+  `tests/campaign.test.ts`); WebGPU w bitwie: 0 błędów, 151 potoków.
+
 ## 2026-11-17 · Marsz albo bieg: przełącznik tempa
 
 - W panelu zaznaczonego wojska wiersz **Tempo: Marsz | Bieg**, na klawiaturze **B**. Zmienia tempo od
