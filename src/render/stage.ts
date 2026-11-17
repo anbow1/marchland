@@ -68,7 +68,13 @@ export class Stage {
   ) {
     installWebGpuCompat();
     // `?gl` forces the WebGL2 path (a device whose WebGPU starts but draws nothing).
-    const forceWebGL = new URLSearchParams(location.search).has('gl');
+    // Also once WebGPU has failed on this device before (src/ui/gfxReport.ts keeps that).
+    let forceWebGL = new URLSearchParams(location.search).has('gl');
+    try {
+      forceWebGL ||= localStorage.getItem('marchland.forceWebGL') === '1';
+    } catch {
+      // No storage: the address alone decides.
+    }
     this.renderer = new WebGPURenderer({ canvas, antialias: false, powerPreference: 'high-performance', trackTimestamp: true, forceWebGL });
     this.renderer.inspector = this.passTimer;
     this.renderer.outputColorSpace = SRGBColorSpace;

@@ -10,16 +10,23 @@ const MAX = 12;
 const HARMLESS = /WebGPU is not available|toInspector|captureStackTrace/;
 
 const caught: string[] = [];
+/** WebGPU refused a pipeline or a shader: this device draws nothing on that path. */
+const PIPELINE_FAULT = /pipeline creation failed|ShaderModule|Invalid .*Pipeline|exceeds the maximum/i;
+/** Kept on the device: once WebGPU failed here, every later start goes straight to WebGL2. */
+export const FORCE_GL_KEY = 'marchland.forceWebGL';
+let pipelineFault = false;
 let shown = false;
 
 function note(text: string): void {
+  if (PIPELINE_FAULT.test(text)) pipelineFault = true;
   if (caught.length >= MAX || !PATTERN.test(text) || HARMLESS.test(text)) return;
   caught.push(text.length > 600 ? `${text.slice(0, 600)}…` : text);
 }
 
 /** Starts listening: call before the renderer is made. */
 export function watchGraphics(): void {
-  for (const level of ['error'] as const) {
+  // Warnings too: a shader's compile messages may come as one (the harmless notes are filtered out).
+  for (const level of ['error', 'warn'] as const) {
     const original = console[level].bind(console);
     console[level] = (...args: unknown[]): void => {
       try {
@@ -32,6 +39,24 @@ export function watchGraphics(): void {
   }
   window.addEventListener('error', (e) => note(`${e.message} (${e.filename}:${e.lineno})`));
   window.addEventListener('unhandledrejection', (e) => note(String((e as PromiseRejectionEvent).reason)));
+}
+
+/**
+ * On WebGPU with a refused pipeline: remembers to use WebGL2 on this device and starts again on it (true:
+ * the page is reloading). Once only: on WebGL2 the report shows whatever still fails.
+ */
+export function fallBackToWebGL(backend: string): boolean {
+  if (!pipelineFault || backend !== 'WebGPU') return false;
+  try {
+    localStorage.setItem(FORCE_GL_KEY, '1');
+  } catch {
+    // Not kept: the address carries it this time.
+  }
+  const params = new URLSearchParams(location.search);
+  if (params.has('gl')) return false;
+  params.set('gl', '1');
+  location.search = params.toString();
+  return true;
 }
 
 /** The GPU's name as WebGL reports it ("unknown" where hidden). */

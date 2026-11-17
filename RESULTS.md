@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Tablet z Adreno 510: WebGPU odrzucał potoki
+
+- Raport grafiki z tabletu (Chrome 156, Android 10, Adreno 510 przez WebGPU) pokazał dwa błędy:
+  - **„Vertex buffer count (9) exceeds the maximum (8)”**: pikinierzy w zbrojach z kodu (milicja), armaty
+    i moździerze miały 8 osobnych buforów wierzchołków plus macierz instancji. Teraz `packVertices` (`armyView.ts`)
+    pakuje atrybuty wierzchołków każdej siatki w jeden bufor przeplatany. Żadna siatka w scenie nie ma ich więcej
+    niż 7 (sprawdzone przejściem po scenie).
+  - **Shader budynków odrzucony** („Invalid ShaderModule fragment_building”). Pierwotny komunikat nie zmieścił się
+    w raporcie, a programowy WebGPU (SwiftShader) przyjmuje ten shader bez błędu (146 potoków, gotowe po 31 s).
+- **Samoczynne przejście na WebGL2**: gdy WebGPU odrzuci potok lub shader, gra po 4 s zapamiętuje na urządzeniu
+  WebGL2 (`marchland.forceWebGL`) i uruchamia się ponownie na nim. Raport pokazuje się dopiero wtedy, gdy błędy są także na WebGL2.
+  - Raport zbiera teraz także ostrzeżenia (bez znanych, niegroźnych notatek three.js), bo tam trafiają komunikaty kompilacji shaderów.
+- Testy 109/109.
+
 ## 2026-11-17 · Działa: ostrzał murów, odrzut, dym i huk
 
 - **Rozkaz „ostrzał”** (`cmdBombard`, rozkaz `bombard`): zaznaczone działa lub moździerze plus prawy przycisk

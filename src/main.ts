@@ -17,7 +17,7 @@ import type { Quality } from './render/stage.ts';
 import { Menu } from './ui/menu.ts';
 import { Sound } from './ui/sound.ts';
 import { startOffline } from './ui/offline.ts';
-import { reportGraphics, watchGraphics } from './ui/gfxReport.ts';
+import { fallBackToWebGL, reportGraphics, watchGraphics } from './ui/gfxReport.ts';
 import { loadProgress, missionWon } from './ui/campaignStore.ts';
 import { carryOut, MISSIONS } from './sim/campaign.ts';
 
@@ -218,7 +218,10 @@ async function run(): Promise<void> {
   menu.hide();
   // Graphics errors in the first seconds (shaders refused, a lost context): a report to photograph.
   // `?gfxreport` shows it regardless, to see what a device reports.
-  window.setTimeout(() => reportGraphics(document.body, view.stage.backendName, params.has('gfxreport')), 6000);
+  // A WebGPU that refuses our pipelines (an older phone GPU): straight over to WebGL2, kept for next time.
+  window.setTimeout(() => {
+    if (!fallBackToWebGL(view.stage.backendName)) reportGraphics(document.body, view.stage.backendName, params.has('gfxreport'));
+  }, 4000);
 
   const openMenu = (): void => {
     if (game.world.winner !== -1) return;

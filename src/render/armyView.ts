@@ -293,6 +293,22 @@ export function interleave(g: BufferGeometry, parts: readonly [name: string, siz
   }
 }
 
+/**
+ * Packs a geometry's own (per-vertex, not yet interleaved) attributes into one interleaved buffer. Many
+ * GPUs allow a pipeline only 8 vertex buffers (an Adreno 510 under WebGPU refused the militia's nine):
+ * the per-man attributes and the instance matrix need the rest.
+ */
+export function packVertices(g: BufferGeometry): void {
+  const parts: [string, number, ArrayLike<number>][] = [];
+  for (const [name, a] of Object.entries(g.attributes)) {
+    if ((a as InterleavedBufferAttribute).isInterleavedBufferAttribute || (a as InstancedBufferAttribute).isInstancedBufferAttribute) continue;
+    parts.push([name, a.itemSize, a.array as ArrayLike<number>]);
+  }
+  if (parts.length < 2) return;
+  for (const [name] of parts) g.deleteAttribute(name);
+  interleave(g, parts);
+}
+
 /** The bone texture of a skinned model: three texels (the matrix's rows) a bone, a row a frame. */
 export function boneTexture(model: RiggedModel): DataTexture {
   const nb = model.bones.length;
@@ -389,6 +405,7 @@ export class ArmyView {
       const anim = new InstancedBufferAttribute(new Float32Array(CAPACITY * 4), 4);
       const side = new InstancedBufferAttribute(new Float32Array(CAPACITY), 1);
       for (const attr of [place, anim, side]) attr.setUsage(DynamicDrawUsage);
+      packVertices(geometry);
       geometry.setAttribute('aPlace', place);
       geometry.setAttribute('aAnim', anim);
       geometry.setAttribute('aSide', side);
@@ -473,6 +490,7 @@ export class ArmyView {
         const k = this.kinds.get(kind);
         if (!k) continue;
         const geometry = cavalryGeometryOnModels(kind, rider as BodyModel, horse as HorseModel);
+        packVertices(geometry);
         geometry.setAttribute('aPlace', k.place);
         geometry.setAttribute('aAnim', k.anim);
         geometry.setAttribute('aSide', k.side);
@@ -496,6 +514,7 @@ export class ArmyView {
         const model = (await response.json()) as GunModel;
         this.gunSizes.set(kind, model.size);
         const geometry = engineGeometryOnModel(kind, model, this.crew === null);
+        packVertices(geometry);
         geometry.setAttribute('aPlace', k.place);
         geometry.setAttribute('aAnim', k.anim);
         geometry.setAttribute('aSide', k.side);
@@ -513,6 +532,7 @@ export class ArmyView {
       if (!k) continue;
       const geometry = soldierGeometryOnBody(kind, body);
       // The per-man attributes move over to the new body: the shader reads them from the geometry.
+      packVertices(geometry);
       geometry.setAttribute('aPlace', k.place);
       geometry.setAttribute('aAnim', k.anim);
       geometry.setAttribute('aSide', k.side);
@@ -557,6 +577,7 @@ export class ArmyView {
       const place = instanced(4);
       const frame = instanced(1);
       const side = instanced(1);
+      packVertices(g);
       g.setAttribute('aPlace', place);
       g.setAttribute('aAnim', instanced(4));
       g.setAttribute('aSide', side);
@@ -685,6 +706,7 @@ export class ArmyView {
     man.dispose();
     const frame = new InstancedBufferAttribute(new Float32Array(CAPACITY), 1);
     frame.setUsage(DynamicDrawUsage);
+    packVertices(g);
     g.setAttribute('aPlace', k.place);
     g.setAttribute('aAnim', k.anim);
     g.setAttribute('aSide', k.side);
@@ -767,6 +789,7 @@ export class ArmyView {
     g.computeBoundingSphere();
     const frame = new InstancedBufferAttribute(new Float32Array(CAPACITY), 1);
     frame.setUsage(DynamicDrawUsage);
+    packVertices(g);
     g.setAttribute('aPlace', k.place);
     g.setAttribute('aAnim', k.anim);
     g.setAttribute('aSide', k.side);
