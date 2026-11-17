@@ -267,7 +267,8 @@ const YARD_MAX_PIECES = 6;
 const YARD_ROW = { x0: 4.3, step: -0.8, z: 4.4 };
 const YARD_CAPACITY = 900;
 
-/** A skinned body of the townsfolk: its instanced mesh, per-person attributes, clips, and how many drawn. */
+/** A skinned body of the townsfolk: its instanced mesh, per-person attributes, clips, how many drawn, and
+ * where its frames begin in the bone texture all the bodies share. */
 interface Folk {
   mesh: InstancedMesh;
   place: InstancedBufferAttribute;
@@ -275,7 +276,14 @@ interface Folk {
   side: InstancedBufferAttribute;
   clips: TownsmanClips;
   count: number;
+  base: number;
 }
+
+/** The townsfolk's bodies (tools/blender/rigged.py, all with the same clips): the men by turns, and a woman
+ * for every third person. */
+const MEN = ['people/townsman.json', 'people/townsman-beard.json', 'people/townsman-wool.json', 'people/townsman-linen.json'];
+const WOMEN = ['people/townswoman.json'];
+const FOLK_CLIPS = ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing', 'harvest'] as const;
 
 export class PeopleView {
   private readonly poses: Record<Pose, InstancedMesh>[] = [];
@@ -296,11 +304,11 @@ export class PeopleView {
   private readonly yardShapes = new Map<LoadShape, InstancedMesh>();
   private readonly shapeTints = new Map<ResourceId, Color>();
   private readonly prepare: (mesh: InstancedMesh) => InstancedMesh;
-  /** The modelled townsfolk (one skinned mesh for both sides), once loaded; until then the built figures.
-   * The townswomen are a second body with the same clips; every third person the view meets is one. */
-  private folk: Folk | null = null;
-  private women: Folk | null = null;
-  private readonly isWoman = new WeakMap<Person, boolean>();
+  /** The modelled townsfolk (a skinned mesh a body, for both sides), once loaded; until then the built
+   * figures. Each person keeps the body the view first gave him or her. */
+  private men: Folk[] = [];
+  private women: Folk[] = [];
+  private readonly bodyOf = new WeakMap<Person, Folk>();
   private met = 0;
   private readonly material: MeshStandardNodeMaterial;
 
@@ -345,19 +353,40 @@ export class PeopleView {
     this.prepare = prepare;
   }
 
-  /** The modelled loads: one instanced mesh a shape; a shape whose file fails keeps the built sack. */
+  /** The townsfolk's bodies. One material for them all: their bone matrices stacked in one texture (the
+   * files have the same bones), so another body costs a draw but no new shader. Women only among men:
+   * without a man's body the built figures stand in for everyone. */
   async loadTownsfolk(base: string): Promise<void> {
-    [this.folk, this.women] = await Promise.all([this.loadBody(base, 'people/townsman.json', 'townsfolk'), this.loadBody(base, 'people/townswoman.json', 'townswomen')]);
-    // Women only among men: without the townsman the built figures stand in for everyone.
-    if (!this.folk) this.women = null;
+    const load = async (file: string): Promise<RiggedModel | null> => {
+      try {
+        const model = (await (await fetch(`${base}${file}`)).json()) as RiggedModel;
+        return FOLK_CLIPS.every((k) => model.clips.some((c) => c.name === k)) ? model : null;
+      } catch {
+        return null;
+      }
+    };
+    const [men, women] = await Promise.all([Promise.all(MEN.map(load)), Promise.all(WOMEN.map(load))]);
+    const first = men.find((m) => m !== null);
+    if (!first) return;
+    const fits = (m: RiggedModel | null): m is RiggedModel => m !== null && m.bones.length === first.bones.length;
+    const bodies = [...men.filter(fits), ...women.filter(fits)];
+    const stride = first.bones.length * 12;
+    const frames: number[] = [];
+    const bases = bodies.map((m) => {
+      const at = frames.length / stride;
+      for (let i = 0; i < m.frames.length; i++) frames.push(m.frames[i] as number);
+      return at;
+    });
+    const material = skinnedMaterial(boneTexture({ ...first, frames }));
+    const folk = bodies.map((m, i) => this.body(m, material, bases[i] as number, i));
+    this.men = folk.slice(0, men.filter(fits).length);
+    this.women = folk.slice(this.men.length);
   }
 
-  /** One skinned body of the townsfolk with its clips; null if the file is missing or lacks a clip. */
-  private async loadBody(base: string, file: string, name: string): Promise<Folk | null> {
-    try {
-      const model = (await (await fetch(`${base}${file}`)).json()) as RiggedModel;
+  /** One skinned body of the townsfolk, drawn with the shared material. */
+  private body(model: RiggedModel, material: MeshStandardNodeMaterial, base: number, index: number): Folk {
+    {
       const named = Object.fromEntries(model.clips.map((c) => [c.name, c])) as unknown as TownsmanClips;
-      for (const k of ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing', 'harvest'] as const) if (!named[k]) return null;
       const n = model.positions.length / 3;
       const g = new BufferGeometry();
       interleave(g, [
@@ -386,16 +415,14 @@ export class PeopleView {
       g.setAttribute('aAnim', instanced(4));
       g.setAttribute('aSide', side);
       g.setAttribute('aFrame', frame);
-      const mesh = new InstancedMesh(g, skinnedMaterial(boneTexture(model)), capacity);
-      mesh.name = name;
+      const mesh = new InstancedMesh(g, material, capacity);
+      mesh.name = `townsfolk ${index}`;
       mesh.count = 0;
       mesh.frustumCulled = false;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       this.scene.add(mesh);
-      return { mesh, place, frame, side, clips: named, count: 0 };
-    } catch {
-      return null;
+      return { mesh, place, frame, side, clips: named, count: 0, base };
     }
   }
 
@@ -430,7 +457,7 @@ export class PeopleView {
         try {
           const model = (await (await fetch(`${base}props/goods/${shape}.json`)).json()) as PropModel;
           const scale = LOAD_SIZE_M / Math.max(...(model.size as number[]));
-          const at = this.folk ? LOAD_IN_HANDS : LOAD_AT;
+          const at = this.men.length > 0 ? LOAD_IN_HANDS : LOAD_AT;
           const g = propGeometry(model, at[0], at[2], null, scale, at[1]);
           const mesh = this.prepare(new InstancedMesh(g, this.material, 2 * PEOPLE.maxPerSide));
           mesh.name = `loads ${shape}`;
@@ -524,8 +551,8 @@ export class PeopleView {
     const shapeCounts = new Map<LoadShape, number>();
     const carts = [0, 0];
     const folkCapacity = 2 * PEOPLE.maxPerSide;
-    if (this.folk) this.folk.count = 0;
-    if (this.women) this.women.count = 0;
+    for (const f of this.men) f.count = 0;
+    for (const f of this.women) f.count = 0;
     for (let i = 0; i < world.people.length; i++) {
       const person = world.people[i] as Person;
       if (!person.alive) continue;
@@ -534,13 +561,13 @@ export class PeopleView {
       const carted = person.role === 'carrier' && person.errand !== 'none' && level >= 2;
       const pose = this.poseOf(person, world.timeS, i);
       const ground = heightAtM(person.x, person.z);
-      if (this.folk) {
-        let woman = this.isWoman.get(person);
-        if (woman === undefined) {
-          woman = this.met++ % 3 === 1;
-          this.isWoman.set(person, woman);
+      if (this.men.length > 0) {
+        let f = this.bodyOf.get(person);
+        if (!f) {
+          const k = this.met++;
+          f = (this.women.length > 0 && k % 3 === 1 ? this.women[Math.floor(k / 3) % this.women.length] : this.men[k % this.men.length]) as Folk;
+          this.bodyOf.set(person, f);
         }
-        const f = woman && this.women ? this.women : this.folk;
         if (f.count >= folkCapacity) continue;
         const folk = f.count;
         const pl = f.place.array as Float32Array;
@@ -550,7 +577,7 @@ export class PeopleView {
         // The model looks along -Z; the figure's frame (and a heading) along +Z.
         pl[folk * 4 + 3] = person.headingRad + Math.PI;
         (f.side.array as Float32Array)[folk] = person.side;
-        (f.frame.array as Float32Array)[folk] = this.folkFrame(f.clips, person, world, i, carted);
+        (f.frame.array as Float32Array)[folk] = f.base + this.folkFrame(f.clips, person, world, i, carted);
         f.count++;
         this.p.set(person.x, ground, person.z);
         this.q.setFromAxisAngle(this.up, person.headingRad);
@@ -605,8 +632,7 @@ export class PeopleView {
         }
       }
     }
-    for (const f of [this.folk, this.women]) {
-      if (!f) continue;
+    for (const f of [...this.men, ...this.women]) {
       f.mesh.count = f.count;
       f.place.needsUpdate = true;
       f.frame.needsUpdate = true;

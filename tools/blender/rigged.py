@@ -15,7 +15,8 @@ written into the file. --team: the garment (by its texture's name)
 dyed in the side's colour, over its own shading; with --team-below only its texels darker than that (linear
 luminance), so dark clothes take the colour and the skin on the same texture keeps its own.
 
-Any Mixamo-rigged character will do (glTF, or an FBX from Mixamo with its skin): it is turned to look the clips' way from where its hips put its
+Any Mixamo-rigged character will do (glTF, or an FBX from Mixamo with its skin), or one on Unreal's skeleton
+(pelvis, spine_01, clavicle_l, thigh_l...: read as the same bones in Mixamo's names): it is turned to look the clips' way from where its hips put its
 left, and its end bones (HeadTop_End, Toe_End) may be missing or lie at the origin. Rigid parts with no
 weights (a helmet, a hat, hair) ride on the head; other unweighted parts (its own sword, shield) are left
 out.
@@ -58,10 +59,27 @@ WEAPONS = {"Sword_joint": "RightHand", "Shield_joint": "LeftForeArm"}
 BONES = ORDER + list(WEAPONS)
 
 
+# Unreal's skeleton (as Unreal-ready characters come) in Mixamo's names: the same bones, other words.
+UNREAL = {
+    "pelvis": "Hips", "spine_01": "Spine", "spine_02": "Spine1", "spine_03": "Spine2", "neck_01": "Neck", "head": "Head",
+    "clavicle_l": "LeftShoulder", "upperarm_l": "LeftArm", "lowerarm_l": "LeftForeArm", "hand_l": "LeftHand",
+    "clavicle_r": "RightShoulder", "upperarm_r": "RightArm", "lowerarm_r": "RightForeArm", "hand_r": "RightHand",
+    "thigh_l": "LeftUpLeg", "calf_l": "LeftLeg", "foot_l": "LeftFoot", "ball_l": "LeftToeBase",
+    "thigh_r": "RightUpLeg", "calf_r": "RightLeg", "foot_r": "RightFoot", "ball_r": "RightToeBase",
+}
+FINGERS = {"index": "Index", "middle": "Middle", "pinky": "Pinky", "ring": "Ring", "thumb": "Thumb"}
+
+
 def plain(name: str) -> str:
-    """'mixamorig:LeftHandIndex1_07' -> 'LeftHandIndex1'."""
+    """'mixamorig:LeftHandIndex1_07' -> 'LeftHandIndex1'; Unreal's 'thigh_l_045' -> 'LeftUpLeg'."""
     name = name.split(":")[-1]
-    return re.sub(r"_\d+$", "", name)
+    name = re.sub(r"_\d+$", "", name)
+    if name in UNREAL:
+        return UNREAL[name]
+    m = re.fullmatch(r"(index|middle|pinky|ring|thumb)_0(\d)_([lr])", name)
+    if m:
+        return ("Left" if m.group(3) == "l" else "Right") + "Hand" + FINGERS[m.group(1)] + m.group(2)
+    return name
 
 
 def kept(name: str) -> str:
@@ -94,11 +112,16 @@ def to_game_point(v: Vector) -> list[float]:
 ON_HEAD = ("helmet", "hat", "hood", "hair", "cap")
 
 
+# Meshes left out: bound so that at rest they lie far outside the skeleton (a beard exported with a bind of
+# its own), by name; set by load_character.
+STRAY = set()
+
+
 def body_meshes():
     """The character's own meshes: the weighted ones, and rigid ones worn on the head."""
     out = []
     for o in bpy.context.scene.objects:
-        if o.type != "MESH" or o.name == "Icosphere":
+        if o.type != "MESH" or o.name == "Icosphere" or o.name in STRAY:
             continue
         if len(o.vertex_groups) > 0 or any(k in o.name.lower() for k in ON_HEAD):
             out.append(o)
@@ -113,19 +136,39 @@ def load_character(path: str, height_m: float):
     else:
         bpy.ops.import_scene.gltf(filepath=path)
     rig = [o for o in bpy.context.scene.objects if o.type == "ARMATURE"][0]
+    # Stand him up: some exports lie the whole rig down (Unreal's Y up under a parent); his hips-to-head line
+    # goes up, along +Z.
+    heads = {}
+    for b in rig.data.bones:
+        heads.setdefault(plain(b.name), rig.matrix_world @ b.head_local)
+    up = (heads["Head"] - heads["Hips"]).normalized()
+    R = up.rotation_difference(Vector((0, 0, 1))).to_matrix().to_4x4()
     bones = {}
     for b in rig.data.bones:
-        bones.setdefault(plain(b.name), rig.matrix_world @ b.matrix_local)
+        bones.setdefault(plain(b.name), R @ rig.matrix_world @ b.matrix_local)
+    # Leave out a mesh that at rest lies far outside the skeleton's reach.
+    pts = [R @ h for h in heads.values()]
+    lo = Vector([min(p[i] for p in pts) for i in range(3)])
+    hi = Vector([max(p[i] for p in pts) for i in range(3)])
+    reach = max(hi - lo)
+    STRAY.clear()
+    for o in body_meshes():
+        ws = [R @ o.matrix_world @ v.co for v in o.data.vertices]
+        if any(min(w[i] for w in ws) < lo[i] - 0.5 * reach or max(w[i] for w in ws) > hi[i] + 0.5 * reach for i in range(3)):
+            STRAY.add(o.name)
+    if STRAY:
+        print(f"character: left out {sorted(STRAY)} (bound far outside the skeleton)")
     # Turn the character to look along -Y like the clips: his left (from the right hip to the left) to +X.
     left = head_of(bones["LeftUpLeg"]) - head_of(bones["RightUpLeg"])
     turn = Matrix.Rotation(-math.atan2(left.y, left.x), 4, "Z")
     # And scale him to stand height_m tall (his meshes' height in the bind pose, whatever the units).
     rig.data.pose_position = "REST"
     bpy.context.view_layer.update()
-    zs = [(o.matrix_world @ v.co).z for o in body_meshes() for v in o.data.vertices]
+    zs = [(R @ o.matrix_world @ v.co).z for o in body_meshes() for v in o.data.vertices]
     scale = height_m / (max(zs) - min(zs))
-    G = Matrix.Scale(scale, 4) @ turn
-    rest = {n: G @ m for n, m in bones.items() if n in KEEP or n in KEEP.values()}
+    G = Matrix.Scale(scale, 4) @ turn @ R
+    # (the bones are already stood up)
+    rest = {n: Matrix.Scale(scale, 4) @ turn @ m for n, m in bones.items() if n in KEEP or n in KEEP.values()}
     # End bones missing or at the origin: one bone-length on along the parent's line.
     for n, child in KEEP.items():
         if child in KEEP:
@@ -170,7 +213,18 @@ def bake_mesh(rig, G, team_garment=None):
         x = min(w - 1, max(0, int((u % 1.0) * w)))
         y = min(h - 1, max(0, int((v % 1.0) * h)))
         o = (y * w + x) * 4
-        return px[o], px[o + 1], px[o + 2]
+        return px[o], px[o + 1], px[o + 2], px[o + 3]
+
+    strands = {}
+
+    def strand_colour(img):
+        """The mean of an image's opaque texels: a hair card's strands, without the empty space between."""
+        if img.name not in strands:
+            _, _, px = pixels(img)
+            n = len(px) // 4
+            opaque = [i for i in range(0, n, 17) if px[i * 4 + 3] >= 0.5] or list(range(0, n, 17))
+            strands[img.name] = [sum(px[i * 4 + k] for i in opaque) / len(opaque) for k in range(3)]
+        return strands[img.name]
 
     pos, nor, col, surf, skin, wts, tris = [], [], [], [], [], [], []
     for o in meshes:
@@ -193,6 +247,12 @@ def bake_mesh(rig, G, team_garment=None):
                     if "metallicRoughness" in n.image.name and mr_img is None:
                         mr_img = n.image
         uv = me.uv_layers.active.data if me.uv_layers.active else None
+        # Without a texture (a beard, a bun of hair): the material's own colour, matt.
+        plain_colour = [0.5, 0.5, 0.5]
+        if mat and mat.node_tree:
+            for n in mat.node_tree.nodes:
+                if n.type == "BSDF_PRINCIPLED" and not n.inputs["Base Color"].links:
+                    plain_colour = list(n.inputs["Base Color"].default_value)[:3]
         team = TEAM_SHARE if team_garment and base_img and team_garment in base_img.name else 0.0
         # Per vertex: the mean of its loops' texture colours.
         acc = {}
@@ -201,11 +261,19 @@ def bake_mesh(rig, G, team_garment=None):
                 continue
             u, v = uv[loop.index].uv
             c = sample(base_img, u, v)
+            if c[3] < 0.5:
+                continue  # a see-through texel between a hair card's strands: its colour is meaningless
             m = sample(mr_img, u, v) if mr_img else (0, 0.6, 0.0)
             a = acc.setdefault(loop.vertex_index, [0, 0, 0, 0, 0, 0, 0])
             a[0] += c[0]; a[1] += c[1]; a[2] += c[2]; a[3] += m[2]; a[4] += m[1]; a[5] += 1
             if TEAM_BELOW is not None and 0.2126 * srgb_to_linear(c[0]) + 0.7152 * srgb_to_linear(c[1]) + 0.0722 * srgb_to_linear(c[2]) < TEAM_BELOW:
                 a[6] += 1
+        # A vertex of a hair card that met no strand: the strands' mean colour, matt.
+        if uv is not None and base_img is not None:
+            hair = strand_colour(base_img)
+            for v in me.vertices:
+                if v.index not in acc:
+                    acc[v.index] = [hair[0], hair[1], hair[2], 0.0, 0.85, 1, 0]
         names = {g.index: g.name for g in o.vertex_groups}
         base = len(pos)
         for v in me.vertices:
@@ -218,6 +286,9 @@ def bake_mesh(rig, G, team_garment=None):
                 # Image.pixels gives a PNG's stored (sRGB) values: to linear for the shader.
                 col.append([srgb_to_linear(a[0] / a[5]), srgb_to_linear(a[1] / a[5]), srgb_to_linear(a[2] / a[5])])
                 surf.append([a[3] / a[5], a[4] / a[5], team * (a[6] / a[5] if TEAM_BELOW is not None else 1.0)])
+            elif base_img is None:
+                col.append(plain_colour)
+                surf.append([0.0, 0.8, 0.0])
             else:
                 col.append([0.5, 0.5, 0.5])
                 surf.append([0.8, 0.4, 0.0])

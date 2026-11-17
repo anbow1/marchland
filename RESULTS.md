@@ -5,6 +5,24 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Pięć postaci w mieście; włosy bez artefaktów
+
+- Mieszczanie mają cztery ciała na zmianę (dotychczasowy .Fuse Civilian 2, brodaty .Fuse Civilian 1, Svend
+  w wełnianej i w lnianej tunice), a co trzecia osoba to Revna w wełnianej tunice (zamiast Eriki z Mixamo,
+  która wyglądała jak łuczniczka). Wszystkie z tymi samymi 11 klipami; ubrania tylko lekko (15%) w barwach
+  strony, żeby miasto nie było jednolicie niebieskie. Jeden materiał i jedna tekstura kości (klatki ciał
+  jedna pod drugą), więc kolejne ciało to kolejne wywołanie rysowania, ale bez nowej tekstury.
+- `rigged.py`: postacie na szkielecie Unreala (pelvis, spine_01, clavicle_l, thigh_l…) czytane jako
+  Mixamo; postać wyeksportowana „na leżąco” (szkielet obrócony o 90°) jest stawiana pionowo wzdłuż linii
+  biodra–głowa (wcześniej wychodziła na 14 m); siatka związana daleko poza szkieletem (u Svendów włosy
+  albo broda) jest pomijana; bez tekstury kolor materiału, matowy.
+- Artefakty wokół głów: włosy, brody i wąsy to karty z przezroczystą teksturą, a wypiekacz uśredniał też
+  przezroczyste teksele między pasmami (przypadkowe kolory) — głowy były w cętki. Teraz liczą się tylko
+  kryjące teksele, a karta bez żadnego dostaje średni kolor pasm. Przepieczone: mieszczanie, mieszczanka,
+  łucznicy, pikinierzy, kusznicy i kowal.
+- Testy 94/94; WebGPU 0 błędów; miasto: 147 potoków (+6: three.js kompiluje na każde ciało osobno mimo
+  wspólnego materiału).
+
 ## 2026-11-17 · Czaprak i opończa dopasowane do ciała, tarcza w kształcie, ciemna grzywa
 
 - Czaprak (lekka jazda) i kropierz (ciężka jazda, od piersi po zad, ze złotym obrębieniem) nie są już
