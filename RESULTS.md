@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Trzy mieszczanki zamiast jednej
+
+- Dwie nowe kobiety w mieście, z tymi samymi klipami co reszta ludzi: „.Fuse Woman 1” (Leonardo Carvalho,
+  CC BY 4.0, brązowa sukienka i wysokie buty; bez barw strony, bo brąz z niebieskim dawał fiolet) i „Girl with
+  clothes. Worker set” (cattleya, CC BY 4.0, lniana koszula i portki, odrobina barw strony). Co trzecia osoba
+  to kobieta, na zmianę jedna z trzech (Revna, sukienka, robotnica).
+- `rigged.py` czyta szkielet z własnym przedrostkiem przed nazwami Mixamo (`girlBone_LeftArm`).
+- Testy 94/94; WebGPU w mieście: 0 błędów, 151 potoków (było 147: każde ciało kompiluje swoje).
+
 ## 2026-11-17 · Pikinierzy pchają oburącz z biodra (Bayonet Stab)
 
 - Cios pikinierów to teraz Mixamo „Bayonet Stab”: wypad do przodu z bronią oburącz na wysokości bioder (dotąd

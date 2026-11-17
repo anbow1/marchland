@@ -83,6 +83,8 @@ def plain(name: str) -> str:
     """'mixamorig:LeftHandIndex1_07' -> 'LeftHandIndex1'; Unreal's 'thigh_l_045' -> 'LeftUpLeg'."""
     name = name.split(":")[-1]
     name = re.sub(r"_\d+$", "", name)
+    # A rig's own prefix before Mixamo's names ('girlBone_LeftArm').
+    name = re.sub(r"^[a-z]+Bone_", "", name)
     if name in UNREAL:
         return UNREAL[name]
     m = re.fullmatch(r"(index|middle|pinky|ring|thumb)_0(\d)_([lr])", name)

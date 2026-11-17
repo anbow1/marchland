@@ -46,6 +46,8 @@ samym stylu albo realistyczne CC0/CC BY.
 | „Blacksmith” (bez szkieletu) | XiaoBuBu80, Sketchfab | CC BY 4.0 | rzemieślnik |
 | Wózek ręczny, 4 wozy | 3dAssetsForGames, AspectStudios, rakutin, NoodlePoodle, Cinnamine3D (Sketchfab) | CC BY 4.0 | **w grze**: taczka (poziom 2, 3dAssetsForGames), wóz (poziom 3, NoodlePoodle); reszta w zapasie |
 | „Virtual model wool tunic & twintail & slim Revna”, „… wool tunic Svend”, „… linen tunic Svend” (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | **w grze**: mieszczanka (`townswoman.json`), mieszczanie (`townsman-wool.json`, `townsman-linen.json`) |
+| „.Fuse Woman 1” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze**: mieszczanka w sukience (`townswoman-dress.json`) |
+| „Girl with clothes. Worker set” (szkielet z przedrostkiem `girlBone_`) | cattleya, Sketchfab | CC BY 4.0 | **w grze**: robotnica w lnie (`townswoman-worker.json`) |
 | „.Fuse Civilian 1” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze**: mieszczanin z brodą (`townsman-beard.json`) |
 | „Medieval Knight (Sculpture)” (szkielet Mixamo) | by__Rx, Sketchfab | CC BY 4.0 | **w grze**: miecznicy (`swordsman.json`) |
 | „Hospitalier Knight” (szkielet Mixamo) | everlasting17th, Sketchfab | CC BY 4.0 | sprawdzony jako halabardnicy — **nie**: bez hełmu, białe nogawice, wygląda współcześnie |
@@ -69,8 +71,7 @@ Stan na 17.11: wszystko, co niezbędne, już jest w grze — żołnierze każdeg
 i kobieta), koń z chodem i galopem, jeździec, budynki, wozy, działa. Zostały rzeczy **opcjonalne**:
 
 1. ~~Upadek konia~~ — jest (drugi koń MAXDESIGN-3D, przeniesiony).
-2. **Druga kobieta w innym stroju** (szkielet Mixamo albo Unreal, CC0/CC BY) — dziś wszystkie mieszczanki to
-   jedna postać.
+2. ~~Druga kobieta w innym stroju~~ — są dwie (.Fuse Woman 1, Girl with clothes. Worker set).
 3. ~~Pchnięcie oburącz z biodra dla pikinierów~~ — jest (Bayonet Stab).
 4. Towary do obejść w stylu KayKit: ryby w koszu, winogrona w koszu, sztabki żelaza, ruda, snopki zboża.
 

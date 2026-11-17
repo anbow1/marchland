@@ -282,7 +282,7 @@ interface Folk {
 /** The townsfolk's bodies (tools/blender/rigged.py, all with the same clips): the men by turns, and a woman
  * for every third person. */
 const MEN = ['people/townsman.json', 'people/townsman-beard.json', 'people/townsman-wool.json', 'people/townsman-linen.json'];
-const WOMEN = ['people/townswoman.json'];
+const WOMEN = ['people/townswoman.json', 'people/townswoman-dress.json', 'people/townswoman-worker.json'];
 const FOLK_CLIPS = ['boxwalk', 'boxidle', 'walk', 'idle', 'pickup', 'putdown', 'digging', 'fishing', 'chop', 'swing', 'harvest'] as const;
 
 export class PeopleView {
