@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Koń pada naprawdę: upadek z drugiego konia MAXDESIGN-3D
+
+- Przesłany „Horse” (MAXDESIGN-3D, CC BY 4.0) to inny koń tego autora z jedną 9-sekundową animacją: galop,
+  postój, **upadek na bok** (klatki 97–147) i znowu galop. Jego szkielet (70 kości bez nazw) i siatka różnią się
+  od konia w grze, więc upadek przeniesiony skryptem `tools/blender/horsefall.py`: obroty odczytane ze stawów
+  (zad i kłąb z linii bioder lub łopatek i kręgosłupa, każda noga, szyja i ogon z kierunku odcinka) i nałożone
+  na szkielet konia w grze od bioder w dół, biodra przesuwane jak u tamtego konia, każda klatka postawiona na
+  ziemi. Dwie wcześniejsze próby odrzucone: macierze kości tego pliku nie zgadzają się z tym, co robi jego siatka
+  (odbity obiekt nadrzędny), a dopasowanie przez najbliższe wierzchołki rozrywało konia.
+- Klip `fall` (25 klatek, ~1 s) w `warhorse.json`: koń wali się łbem do przodu i ląduje na boku z podkurczonymi
+  nogami; jeździec idzie w dół razem z nim. Końcówka źródła (zad przetoczony, nogi w górze) ucięta. Zastępuje
+  obliczony przewrót całej bryły; bez klipu gra przewraca konia jak dotąd.
+- `baked.py`: szkielet z kośćmi bez nazw (bez „head”) już nie przerywa wypiekania; położenie szkieletu czytane
+  w każdej klatce (animowany obiekt nadrzędny).
+- Testy 94/94; WebGPU w bitwie: 0 błędów, 147 potoków.
+
 ## 2026-11-17 · Jeźdźcy: Paladin z Mixamo w siodle
 
 - Przesłany „Stabbing” ze skórą to ten sam ruch, co pchnięcie pikinierów (klatki identyczne), ale z postacią

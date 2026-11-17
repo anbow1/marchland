@@ -126,8 +126,9 @@ def main() -> None:
                 n = names.get(g.group)
                 if n in weight:
                     weight[n] += g.weight
-    head = next(b.name for b in bones if "head" in b.name.lower() and weight[b.name] > 0)
     ranked = sorted((n for n in weight if weight[n] > 0), key=lambda n: -weight[n])
+    # Unweighted rigid parts ride on the head; a skeleton with unnamed bones has none: on the heaviest.
+    head = next((b.name for b in bones if "head" in b.name.lower() and weight[b.name] > 0), ranked[0])
     kept = set(ranked[:max_bones]) | {head}
 
     def keeper(name):
@@ -223,8 +224,10 @@ def main() -> None:
     pos = [list((T @ p.to_4d()).xyz) for p in world_pos]
     normals = [[-n.x, n.z, n.y] for n in nor]
 
-    W = arm.matrix_world
+    # The armature's own place, read every frame: some takes move the rig's parent object (a horse falling over)
+    # as well as its bones.
     bpy.context.scene.frame_set(first)
+    W = arm.matrix_world.copy()
     rest_inv = {n: (W @ arm.pose.bones[n].matrix).inverted() for n in order}
     flat = []
     step = scene_fps / fps
@@ -235,6 +238,7 @@ def main() -> None:
         f = float(start)
         while f < end - 1e-6:
             bpy.context.scene.frame_set(int(f), subframe=f - int(f))
+            W = arm.matrix_world.copy()
             for n in order:
                 m = T @ (W @ arm.pose.bones[n].matrix) @ rest_inv[n] @ Ti
                 flat += [round(m[r][c], 4) for r in range(3) for c in range(4)]
@@ -269,6 +273,7 @@ def main() -> None:
     if "--saddle" in args:
         bpy.context.scene.frame_set(first)
         bone = option("--saddle", "")
+        W = arm.matrix_world.copy()
         head = list((T @ (W @ arm.pose.bones[bone].head).to_4d()).xyz)
         over = [p for p in pos if abs(p[0]) < 0.12 and abs(p[2] - head[2]) < 0.12]
         top = max(p[1] for p in over) if over else head[1]

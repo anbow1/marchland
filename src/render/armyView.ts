@@ -703,7 +703,8 @@ export class ArmyView {
       walk,
       run: gallop,
       impact: null,
-      deaths: [],
+      // The horse's fall (stumbling, rearing, down on its side), when the file has one.
+      deaths: named('fall') ? [named('fall') as Clip] : [],
       draw: null,
       shield: false,
       reach: idle.start,
@@ -835,9 +836,9 @@ export class ArmyView {
     const horse = sk.horse;
     if (horse) {
       // A horse: gallop or walk in step with the ground it covers; standing, or grazing at ease. A dead one
-      // lies as it stood (the whole falls on its side).
+      // plays its fall and lies as it ends; without a fall clip it lies as it stood (the whole falls on its side).
       const loop = (c: Clip): number => cycle(c, timeS / (c.frames / sk.fps) + s.slot * 0.37);
-      if (!s.alive) return horse.idle.start;
+      if (!s.alive) return sk.deaths[0] ? at(sk.deaths[0], s.deadS) : horse.idle.start;
       if (speed > GALLOP_FROM_MS) return cycle(horse.gallop, s.strideM / GALLOP_CYCLE_M);
       if (speed > 0.25) return cycle(horse.walk, s.strideM / Math.max(0.5, horse.walk.travelM ?? 1));
       const hurtS = timeS - (s.hurtAtS ?? -1e9);

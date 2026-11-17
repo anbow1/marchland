@@ -52,6 +52,7 @@ samym stylu albo realistyczne CC0/CC BY.
 | „Medieval Civilian 3” | Leonardo Carvalho, Sketchfab | Sketchfab Standard | **nie**: licencja nie pozwala udostępniać siatki w repozytorium |
 | „Parameswara Chronicles: Portugese Knight” | (Sketchfab) | „CC BY” | **nie**: ponowne wrzucenie postaci Paladin J Nordstrom z Mixamo — pobrana wprost z Mixamo, w grze jako jeździec |
 | „Horse” (szkielet, chód, galop, postój, skubanie trawy) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: konie jazdy (`warhorse.json`) |
+| „Horse” (drugi: galop, postój, upadek; 70 kości bez nazw) | MAXDESIGN-3D (Sketchfab) | CC BY 4.0 | **w grze**: tylko upadek, przeniesiony na konia jazdy (`horsefall.py`) |
 | Armata, moździerz, kula | Lyskilde, ViktorKom, Uğur Yakışık (Sketchfab) | CC BY 4.0 | **w grze**: armata i moździerz (kula rysowana własna); obsługa to mieszczanie ze szkieletem |
 | Kusza | iedalton, Sketchfab | CC BY 4.0 | broń kuszników |
 | Świnia | iRahulRajput, Sketchfab | CC BY 4.0 | **w grze**: świnie w chlewni |
@@ -66,8 +67,7 @@ Odrzucone: „Hafsid Horse General (Machiavello Mod)” (z moda do gry komercyjn
 Stan na 17.11: wszystko, co niezbędne, już jest w grze — żołnierze każdego rodzaju, ludzie w mieście (mężczyźni
 i kobieta), koń z chodem i galopem, jeździec, budynki, wozy, działa. Zostały rzeczy **opcjonalne**:
 
-1. **Upadek konia** (śmierć konia pod jeźdźcem) — teraz koń przewraca się obliczonym obrotem. Klip konia
-   ze szkieletem tego samego konia (MAXDESIGN-3D) albo inny koń z osobnymi pętlami i upadkiem (CC0/CC BY).
+1. ~~Upadek konia~~ — jest (drugi koń MAXDESIGN-3D, przeniesiony).
 2. **Druga kobieta w innym stroju** (szkielet Mixamo albo Unreal, CC0/CC BY) — dziś wszystkie mieszczanki to
    jedna postać.
 3. Pchnięcie oburącz z biodra dla pikinierów (Mixamo; „Stabbing” to pchnięcie znad głowy) — tylko jeśli się
