@@ -16,8 +16,8 @@
   "Great Sword Attack" and "Great Sword Slash" by turns.
 - `pikeman.json` — the pikemen, made by `rigged.py --arms pike` from **".Fuse Warrior"** by **Leonardo
   Carvalho** (Sketchfab), licensed **CC BY 4.0**: its sword and shield left out, the helmet kept, the
-  upper armour dyed in the side's colour; the pike is the game's own. Motion from Mixamo ("Stabbing",
-  "Rifle Walk" and the sword-and-shield set).
+  upper armour dyed in the side's colour; the pike is the game's own. Motion from Mixamo ("Bayonet Stab",
+  with the pike along the line of both hands, `--two-hand-clips stab`; "Rifle Walk" and the sword-and-shield set).
 - `archer.json` — the archers, made by `rigged.py --arms bow` from **".Fuse Civilian 2"** by **Leonardo
   Carvalho** (Sketchfab), licensed **CC BY 4.0**: the tunic dyed in the side's colour; the bow is the
   game's own. Motion from Mixamo (the Longbow Aiming Pack and the sword-and-shield set).

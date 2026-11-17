@@ -2,7 +2,7 @@
 
     bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
         [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
-        [--tool-clips name,name] [--tool2-clips name,name] [--team-below 0.12]
+        [--tool-clips name,name] [--tool2-clips name,name] [--team-below 0.12] [--two-hand-clips name,name]
         <clip.fbx>...
     bl/bin/python -I tools/blender/rigged.py -- <character.fbx> <rider.json> --seated --arms none [--height 1.8] [--tris 3200]
         [--gain 2.5]
@@ -19,7 +19,9 @@ joint is collapsed to nothing, so a townsman carries his axe only while he chops
 (first joint, --tool-clips) and a mallet (second joint, held in the same hand, --tool2-clips). --source: the credit
 written into the file. --team: the garment (by its texture's name)
 dyed in the side's colour, over its own shading; with --team-below only its texels darker than that (linear
-luminance), so dark clothes take the colour and the skin on the same texture keeps its own.
+luminance), so dark clothes take the colour and the skin on the same texture keeps its own. --two-hand-clips: in
+these clips (a musket's bayonet thrust) a polearm lies along the line from the right hand to the left instead of
+following the sword joint.
 
 Any Mixamo-rigged character will do (glTF, or an FBX from Mixamo with its skin), or one on Unreal's skeleton
 (pelvis, spine_01, clavicle_l, thigh_l...: read as the same bones in Mixamo's names): it is turned to look the clips' way from where its hips put its
@@ -546,7 +548,7 @@ def head_of(m: Matrix) -> Vector:
     return m.to_translation()
 
 
-def bake_frames(char_rest, clip_path, hips_ratio):
+def bake_frames(char_rest, clip_path, hips_ratio, two_hands=False):
     """Per frame per bone, the skinning matrix (Blender space, character facing -Y) for one clip."""
     before = set(bpy.data.objects)
     bpy.ops.import_scene.fbx(filepath=clip_path)
@@ -608,6 +610,16 @@ def bake_frames(char_rest, clip_path, hips_ratio):
             m.translation = h - r @ h_rest
             mats.append(m)
         for joint, hand in WEAPONS.items():
+            if two_hands and joint == "Sword_joint":
+                # Held in both hands like a musket (a bayonet thrust): the shaft (the weapon's -Y at rest, through
+                # the right hand) along the line from the right hand to the left, the right hand on it.
+                ahead = (posed_head["LeftHand"] - posed_head["RightHand"]).normalized()
+                turn = Vector((0, -1, 0)).rotation_difference(ahead)
+                h_rest = head_of(char_rest["RightHand"])
+                m = turn.to_matrix().to_4x4()
+                m.translation = posed_head["RightHand"] - turn @ h_rest
+                mats.append(m)
+                continue
             if joint not in bones:
                 mats.append(mats[ORDER.index(hand)].copy())
                 continue
@@ -709,9 +721,10 @@ def main() -> None:
     step = int(option("--step", "1"))  # every step-th frame (a clip's fps divided by it)
     tool_clips = set(filter(None, option("--tool-clips", "").split(",")))
     tool2_clips = set(filter(None, option("--tool2-clips", "").split(",")))
+    two_hand_clips = set(filter(None, option("--two-hand-clips", "").split(",")))
     if arms == "tools":
         WEAPONS["Shield_joint"] = "RightHand"
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain") if n in args}
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain", "--two-hand-clips") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
@@ -747,10 +760,11 @@ def main() -> None:
     for path in clips:
         name = os.path.splitext(os.path.basename(path))[0]
         # The first pass only measures the clips' hips height.
-        frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, 1.0)
+        both = name in two_hand_clips
+        frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, 1.0, both)
         ratio = hips_char / hips_anim
         if abs(ratio - 1) > 1e-3:
-            frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, ratio)
+            frames, fps, hands, hips_anim, travel = bake_frames(char_rest, path, ratio, both)
         anim_hand = anim_hand or hands
         frames = frames[::step]
         # A tool put away: its joint's matrices with no extent (its triangles have no area).

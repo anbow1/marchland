@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Pikinierzy pchają oburącz z biodra (Bayonet Stab)
+
+- Cios pikinierów to teraz Mixamo „Bayonet Stab”: wypad do przodu z bronią oburącz na wysokości bioder (dotąd
+  „Stabbing”, pchnięcie znad głowy). W klipach karabinowych staw miecza nie leży wzdłuż broni, więc
+  `rigged.py --two-hand-clips stab` kładzie pikę na linii od prawej do lewej dłoni. W pchnięciu grot wychodzi
+  3,4 m przed pikiniera na wysokości ~1 m; tę klatkę gra wybiera też na szyk z pikami opuszczonymi.
+- Testy 94/94.
+
 ## 2026-11-17 · Koń pada naprawdę: upadek z drugiego konia MAXDESIGN-3D
 
 - Przesłany „Horse” (MAXDESIGN-3D, CC BY 4.0) to inny koń tego autora z jedną 9-sekundową animacją: galop,

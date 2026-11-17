@@ -21,7 +21,8 @@ Postać najlepiej **ze szkieletem humanoida Mixamo** (nazwy kości `mixamorig:*`
 | Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | sprawdzone; w grze ich tuniki (niżej) |
 | Animacje miecz i tarcza: cięcie, blok, postawa, marsz, bieg, trafienie, śmierć ×2 | Mixamo | Mixamo | w grze (miecznicy, halabardnicy) |
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
-| Stabbing | Mixamo | Mixamo | w grze: cios pikinierów |
+| Bayonet Stab | Mixamo | Mixamo | w grze: cios pikinierów (oburącz z biodra) |
+| Stabbing | Mixamo | Mixamo | w zapasie (dawny cios pikinierów, znad głowy) |
 | Double Dagger Stab, Standing Aim Walk Forward/Right, Idle 1–2, Block (drugi) | Mixamo | Mixamo | w zapasie |
 
 ### Zasoby i towary (pobrane z GitHuba KayKit, CC0) — w grze
@@ -70,8 +71,7 @@ i kobieta), koń z chodem i galopem, jeździec, budynki, wozy, działa. Zostały
 1. ~~Upadek konia~~ — jest (drugi koń MAXDESIGN-3D, przeniesiony).
 2. **Druga kobieta w innym stroju** (szkielet Mixamo albo Unreal, CC0/CC BY) — dziś wszystkie mieszczanki to
    jedna postać.
-3. Pchnięcie oburącz z biodra dla pikinierów (Mixamo; „Stabbing” to pchnięcie znad głowy) — tylko jeśli się
-   trafi.
+3. ~~Pchnięcie oburącz z biodra dla pikinierów~~ — jest (Bayonet Stab).
 4. Towary do obejść w stylu KayKit: ryby w koszu, winogrona w koszu, sztabki żelaza, ruda, snopki zboża.
 
 Animacje z Mixamo: FBX, **Without Skin** (albo ze skórą, jeśli chodzi też o postać), 30 kl./s, przy ruchu
