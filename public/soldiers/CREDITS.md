@@ -5,14 +5,15 @@
   https://blendswap.com/blend/28541), licensed **CC0**: thinned to about 3 200 triangles, the arms
   brought down from the rest pose, materials as plain colours. Weapons, shields and the surcoat in the
   side's colours are the game's own.
-- `swordsman.json` — the swordsmen's skinned body, made by `tools/blender/rigged.py` from
-  **"knight for game project (old)"** by **Thomas.Osterhammel**
-  (https://sketchfab.com/3d-models/knight-for-game-project-old), licensed **CC BY 4.0**: thinned to about
-  3 400 triangles, colours taken from its texture. Its sword and shield are the game's own simple shapes.
-  The strike, guard, idle, walk, run, flinch and two deaths are motion from **Mixamo** (Adobe),
-  retargeted and baked into bone matrices; the raw animation files are not part of this repository.
-- `halberdier.json` — the same knight with the game's own halberd (`rigged.py --arms halberd`), striking
-  with Mixamo's "Upward Thrust", "Great Sword Attack" and "Great Sword Slash" by turns.
+- `swordsman.json` — the swordsmen, made by `tools/blender/rigged.py` from **"Medieval Knight | Sculpture | Game
+  ready"** by **by__Rx** (Sketchfab), licensed **CC BY 4.0**: full plate with a gilt visor, thinned to about 3 500
+  triangles, colours from its textures. The sword and the heater shield in the side's colour are the game's own.
+  The strike, guard, idle, walk, run, flinch and two deaths are motion from **Mixamo** (Adobe), retargeted and
+  baked into bone matrices; the raw animation files are not part of this repository.
+- `halberdier.json` — the halberdiers, from **"knight for game project (old)"** by **Thomas.Osterhammel**
+  (https://sketchfab.com/3d-models/knight-for-game-project-old), licensed **CC BY 4.0**, thinned to about 3 400
+  triangles, with the game's own halberd (`rigged.py --arms halberd`), striking with Mixamo's "Upward Thrust",
+  "Great Sword Attack" and "Great Sword Slash" by turns.
 - `pikeman.json` — the pikemen, made by `rigged.py --arms pike` from **".Fuse Warrior"** by **Leonardo
   Carvalho** (Sketchfab), licensed **CC BY 4.0**: its sword and shield left out, the helmet kept, the
   upper armour dyed in the side's colour; the pike is the game's own. Motion from Mixamo ("Stabbing",

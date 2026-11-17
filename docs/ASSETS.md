@@ -44,7 +44,8 @@ samym stylu albo realistyczne CC0/CC BY.
 | Wózek ręczny, 4 wozy | 3dAssetsForGames, AspectStudios, rakutin, NoodlePoodle, Cinnamine3D (Sketchfab) | CC BY 4.0 | **w grze**: taczka (poziom 2, 3dAssetsForGames), wóz (poziom 3, NoodlePoodle); reszta w zapasie |
 | „Virtual model wool tunic & twintail & slim Revna”, „… wool tunic Svend”, „… linen tunic Svend” (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | **w grze**: mieszczanka (`townswoman.json`), mieszczanie (`townsman-wool.json`, `townsman-linen.json`) |
 | „.Fuse Civilian 1” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze**: mieszczanin z brodą (`townsman-beard.json`) |
-| „Hospitalier Knight”, „Medieval Knight (Sculpture)” (szkielet Mixamo) | everlasting17th; by__Rx (Sketchfab) | CC BY 4.0 | czekają: kandydaci na żołnierzy |
+| „Medieval Knight (Sculpture)” (szkielet Mixamo) | by__Rx, Sketchfab | CC BY 4.0 | **w grze**: miecznicy (`swordsman.json`) |
+| „Hospitalier Knight” (szkielet Mixamo) | everlasting17th, Sketchfab | CC BY 4.0 | sprawdzony jako halabardnicy — **nie**: bez hełmu, białe nogawice, wygląda współcześnie |
 | „Bandit Armor and Clothes” (szkielet MakeHuman) | wolkoed, Sketchfab | CC BY 4.0 | czeka: potrzebne mapowanie kości MakeHuman |
 | „Medieval Civilian 3” | Leonardo Carvalho, Sketchfab | Sketchfab Standard | **nie**: licencja nie pozwala udostępniać siatki w repozytorium |
 | „Parameswara Chronicles: Portugese Knight” | (Sketchfab) | „CC BY” | **nie**: ponowne wrzucenie postaci Paladin J Nordstrom z Mixamo — lepiej pobrać ją wprost z Mixamo |

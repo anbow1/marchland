@@ -435,11 +435,14 @@ def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris,
         ("Sword_joint", (-0.79, -0.33, 1.41), (0.045, 0.82, 0.012), steel, 1.0, 0.3, 0.0),  # blade
         ("Sword_joint", (-0.79, 0.07, 1.41), (0.03, 0.03, 0.22), steel, 1.0, 0.4, 0.0),  # cross-guard
         ("Sword_joint", (-0.79, 0.16, 1.41), (0.03, 0.17, 0.03), wood, 0.0, 0.8, 0.0),  # grip
-        ("Shield_joint", (0.57, 0.11, 1.50), (0.44, 0.66, 0.04), (1, 1, 1), 0.0, 0.7, 1.0),  # face, in the side's colour
-        ("Shield_joint", (0.57, 0.11, 1.475), (0.47, 0.69, 0.02), wood, 0.0, 0.8, 0.0),  # rim and back
     ]
     if polearm:
         parts = polearm
+    else:
+        # The shield: a heater (flat top, sides running into a point), its face in the side's colour over a
+        # wooden back a little larger, lying along the forearm as the clips' paladin held his.
+        add_heater("Shield_joint", (0.57, 0.11, 1.50), 0.44, 0.66, 0.04, (1, 1, 1), 0.0, 0.7, 1.0, anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris)
+        add_heater("Shield_joint", (0.57, 0.11, 1.475), 0.48, 0.70, 0.02, wood, 0.0, 0.8, 0.0, anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris)
     for joint, c, s, colour, metal, rough, team in parts:
         hand = WEAPONS[joint]
         corners, faces = box(*c, *s)
@@ -458,6 +461,65 @@ def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris,
         for a, b, cc, d in faces:
             tris.append([base + a, base + b, base + cc])
             tris.append([base + a, base + cc, base + d])
+
+
+# Which way along its length (the clips' Y) a shield's point lies.
+HEATER_POINT = 1
+
+
+def add_heater(joint, c, width, length, thick, colour, metal, rough, team, anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris):
+    """A heater shield as a slab: its outline in the clips' X (across) and Y (along, the point at HEATER_POINT),
+    `thick` deep along Z; flat faces, so every face has its own corners."""
+    half = width / 2
+    top = -HEATER_POINT * length / 2  # the flat edge
+    shoulder = top + HEATER_POINT * length * 0.5  # where the sides start to curve in
+    outline = [(-half, top), (half, top)]
+    for i in range(7):
+        a = i / 6 * math.pi / 2
+        outline.append((half * math.cos(a), shoulder + HEATER_POINT * (length * 0.5) * math.sin(a)))
+    for i in range(5, -1, -1):
+        a = i / 6 * math.pi / 2
+        outline.append((-half * math.cos(a), shoulder + HEATER_POINT * (length * 0.5) * math.sin(a)))
+    shift = char_hand_rest[WEAPONS[joint]] - anim_rest[WEAPONS[joint]]
+    cx, cy, cz = c
+
+    def corner(u, v, side):
+        return Vector((cx + u, cy + v, cz + side * thick / 2)) + shift
+
+    def wound(points, base, i, j, k, normal):
+        """A triangle wound to face along `normal` (the game's culling keeps counter-clockwise fronts)."""
+        a, b, cc = points[i], points[j], points[k]
+        if (b - a).cross(cc - a).dot(Vector(normal)) < 0:
+            j, k = k, j
+        tris.append([base + i, base + j, base + k])
+
+    def face(points, normal):
+        base = len(pos)
+        for p in points:
+            pos.append(to_game_point(p))
+            nor.append([-normal[0], normal[2], normal[1]])
+            col.append([srgb_to_linear(x) for x in colour])
+            surf.append([metal, rough, team])
+            skin.append([BONES.index(joint), 0, 0, 0])
+            wts.append([1.0, 0.0, 0.0, 0.0])
+        return base
+
+    middle = (0.0, (top + shoulder) / 2)
+    n = len(outline)
+    for side in (-1, 1):
+        points = [corner(*middle, side)] + [corner(u, v, side) for u, v in outline]
+        base = face(points, (0, 0, side))
+        for i in range(n):
+            wound(points, base, 0, 1 + i, 1 + (i + 1) % n, (0, 0, side))
+    for i in range(n):
+        (u0, v0), (u1, v1) = outline[i], outline[(i + 1) % n]
+        out = Vector((v1 - v0, -(u1 - u0), 0)).normalized()
+        if out.dot(Vector((u0 + u1, v0 + v1 - 2 * middle[1], 0))) < 0:
+            out = -out
+        points = [corner(u0, v0, -1), corner(u1, v1, -1), corner(u1, v1, 1), corner(u0, v0, 1)]
+        base = face(points, tuple(out))
+        wound(points, base, 0, 1, 2, tuple(out))
+        wound(points, base, 0, 2, 3, tuple(out))
 
 
 def head_of(m: Matrix) -> Vector:

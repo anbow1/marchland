@@ -5,6 +5,16 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Miecznicy w pełnej zbroi; tarcza trójkątna u żołnierzy ze szkieletem
+
+- Miecznicy na „Medieval Knight (Sculpture)” (by__Rx, CC BY 4.0): pełna płytowa zbroja ze złotą przyłbicą.
+  Halabardnicy zostają na dotychczasowym rycerzu — teraz obie formacje różnią się z daleka. „Hospitalier
+  Knight” sprawdzony jako halabardnicy i odrzucony (bez hełmu, białe nogawice: wyglądał współcześnie).
+- Tarcza żołnierzy ze szkieletem (`rigged.py`): zamiast dwóch prostopadłościanów tarcza trójkątna — płaska
+  u góry, boki zbiegają się w szpic, lico w barwach strony na drewnianym spodzie. Każdy trójkąt sam
+  sprawdza, w którą stronę patrzy (bez zgadywania kolejności wierzchołków). Na zrzucie szpicem w dół.
+- Testy 94/94; WebGPU 0 błędów; bitwa: 147 potoków.
+
 ## 2026-11-17 · Jeździec jedzie w takt konia (bez klipu jazdy)
 
 - Mixamo nie ma animacji jazdy konnej (jest tylko siedzenie na krześle, nogi razem, do konia nie pasuje), więc
