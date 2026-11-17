@@ -16,6 +16,7 @@ import { spawnRegiment, stepWorld } from './sim/world.ts';
 import type { Quality } from './render/stage.ts';
 import { Menu } from './ui/menu.ts';
 import { Sound } from './ui/sound.ts';
+import { startOffline } from './ui/offline.ts';
 
 // Entry point: menu, loading, game, end screen. URL switches for measuring
 // (tools/measure/README.md): `?autostart` skips the menu, `&q=high|low` picks
@@ -43,6 +44,7 @@ const hudRoot = document.getElementById('hud') as HTMLElement;
 const menu = new Menu(document.getElementById('ui') as HTMLElement);
 const sound = new Sound();
 const autostart = params.has('autostart');
+startOffline();
 
 function askedQuality(): Quality | null {
   const q = params.get('q');

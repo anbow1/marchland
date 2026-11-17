@@ -1,5 +1,6 @@
 import { execSync } from 'node:child_process';
 import { defineConfig } from 'vitest/config';
+import { offlineFiles } from './tools/pwa/plugin.ts';
 
 /** The commit and its date ('3f2a1c9 · 2026-11-14'), or 'dev' outside git; read by src/version.ts. */
 function buildStamp(): string {
@@ -14,6 +15,8 @@ function buildStamp(): string {
 
 export default defineConfig({
   base: './',
+  // Every file of the build listed for the service worker (offline play: src/ui/offline.ts).
+  plugins: [offlineFiles()],
   define: { __BUILD__: JSON.stringify(buildStamp()) },
   resolve: {
     // Addons import 'three'; point it at the WebGPU build so there is one copy of the core.

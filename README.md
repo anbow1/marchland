@@ -15,6 +15,22 @@ npm test        # economy, combat, archery, camera, whole games played headless
 npm run build
 ```
 
+## Play it: web, iPad, Windows — offline after the first start
+
+Every push to `main` publishes the game at **https://anbow1.github.io/FPS/marchland/**
+(`.github/workflows/marchland-web.yml`; once: Settings → Pages → Source: *GitHub Actions*).
+Its service worker (`src/ui/offline.ts`, `tools/pwa/`) keeps every file on the device after the first
+visit, so it plays without the internet; a new version downloads in the background, only the files
+that changed, and starts next time (or at once from the note at the top of the screen). Saves stay.
+
+- **iPad / iPhone:** open the address in Safari once with the internet → Share → *Add to Home
+  Screen*. Start it from the icon: full screen, offline.
+- **Android:** Chrome → *Install app*.
+- **Windows:** `Marchland.exe` from the *marchland-windows* release (`desktop/`, built by
+  `.github/workflows/marchland-desktop.yml`): a window onto the same address that keeps the game on
+  the disk. The first start needs the internet; after that it plays offline and updates itself. Not
+  code-signed: Windows asks on the first start (*More info* → *Run anyway*). F11: full screen.
+
 Status: playable from the first building to the fall of a keep. The ground,
 walls and roofs are scanned CC0 surfaces; soldiers, horses, engines, buildings
 and trees are still geometry made in code. What comes next:

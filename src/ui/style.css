@@ -152,3 +152,35 @@ button.link { background: none; border: none; color: #f0d67a; text-decoration: u
 
 .formations .row { gap: 4px; align-items: center; margin-top: 3px; }
 .formations .label { min-width: 74px; color: #b9b29c; }
+
+/* A new version downloaded for offline play (src/ui/offline.ts). */
+.update-note {
+  position: fixed;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  max-width: calc(100vw - 32px);
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(20, 24, 32, 0.92);
+  border: 1px solid #c9a227;
+  color: #f1ead8;
+  font: 14px/1.3 system-ui, sans-serif;
+}
+.update-note button {
+  padding: 4px 10px;
+  border-radius: 6px;
+  border: 1px solid #c9a227;
+  background: #2f5fb0;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.update-note button.close {
+  background: transparent;
+  border-color: transparent;
+}

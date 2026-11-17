@@ -26,6 +26,9 @@ interface Strings {
   play: string;
   /** Before the build stamp in the menus. */
   version: string;
+  /** A newer version was fetched for offline play: it starts next time, or now. */
+  updateReady: string;
+  updateNow: string;
   resume: string;
   restart: string;
   paused: string;
@@ -490,6 +493,8 @@ const pl: Strings = {
     cannon: 'Dobre na: oddziały z daleka, mury i budynki. Słabe na: każdego, kto podejdzie blisko.',
     mortar: 'Dobry na: mury, budynki, zbite szyki. Słaby na: wszystko z bliska.',
   },
+  updateReady: 'Pobrano nową wersję gry — włączy się przy następnym uruchomieniu.',
+  updateNow: 'Uruchom teraz',
   menu: 'Menu',
   speed: 'Tempo',
   makes: 'daje',
@@ -817,6 +822,8 @@ const en: Strings = {
     cannon: 'Good against: regiments from afar, buildings. Poor against: anyone who comes close.',
     mortar: 'Good against: walls, buildings, packed ranks. Poor against: anything close.',
   },
+  updateReady: 'A new version of the game is downloaded — it starts next time.',
+  updateNow: 'Restart now',
   menu: 'Menu',
   speed: 'Speed',
   makes: 'makes',

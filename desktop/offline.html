@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8" />
+    <title>Marchland</title>
+    <style>
+      html, body { height: 100%; margin: 0; background: #1b2740; color: #f1ead8; font: 18px/1.5 system-ui, sans-serif; }
+      main { height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 0 24px; text-align: center; }
+      img { width: 128px; height: 128px; }
+      button { padding: 8px 18px; border-radius: 8px; border: 1px solid #c9a227; background: #2f5fb0; color: #fff; font: inherit; cursor: pointer; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <img src="icon.png" alt="" />
+      <p>Pierwsze uruchomienie Marchland potrzebuje internetu: gra pobierze się na dysk (ok. 60 MB).<br />Potem działa bez sieci.</p>
+      <p lang="en">The first start of Marchland needs the internet: the game downloads to the disk (about 60 MB). Then it plays offline.</p>
+      <button id="again">Spróbuj ponownie · Try again</button>
+    </main>
+    <script>
+      const game = new URLSearchParams(location.search).get('game');
+      const again = () => { location.href = game; };
+      document.getElementById('again').addEventListener('click', again);
+      window.addEventListener('online', again);
+    </script>
+  </body>
+</html>

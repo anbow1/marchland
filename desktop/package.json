@@ -1,0 +1,36 @@
+{
+  "name": "marchland-desktop",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marchland for Windows: a window onto the web game that keeps it on the disk for offline play.",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable --publish never"
+  },
+  "devDependencies": {
+    "electron": "45.2.3",
+    "electron-builder": "26.18.1"
+  },
+  "build": {
+    "appId": "io.github.anbow1.marchland",
+    "productName": "Marchland",
+    "files": [
+      "main.cjs",
+      "offline.html",
+      "icon.png"
+    ],
+    "win": {
+      "target": "portable",
+      "icon": "icon.png"
+    },
+    "portable": {
+      "artifactName": "Marchland.exe"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anbow1/FPS.git",
+    "directory": "marchland/desktop"
+  }
+}

@@ -5,6 +5,29 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-17 · Gra offline: iPad z ekranu początkowego, Windows jako .exe, aktualizacje różnicowe
+
+- **Tryb offline** (`src/ui/offline.ts`, `tools/pwa/`): po budowie powstaje `dist/sw.js` z listą wszystkich
+  plików gry (161) i skrótem każdego. Przy pierwszej wizycie service worker zapisuje grę na urządzeniu
+  (lokalnie ok. 1,5 s; z sieci zależy od łącza, ~56 MB). Nowa wersja instaluje się w tle do własnej pamięci:
+  niezmienione pliki kopiuje ze starej, pobiera tylko zmienione. Włącza się przy następnym uruchomieniu albo
+  od razu z paska „Pobrano nową wersję gry — Uruchom teraz”. Zapisy gry zostają. Na localhost wyłączony
+  (narzędzia pomiarowe), chyba że `?sw`.
+- Sprawdzone w Chromium: instalacja 162 wpisów; gra startuje (`__ready`) przy odciętej sieci, 113 odpowiedzi
+  z pamięci; po zmianie jednego pliku aktualizacja pobrała tylko `sw.js` i ten plik, przycisk przełączył na
+  nową wersję, stara pamięć usunięta. Poprawka po drodze: dopasowanie bez `Vary` (moduł JS prosi z
+  nagłówkiem Origin, którego zapisana kopia nie miała).
+- **Ikona i manifest**: tarcza z wieżą (`public/icons/`), `manifest.webmanifest`, znaczniki Apple (pełny
+  ekran z ekranu początkowego iPada).
+- **GitHub Pages** (`.github/workflows/marchland-web.yml`): każdy push do `main` z Marchland publikuje
+  https://anbow1.github.io/FPS/marchland/. Jednorazowo trzeba włączyć Pages (źródło: GitHub Actions).
+- **Windows** (`desktop/`, `.github/workflows/marchland-desktop.yml`): Electron 45 jako okno na ten adres;
+  `Marchland.exe` (przenośny, 110 MB, bez podpisu) w wydaniu *marchland-windows*. Sprawdzone pod Xvfb:
+  pierwsze uruchomienie zapisało 162 pliki w 2 s; z wyłączonym serwerem gra wstaje z dysku; bez internetu
+  przy pierwszym starcie — strona z prośbą o połączenie i ponowną próbą. Build .exe działa na Linuksie
+  (bez Wine).
+- Testy 94/94.
+
 ## 2026-11-17 · Trzy mieszczanki zamiast jednej
 
 - Dwie nowe kobiety w mieście, z tymi samymi klipami co reszta ludzi: „.Fuse Woman 1” (Leonardo Carvalho,
