@@ -241,26 +241,37 @@ describe('the wider roster', () => {
   });
 
   it('a crossbow bolt goes through mail that turns arrows: shot for shot it brings down more', () => {
+    // Twenty swordsmen in mail marching on the shooters from 160 m, four games each.
     const perShot = (shooters: UnitKind): number => {
       let lost = 0;
       let shots = 0;
       for (let seed = 1; seed <= 4; seed++) {
         const world = emptyWorld(seed);
-        spawnRegiment(world, PLAYER, shooters, 0, 0, Math.PI);
-        const target = spawnRegiment(world, COMPUTER, 'swordsmen', 0, -55, 0);
-        // Short enough that neither empties the target's ranks.
-        for (let step = 0; step < 40 / SIM.stepSeconds; step++) {
+        const s = spawnRegiment(world, PLAYER, shooters, 0, 0, Math.PI);
+        campaignRegiment(s);
+        fillRegiment(s, 20);
+        const target = spawnRegiment(world, COMPUTER, 'swordsmen', 0, -160, 0);
+        campaignRegiment(target);
+        fillRegiment(target, 20);
+        cmdMove(world, target.id, 0, -3, null, false);
+        for (let step = 0; step < 300 / SIM.stepSeconds && !isEngaged(target) && target.aliveMen > 0; step++) {
           world.events.clear();
           stepWorld(world, SIM.stepSeconds);
-          for (let i = 0; i < world.events.count; i++) if ((world.events.items[i] as (typeof world.events.items)[number]).kind === 'arrowShot') shots++;
+          for (let i = 0; i < world.events.count; i++) {
+            const e = world.events.items[i] as (typeof world.events.items)[number];
+            if (e.kind === 'arrowShot' && e.side === PLAYER) shots++;
+          }
         }
-        lost += target.initialMen - target.aliveMen;
+        lost += 20 - target.aliveMen;
       }
       return lost / Math.max(1, shots);
     };
-    // A bolt does twice an arrow's harm and goes through more of the mail.
-    expect(perShot('crossbowmen')).toBeGreaterThan(perShot('archers') * 1.5);
-  }, 30_000);
+    // Arrows and bolts hit alike; a bolt (30, through most of the mail) kills in two, an arrow (20) in three.
+    const bolt = perShot('crossbowmen');
+    const arrow = perShot('archers');
+    expect(bolt).toBeGreaterThan(arrow * 1.3);
+    expect(arrow).toBeGreaterThan(0.05);
+  }, 60_000);
 
   it('cannon reach where archers cannot, and shoot nothing inside their minimum range', () => {
     const shootAt = (distanceM: number): number => {

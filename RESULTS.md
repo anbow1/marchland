@@ -15,13 +15,14 @@ jeszcze nie mierzyłem.
   - Bełt zabierał miecznikowi 13 z 36 punktów życia, a kula armatnia zabijała jednego człowieka.
 - **Zmiany** (`config.ts`, `missiles.ts`):
   - trafienie 0,4 → 0,75;
-  - łucznicy i kusznicy trafiają jednakowo, ale bełt ma 2× większe obrażenia (strzała 15, bełt 30,
-    a bełt dalej przebija zbroję); łucznik strzela częściej (6 s wobec 10 s);
+  - łucznicy i kusznicy trafiają jednakowo (ok. 28% strzałów w podchodzący oddział); strzała 20, bełt 30
+    i bełt dalej przebija zbroję: miecznika w kolczudze zabijają 3 strzały albo 2 bełty; łucznik strzela
+    częściej (6 s wobec 10 s);
   - kula armatnia toczy się 12 m przez szereg i trafia do 4 ludzi stojących na jej drodze (75% każdy),
     z siłą malejącą z odległością;
   - moździerz zabójczy, ale mało celny: obrażenia 30, rozprysk 3,5 m, 3× większy rozrzut.
 - **Po zmianach**:
-  - kusze 14% na strzał (25–50 zabitych na 250 bełtów), łuki 3–5%, działo ok. 1 zabity na strzał;
+  - kusze 12–14% na strzał (25–50 zabitych na 250 bełtów), łuki ok. 7%, działo ok. 1 zabity na strzał;
   - nowy test w `tests/combat.test.ts`;
   - trzy stare testy dostosowane, bo nasycały się (oddział ginął cały przed końcem pomiaru).
 - **Mur przez bród**: w wodzie nie da się stawiać muru, więc mur przecinający bród zostawia przejście
