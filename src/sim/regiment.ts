@@ -121,6 +121,13 @@ export interface Regiment {
   /** A way round walls to its goal: way points (x, z pairs), the next one, the goal it leads to, the map's version it was found on, and the clock to the next look. */
   route: number[];
   routeAt: number;
+  /** Where the regiment has marched lately (x, z pairs, a point every 2 m, newest last): men cut off from their
+   * places by water follow it (over the ford it took) instead of wading into the river. Absent in old saves. */
+  trail?: number[];
+  /** Metres the column still marches after its way round is done, so its tail is through before it deploys. */
+  columnLeftM?: number;
+  /** Standing back from a ford or a gate while another regiment of its side goes through. */
+  waiting?: boolean;
   routeGoalX: number;
   routeGoalZ: number;
   routeVersion: number;
@@ -188,7 +195,8 @@ function wedgeRank(slot: number): number {
 
 /** Sideways (in files) and backwards (in ranks) position of a slot. The last, short rank is centred too. */
 function slotFile(r: Regiment, slot: number): number {
-  if (r.formation === 'wedge') {
+  // In column even a wedge marches three abreast.
+  if (r.formation === 'wedge' && r.marchFiles === 0) {
     const rank = wedgeRank(slot);
     const first = rank * rank;
     const inRank = Math.min(2 * rank + 1, r.aliveMen - first);
@@ -201,7 +209,7 @@ function slotFile(r: Regiment, slot: number): number {
 }
 
 function slotRank(r: Regiment, slot: number): number {
-  if (r.formation === 'wedge') return wedgeRank(slot);
+  if (r.formation === 'wedge' && r.marchFiles === 0) return wedgeRank(slot);
   return Math.floor(slot / filesOf(r));
 }
 
@@ -222,13 +230,55 @@ export function placeZ(r: Regiment, slot: number, anchorZ: number, facingRad: nu
   return anchorZ - Math.sin(facingRad) * slotFile(r, slot) * r.def.fileSpacingM * spread(r) - Math.cos(facingRad) * slotRank(r, slot) * r.def.rankSpacingM * spread(r);
 }
 
+// A column on the march bends: each rank stands on the way the head has come (the regiment's trail), not on a
+// straight line behind it, so the tail follows the head through a ford or a gate instead of swinging into the river.
+const SNAKE = { r: null as Regiment | null, slot: -1, ax: 0, az: 0, n: 0, x: 0, z: 0 };
+
+function snakePlace(r: Regiment, slot: number): boolean {
+  const trail = r.trail;
+  if (r.marchFiles <= 0 || !trail || trail.length < 2) return false;
+  if (SNAKE.r === r && SNAKE.slot === slot && SNAKE.ax === r.anchorX && SNAKE.az === r.anchorZ && SNAKE.n === trail.length) return true;
+  let left = slotRank(r, slot) * r.def.rankSpacingM * spread(r);
+  const across = slotFile(r, slot) * r.def.fileSpacingM * spread(r);
+  let px = r.anchorX;
+  let pz = r.anchorZ;
+  // Backwards along the way; beyond the trail's end, straight on behind it.
+  let backX = -forwardX(r.facingRad);
+  let backZ = -forwardZ(r.facingRad);
+  for (let k = trail.length - 2; k >= 0 && left > 0; k -= 2) {
+    const tx = trail[k] as number;
+    const tz = trail[k + 1] as number;
+    const seg = Math.hypot(tx - px, tz - pz);
+    if (seg < 1e-6) continue;
+    backX = (tx - px) / seg;
+    backZ = (tz - pz) / seg;
+    const step = Math.min(seg, left);
+    px += backX * step;
+    pz += backZ * step;
+    left -= step;
+  }
+  if (left > 0) {
+    px += backX * left;
+    pz += backZ * left;
+  }
+  // Across the way: the file axis of a man facing forward (−back).
+  SNAKE.x = px - backZ * across;
+  SNAKE.z = pz + backX * across;
+  SNAKE.r = r;
+  SNAKE.slot = slot;
+  SNAKE.ax = r.anchorX;
+  SNAKE.az = r.anchorZ;
+  SNAKE.n = trail.length;
+  return true;
+}
+
 /** Where a slot is now. */
 export function slotX(r: Regiment, slot: number): number {
-  return placeX(r, slot, r.anchorX, r.facingRad);
+  return snakePlace(r, slot) ? SNAKE.x : placeX(r, slot, r.anchorX, r.facingRad);
 }
 
 export function slotZ(r: Regiment, slot: number): number {
-  return placeZ(r, slot, r.anchorZ, r.facingRad);
+  return snakePlace(r, slot) ? SNAKE.z : placeZ(r, slot, r.anchorZ, r.facingRad);
 }
 
 /** Width of the front rank in metres. */

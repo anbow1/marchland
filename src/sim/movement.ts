@@ -1,9 +1,9 @@
-import { cellX, cellZ, findRoute, freeCellBeside, nearBuilt, blockedBetween, wallCellAt, wallStops } from './nav.ts';
+import { cellX, cellZ, findRoute, NAV_CELLS_PER_SIDE, freeCellBeside, nearBuilt, blockedBetween, wallCellAt, wallStops } from './nav.ts';
 import { reachM } from './missiles.ts';
 import { woodStands } from './trees.ts';
 import { ARMY, COMBAT, FATIGUE, FORMATION, MAP, TOWN } from '../config.ts';
-import { angleDelta, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, offRiver, townX, townZ } from './terrain.ts';
+import { angleDelta, filesOf, frontageM, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
+import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, offRiver, RIVER_CROSSINGS, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -200,12 +200,41 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
 
   // Water, rock or a wall in the way: the way round it (a ford, a gap, one of its own gates), one leg at a time, in column.
   const leg = r.order === 'hold' ? null : followRoute(world, r, goalX, goalZ, dtSeconds);
-  r.marchFiles = leg ? ARMY.columnFiles : 0;
+  // The column holds until its tail is through too, then deploys; a fight or a halt deploys it at once.
+  if (leg) r.columnLeftM = columnLengthM(r) + 4;
+  if (r.order === 'hold' || isEngaged(r)) r.columnLeftM = 0;
+  const inColumn = leg !== null || (r.columnLeftM ?? 0) > 0;
+  // The way it has come, a point every 2 m (the last 80 m): the column's ranks stand on it, and men behind follow it round water.
+  const trail = (r.trail ??= []);
+  if (inColumn && r.marchFiles === 0) {
+    // Falling into column: it forms up straight behind the head, away from where it is going.
+    const toX = (leg ? leg.x : goalX) - r.anchorX;
+    const toZ = (leg ? leg.z : goalZ) - r.anchorZ;
+    const to = hypot2(toX, toZ) || 1;
+    const back = columnLengthM(r) + 6;
+    trail.length = 0;
+    trail.push(r.anchorX - (toX / to) * back, r.anchorZ - (toZ / to) * back, r.anchorX, r.anchorZ);
+  }
+  r.marchFiles = inColumn ? ARMY.columnFiles : 0;
+  const lastX = trail[trail.length - 2];
+  const lastZ = trail[trail.length - 1];
+  if (lastX === undefined || lastZ === undefined || hypot2(r.anchorX - lastX, r.anchorZ - lastZ) > 2) {
+    trail.push(r.anchorX, r.anchorZ);
+    if (trail.length > 80) trail.splice(0, 2);
+  }
+  // At a ford or a gate another regiment of its side is going through: it waits its turn.
+  const waiting = leg !== null && !isEngaged(r) && mustWait(world, r, leg.x, leg.z);
+  r.waiting = waiting;
   if (leg) {
     goalX = leg.x;
     goalZ = leg.z;
     stopDistanceM = 0;
     faceGoal = false;
+    // Waiting: it stands, facing the crossing.
+    if (waiting) {
+      faceGoal = true;
+      stopDistanceM = hypot2(goalX - r.anchorX, goalZ - r.anchorZ);
+    }
   }
   const dx = goalX - r.anchorX;
   const dz = goalZ - r.anchorZ;
@@ -236,6 +265,7 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
       r.run = false;
     }
   }
+  if (!leg && (r.columnLeftM ?? 0) > 0) r.columnLeftM = Math.max(0, (r.columnLeftM ?? 0) - movedM);
   r.speedMs = movedM / dtSeconds;
   r.sinceChargeSpeedS = r.speedMs >= COMBAT.chargeMinSpeedShare * runSpeedMs(r) ? 0 : r.sinceChargeSpeedS + dtSeconds;
   const turnRate = isEngaged(r) ? ARMY.engagedTurnRateRadS : r.def.turnRateRadS;
@@ -246,6 +276,144 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
 }
 
 const routeScratch = new Float32Array(2 * 64);
+
+/** Half the width of the regiment's front: in column (three abreast), or as it stands deployed. */
+function marchHalfWidthM(r: Regiment, column: boolean): number {
+  const files = column ? Math.min(ARMY.columnFiles, Math.max(1, r.aliveMen)) : filesOf(r);
+  const across = r.formation === 'wedge' && !column ? frontageM(r) : (files - 1) * r.def.fileSpacingM;
+  // A cell and a bit to spare: the water test is on two-metre cells, and men lag a little off their places.
+  return across / 2 + r.def.bodyRadiusM + 1.6;
+}
+
+/** Length of the regiment in column, front rank to last. */
+function columnLengthM(r: Regiment): number {
+  const ranks = Math.ceil(Math.max(1, r.aliveMen) / Math.min(ARMY.columnFiles, Math.max(1, r.aliveMen)));
+  return (ranks - 1) * r.def.rankSpacingM;
+}
+
+/** True when a band `halfW` either side of the straight way crosses water, rock or a wall that stops the side. */
+function wideBlocked(nav: World['nav'], side: number, x0: number, z0: number, x1: number, z1: number, halfW: number): boolean {
+  if (blockedBetween(nav, side, x0, z0, x1, z1)) return true;
+  const d = hypot2(x1 - x0, z1 - z0);
+  if (halfW < 0.5 || d < 1e-6) return false;
+  const px = -(z1 - z0) / d;
+  const pz = (x1 - x0) / d;
+  for (const k of halfW > 4 ? [1, -1, 0.5, -0.5] : [1, -1]) {
+    const ox = px * halfW * k;
+    const oz = pz * halfW * k;
+    if (blockedBetween(nav, side, x0 + ox, z0 + oz, x1 + ox, z1 + oz)) return true;
+  }
+  return false;
+}
+
+// ---- taking turns at a crossing ----------------------------------------------
+// A ford, the causeway, a gate: one regiment of a side at a time. The others stand back and wait, the nearest
+// going next, so columns do not meet in the water or jam in the gateway.
+
+interface Passage {
+  x: number;
+  z: number;
+  radiusM: number;
+}
+
+const QUEUE_APPROACH_M = 12;
+let passageVersion = -1;
+let passageNav: World['nav'] | null = null;
+const passageList: Passage[] = [];
+
+function passages(world: World): readonly Passage[] {
+  const nav = world.nav;
+  if (passageNav === nav && passageVersion === nav.version) return passageList;
+  passageNav = nav;
+  passageVersion = nav.version;
+  passageList.length = 0;
+  const crossingR = Math.hypot(MAP.crossingHalfM, MAP.riverHalfWidthM) + 3;
+  for (const [x, z] of RIVER_CROSSINGS) passageList.push({ x, z, radiusM: crossingR });
+  // Gates: their cells gathered into gateways, each with its middle and reach.
+  const seen = new Set<number>();
+  const n = NAV_CELLS_PER_SIDE;
+  for (let i = 0; i < nav.wallGate.length; i++) {
+    if (nav.wallGate[i] !== 1 || seen.has(i)) continue;
+    const cells = [i];
+    seen.add(i);
+    for (let k = 0; k < cells.length; k++) {
+      const c = cells[k] as number;
+      const cx = c % n;
+      const cz = (c / n) | 0;
+      for (let dz = -1; dz <= 1; dz++) {
+        for (let dx = -1; dx <= 1; dx++) {
+          const x = cx + dx;
+          const z = cz + dz;
+          if (x < 0 || z < 0 || x >= n || z >= n) continue;
+          const j = z * n + x;
+          if (nav.wallGate[j] === 1 && !seen.has(j)) {
+            seen.add(j);
+            cells.push(j);
+          }
+        }
+      }
+    }
+    let sx = 0;
+    let sz = 0;
+    for (const c of cells) {
+      sx += cellX(c);
+      sz += cellZ(c);
+    }
+    const mx = sx / cells.length;
+    const mz = sz / cells.length;
+    let far = 0;
+    for (const c of cells) far = Math.max(far, hypot2(cellX(c) - mx, cellZ(c) - mz));
+    passageList.push({ x: mx, z: mz, radiusM: far + 6 });
+  }
+  return passageList;
+}
+
+/** The point the regiment's way is heading for now, or null when it is not following a way round. */
+function legOf(r: Regiment): { x: number; z: number } | null {
+  if (r.order === 'hold' || r.routeAt * 2 >= r.route.length) return null;
+  return { x: r.route[r.routeAt * 2] as number, z: r.route[r.routeAt * 2 + 1] as number };
+}
+
+/** True when the straight way from (x0, z0) to (x1, z1) comes within `radius` of (cx, cz). */
+function passesNear(x0: number, z0: number, x1: number, z1: number, cx: number, cz: number, radius: number): boolean {
+  const dx = x1 - x0;
+  const dz = z1 - z0;
+  const len2 = dx * dx + dz * dz;
+  const t = len2 < 1e-9 ? 0 : Math.min(1, Math.max(0, ((cx - x0) * dx + (cz - z0) * dz) / len2));
+  return hypot2(x0 + dx * t - cx, z0 + dz * t - cz) < radius;
+}
+
+/** About to go through a passage: close to it, outside it, and its way leads in. */
+function approaching(r: Regiment, p: Passage, legX: number, legZ: number): number {
+  const d = hypot2(r.anchorX - p.x, r.anchorZ - p.z);
+  if (d < p.radiusM || d > p.radiusM + QUEUE_APPROACH_M) return -1;
+  return passesNear(r.anchorX, r.anchorZ, legX, legZ, p.x, p.z, p.radiusM) ? d : -1;
+}
+
+/** Going through a passage now: on the move, with men in it. */
+function inPassage(r: Regiment, p: Passage): boolean {
+  if (r.order === 'hold' || r.waiting || (r.speedMs < 0.05 && r.lagM < 1)) return false;
+  if (hypot2(r.centreX - p.x, r.centreZ - p.z) > p.radiusM + r.radiusM) return false;
+  for (const s of r.soldiers) if (s.alive && hypot2(s.x - p.x, s.z - p.z) < p.radiusM) return true;
+  return false;
+}
+
+/** True when the regiment must stand back from a crossing it is about to take: another of its side is going through, or is nearer the front of the queue. */
+function mustWait(world: World, r: Regiment, legX: number, legZ: number): boolean {
+  for (const p of passages(world)) {
+    const mine = approaching(r, p, legX, legZ);
+    if (mine < 0) continue;
+    for (const o of world.regiments) {
+      if (o === r || o.side !== r.side || o.aliveMen === 0 || o.state !== 'formed') continue;
+      if (inPassage(o, p)) return true;
+      const leg = legOf(o);
+      if (!leg) continue;
+      const theirs = approaching(o, p, leg.x, leg.z);
+      if (theirs >= 0 && (theirs < mine || (theirs === mine && o.id < r.id))) return true;
+    }
+  }
+  return false;
+}
 const LEG = { x: 0, z: 0 };
 
 /**
@@ -258,8 +426,10 @@ function followRoute(world: World, r: Regiment, goalX: number, goalZ: number, dt
   r.routeCheckS -= dtSeconds;
   const moved = hypot2(goalX - r.routeGoalX, goalZ - r.routeGoalZ) > ARMY.routeGoalSlackM;
   const changed = r.routeVersion !== nav.version;
+  // How wide a way it needs: a column's, or while it is deployed its whole front (a line does not fit through a gate).
+  const halfW = isEngaged(r) ? 0 : marchHalfWidthM(r, r.marchFiles > 0);
   if (r.routeCheckS <= 0 || moved || changed) {
-    if (!blockedBetween(nav, r.side, r.anchorX, r.anchorZ, goalX, goalZ)) {
+    if (!wideBlocked(nav, r.side, r.anchorX, r.anchorZ, goalX, goalZ, halfW)) {
       r.route.length = 0;
       r.routeCheckS = ARMY.routeCheckS;
       r.routeGoalX = goalX;
@@ -272,6 +442,8 @@ function followRoute(world: World, r: Regiment, goalX: number, goalZ: number, dt
       r.route.length = 0;
       // Every way point but the last (the goal itself, reached by the ordinary approach).
       for (let k = 0; k < n - 1; k++) r.route.push(routeScratch[k * 2] as number, routeScratch[k * 2 + 1] as number);
+      // Straight on, but too narrow for its front (a gate dead ahead): in column to the goal itself.
+      if (n > 0 && r.route.length === 0) r.route.push(goalX, goalZ);
       r.routeAt = 0;
       r.routeGoalX = goalX;
       r.routeGoalZ = goalZ;
@@ -293,7 +465,8 @@ function followRoute(world: World, r: Regiment, goalX: number, goalZ: number, dt
     }
     const nx = r.routeAt + 1 < points ? (r.route[(r.routeAt + 1) * 2] as number) : goalX;
     const nz = r.routeAt + 1 < points ? (r.route[(r.routeAt + 1) * 2 + 1] as number) : goalZ;
-    if (!blockedBetween(nav, r.side, r.anchorX, r.anchorZ, nx, nz) && !blockedBetween(nav, r.side, x, z, nx, nz) && hypot2(x - r.anchorX, z - r.anchorZ) < 6) {
+    const colW = marchHalfWidthM(r, true);
+    if (!wideBlocked(nav, r.side, r.anchorX, r.anchorZ, nx, nz, colW) && !wideBlocked(nav, r.side, x, z, nx, nz, colW) && hypot2(x - r.anchorX, z - r.anchorZ) < 6) {
       r.routeAt++;
       continue;
     }
@@ -341,6 +514,12 @@ function findTarget(world: World, s: Soldier, radiusM: number, placeX: number, p
 }
 
 const OFF_CLIFF = { x: 0, z: 0 };
+
+/** True when deep water (a lake, the river away from its crossings) lies on the straight way between two points. */
+function waterBetween(x0: number, z0: number, x1: number, z1: number): boolean {
+  for (const t of [0.2, 0.4, 0.6, 0.8]) if (isWater(x0 + (x1 - x0) * t, z0 + (z1 - z0) * t)) return true;
+  return false;
+}
 
 /** Puts a soldier who has stepped into a lake back on its bank, and one who has climbed onto sheer rock back at its foot. */
 function avoidWater(s: Soldier): void {
@@ -447,6 +626,18 @@ function stepSoldier(world: World, s: Soldier, dtSeconds: number): number {
       goalX = placeX;
       goalZ = placeZ;
       maxSpeed = catchUp;
+      // Water between him and his place (the line has turned on the far bank while he is still behind):
+      // along the way the regiment came, to the newest point of it he can reach dry, not into the river.
+      if (lagM > 3 && r.trail && r.trail.length > 0 && waterBetween(s.x, s.z, placeX, placeZ)) {
+        for (let k = r.trail.length - 2; k >= 0; k -= 2) {
+          const tx = r.trail[k] as number;
+          const tz = r.trail[k + 1] as number;
+          if (waterBetween(s.x, s.z, tx, tz)) continue;
+          goalX = tx;
+          goalZ = tz;
+          break;
+        }
+      }
     }
   }
 

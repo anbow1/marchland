@@ -28,6 +28,25 @@ for (let cz = 0; cz < N; cz++) {
   }
 }
 
+/** How many cells to the nearest water or rock (capped at SHORE_CELLS + 1): a column keeps off the very edge of a ford. */
+const SHORE_CELLS = 2;
+const SHORE = new Uint8Array(CELLS).fill(SHORE_CELLS + 1);
+for (let cz = 0; cz < N; cz++) {
+  for (let cx = 0; cx < N; cx++) {
+    if (WATER[cz * N + cx] !== 1) continue;
+    for (let dz = -SHORE_CELLS; dz <= SHORE_CELLS; dz++) {
+      for (let dx = -SHORE_CELLS; dx <= SHORE_CELLS; dx++) {
+        const x = cx + dx;
+        const z = cz + dz;
+        if (x < 0 || z < 0 || x >= N || z >= N) continue;
+        const i = z * N + x;
+        const d = Math.max(Math.abs(dx), Math.abs(dz));
+        if (d < (SHORE[i] as number)) SHORE[i] = d;
+      }
+    }
+  }
+}
+
 export interface Nav {
   /** 1 where a road has been laid. */
   road: Uint8Array;
@@ -354,9 +373,29 @@ export function freeCellBeside(nav: Nav, cell: number, nearX: number, nearZ: num
   return best;
 }
 
+/** Extra cost of a cell beside water, rock or a wall that stops him (by how many cells off it is): a regiment's way runs through the middle of a ford or a gate. */
+const EDGE_COST = [0, 4, 1.5];
+
 function costOf(nav: Nav, i: number): number {
-  if (nav.road[i] === 1) return COST_ROAD;
-  return FOREST[i] === 1 ? COST_FOREST : COST_OPEN;
+  const ground = nav.road[i] === 1 ? COST_ROAD : FOREST[i] === 1 ? COST_FOREST : COST_OPEN;
+  if (passSide < 0) return ground;
+  let near = SHORE[i] as number;
+  if (near > SHORE_CELLS) near = SHORE_CELLS + 1;
+  const cx = i % N;
+  const cz = (i / N) | 0;
+  for (let dz = -SHORE_CELLS; dz <= SHORE_CELLS && near > 1; dz++) {
+    const z = cz + dz;
+    if (z < 0 || z >= N) continue;
+    for (let dx = -SHORE_CELLS; dx <= SHORE_CELLS; dx++) {
+      const x = cx + dx;
+      if (x < 0 || x >= N) continue;
+      const j = z * N + x;
+      if (nav.wallHp[j] === 0 || !wallStops(nav, j, passSide)) continue;
+      const d = Math.max(Math.abs(dx), Math.abs(dz));
+      if (d < near) near = d;
+    }
+  }
+  return ground + (EDGE_COST[near] ?? 0);
 }
 
 const DX = [1, -1, 0, 0, 1, 1, -1, -1];
@@ -401,6 +440,7 @@ export function findPath(nav: Nav, sx: number, sz: number, tx: number, tz: numbe
     const cx = cell % N;
     const cz = (cell / N) | 0;
     const here = gScore[cell] as number;
+    const hereCost = costOf(nav, cell);
     for (let k = 0; k < 8; k++) {
       const nx = cx + (DX[k] as number);
       const nz = cz + (DZ[k] as number);
@@ -410,7 +450,7 @@ export function findPath(nav: Nav, sx: number, sz: number, tx: number, tz: numbe
       if (next !== goal && !passable(nav, next)) continue;
       // No cutting a corner between two blocked cells.
       if (k >= 4 && (!passable(nav, cz * N + nx) || !passable(nav, nz * N + cx))) continue;
-      const step = (k >= 4 ? Math.SQRT2 : 1) * 0.5 * (costOf(nav, cell) + costOf(nav, next));
+      const step = (k >= 4 ? Math.SQRT2 : 1) * 0.5 * (hereCost + costOf(nav, next));
       const g = here + step;
       if (stamp[next] === generation && g >= (gScore[next] as number)) continue;
       gScore[next] = g;

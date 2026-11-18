@@ -5,6 +5,31 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Bród i brama: kolumna idzie śladem, oddziały czekają na swoją kolej
+
+- **Ludzie gubili się na brodzie**:
+  - trasa szła samą krawędzią brodu, więc skrajni ludzie w kolumnie wchodzili w głęboką wodę;
+  - kolumna była sztywna: przy skręcie czoła tył zataczał łuk i wpadał do rzeki;
+  - przy przejściu na ukos 6–8 ludzi stało w głębokiej wodzie, a przy dalekim skosie 2–4 nie doszło wcale.
+- **Teraz**:
+  - trasa oddziału omija pas 2 komórek (4 m) przy wodzie, skałach i murze, więc biegnie środkiem brodu i bramy;
+  - kolumna to „wąż”: każdy szereg stoi na drodze, którą przeszło czoło (ślad oddziału), więc tył idzie tam,
+    gdzie przód, a nie na skróty przez rzekę;
+  - kolumna rozwija się w szyk dopiero, gdy przejdzie przez przeprawę jej ostatni szereg;
+  - oddział rozwinięty w linię sprawdza, czy zmieści się cały; jeśli linia nie mieści się w bramie, przechodzi
+    w kolumnie zamiast utknąć skrzydłami na murze.
+- **Kolejka na przeprawach** (prośba: „trzeba by je kolejkować”):
+  - bród, grobla i każda brama to przeprawa; przez jedną przeprawę idzie naraz jeden oddział danej strony;
+  - pozostałe czekają 12 m przed wejściem, zwrócone ku przeprawie; najbliższy idzie następny;
+  - oddział, który stoi (rozkaz „stój”), nie blokuje przeprawy; nieprzyjaciel nie czeka w tej kolejce.
+- **Pomiar** (`tests/crossing.test.ts`, na mapie z rzeką):
+  - 40 mieczników i 12 jazdy przez bród prosto i na dwa skosy: 0 ludzi w głębokiej wodzie, wszyscy doszli;
+  - 4 oddziały naraz przez ten sam bród: przeszły po kolei w 31, 94, 152 i 185 s, nigdy więcej niż jeden
+    w brodzie, nikt w wodzie (przedtem tłoczyły się i część utykała);
+  - 4 oddziały przez jedną bramę: 20, 69, 111 i 149 s, po kolei.
+- `npm test` uruchamia ten plik drugi raz z `MARCHLAND_MAP=river`. Misja 1 bez zmian: za murem 4/4 wygrane
+  ze stratami, w polu 2/4. Testy 115/115 (+4 na mapie z rzeką).
+
 ## 2026-11-18 · Pola w czterech fazach, ryby u rybaka
 
 - **Pola**:

@@ -129,6 +129,9 @@ export function riverPoint(s: number, across: number): [number, number] {
 
 export const HAS_RIVER = RIVER;
 
+/** The middles of the river's crossings (the causeway and the two fords), as x, z pairs; none without the river. */
+export const RIVER_CROSSINGS: readonly (readonly [number, number])[] = RIVER ? [-MAP.knollOffsetM, 0, MAP.knollOffsetM].map((s) => riverPoint(s, 0)) : [];
+
 /** True where the lake, or the river, is too deep to wade. */
 export function isWater(x: number, z: number): boolean {
   return lakeShare(x, z) < 0.93 || isRiver(x, z);
