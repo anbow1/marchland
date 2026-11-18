@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Taczka w rękach tragarza, ładunek w skrzyni
+
+- Taczka stała jak odstawiona: na nóżkach, z rączkami 0,36 m nad ziemią, przed tragarzem, ale poza jego
+  dłońmi. Ładunek był ustawiany na wysokości ziemi, więc leżał przed kołem, niżej niż sama taczka.
+- Teraz taczka jest o 1/5 większa (1,8 m) i przechylona wokół osi koła (ok. 16°): koło stoi na ziemi, a
+  końce rączek są 0,85 m nad ziemią, 0,4 m przed tragarzem, w jego dłoniach.
+- Ładunek leży na dnie skrzyni: jego położenie liczone jest tym samym przechyleniem co taczka.
+- Sprawdzone na zrzutach z bliska (z boku i z tyłu).
+
 ## 2026-11-18 · Bród i brama: kolumna idzie śladem, oddziały czekają na swoją kolej
 
 - **Ludzie gubili się na brodzie**:

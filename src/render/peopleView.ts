@@ -125,7 +125,57 @@ interface PropModel {
 
 /** Where the models sit about the carrier (who looks along +Z): the barrow ahead of his hands; the wagon
  * at his right, its shafts ahead, the horse between and beyond them. */
-const BARROW_Z = 1.1;
+/**
+ * The modelled barrow as it is pushed (handcart.json, 1.5 m long, lying on its legs with the handles 0.36 m up):
+ * a fifth larger, its handles lifted into the carrier's hands (0.85 m up, 0.4 m before him) by tipping it
+ * forward about the wheel's axle, the wheel on the ground. `load` is the middle of its tray's floor, where the
+ * load rides.
+ */
+const BARROW = {
+  scale: 1.2,
+  axleY: 0.18,
+  axleZ: 0.59,
+  handleY: 0.365,
+  handleZ: -0.75,
+  gripY: 0.85,
+  gripZ: 0.4,
+  floorY: 0.3,
+  floorZ: 0.02,
+};
+const BARROW_LOAD = { y: 0, z: 0 };
+
+function pushedBarrow(model: PropModel): PropModel {
+  const b = BARROW;
+  const hy = (b.handleY - b.axleY) * b.scale;
+  const hz = (b.handleZ - b.axleZ) * b.scale;
+  // Tip it until the handles' ends are at the grip: hy·cos a − hz·sin a = grip − axle height.
+  const rise = b.gripY - b.axleY * b.scale;
+  let a = 0;
+  for (let k = 0; k < 40; k++) a += (rise - (hy * Math.cos(a) - hz * Math.sin(a))) / (-hy * Math.sin(a) - hz * Math.cos(a));
+  const cos = Math.cos(a);
+  const sin = Math.sin(a);
+  // The axle stays on its height over the ground; along the way it goes where the handles reach the grip.
+  const axleZ = b.gripZ - (hy * sin + hz * cos);
+  const place = (y: number, z: number): [number, number] => {
+    const ry = (y - b.axleY) * b.scale;
+    const rz = (z - b.axleZ) * b.scale;
+    return [b.axleY * b.scale + ry * cos - rz * sin, axleZ + ry * sin + rz * cos];
+  };
+  [BARROW_LOAD.y, BARROW_LOAD.z] = place(b.floorY, b.floorZ);
+  const positions = model.positions.slice();
+  const normals = model.normals.slice();
+  for (let v = 0; v < positions.length; v += 3) {
+    const [y, z] = place(positions[v + 1] as number, positions[v + 2] as number);
+    positions[v] = (positions[v] as number) * b.scale;
+    positions[v + 1] = y;
+    positions[v + 2] = z;
+    const ny = normals[v + 1] as number;
+    const nz = normals[v + 2] as number;
+    normals[v + 1] = ny * cos - nz * sin;
+    normals[v + 2] = ny * sin + nz * cos;
+  }
+  return { ...model, positions, normals };
+}
 const WAGON_X = 1.0;
 const WAGON_Z = -0.3;
 /** The modelled wagon's horse (the cavalry's, animated; drawn by AnimalsView): its middle between the shafts. */
@@ -458,6 +508,7 @@ export class PeopleView {
           const model = (await (await fetch(`${base}props/goods/${shape}.json`)).json()) as PropModel;
           const scale = LOAD_SIZE_M / Math.max(...(model.size as number[]));
           const at = this.men.length > 0 ? LOAD_IN_HANDS : LOAD_AT;
+          this.loadLift = at;
           const g = propGeometry(model, at[0], at[2], null, scale, at[1]);
           const mesh = this.prepare(new InstancedMesh(g, this.material, 2 * PEOPLE.maxPerSide));
           mesh.name = `loads ${shape}`;
@@ -479,6 +530,8 @@ export class PeopleView {
 
   /** Whether the carts are the modelled ones (their loads sit a little differently). */
   private modelled = false;
+  /** Where the modelled loads are built to ride about the carrier (x, up, ahead). */
+  private loadLift: readonly [number, number, number] = LOAD_AT;
 
   /** Swaps the built handcart and wagon for the modelled barrow and wagon, if their files load. */
   async loadCarts(base: string): Promise<void> {
@@ -486,7 +539,7 @@ export class PeopleView {
       const get = async (name: string): Promise<PropModel> => (await (await fetch(`${base}props/${name}.json`)).json()) as PropModel;
       const [barrow, wagon] = await Promise.all([get('handcart'), get('wagon')]);
       // The wagon's horse is not built in: the animated one walks between the shafts (`harnessed`).
-      const shapes = [propGeometry(barrow, 0, BARROW_Z, null), propGeometry(wagon, WAGON_X, WAGON_Z, null)];
+      const shapes = [propGeometry(pushedBarrow(barrow), 0, 0, null), propGeometry(wagon, WAGON_X, WAGON_Z, null)];
       this.carts.forEach((mesh, k) => {
         const old = mesh.geometry;
         mesh.geometry = shapes[k] as BufferGeometry;
@@ -627,9 +680,12 @@ export class PeopleView {
       if (person.load && loads < this.loads.instanceMatrix.count) {
         if (carted) {
           // In the cart instead of on his shoulder.
+          // The load's model is built to ride at `lift` (in his hands, or on his shoulder): down from there onto the floor.
+          const lift = this.loadLift;
+          const barrowZ = this.modelled ? BARROW_LOAD.z - lift[2] : 1.15;
           const dx = level >= 3 ? WAGON_X : 0;
-          const dz = level >= 3 ? (this.modelled ? WAGON_Z : -0.1) : this.modelled ? BARROW_Z : 1.15;
-          const dy = level >= 3 ? -0.55 : this.modelled ? -0.95 : -0.85;
+          const dz = level >= 3 ? (this.modelled ? WAGON_Z : -0.1) : barrowZ;
+          const dy = level >= 3 ? -0.55 : this.modelled ? BARROW_LOAD.y - lift[1] : -0.85;
           const c = Math.cos(person.headingRad);
           const sn = Math.sin(person.headingRad);
           this.p.set(person.x + c * dx + sn * dz - 0.1 * c, heightAtM(person.x, person.z) + dy, person.z - sn * dx + c * dz + 0.1 * sn);
