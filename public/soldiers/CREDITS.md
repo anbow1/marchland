@@ -14,7 +14,12 @@
   (https://sketchfab.com/3d-models/knight-for-game-project-old), licensed **CC BY 4.0**, thinned to about 3 400
   triangles, with the game's own halberd (`rigged.py --arms halberd`), striking with Mixamo's "Upward Thrust",
   "Great Sword Attack" and "Great Sword Slash" by turns.
-- `pikeman.json` — the pikemen, made by `rigged.py --arms pike` from **".Fuse Warrior"** by **Leonardo
+- `militia.json` — the militia (the levy), made by `tools/blender/rigged.py --arms spear --shield small
+  --two-hand-clips stab --team Image_3` from **"Virtual model wool tunic Svend"** by **ChamberSu1996**
+  (Sketchfab), licensed **CC BY 4.0**: on Unreal's skeleton, read as Mixamo's; a 2.4 m spear held in both hands, a
+  small wooden shield on the left forearm, the wool tunic a little in the side's colour; the pikemen's Mixamo
+  motion.
+- `pikeman.json` — the pikemen (a large shield in the side's colour on the left forearm: `--shield large`), made by `rigged.py --arms pike` from **".Fuse Warrior"** by **Leonardo
   Carvalho** (Sketchfab), licensed **CC BY 4.0**: its sword and shield left out, the helmet kept, the
   upper armour dyed in the side's colour; the pike is the game's own. Motion from Mixamo ("Bayonet Stab",
   with the pike along the line of both hands, `--two-hand-clips stab`; "Rifle Walk" and the sword-and-shield set).

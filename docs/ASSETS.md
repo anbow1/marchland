@@ -48,7 +48,7 @@ samym stylu albo realistyczne CC0/CC BY.
 | „Blacksmith” (szkielet, animacja pracy) | celestin.bitternose, Sketchfab | CC BY 4.0 | **w grze**: kowal przy hucie, kuźni, płatnerzu |
 | „Blacksmith” (bez szkieletu) | XiaoBuBu80, Sketchfab | CC BY 4.0 | rzemieślnik |
 | Wózek ręczny, 4 wozy | 3dAssetsForGames, AspectStudios, rakutin, NoodlePoodle, Cinnamine3D (Sketchfab) | CC BY 4.0 | **w grze**: taczka (poziom 2, 3dAssetsForGames), wóz (poziom 3, NoodlePoodle); reszta w zapasie |
-| „Virtual model wool tunic & twintail & slim Revna”, „… wool tunic Svend”, „… linen tunic Svend” (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | **w grze**: mieszczanka (`townswoman.json`), mieszczanie (`townsman-wool.json`, `townsman-linen.json`) |
+| „Virtual model wool tunic & twintail & slim Revna”, „… wool tunic Svend”, „… linen tunic Svend” (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | **w grze**: mieszczanka (`townswoman.json`), mieszczanie (`townsman-wool.json`, `townsman-linen.json`), milicja z włócznią i małą tarczą (`militia.json`) |
 | „.Fuse Woman 1” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze**: mieszczanka w sukience (`townswoman-dress.json`) |
 | „Girl with clothes. Worker set” (szkielet z przedrostkiem `girlBone_`) | cattleya, Sketchfab | CC BY 4.0 | **w grze**: robotnica w lnie (`townswoman-worker.json`) |
 | „.Fuse Civilian 1” (szkielet Mixamo) | Leonardo Carvalho, Sketchfab | CC BY 4.0 | **w grze**: mieszczanin z brodą (`townsman-beard.json`) |
@@ -132,7 +132,8 @@ powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
 | `soldiers/halberdier.json` | szkielet | 3449 | 24 | upward_thrust (71), chop (37), greatslash (56), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/horse.json` | koń bez szkieletu (części) | 3591 | — | — |
 | `soldiers/knight.json` | ciało z częściami (limbs) | 3189 | — | jedna poza |
-| `soldiers/pikeman.json` | szkielet | 3431 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/militia.json` | szkielet | 1683 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/pikeman.json` | szkielet | 3551 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/rider.json` | ciało z częściami (limbs) | 3199 | — | jedna poza |
 | `soldiers/swordsman.json` | szkielet | 3523 | 24 | slash (46), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/warhorse.json` | szkielet + siodło | 2999 | 40 | idle (62), walk (33), gallop (16), graze (151), fall (25) |

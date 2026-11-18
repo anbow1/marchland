@@ -47,8 +47,8 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 
 ## 4. Do czego służą
 
-- **Milicja z tarczami** — Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia. *(tylko obrona: rozkazy do 115 m od własnego zamku, bez ataku na budynki; 25 % szans zatrzymania pocisku)*
-- **Pikinierzy** — Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców. *(+8 do ataku przeciw jeździe; zasięg broni 3 m)*
+- **Milicja z tarczami** — Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia. *(tylko obrona: rozkazy do 115 m od własnego zamku, bez ataku na budynki; 20 % szans zatrzymania pocisku)*
+- **Pikinierzy** — Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców. *(+8 do ataku przeciw jeździe; 35 % szans zatrzymania pocisku; zasięg broni 3 m)*
 - **Łucznicy** — Daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.
 - **Miecznicy** — Miecz, tarcza, kolczuga: wygrywają zwykłą walkę pieszą i znoszą ostrzał. *(35 % szans zatrzymania pocisku)*
 - **Halabardnicy** — Biją mocniej niż miecznicy i zatrzymują konie, ale bez tarczy cierpią od strzał. *(+5 do ataku przeciw jeździe; zasięg broni 2.3 m)*

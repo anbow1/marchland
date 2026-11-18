@@ -481,6 +481,8 @@ export interface UnitDef {
   missileSplashM: number;
   /** A gun's ball goes on along the ground this far after it lands, striking whoever stands in its way. */
   missileRollM?: number;
+  /** A shield on the arm: defence points added against blows from the front (missileBlock is its use against shot). */
+  shieldDefence?: number;
   /** Aim error against the usual (MISSILE.spreadAtRangeM): a mortar's stone is deadly where it falls, but falls wide. */
   missileSpreadFactor?: number;
   /** Damage one missile does to a building. */
@@ -510,9 +512,9 @@ const ENGINE = { trainedAt: 'foundry' as const, defenceOnly: false, cavalry: fal
 export const UNITS: Record<UnitKind, UnitDef> = {
   // Townsmen with a shield and a spear: cheap, steady enough behind the shield, quick to run.
   // A spear and a wooden shield made at the keep (one timber a man), no armour: raised before there is a barracks.
-  militia: { ...FOOT, defenceOnly: true, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
+  militia: { ...FOOT, defenceOnly: true, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.2, shieldDefence: 1, morale: 45, runSpeedMs: 3.1, bounty: 1 },
   // A hedge of pikes: the answer to horsemen, open to arrows.
-  pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, bounty: 2 },
+  pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, shieldDefence: 1.5, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, missileBlock: 0.35, bounty: 2 },
   archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 20, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
   // Sword, shield and mail: the line that wins a straight fight on foot.
   swordsmen: { ...FOOT, barracksLevel: 2, goldCost: 90, equipment: { weapon: 1, mailArmor: 1 }, hp: 36, attack: 9, defence: 9, armour: 0.4, damage: 7, attackIntervalS: 1.4, chargeBonus: 2, chargeShock: 3, missileBlock: 0.35, morale: 75, runSpeedMs: 2.7, bounty: 3 },

@@ -374,6 +374,12 @@ PIKE = [
     ("Sword_joint", (-0.79, -2.7, 1.41), (0.05, 0.08, 0.05), (1, 1, 1), 0.0, 0.7, 1.0),  # pennon in the side's colour
 ]
 
+SPEAR = [
+    # A levy's spear: a 2.4 m shaft, half a metre of it behind the hand, and a broad iron head.
+    ("Sword_joint", (-0.79, -0.6, 1.41), (0.03, 2.4, 0.03), (0.30, 0.21, 0.12), 0.0, 0.85, 0.0),  # shaft
+    ("Sword_joint", (-0.79, -1.93, 1.41), (0.05, 0.26, 0.016), (0.42, 0.42, 0.43), 0.9, 0.45, 0.0),  # head
+]
+
 
 def add_box(centre, size, colour, metal, rough, team, bone, pos, nor, col, surf, skin, wts, tris):
     """One box in the character's rest space (Blender, looking along -Y), riding on one bone."""
@@ -449,7 +455,7 @@ def add_bow(hand, *mesh):
     add_box(fist + Vector((0.0, 0.0, 0.0)), (0.07, 0.07, 0.05), (1, 1, 1), 0.0, 0.7, 1.0, "LeftHand", *mesh)  # wrap in the side's colour
 
 
-def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris, polearm=None):
+def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris, polearm=None, shield=None):
     """The sword in the right hand and the shield on the left forearm, where the clips' paladin held them in
     their T pose (sword along -Y, the shield flat along the forearm), moved to the character's hand."""
     steel = (0.55, 0.56, 0.58)
@@ -462,6 +468,13 @@ def add_weapons(anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris,
     ]
     if polearm:
         parts = polearm
+        # A polearm in both hands and a shield strapped to the left forearm (--shield): a small plain wooden
+        # one (a levy's), or a large one faced in the side's colour (pikemen's).
+        if shield == "small":
+            add_heater("Shield_joint", (0.57, 0.11, 1.48), 0.34, 0.46, 0.03, wood, 0.0, 0.85, 0.0, anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris)
+        elif shield == "large":
+            add_heater("Shield_joint", (0.57, 0.11, 1.50), 0.46, 0.70, 0.04, (1, 1, 1), 0.0, 0.7, 1.0, anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris)
+            add_heater("Shield_joint", (0.57, 0.11, 1.475), 0.50, 0.74, 0.02, wood, 0.0, 0.8, 0.0, anim_rest, char_hand_rest, pos, nor, col, surf, skin, wts, tris)
     else:
         # The shield: a heater (flat top, sides running into a point), its face in the side's colour over a
         # wooden back a little larger, lying along the forearm as the clips' paladin held his.
@@ -726,7 +739,7 @@ def main() -> None:
     two_hand_clips = set(filter(None, option("--two-hand-clips", "").split(",")))
     if arms == "tools":
         WEAPONS["Shield_joint"] = "RightHand"
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain", "--two-hand-clips") if n in args}
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain", "--two-hand-clips", "--shield") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
@@ -796,7 +809,7 @@ def main() -> None:
         draw = next(c for c in clip_meta if c["name"] == "draw")
         add_crossbow(char_rest, all_frames[draw["start"] + draw["frames"] - 1], *mesh)
     else:
-        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "axe": AXE, "tools": AXE + MALLET, "crossbow": CROSSBOW}[arms])
+        add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "spear": SPEAR, "axe": AXE, "tools": AXE + MALLET, "crossbow": CROSSBOW}[arms], option("--shield", None))
     # Feet on the ground.
     floor = min(p[1] for p in pos)
     for p in pos:

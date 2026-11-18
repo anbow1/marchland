@@ -145,6 +145,8 @@ function strike(world: World, s: Soldier, t: Soldier): void {
   if (b.formation === 'loose') shape -= FORMATION.looseDefence;
   if (b.formation === 'wedge') shape -= FORMATION.wedgeDefence;
   if (b.stance === 'pikeWall' && frontal) shape += FORMATION.pikeWallDefence;
+  // A shield strapped to the arm turns some blows from the front (pikemen's and the militia's).
+  if (frontal) shape += b.def.shieldDefence ?? 0;
   const defence = (b.def.defence + shape - FATIGUE.skillPenalty * b.fatigue) * (b.state === 'routing' ? COMBAT.routingDefenceFactor : 1);
   const chance = Math.min(COMBAT.maxHitChance, Math.max(COMBAT.minHitChance, COMBAT.baseHitChance + COMBAT.hitChancePerPoint * (attack - defence) + directionBonus));
   if (world.rng.next() >= chance) return;

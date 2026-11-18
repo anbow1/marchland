@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Milicja z modelu, tarcze milicji i pikinierów
+
+- **Milicja** nie jest już figurą z klocków: `soldiers/militia.json`, postać w wełnianej tunice („Virtual model wool
+  tunic Svend”, ChamberSu1996, CC BY 4.0) na szkielecie, z ruchami pikinierów (pchnięcie oburącz z biodra).
+  Ma włócznię 2,4 m (nowa broń `--arms spear` w `rigged.py`) i małą drewnianą tarczę.
+- **Tarcze** (`rigged.py --shield small|large`): przy broni drzewcowej tarcza na lewym przedramieniu.
+  - Milicja: mała, drewniana.
+  - Pikinierzy: duża, w barwach strony (model pikinierów przebudowany).
+- **Co dają tarcze** (`config.ts`, `combat.ts`):
+  - przeciw ostrzałowi: pikinierzy zatrzymują 35% pocisków (było 0), milicja 20% (było 25%);
+  - w starciu: premia do obrony od przodu (`shieldDefence`), pikinierzy +1,5, milicja +1.
+  - Pikinierzy są więc mocniejsi, milicja słabsza niż wcześniej.
+- **Strzały**: 20 zamiast 15. Miecznika w kolczudze zabijają 3 strzały albo 2 bełty. W podchodzący oddział łuki
+  mają ok. 7% zabitych na strzał, kusze ok. 12%.
+- **Misja 1 po zmianach**: mniejsza armia za murami wygrywa 3/4, bez murów 2/4. Testy 114/114.
+
 ## 2026-11-18 · Ostrzał, który się liczy; misja 1: 30 minut i obrona za murami
 
 - **Pomiar**: kusznicy, wieże i moździerze oddali ok. 250 strzałów, zanim najeźdźca dotarł do obrońców,
