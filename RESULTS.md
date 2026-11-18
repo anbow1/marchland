@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · iPad: podgląd budowy nad panelem, ostrzejszy obraz
+
+- **Podgląd budynku pod panelem**: Safari po stuknięciu wysyła ruch myszy w miejsce palca, także po stuknięciu
+  w przycisk menu. Podgląd budynku stał wtedy pod panelem, a dymek podpowiedzi przy palcu.
+  - Teraz po stuknięciu w panel podgląd czeka na środku mapy, a palec na mapie prowadzi go za sobą;
+    emulowane ruchy myszy po dotyku są pomijane (`controls.ts`).
+  - Dymki „najechania” na dotyku są wyłączone.
+  - Ten sam budynek stuknięty ponownie w menu anuluje budowę, bo na dotyku nie ma Esc ani prawego przycisku.
+  - Podpowiedź na dole ma wersję dotykową.
+- **Rozmyty obraz na Niskiej**: 1 piksel na piksel CSS, a regulator płynności schodził jeszcze do 0,42.
+  - Teraz Niska rysuje 1,5 piksela na piksel CSS, a regulator schodzi najwyżej do 2/3 tej wartości,
+    czyli nigdy poniżej 1 piksela.
+- Sprawdzone na emulowanym iPadzie (Playwright, dotyk): podgląd chaty na środku mapy. Testy 109/109.
+
 ## 2026-11-18 · iPad (Safari, WebGL2): za dużo atrybutów wierzchołków
 
 - Raport grafiki z iPada (Safari 18.5, WebGL2): „Attribute location out of range” na pozycjach 16–18.

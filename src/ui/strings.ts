@@ -219,6 +219,7 @@ interface Strings {
   yard: string;
   fields: string;
   hintBuild: string;
+  hintBuildTouch: string;
   grid: string;
   gridTip: string;
   gridOn: string;
@@ -601,6 +602,7 @@ const pl: Strings = {
   yard: 'Podwórze',
   fields: 'Pola',
   hintBuild: 'Lewy przycisk: postaw · R: obróć · T: siatka · prawy przycisk / Esc: anuluj · Shift: stawiaj kolejne',
+  hintBuildTouch: 'Stuknij w mapę tam, gdzie ma stanąć · ten sam budynek w menu: anuluj',
   grid: 'Siatka',
   gridTip: 'Budynki przyciągają się do siatki co 16 m, równoległej do dróg, drzwiami w jednym z czterech kierunków (R obraca o 90°): miasto w kwartałach. Pusta kratka między rzędami mieści ulicę.',
   gridOn: 'wł.',
@@ -982,6 +984,7 @@ const en: Strings = {
   yard: 'Yard',
   fields: 'Fields',
   hintBuild: 'Left button: place · R: turn · T: grid · right button / Esc: cancel · Shift: place more',
+  hintBuildTouch: 'Tap the map where it should stand · the same building in the menu: cancel',
   grid: 'Grid',
   gridTip: 'Buildings snap to a 16 m grid square with the roads, doors facing one of four ways (R turns by 90°): a town in blocks. An empty cell between rows holds a street.',
   gridOn: 'on',

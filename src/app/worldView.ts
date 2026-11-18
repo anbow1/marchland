@@ -75,8 +75,9 @@ export class WorldView {
 
   constructor(canvas: HTMLCanvasElement, quality: Quality) {
     // Phones render at 2× device pixels and let the governor lower the scale (rules §9).
-    // Low (tablets, phones): a pixel per CSS pixel, a quarter of a Retina screen's; the HUD stays sharp.
-    this.stage = new Stage(canvas, { quality, maxPixelRatio: quality === 'low' ? 1 : 2 });
+    // Low (tablets, phones): one and a half pixels per CSS pixel, about half a Retina screen's (one pixel
+    // was too soft on an iPad); the governor may take it down to one, no further.
+    this.stage = new Stage(canvas, { quality, maxPixelRatio: quality === 'low' ? 1.5 : 2 });
   }
 
   async load(onProgress: (share: number) => void): Promise<void> {

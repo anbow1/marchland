@@ -54,6 +54,8 @@ export class Controls {
   private mouseX = -1;
   private mouseY = -1;
   private mouseInside = false;
+  /** The last press was a finger: the browser's copied mouse moves are then ignored (see below). */
+  private touching = false;
   /** Scrolling at the screen's edge; off for touch and for automated runs. */
   edgeScroll = true;
 
@@ -69,10 +71,26 @@ export class Controls {
     canvas.addEventListener('wheel', this.wheel, { passive: false });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('mousemove', (e) => {
+      // After a tap the browser sends a mouse move to where the finger was, a menu button too: the building
+      // being placed would sit under the panel. On touch the "cursor" is the finger on the map instead.
+      if (this.touching) return;
       this.mouseX = e.clientX;
       this.mouseY = e.clientY;
       this.mouseInside = true;
     });
+    window.addEventListener(
+      'pointerdown',
+      (e) => {
+        this.touching = e.pointerType === 'touch';
+        if (!this.touching || e.target === canvas) return;
+        // A finger on the panel (picking a building): the preview waits in the middle of the map.
+        const box = canvas.getBoundingClientRect();
+        this.mouseX = box.left + box.width / 2;
+        this.mouseY = box.top + box.height * 0.42;
+        this.mouseInside = true;
+      },
+      true,
+    );
     document.addEventListener('mouseleave', () => {
       this.mouseInside = false;
     });
@@ -82,7 +100,12 @@ export class Controls {
   private readonly down = (e: PointerEvent): void => {
     this.canvas.setPointerCapture(e.pointerId);
     const touch = e.pointerType === 'touch';
-    if (touch) this.edgeScroll = false;
+    if (touch) {
+      this.edgeScroll = false;
+      this.mouseX = e.clientX;
+      this.mouseY = e.clientY;
+      this.mouseInside = true;
+    }
     this.pointers.set(e.pointerId, { id: e.pointerId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, button: e.button, touch, dragging: false });
     if (this.pointers.size === 2) {
       this.pinchPx = this.pinchDistance();
@@ -90,7 +113,12 @@ export class Controls {
     }
   };
 
-  /** Where the mouse is over the page (CSS pixels), for whatever follows the cursor; false before it has moved or on touch. */
+  /** True while the last press was a finger: no hover tips then (they would sit under it). */
+  get touchInput(): boolean {
+    return this.touching;
+  }
+
+  /** Where the mouse is over the page (CSS pixels), for whatever follows the cursor; false before it has moved. On touch: the finger on the map, or the middle of the map after a tap on the panel. */
   cursor(out: { x: number; y: number }): boolean {
     if (!this.mouseInside || this.mouseX < 0) return false;
     out.x = this.mouseX;
@@ -124,6 +152,11 @@ export class Controls {
     const prevY = p.y;
     p.x = e.clientX;
     p.y = e.clientY;
+    // One finger on the map moves the preview with it.
+    if (p.touch && this.pointers.size === 1) {
+      this.mouseX = p.x;
+      this.mouseY = p.y;
+    }
     if (!p.dragging && Math.hypot(p.x - p.startX, p.y - p.startY) > DRAG_PX) p.dragging = true;
     if (this.pointers.size === 2 && p.touch) {
       // Pinch: zoom about the midpoint of the two fingers.

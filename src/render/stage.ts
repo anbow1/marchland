@@ -85,7 +85,10 @@ export class Stage {
     this.scene.add(this.camera);
     this.passTimer.mainScene = this.scene;
     this.passTimer.mainCamera = this.camera;
-    this.governor = new FrameGovernor(GOVERNOR_STEPS, (step) => {
+    // Low starts sharper (more pixels) but may give fewer back: never below two thirds, which on a tablet
+    // is a pixel per CSS pixel; under that the picture went soft as a photo out of focus.
+    const steps = settings.quality === 'low' ? GOVERNOR_STEPS.filter((s) => s.scale >= 0.66) : GOVERNOR_STEPS;
+    this.governor = new FrameGovernor(steps, (step) => {
       if (step.scale !== this.dynamicScale) {
         this.dynamicScale = step.scale;
         this.resize();

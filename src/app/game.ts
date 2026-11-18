@@ -545,7 +545,7 @@ export class Game implements ControlTarget {
     this.hoverAgeS += frameSeconds;
     if (this.hoverAgeS < 0.1) return;
     this.hoverAgeS = 0;
-    if (this.tool || !this.controls.cursor(this.cursor) || !this.ground(this.cursor.x, this.cursor.y, this.hit)) {
+    if (this.tool || this.controls.touchInput || !this.controls.cursor(this.cursor) || !this.ground(this.cursor.x, this.cursor.y, this.hit)) {
       this.hud.hover('', 0, 0);
       return;
     }
@@ -587,6 +587,12 @@ export class Game implements ControlTarget {
   private pickTool(tool: Tool): void {
     this.sound.unlock();
     this.sound.play('click');
+    // The same building picked again puts it down (a touch screen has no Esc or right button).
+    if (tool.kind === 'build' && this.tool?.kind === 'build' && this.tool.building === tool.building) {
+      this.tool = null;
+      this.setHint(T.hintIdle);
+      return;
+    }
     this.tool = tool;
     this.selected.clear();
     this.selectedPlot = NOWHERE;
@@ -679,7 +685,7 @@ export class Game implements ControlTarget {
     this.tiles.values.length = 0;
     if (tool.kind === 'build') {
       if (!pointing) {
-        this.setHint(`${T.buildings[tool.building].name}: ${T.hintBuild}`);
+        this.setHint(`${T.buildings[tool.building].name}: ${this.controls.touchInput ? T.hintBuildTouch : T.hintBuild}`);
         return 'none';
       }
       const gx = this.placeX(this.hit.x);
@@ -705,7 +711,7 @@ export class Game implements ControlTarget {
         }
       }
       this.tiles.allowed = this.ghost.allowed;
-      let why: string = check.result === 'ok' ? T.hintBuild : T.results[check.result];
+      let why: string = check.result === 'ok' ? (this.controls.touchInput ? T.hintBuildTouch : T.hintBuild) : T.results[check.result];
       if (check.result === 'tooFar') {
         // How far it is: from the keep against its reach, and from the nearest building against 70 m.
         const fromKeep = Math.round(Math.hypot(gx - townX(PLAYER), gz - townZ(PLAYER)));
