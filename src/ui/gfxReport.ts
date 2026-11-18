@@ -48,7 +48,7 @@ export function lastErrors(): string | null {
     const raw = localStorage.getItem(LAST_KEY);
     if (!raw) return null;
     const kept = JSON.parse(raw) as { at: string; lines: string[] };
-    return kept.lines.length > 0 ? [`Marchland · ${kept.at}`, `GPU: ${gpuName()}`, navigator.userAgent, '', ...kept.lines].join('\n') : null;
+    return kept.lines.length > 0 ? [`Marchland · ${kept.at}`, `GPU: ${gpuName()}`, gpuLimits(), navigator.userAgent, '', ...kept.lines].join('\n') : null;
   } catch {
     return null;
   }
@@ -82,6 +82,7 @@ export function watchGraphics(): void {
       original(...args);
     };
   }
+  watchPrograms();
   window.addEventListener('error', (e) => note(`${e.message} (${e.filename}:${e.lineno})`, true));
   window.addEventListener('unhandledrejection', (e) => note(String((e as PromiseRejectionEvent).reason), true));
   // A lost GPU context (memory pressure on a small tablet) leaves the view black.
@@ -104,6 +105,62 @@ export function fallBackToWebGL(backend: string): boolean {
   params.set('gl', '1');
   location.search = params.toString();
   return true;
+}
+
+/**
+ * A WebGL2 program the driver will not link often comes with an empty log (an older Adreno): note what that
+ * program was (its length, samplers, texture reads, varyings) so the report can name the shader.
+ */
+function watchPrograms(): void {
+  if (typeof WebGL2RenderingContext === 'undefined') return;
+  const P = WebGL2RenderingContext.prototype;
+  const sources = new WeakMap<WebGLShader, string>();
+  const attached = new WeakMap<WebGLProgram, string[]>();
+  const reported = new WeakSet<WebGLProgram>();
+  const shaderSource = P.shaderSource;
+  const attachShader = P.attachShader;
+  const getProgramParameter = P.getProgramParameter;
+  P.shaderSource = function (shader: WebGLShader, source: string): void {
+    sources.set(shader, source);
+    shaderSource.call(this, shader, source);
+  };
+  P.attachShader = function (program: WebGLProgram, shader: WebGLShader): void {
+    const list = attached.get(program) ?? [];
+    list.push(sources.get(shader) ?? '');
+    attached.set(program, list);
+    attachShader.call(this, program, shader);
+  };
+  P.getProgramParameter = function (program: WebGLProgram, name: GLenum): unknown {
+    const value: unknown = getProgramParameter.call(this, program, name);
+    if (name === this.LINK_STATUS && value === false && !reported.has(program)) {
+      reported.add(program);
+      try {
+        const [vert = '', frag = ''] = [...(attached.get(program) ?? [])].sort((a, b) => Number(/gl_Position/.test(b)) - Number(/gl_Position/.test(a)));
+        const count = (s: string, re: RegExp): number => (s.match(re) ?? []).length;
+        note(
+          `WebGL link failed: vertex ${vert.length} chars, ${count(vert, /uniform\s+\w*sampler/g)} samplers, ${count(vert, /^\s*layout\s*\(\s*location[^)]*\)\s*in\s/gm)} attributes, ${count(vert, /^\s*(flat\s+)?out\s/gm)} varyings; fragment ${frag.length} chars, ${count(frag, /uniform\s+\w*sampler/g)} samplers, ${count(frag, /texture\w*\(/g)} texture reads`,
+          true,
+        );
+      } catch {
+        // The report never breaks the game.
+      }
+    }
+    return value;
+  };
+}
+
+/** The GPU's limits that most often refuse a shader on a phone or tablet. */
+function gpuLimits(): string {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return '';
+    const p = (n: GLenum): string => String(gl.getParameter(n));
+    const line = `limits: attribs ${p(gl.MAX_VERTEX_ATTRIBS)}, varyings ${p(gl.MAX_VARYING_VECTORS)}, vertex uniforms ${p(gl.MAX_VERTEX_UNIFORM_VECTORS)}, fragment uniforms ${p(gl.MAX_FRAGMENT_UNIFORM_VECTORS)}, textures ${p(gl.MAX_TEXTURE_IMAGE_UNITS)}/${p(gl.MAX_VERTEX_TEXTURE_IMAGE_UNITS)} vertex, uniform blocks ${p(gl.MAX_VERTEX_UNIFORM_BLOCKS)}/${p(gl.MAX_FRAGMENT_UNIFORM_BLOCKS)}, block size ${p(gl.MAX_UNIFORM_BLOCK_SIZE)}`;
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return line;
+  } catch {
+    return '';
+  }
 }
 
 /** The GPU's name as WebGL reports it ("unknown" where hidden). */
@@ -129,6 +186,7 @@ export function reportGraphics(root: HTMLElement, backend: string, force = false
   const lines = [
     `Marchland · ${backend}`,
     `GPU: ${gpuName()}`,
+    gpuLimits(),
     `${navigator.userAgent}`,
     `screen ${screen.width}×${screen.height} @${window.devicePixelRatio}`,
     '',

@@ -153,7 +153,12 @@ function coverTexture(extentM: number): DataTexture {
 }
 
 /** `works` is the map of roads, yards and fields (groundWorks.ts): it covers the playable square. */
-export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
+/**
+ * `cheap` (the Minimal preset, weak tablet GPUs): each scan and the noise read once instead of two or three
+ * times, no fine detail by the camera: about 18 texture reads a pixel instead of 45 (an Adreno 510 stuttered
+ * on the full shader and may have refused it).
+ */
+export function buildTerrain(lib: SurfaceLibrary, works: Texture, cheap = false): Mesh {
   const extentM = MAP.sizeM + 2 * TERRAIN_MARGIN_M;
   const cells = Math.round(extentM / CELL_M);
   const geometry = new PlaneGeometry(extentM, extentM, cells, cells).rotateX(-Math.PI / 2);
@@ -172,6 +177,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const turned = vec2(xz.x.mul(TURN_COS).sub(xz.y.mul(TURN_SIN)), xz.x.mul(TURN_SIN).add(xz.y.mul(TURN_COS)));
   const noiseAt = (sizeM: number, ox: number, oy: number): Node<'float'> => {
     const a = texture(noise, xz.div(sizeM).add(vec2(ox, oy))).r;
+    if (cheap) return a;
     const b = texture(noise, turned.div(sizeM * 1.618).add(vec2(oy, ox))).r;
     // The mean of two keeps the middle but loses contrast: stretch it back.
     return a.add(b).sub(1).mul(1.35).add(0.5).clamp(0, 1);
@@ -212,6 +218,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const untiled = (id: SurfaceId, scale: number, shift: number): Node<'vec3'> => {
     const layer = int(layerOf(id));
     const a = texture(lib.colour, uvOf(id, scale).add(vec2(shift, shift * 0.6))).depth(layer).rgb;
+    if (cheap) return a;
     const b = texture(lib.colour, groundTurned.div(lib.sizeM[id] * scale * 1.27).add(vec2(0.43 + shift, 0.29))).depth(layer).rgb;
     const mean = texture(lib.colour, uvOf(id, scale)).depth(layer).level(float(FLAT_MIP)).rgb;
     const w = which;
@@ -237,6 +244,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   const luminance = vec3(0.2126, 0.7152, 0.0722);
   /** A fine scan as a ratio round 1 (the scan over its own average): blades and clumps, not a colour of its own. */
   const detailOf = (id: SurfaceId): Node<'vec3'> => {
+    if (cheap) return vec3(1);
     const near = untiled(id, 1, 0);
     const mean = texture(lib.colour, uvOf(id, 1)).depth(int(layerOf(id))).level(float(FLAT_MIP)).rgb;
     const bright = near.dot(luminance).div(max(mean.dot(luminance), float(0.02)));
@@ -252,7 +260,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
   // Its clumps and worn spots only right by the camera: from a middling height they are pale blotches a
   // metre or three across, like spilt paint, so by 40 m they have faded into the photograph's average and
   // the meadow reads by the grain of the grass scan and the broad swathes below.
-  const pastureMix = mix(pastureMean, pastureRaw, float(1).sub(smoothstep(12, 40, distanceM)).mul(0.5).add(0.03));
+  const pastureMix = cheap ? pastureRaw : mix(pastureMean, pastureRaw, float(1).sub(smoothstep(12, 40, distanceM)).mul(0.5).add(0.03));
   // The photograph's bare, sun-burnt spots read as yellow blotches from a strategy camera: keep their
   // brightness, take their yellow (no more red than four fifths of the green, little blue).
   const pastureGreen = vec3(min(pastureMix.x, pastureMix.y.mul(0.78)), pastureMix.y, min(pastureMix.z, pastureMix.y.mul(0.55)));
@@ -264,7 +272,7 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
     // A track: the earth scan bleached by sun and wheels to a pale sandy brown, darker in the ruts, with the
     // meadow's grass along its crown.
     if (id === 'mud') {
-      const earthScan = mix(untiled('dirt', 1, 0.23), untiled('dirt', FAR_SCALE, 0.41), far);
+      const earthScan = cheap ? untiled('dirt', 1, 0.23) : mix(untiled('dirt', 1, 0.23), untiled('dirt', FAR_SCALE, 0.41), far);
       // The scan's light and shade on the pale, dusty brown of a dry track (sRGB about 180, 152, 116).
       const shade = earthScan.dot(luminance).div(0.13).clamp(0.45, 1.6);
       const sandy = mix(vec3(0.43, 0.31, 0.19).mul(shade), earthScan, 0.2);
@@ -272,8 +280,9 @@ export function buildTerrain(lib: SurfaceLibrary, works: Texture): Mesh {
       return mix(rutted, pasture.mul(0.85), crown.mul(0.4));
     }
     const near = untiled(id, 1, 0);
-    const wide = untiled(id, FAR_SCALE, 0.31);
     const season = SEASON_TINT[id];
+    if (cheap) return near.mul(season ? vec3(season[0], season[1], season[2]) : vec3(1));
+    const wide = untiled(id, FAR_SCALE, 0.31);
     // From very far a repeat is a few pixels and reads as a grid of dots: there, the scan's average colour.
     const flat = texture(lib.colour, uvOf(id, FAR_SCALE)).depth(int(layerOf(id))).level(float(FLAT_MIP)).rgb;
     return mix(mix(near, wide, far), flat, veryFar).mul(season ? vec3(season[0], season[1], season[2]) : vec3(1));

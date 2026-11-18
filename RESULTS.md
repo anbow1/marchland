@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Tab S2 na Bardzo niskiej: lżejszy teren, raport odrzuconego shadera
+
+- Raport z Tab S2 (Adreno 510, WebGL2, Bardzo niska): kilka programów nie chce się zlinkować, a log jest pusty.
+  To typowe dla starszych Adreno, gdy shader przekracza zasoby sterownika.
+- Pomiar w przeglądarce (79 programów): najwyżej 11 atrybutów, 8 zmiennych z wierzchołka do fragmentu, 6 tekstur,
+  czyli w zwykłych limitach. Wyjątkiem jest shader terenu: 60 tys. znaków i 45 odczytów tekstur na piksel.
+- **Teren na Bardzo niskiej** (`buildTerrain(..., cheap)`): każdy skan i szum czytany raz zamiast dwóch–trzech razy,
+  bez drobnych szczegółów przy kamerze. 16 odczytów zamiast 45, 33 tys. znaków; wygląd prawie ten sam
+  (zrzut miasta), a na słabym GPU to też główny koszt każdej klatki.
+- **Raport** dla programu, którego nie da się zlinkować, podaje:
+  - długość, tekstury, atrybuty i zmienne shadera wierzchołków;
+  - długość, tekstury i odczyty tekstur shadera fragmentów;
+  - limity GPU (atrybuty, zmienne, uniformy, tekstury, bloki uniformów).
+  Następny raport wskaże więc, który shader i który limit.
+- Testy 109/109.
+
 ## 2026-11-18 · Wybór grafiki z menu był ignorowany
 
 - Tab S2: ustawienia grafiki prawie nic nie zmieniały, a na „Bardzo niskiej” dalej była trawa.

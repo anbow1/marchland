@@ -91,7 +91,7 @@ export class WorldView {
     this.lighting = new Lighting(this.stage.renderer, scene, AFTERNOON, quality);
     const surfaces = await loadSurfaces(quality, (share) => onProgress(0.15 + share * 0.25));
     t = logStage('textures', t);
-    const terrain = buildTerrain(surfaces, this.works.texture);
+    const terrain = buildTerrain(surfaces, this.works.texture, quality === 'minimal');
     scene.add(terrain);
     this.grass = new GrassView(terrain.userData['grid'] as TerrainGrid, this.works.texture, quality);
     // Minimal: no blades at all (the ground's own colour reads as grass from above).
