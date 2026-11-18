@@ -220,3 +220,15 @@ button.group.on { background: #4a4f32; border-color: #d8bf6a; color: #f2ead2; }
 .gfxReport pre { white-space: pre-wrap; word-break: break-word; font-size: 11px; color: #e8c8b8; }
 .lastErrorsButton { position: fixed; z-index: 50; left: 12px; bottom: 12px; padding: 6px 12px; background: #5a2a22; border: 1px solid #c2584a; border-radius: 5px; color: #ffd2c8; font: inherit; font-size: 13px; }
 .gfxReport textarea { background: #12130f; color: #e8d8c8; border: 1px solid #55503e; font: 11px ui-monospace, monospace; margin: 6px 0; }
+
+/* The menu on a short screen (a phone on its side): never taller than the screen, scrolled inside instead
+   of cut off at the top and bottom (a centred box taller than the window cannot be scrolled to). */
+.sheet { max-height: calc(100dvh - 24px); overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; box-sizing: border-box; }
+@media (max-height: 520px) {
+  .sheet { margin: 8px; padding: 12px 16px; gap: 6px; max-height: calc(100dvh - 16px); max-width: min(760px, calc(100vw - 16px)); }
+  .sheet h1 { font-size: 26px; }
+  .sheet h2 { font-size: 19px; }
+  .sheet button.primary { padding: 5px 26px; font-size: 15px; }
+  .choice, .sheet button { padding: 4px 10px; }
+  .help { font-size: 11px; }
+}

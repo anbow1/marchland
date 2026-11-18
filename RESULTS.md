@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Menu na telefonie poziomo: przewijane, nie ucięte
+
+- Telefon poziomo (ok. 360 px wysokości): menu startowe i menu pauzy były wyższe niż ekran i wyśrodkowane.
+  Góra i dół były ucięte, a przewinąć się nie dało.
+- Teraz okno menu ma najwyżej wysokość ekranu i przewija się w środku. Na niskich ekranach (do 520 px) ma mniejsze
+  marginesy, tytuły i przyciski.
+- Sprawdzone na emulowanym Pixelu 7 poziomo: okno od 8 do 352 px przy ekranie 360 px; przewija się do „Graj” i stopki.
+
 ## 2026-11-18 · Tab S2 na Bardzo niskiej: lżejszy teren, raport odrzuconego shadera
 
 - Raport z Tab S2 (Adreno 510, WebGL2, Bardzo niska): kilka programów nie chce się zlinkować, a log jest pusty.
