@@ -1,7 +1,7 @@
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { Color, DynamicDrawUsage, InstancedMesh, type Material, Matrix4, Mesh, Quaternion, type Scene, Vector3 } from 'three/webgpu';
-import { GATE, WALLS } from '../config.ts';
-import { cellX, cellZ } from '../sim/nav.ts';
+import { GATE, ROADS, WALLS } from '../config.ts';
+import { cellX, cellZ, NAV_CELLS_PER_SIDE, type Nav } from '../sim/nav.ts';
 import { heightAtM } from '../sim/terrain.ts';
 import type { Gate, World } from '../sim/world.ts';
 import { surfacePaint } from './buildingParts.ts';
@@ -24,6 +24,69 @@ const CAP = 0x979087;
 /** Yaw and length factor of a cell's segment, by its line (nav.ts: 0 along X, 1 along Z, 2 and 3 diagonals). */
 const YAW = [0, Math.PI / 2, -Math.PI / 4, Math.PI / 4];
 const STRETCH = [1, 1, Math.SQRT2, Math.SQRT2];
+
+/** Where a wall cell's stretch stands and which way it runs: on the line it was drawn on, not the cell's octant. */
+const LINE = { x: 0, z: 0, yaw: 0, stretch: 1 };
+
+/**
+ * A line drawn at any angle is laid as a staircase of cells, each knowing only its line to the nearest 45°; turned
+ * that way the stretches stood apart, step after step. The line's own way is found from the cells about it (of the
+ * same octant, three cells round, standing or fallen): the stretch is turned along it, set onto it, and long enough
+ * to reach the next cell's (a cell a step along the line's main axis).
+ */
+function lineThrough(nav: Nav, cell: number): void {
+  const n = NAV_CELLS_PER_SIDE;
+  const cx = cell % n;
+  const cz = (cell / n) | 0;
+  const dir = nav.wallDir[cell] as number;
+  let count = 0;
+  let mx = 0;
+  let mz = 0;
+  let sxx = 0;
+  let szz = 0;
+  let sxz = 0;
+  for (let dz = -3; dz <= 3; dz++) {
+    for (let dx = -3; dx <= 3; dx++) {
+      const x = cx + dx;
+      const z = cz + dz;
+      if (x < 0 || z < 0 || x >= n || z >= n) continue;
+      const j = z * n + x;
+      if ((nav.wallHp[j] === 0 && nav.wallRubble?.[j] !== 1) || nav.wallDir[j] !== dir) continue;
+      count++;
+      mx += dx;
+      mz += dz;
+      sxx += dx * dx;
+      szz += dz * dz;
+      sxz += dx * dz;
+    }
+  }
+  const x0 = cellX(cell);
+  const z0 = cellZ(cell);
+  if (count < 3) {
+    LINE.x = x0;
+    LINE.z = z0;
+    LINE.yaw = YAW[dir] as number;
+    LINE.stretch = STRETCH[dir] as number;
+    return;
+  }
+  mx /= count;
+  mz /= count;
+  const cxx = sxx / count - mx * mx;
+  const czz = szz / count - mz * mz;
+  const cxz = sxz / count - mx * mz;
+  // The main axis of the cells' scatter.
+  const angle = 0.5 * Math.atan2(2 * cxz, cxx - czz);
+  const ux = Math.cos(angle);
+  const uz = Math.sin(angle);
+  // Onto the line through the cells' middle.
+  const along = -mx * ux - mz * uz;
+  LINE.x = x0 + (mx + ux * along) * ROADS.cellM;
+  LINE.z = z0 + (mz + uz * along) * ROADS.cellM;
+  // The stretch runs along +X before it is turned: a yaw of −a turns +X onto (cos a, sin a).
+  LINE.yaw = -angle;
+  // A little over, so the joints between stretches never show daylight.
+  LINE.stretch = 1.06 / Math.max(Math.abs(ux), Math.abs(uz));
+}
 
 function segment(paints: Map<number, Paint>): MeshBuilder {
   const b = new MeshBuilder(0, paints);
@@ -142,14 +205,14 @@ export class WallView {
       }
       // A gate's cells are drawn by the gate (as wall when there is no gate model).
       if (nav.wallGate[cell] === 1 && this.gateModel) continue;
-      const dir = nav.wallDir[cell] as number;
-      const x = cellX(cell);
-      const z = cellZ(cell);
+      lineThrough(nav, cell);
+      const x = LINE.x;
+      const z = LINE.z;
       this.p.set(x, heightAtM(x, z), z);
-      this.q.setFromAxisAngle(this.up, YAW[dir] as number);
+      this.q.setFromAxisAngle(this.up, LINE.yaw);
       // Battered stretches crumble: lower (down to half their height as they near falling) and darker.
       const whole = Math.min(1, hp / WALLS.hp);
-      this.s.set(STRETCH[dir] as number, whole >= 1 ? 1 : 0.5 + 0.5 * whole, 1);
+      this.s.set(LINE.stretch, whole >= 1 ? 1 : 0.5 + 0.5 * whole, 1);
       this.mesh.setMatrixAt(n, this.m.compose(this.p, this.q, this.s));
       const share = 0.55 + 0.45 * whole;
       this.mesh.setColorAt(n, this.c.setRGB(share, share, share));

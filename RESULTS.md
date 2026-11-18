@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Mur pod dowolnym kątem bez schodków
+
+- Mur stawiany pod kątem innym niż 0°, 45° i 90° rozpadał się na schodki z przerwami.
+  - Linia muru to schodki komórek 2 m, a każdy kawałek był obrócony do najbliższej wielokrotności 45°.
+  - Przy kącie np. 27° kawałki stały równolegle obok siebie, przesunięte, ze szparami.
+- Teraz kierunek każdego kawałka wynika z rozkładu komórek tej samej linii w promieniu 3 komórek (oś główna).
+  - Kawałek jest obrócony wzdłuż prawdziwej linii i postawiony na niej.
+  - Ma długość od komórki do komórki, z naddatkiem 6% na łączenia.
+- Mury 0°, 45° i 90° wyglądają jak przedtem.
+- Sprawdzone na zrzutach murów pod kątem 12°, 27° i 63°: ściana jest ciągła, zostaje lekki załom w jednym
+  miejscu i stopnie na zboczu (każdy kawałek stoi poziomo).
+
 ## 2026-11-18 · Taczka w rękach tragarza, ładunek w skrzyni
 
 - Taczka stała jak odstawiona: na nóżkach, z rączkami 0,36 m nad ziemią, przed tragarzem, ale poza jego
