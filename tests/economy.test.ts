@@ -941,6 +941,42 @@ describe('walls and watchtowers', () => {
     for (const s of theirs.soldiers) if (s.alive) expect(s.x).toBeGreaterThan(x - 1.5);
   });
 
+  it('a wall between two watchtowers joins them tight: no regiment slips past a tower', () => {
+    for (const [dx, dz] of [[0, 50], [36, 36]] as const) {
+      const world = rich(quietWorld());
+      world.towns[PLAYER].stock.stone = 5000;
+      const ax = townX(PLAYER) + 50;
+      const az = townZ(PLAYER) - 60;
+      const bx = ax + dx;
+      const bz = az + dz;
+      expect(cmdBuild(world, PLAYER, 'tower', ax, az, 0)).toBe('ok');
+      expect(cmdBuild(world, PLAYER, 'tower', bx, bz, 0)).toBe('ok');
+      for (const b of world.towns[PLAYER].plots) if (b && b.kind === 'tower') b.constructionLeftS = 0;
+      expect(cmdBuildWall(world, PLAYER, ax, az, bx, bz)).toBe('ok');
+      // The wall runs into both towers (it used to stop at their built ground, a gap a metre or two wide).
+      expect(wallCellAt(world.nav, ax, az)).toBeGreaterThanOrEqual(0);
+      expect(wallCellAt(world.nav, bx, bz)).toBeGreaterThanOrEqual(0);
+      // The line sealed beyond the towers too: the only way across would be between them.
+      const len = Math.hypot(dx, dz);
+      const ux = dx / len;
+      const uz = dz / len;
+      expect(cmdBuildWall(world, PLAYER, ax, az, ax - ux * 70, az - uz * 70)).toBe('ok');
+      expect(cmdBuildWall(world, PLAYER, bx, bz, bx + ux * 70, bz + uz * 70)).toBe('ok');
+      const nx = uz;
+      const nz = -ux;
+      for (const t of [0.08, 0.5]) {
+        const px = ax + dx * t;
+        const pz = az + dz * t;
+        const r = spawnRegiment(world, COMPUTER, 'swordsmen', px + nx * 18, pz + nz * 18, 0);
+        cmdMove(world, r.id, px - nx * 18, pz - nz * 18, null, false);
+        run(world, 40);
+        expect(r.soldiers.filter((q) => q.alive && (q.x - ax) * nx + (q.z - az) * nz < -2).length).toBe(0);
+        for (const q of r.soldiers) q.alive = false;
+        r.aliveMen = 0;
+      }
+    }
+  });
+
   it('guns sent against a wall batter it down; a wall of their own side cannot be their mark', () => {
     const world = rich(quietWorld());
     const x = townX(PLAYER) + 40;

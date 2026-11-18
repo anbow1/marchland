@@ -1,9 +1,9 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
-import { cellX, cellZ, gateCells, roadCells, wallCellAt, wallCells } from '../sim/nav.ts';
+import { cellX, cellZ, gateCells, roadCells, wallCellAt } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, nearestOwnBuildingM, reachOf, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type ResourceId, type Side, type UnitKind } from '../sim/types.ts';
@@ -746,7 +746,7 @@ export class Game implements ControlTarget {
       this.setHint(wall ? (tool.started ? T.hintWallEnd : T.hintWallStart) : tool.started ? T.hintRoadEnd : T.hintRoadStart);
       return 'none';
     }
-    const cells = wall ? wallCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch) : roadCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch);
+    const cells = wall ? wallCellsFor(this.world, PLAYER, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch) : roadCells(this.world.nav, tool.fromX, tool.fromZ, this.hit.x, this.hit.z, this.roadScratch);
     for (let i = 0; i < cells; i++) this.tiles.values.push(cellX(this.roadScratch[i] as number), cellZ(this.roadScratch[i] as number), ROADS.cellM, ROADS.cellM, 0);
     this.tiles.count = cells;
     const cost = wall ? wallCost(this.world, tool.fromX, tool.fromZ, this.hit.x, this.hit.z) : roadCost(this.world, tool.fromX, tool.fromZ, this.hit.x, this.hit.z);

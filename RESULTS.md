@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Mur szczelnie łączy się z wieżą
+
+- Mur postawiony od wieży do wieży kończył się na krawędzi zabudowanego terenu wieży, ok. 6 m od jej środka.
+  Wieża sama nie zagradza drogi, więc wrogi oddział przechodził tą szczeliną: 12/12 ludzi obok wieży,
+  a z połowy muru 10/12 naokoło przez szczelinę.
+- Teraz mur wchodzi w podstawę własnych wież, przez które przechodzi albo na których się kończy
+  (`wallCellsFor` w `commands.ts`); podgląd kosztu w grze liczy tak samo. W widoku mur wbiega w wieżę.
+- Nowy test: dwie wieże, mur prosty i skośny między nimi, linia zamknięta murem także za wieżami.
+  Wrogi oddział posłany w poprzek przy wieży i przez środek: 0/12 po drugiej stronie.
+- Na tablecie budowa dróg i murów działa tak samo (stuknięcie zamiast kliknięcia). Shifta nie ma, więc każdy
+  odcinek zaczyna się od nowa.
+- Testy 110/110.
+
 ## 2026-11-18 · Drogi i mury: odcinek to początek i koniec
 
 - Dotąd koniec odcinka był od razu początkiem następnego, więc każde kliknięcie przedłużało drogę.

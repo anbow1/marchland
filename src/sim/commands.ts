@@ -6,7 +6,7 @@ import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { assignSlots, type Formation, frontageM, isArcher, type QueuedOrder, type Regiment, type Stance } from './regiment.ts';
 import { clampToMap, townX, townZ } from './terrain.ts';
-import { type BuildingKind, type CommandResult, type Cost, type ResourceId, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
+import { type BuildingKind, type CommandResult, type Cost, PLAYER, type ResourceId, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -703,15 +703,27 @@ export function stepQueues(world: World): void {
 const wallScratch: number[] = [];
 
 /** Stone a wall from one point to another would cost now. */
-export function wallCost(world: World, x0: number, z0: number, x1: number, z1: number): number {
-  return wallCells(world.nav, x0, z0, x1, z1, wallScratch) * WALLS.stonePerCell;
+export function wallCost(world: World, x0: number, z0: number, x1: number, z1: number, side: Side = PLAYER): number {
+  return wallCellsFor(world, side, x0, z0, x1, z1, wallScratch) * WALLS.stonePerCell;
 }
 
 /** Builds a straight wall between two points, paid for in stone. Leave a gap for a gate. */
+/**
+ * The cells a wall of `side` would take from (x0, z0) to (x1, z1). A wall runs on into the side's own
+ * watchtowers it meets, so it joins them tight: stopped at a tower's built ground it left a gap of a
+ * metre or two that a regiment walked through (a tower itself does not bar the way).
+ */
+export function wallCellsFor(world: World, side: Side, x0: number, z0: number, x1: number, z1: number, out: number[]): number {
+  const towers = world.towns[side].plots.filter((b): b is NonNullable<typeof b> => b !== null && b.kind === 'tower');
+  const reach = TOWN.buildingRadiusM + 0.5;
+  const inTower = towers.length === 0 ? null : (cell: number): boolean => towers.some((b) => Math.hypot(cellX(cell) - b.x, cellZ(cell) - b.z) <= reach);
+  return wallCells(world.nav, x0, z0, x1, z1, out, inTower);
+}
+
 export function cmdBuildWall(world: World, side: Side, x0: number, z0: number, x1: number, z1: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (!mayLayRoadAt(side, x, z)) return 'tooFar';
-  const cells = wallCells(world.nav, x0, z0, x1, z1, wallScratch);
+  const cells = wallCellsFor(world, side, x0, z0, x1, z1, wallScratch);
   const town = world.towns[side];
   if (town.stock.stone < cells * WALLS.stonePerCell) return 'cannotAfford';
   town.stock.stone -= cells * WALLS.stonePerCell;

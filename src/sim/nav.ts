@@ -286,7 +286,7 @@ export function wallCellAt(nav: Nav, x: number, z: number): number {
 }
 
 /** Cells a straight wall from one point to another would take: not water, not built on, not wall already. */
-export function wallCells(nav: Nav, x0: number, z0: number, x1: number, z1: number, out: number[]): number {
+export function wallCells(nav: Nav, x0: number, z0: number, x1: number, z1: number, out: number[], throughBuilt: ((cell: number) => boolean) | null = null): number {
   out.length = 0;
   const steps = Math.max(1, Math.ceil(hypot2(x1 - x0, z1 - z0) / (ROADS.cellM * 0.5)));
   let last = -1;
@@ -295,7 +295,8 @@ export function wallCells(nav: Nav, x0: number, z0: number, x1: number, z1: numb
     const i = cellOf(z0 + (z1 - z0) * t) * N + cellOf(x0 + (x1 - x0) * t);
     if (i === last) continue;
     last = i;
-    if (nav.wallHp[i] > 0 || nav.built[i] === 1 || WATER[i] === 1 || out.includes(i)) continue;
+    // Built-on ground stops a wall, but for what `throughBuilt` lets it into (a watchtower it joins).
+    if (nav.wallHp[i] > 0 || (nav.built[i] === 1 && !throughBuilt?.(i)) || WATER[i] === 1 || out.includes(i)) continue;
     out.push(i);
   }
   return out.length;
