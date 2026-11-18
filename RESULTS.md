@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Wyłom w murze: gruz i kruszące się krawędzie
+
+- Zburzone pole muru dotąd znikało i zostawała gładko ucięta przerwa. Teraz:
+  - mapa pamięta gruz (`nav.wallRubble`): pole zburzone przez działa lub wojsko, przejezdne;
+  - nowy mur na tym polu usuwa gruz; starszy zapis gry ma wyłomy po prostu czyste;
+  - na każdym takim polu leży kupa kamieni muru (bloki i gruz rozsypane na obie strony), każda obrócona
+    i wielka po swojemu;
+  - ostrzeliwany mur kruszy się: im mniej mu zostało, tym jest niższy (do połowy wysokości) i ciemniejszy, więc
+    wyłom ma poszarpane, schodkowe krawędzie.
+- Zrzut: mur z wyłomem na 5 pól i nadkruszonymi polami po obu stronach.
+
 ## 2026-11-18 · Milicja z modelu, tarcze milicji i pikinierów
 
 - **Milicja** nie jest już figurą z klocków: `soldiers/militia.json`, postać w wełnianej tunice („Virtual model wool

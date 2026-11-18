@@ -202,6 +202,8 @@ function upgrade(world: World): World {
     r.queue ??= [];
     r.maxMen ??= r.initialMen;
   }
+  // Rubble where walls fell: not kept before; an old save's breaches are simply clear.
+  world.nav.wallRubble ??= new Uint8Array(world.nav.wallHp.length);
   for (const a of world.arrows) {
     a.shooterId ??= -1;
     a.rollM ??= 0;

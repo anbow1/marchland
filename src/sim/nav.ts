@@ -36,6 +36,8 @@ export interface Nav {
   /** Walls: blows left in each cell (0 = no wall), the side that built it, and its line (0 along X, 1 along Z, 2 and 3 the diagonals). */
   wallHp: Uint16Array;
   wallSide: Uint8Array;
+  /** 1 where a stretch of wall was battered down and lies as rubble (passable; drawn as a heap of stones). */
+  wallRubble: Uint8Array;
   wallDir: Uint8Array;
   /** 1 where the wall is a gate: open to its own side's people and soldiers. */
   wallGate: Uint8Array;
@@ -46,7 +48,7 @@ export interface Nav {
 }
 
 export function createNav(): Nav {
-  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), wallHp: new Uint16Array(CELLS), wallSide: new Uint8Array(CELLS), wallDir: new Uint8Array(CELLS), wallGate: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
+  return { road: new Uint8Array(CELLS), built: new Uint8Array(CELLS), wallHp: new Uint16Array(CELLS), wallSide: new Uint8Array(CELLS), wallRubble: new Uint8Array(CELLS), wallDir: new Uint8Array(CELLS), wallGate: new Uint8Array(CELLS), version: 0, budget: ROADS.cellsPerStep };
 }
 
 export const NAV_CELLS_PER_SIDE = N;
@@ -314,6 +316,7 @@ export function layWall(nav: Nav, cells: readonly number[], side: number, x0: nu
     nav.wallDir[i] = dir;
     nav.wallGate[i] = 0;
     nav.road[i] = 0;
+    nav.wallRubble[i] = 0;
   }
   if (cells.length > 0) nav.version += 1;
 }
@@ -325,6 +328,7 @@ export function damageWall(nav: Nav, cell: number, amount: number): boolean {
   const left = Math.max(0, hp - Math.max(1, Math.round(amount)));
   nav.wallHp[cell] = left;
   if (left > 0) return false;
+  nav.wallRubble[cell] = 1;
   nav.version += 1;
   return true;
 }

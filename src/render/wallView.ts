@@ -11,7 +11,8 @@ import { freshUrl } from '../version.ts';
 import { surfaceMaterial, type SurfaceLibrary } from './surfaces.ts';
 
 // The walls: a stretch of masonry with a merlon for every 2 m cell, turned along the line it was
-// drawn on (diagonal cells are stretched to meet). Battered stretches darken; fallen ones are gone.
+// drawn on (diagonal cells are stretched to meet). Battered stretches crumble lower and darken; fallen ones lie
+// as heaps of their stone, spilled to both sides.
 // The stretch is public/buildings/wall.glb (tools/blender/walls.py, from LucasPresoto's Tower and
 // Castle Walls); until it loads, or if it does not, a plainer one from code. A gate (gate.glb, from the
 // same set) stands in place of the stretches of its cells, its two leaves swinging open while the side's
@@ -32,8 +33,34 @@ function segment(paints: Map<number, Paint>): MeshBuilder {
   return b;
 }
 
+/** A heap of fallen masonry over a 2 m cell: blocks and rubble of the wall's stone, spilling to both sides. */
+function rubble(paints: Map<number, Paint>): MeshBuilder {
+  const b = new MeshBuilder(0, paints);
+  // Fixed scatter (the same heap everywhere, turned and scaled per cell): big blocks low, smaller ones on top.
+  const blocks: [number, number, number, number, number, number][] = [
+    [0, 0.25, 0, 2.0, 0.5, 1.4],
+    [-0.5, 0.55, 0.15, 0.9, 0.45, 0.8],
+    [0.45, 0.5, -0.2, 0.8, 0.5, 0.7],
+    [0.1, 0.85, 0.05, 0.7, 0.35, 0.55],
+    [-0.8, 0.18, 1.1, 0.6, 0.36, 0.5],
+    [0.7, 0.15, -1.15, 0.7, 0.3, 0.55],
+    [0.2, 0.12, 1.4, 0.45, 0.24, 0.4],
+    [-0.4, 0.1, -1.45, 0.5, 0.2, 0.35],
+  ];
+  blocks.forEach(([x, y, z, sx, sy, sz], i) => b.box(x, y - sy / 2, z, sx, sy, sz, i % 3 === 2 ? CAP : BODY));
+  return b;
+}
+
+/** A number in [0, 1) from a cell index: each heap turned and sized its own way. */
+function jitter(cell: number, k: number): number {
+  const h = Math.imul(cell ^ (k * 0x9e3779b1), 0x85ebca6b);
+  return ((h ^ (h >>> 13)) >>> 0) / 4294967296;
+}
+
 export class WallView {
   private readonly mesh: InstancedMesh;
+  /** Where a stretch was battered down: heaps of its stone. */
+  private readonly rubble: InstancedMesh;
   private readonly m = new Matrix4();
   private readonly p = new Vector3();
   private readonly q = new Quaternion();
@@ -64,6 +91,14 @@ export class WallView {
     this.mesh.receiveShadow = true;
     this.mesh.setColorAt(0, new Color(1, 1, 1));
     scene.add(this.mesh);
+    this.rubble = new InstancedMesh(rubble(paints).build(), surfaceMaterial(lib, 'wall rubble'), MAX_CELLS);
+    this.rubble.name = 'wall rubble';
+    this.rubble.instanceMatrix.setUsage(DynamicDrawUsage);
+    this.rubble.count = 0;
+    this.rubble.frustumCulled = false;
+    this.rubble.castShadow = true;
+    this.rubble.receiveShadow = true;
+    scene.add(this.rubble);
   }
 
   /** Swaps the stretch from code for the modelled one; keeps the former if the file does not load. */
@@ -90,9 +125,21 @@ export class WallView {
     if (nav.version === this.version) return;
     this.version = nav.version;
     let n = 0;
+    let heaps = 0;
     for (let cell = 0; cell < nav.wallHp.length && n < MAX_CELLS; cell++) {
       const hp = nav.wallHp[cell] as number;
-      if (hp === 0) continue;
+      if (hp === 0) {
+        if (nav.wallRubble?.[cell] === 1 && heaps < MAX_CELLS) {
+          const x = cellX(cell);
+          const z = cellZ(cell);
+          this.p.set(x, heightAtM(x, z), z);
+          this.q.setFromAxisAngle(this.up, (YAW[nav.wallDir[cell] as number] as number) + (jitter(cell, 1) - 0.5) * 0.9);
+          const size = 1.0 + jitter(cell, 2) * 0.45;
+          this.s.set(size, 1.0 + jitter(cell, 3) * 0.7, size);
+          this.rubble.setMatrixAt(heaps++, this.m.compose(this.p, this.q, this.s));
+        }
+        continue;
+      }
       // A gate's cells are drawn by the gate (as wall when there is no gate model).
       if (nav.wallGate[cell] === 1 && this.gateModel) continue;
       const dir = nav.wallDir[cell] as number;
@@ -100,14 +147,18 @@ export class WallView {
       const z = cellZ(cell);
       this.p.set(x, heightAtM(x, z), z);
       this.q.setFromAxisAngle(this.up, YAW[dir] as number);
-      this.s.set(STRETCH[dir] as number, 1, 1);
+      // Battered stretches crumble: lower (down to half their height as they near falling) and darker.
+      const whole = Math.min(1, hp / WALLS.hp);
+      this.s.set(STRETCH[dir] as number, whole >= 1 ? 1 : 0.5 + 0.5 * whole, 1);
       this.mesh.setMatrixAt(n, this.m.compose(this.p, this.q, this.s));
-      const share = 0.55 + 0.45 * (hp / WALLS.hp);
+      const share = 0.55 + 0.45 * whole;
       this.mesh.setColorAt(n, this.c.setRGB(share, share, share));
       n++;
     }
     this.mesh.count = n;
     this.mesh.instanceMatrix.needsUpdate = true;
+    this.rubble.count = heaps;
+    this.rubble.instanceMatrix.needsUpdate = true;
     if (this.mesh.instanceColor) this.mesh.instanceColor.needsUpdate = true;
   }
 
