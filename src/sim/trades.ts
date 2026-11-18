@@ -50,8 +50,13 @@ function stepFarmer(world: World, town: Town, b: Building, p: Person, plot: numb
     const worked = Math.min(FIELDS.stripsPerLevel[b.level - 1] as number, b.strips.length);
     // Reap what is ripe, then sow bare land, then break new ground.
     let pick = -1;
+    // Corn is sown a strip at a time: the next only once the last sown has grown its share of the season
+    // (a quarter of it with four strips), so the strips stand at four stages, from shoots to gold, and the
+    // harvests come one after another.
+    const justSown = !vines && b.strips.slice(0, worked).some((q) => q.state === 'growing' && q.growth < 1 / Math.max(1, worked));
     for (const want of ['ripe', 'bare', 'wild'] as const) {
       if (want === 'ripe' && b.out[crop] >= PEOPLE.outputCap) continue;
+      if (want === 'bare' && justSown) continue;
       for (let i = 0; i < worked && pick < 0; i++) if ((b.strips[i] as Building['strips'][number]).state === want) pick = i;
       if (pick >= 0) break;
     }

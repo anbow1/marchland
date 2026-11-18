@@ -226,30 +226,31 @@ export const TOWER = {
 } as const;
 
 export const FIELDS = {
-  /** Strips of land a farm works at levels 1…3: the farmland grows with the farm. */
-  stripsPerLevel: [2, 4, 6] as readonly number[],
-  maxStrips: 6,
+  /** Strips of land a farm works at levels 1…3: four narrow strips at first, so the corn stands at four
+   * stages (each sown a quarter of a season after the last), more as the farm grows. */
+  stripsPerLevel: [4, 8, 12] as readonly number[],
+  maxStrips: 12,
   /** A strip: this long across the back of the farm, this wide; the first lies this far behind the farm. */
   stripLengthM: 12,
-  stripWidthM: 6,
-  firstStripM: 11,
-  stripGapM: 0.6,
-  /** Breaking new ground, sowing, the wait for the corn, and the harvest, in seconds at level 1. */
-  establishSeconds: 14,
-  sowSeconds: 9,
+  stripWidthM: 3,
+  firstStripM: 10,
+  stripGapM: 0.4,
+  /** Breaking new ground, sowing, the wait for the corn, and the harvest of one strip, in seconds at level 1. */
+  establishSeconds: 7,
+  sowSeconds: 5,
   growSeconds: 60,
-  harvestSeconds: 11,
-  grainPerHarvest: 10,
+  harvestSeconds: 6,
+  grainPerHarvest: 6,
 } as const;
 
 /** Vines: planted once, then they bear every season with no new sowing; slower than corn. */
 export const VINES = {
   /** Breaking the ground and planting the vines of one strip, at level 1. */
-  plantSeconds: 30,
-  /** From planting, or from the last vintage, to ripe grapes. */
+  plantSeconds: 15,
+  /** From planting, or from the last vintage, to ripe grapes (a strip is half the old width: half the work and yield). */
   growSeconds: 110,
-  harvestSeconds: 14,
-  grapesPerHarvest: 6,
+  harvestSeconds: 7,
+  grapesPerHarvest: 3,
 } as const;
 
 /** Wine is a luxury: carried to the houses, drunk there, and a house with wine pays more and grows faster. */

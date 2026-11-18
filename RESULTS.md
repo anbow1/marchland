@@ -5,6 +5,25 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Pola w czterech fazach, ryby u rybaka
+
+- **Pola**:
+  - wyglądały pusto: kępy zboża co 1,5 m, a wszystkie poletka obsiane naraz, więc rosły w jednej fazie;
+  - teraz kępy stoją co 0,9 m (ok. 2,5× gęściej);
+  - poletka są węższe (3 m zamiast 6), a zagroda ma ich 4, 8 i 12 na poziomach 1–3 (było 2, 4 i 6), więc
+    powierzchnia pól jest ta sama;
+  - rolnik obsiewa kolejne poletko dopiero, gdy ostatnio obsiane urosło o 1/n sezonu, więc 4 poletka stoją
+    w różnych fazach: świeży wysiew, młode zielone, wysokie zielone, złote dojrzałe;
+  - zbiory przychodzą jeden po drugim;
+  - praca na poletku i zbiór o połowę mniejsze; winnice tak samo.
+  - Produkcja zagrody poziomu 1 w drugich 10 minutach: 80 zboża przedtem, 70 po zmianie przy zbiorze 5 z poletka.
+    Zbiór podniesiony do 6 (szacunkowo ok. 84, tego wariantu nie mierzyłem).
+- **Ryby u rybaka**:
+  - na suszarkach wisiały płaskie listewki; teraz ryby wiszą za ogon głową w dół, każda z płetwą ogonową,
+    tułowiem zwężającym się ku ogonowi i głową, w dwóch odcieniach srebra (`hang_fish` w `buildings.py`);
+  - żółte walce to były kosze: teraz brązowe, wiklinowe, z kilkoma rybami w środku.
+- Testy 114/114.
+
 ## 2026-11-18 · Odgłosy walki z nagrań (CC0)
 
 - Walka brzmiała jak z syntezatora: wszystkie dźwięki były robione w kodzie z szumu i tonów.

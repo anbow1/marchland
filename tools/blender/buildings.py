@@ -512,7 +512,7 @@ def fisher(k, level):
             k.box(x, y, 0, 0.1, 0.1, 1.9, BEAM)
         k.box(-2.0, y, 1.85, 3.4, 0.08, 0.08, BEAM)
         for i in range(8):
-            k.box(-3.3 + i * 0.42, y, 1.2, 0.12, 0.04, 0.55, "fish#8fa3b0")
+            hang_fish(k, -3.3 + i * 0.42 + k.jitter(0.04), y + k.jitter(0.03), 1.83, 0.5 + k.jitter(0.06), "fish#8fa3b0" if i % 2 else "fish#a3aeb4")
     # A boat drawn up on the bank, upturned, and its oars; a net on stakes; baskets.
     m = k.mark()
     k.box(0, 0, 0, 1.4, 4.2, 0.45, BOARDS, bevel=0.06)
@@ -522,9 +522,34 @@ def fisher(k, level):
     for x in (1.4, 3.8):
         k.box(x, -3.4, 0, 0.1, 0.1, 1.5, BEAM)
     k.slab([(1.4, -3.4, 1.45), (3.8, -3.4, 1.45), (3.8, -3.4, 0.3), (1.4, -3.4, 0.3)], 0.02, "straw#c9b678")
+    # Wicker baskets of the day's catch: a few fish lying on top of each.
     for i in range(2 + level):
-        k.cylinder(-3.6 + i * 0.6, -3.6, 0, 0.25, 0.3, 0.4, 8, "straw#c9b678")
+        bx = -3.6 + i * 0.6
+        k.cylinder(bx, -3.6, 0, 0.25, 0.3, 0.4, 10, "wicker#7a5a32")
+        for f in range(3):
+            lie_fish(k, bx + (f - 1) * 0.09, -3.6 + k.jitter(0.06), 0.41, 0.3, k.jitter(0.6), "fish#8fa3b0" if f % 2 else "fish#a3aeb4")
     return {}
+
+
+def hang_fish(k, x, y, top, length, surface):
+    """A fish hung to dry by its tail from a rack bar at height `top`: the tail fin up, the body tapering
+    down to the head (two cones), a little flat in the side."""
+    m = k.mark()
+    fin = 0.11 * length / 0.5
+    body = length - fin
+    # Tail fin: a flat V under the bar.
+    k.prism([(-0.07, 0), (0.07, 0), (0.012, -fin), (-0.012, -fin)], 0.008, surface)
+    # Body from the tail stem (thin) to the shoulders (thick), then the head narrowing to the mouth.
+    k.cylinder(0, 0, -fin - body * 0.62, 0.062, 0.016, body * 0.62, 8, surface)
+    k.cylinder(0, 0, -fin - body, 0.022, 0.062, body * 0.38, 8, surface)
+    k.move_since(m, Matrix.Translation((x, y, top)) @ Matrix.Diagonal((1.0, 0.55, 1.0, 1.0)))
+
+
+def lie_fish(k, x, y, z, length, turn, surface):
+    """A fish lying on its side (on a basket's catch): the hung fish laid flat and turned."""
+    m = k.mark()
+    hang_fish(k, 0, 0, 0, length, surface)
+    k.move_since(m, Matrix.Translation((x, y, z + 0.035)) @ Matrix.Rotation(turn, 4, "Z") @ Matrix.Rotation(1.5708, 4, "Y") @ Matrix.Translation((0, 0, length / 2)))
 
 
 def pig_farm(k, level):

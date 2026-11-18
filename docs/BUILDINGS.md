@@ -19,14 +19,14 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | 10 | **Forester's Hut** | 35 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
 | 11 | **Hunter's Lodge** | 40 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
 | 12 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
-| 13 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen | 1 | 250 |
+| 13 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 6 grain a harvest from each strip; 4 / 8 / 12 strips (levels 1–3), 60 s to ripen | 1 | 250 |
 | 14 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
 | 15 | **Windmill** | 70 gold, 30 timber | any level ground | 2 grain → 2 flour every 6 s | 1 | 300 |
 | 16 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
 | 17 | **Brewery** | 60 gold, 25 timber, 10 stone | any level ground | 2 grain → 2 ale every 8 s | 1 | 300 |
 | 18 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
 | 19 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
-| 20 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 6 grapes a vintage from each strip of vines, every 110 s once planted (30 s to plant a strip); 2 / 4 / 6 strips (levels 1–3) | 1 | 250 |
+| 20 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 3 grapes a vintage from each strip of vines, every 110 s once planted (15 s to plant a strip); 4 / 8 / 12 strips (levels 1–3) | 1 | 250 |
 | 21 | **Winery** | 90 gold, 20 timber, 20 stone | any level ground | 3 grapes → 2 wine every 12 s | 1 | 300 |
 | 22 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
 | 23 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
@@ -116,7 +116,7 @@ roads serve all of them.
 
 ### Grain and bread (Zboże i chleb)
 
-- **Farm** — 10 grain a harvest from each strip; 2 / 4 / 6 strips (levels 1–3), 60 s to ripen. *Model from Blender.*
+- **Farm** — 6 grain a harvest from each strip; 4 / 8 / 12 strips (levels 1–3), 60 s to ripen. *Model from Blender.*
 - **Windmill** — 2 grain → 2 flour. *Model from Blender.*
 - **Bakery** — 1 flour → 1 bread. *Model from Blender.*
 - **Brewery** — 2 grain → 2 ale. *Shapes from code; model to come.*
@@ -133,7 +133,7 @@ roads serve all of them.
 
 ### Wine (Wino)
 
-- **Vineyard** — 6 grapes a vintage from each strip of vines, every 110 s once planted (30 s to plant a strip); 2 / 4 / 6 strips (levels 1–3). *Model from Blender.*
+- **Vineyard** — 3 grapes a vintage from each strip of vines, every 110 s once planted (15 s to plant a strip); 4 / 8 / 12 strips (levels 1–3). *Model from Blender.*
 - **Winery** — 3 grapes → 2 wine. *Model from Blender.*
 
 ### Iron, weapons and mail (Żelazo, broń i kolczugi)

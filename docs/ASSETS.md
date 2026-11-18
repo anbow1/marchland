@@ -146,7 +146,7 @@ powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
 | `barracks` | 1, 2, 3 | 4768 / 4944 / 4944 |
 | `butcher` | 1, 2, 3 | 3748 / 3924 / 3968 |
 | `farm` | 1, 2, 3 | 3036 / 3152 / 3152 |
-| `fisher` | 1, 2, 3 | 1080 / 1240 / 1400 |
+| `fisher` | 1, 2, 3 | 2612 / 3432 / 4252 |
 | `fletcher` | 1, 2, 3 | 3484 / 3512 / 3540 |
 | `house` | 1, 2, 3 | 4936 / 5368 / 8124 |
 | `ironMine` | 1, 2, 3 | 2628 / 2788 / 2788 |

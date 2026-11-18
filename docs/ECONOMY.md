@@ -62,9 +62,9 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 5. Wino
 
-- **Winnica**: winiarz sadzi krzewy na pasie ziemi (30 s, raz). Potem pas sam rodzi co 110 s,
-  bez ponownego siewu; zbiór trwa 14 s i daje 6 winogron. Rzędy winorośli zajmują
-  teren za winnicą tak jak pola zagrody (2 / 4 / 6 pasów na poziomach 1–3).
+- **Winnica**: winiarz sadzi krzewy na pasie ziemi (15 s, raz). Potem pas sam rodzi co 110 s,
+  bez ponownego siewu; zbiór trwa 7 s i daje 3 winogron. Rzędy winorośli zajmują
+  teren za winnicą tak jak pola zagrody (4 / 8 / 12 pasów na poziomach 1–3).
 - **Winiarnia** tłoczy wino z winogron. Tragarze niosą wino do chat (do 3 beczułek), gdy mają
   zapas — po chlebie, przed surowcami warsztatów.
 - Chata z winem: mieszkaniec wypija 0.05 wina na minutę; podatek ×1.8,
@@ -72,9 +72,9 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 6. Pola, las, jezioro, skała
 
-- **Pole**: rolnik karczuje pas ziemi (14 s, raz), sieje (9 s), zboże rośnie 60 s,
-  potem żniwa (11 s) i 10 zboża wraca do zagrody. Pas ma 12 × 6 m;
-  zagroda uprawia 2 / 4 / 6 pasów na poziomach 1–3. Pasy leżą za zagrodą, w stronę przeciwną
+- **Pole**: rolnik karczuje pas ziemi (7 s, raz), sieje (5 s), zboże rośnie 60 s,
+  potem żniwa (6 s) i 6 zboża wraca do zagrody. Pas ma 12 × 3 m;
+  zagroda uprawia 4 / 8 / 12 pasów na poziomach 1–3. Pasy leżą za zagrodą, w stronę przeciwną
   do drzwi, i nic nie można na nich postawić — rolnictwo zużywa teren, więc zagrody buduje się
   jako wieś na otwartej przestrzeni, a rzemiosło przy zamku.
 - **Drwal** musi stać do 26 m od lasu: kurs to 8 s rąbania i 8 drewna.

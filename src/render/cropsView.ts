@@ -11,8 +11,8 @@ import { cardMaterial, cornPatchGeometry } from './foliage.ts';
 // so the field is seen to rise.
 
 /** Patches across and along a strip. */
-const PATCH_M = 1.5;
-const MAX_PATCHES = 6000;
+const PATCH_M = 0.9;
+const MAX_PATCHES = 14000;
 /** Full height of ripe corn, in metres. */
 const RIPE_M = 1.05;
 const GREEN = new Color(0x5f8a2c);

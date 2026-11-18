@@ -61,15 +61,15 @@
  },
  "fisher:1": {
   "file": "fisher_1.glb",
-  "triangles": 1080
+  "triangles": 2612
  },
  "fisher:2": {
   "file": "fisher_2.glb",
-  "triangles": 1240
+  "triangles": 3432
  },
  "fisher:3": {
   "file": "fisher_3.glb",
-  "triangles": 1400
+  "triangles": 4252
  },
  "fletcher:1": {
   "file": "fletcher_1.glb",
