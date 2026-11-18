@@ -51,6 +51,8 @@ export interface PauseActions {
   save(): string;
   settings: Settings;
   changed(settings: Settings): void;
+  /** The graphics actually loaded, and the renderer: shown under the help. */
+  graphics: string;
 }
 
 function settingsRows(settings: Settings): string {
@@ -174,7 +176,7 @@ export class Menu {
     const sheet = this.show(
       `<h2>${T.paused}</h2><button class="primary" data-do="resume">${T.resume}</button><button data-do="save">${T.saveGame}</button><p class="small saveNote"></p><button data-do="restart">${T.restart}</button>` +
         settingsRows(settings) +
-        `${helpHtml()}<p class="small">${T.version} ${BUILD} · ${loadedSeconds.toFixed(1)} s</p>`,
+        `${helpHtml()}<p class="small">${T.version} ${BUILD} · ${loadedSeconds.toFixed(1)} s · ${T.quality}: ${actions.graphics}</p>`,
     );
     sheet.addEventListener('click', (e) => {
       const target = e.target as HTMLElement;

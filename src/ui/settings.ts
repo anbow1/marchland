@@ -5,10 +5,12 @@
 export interface Settings {
   volume: number;
   edgeScroll: boolean;
+  /** The graphics preset last chosen in the menu on this device (null: none chosen yet). */
+  quality: 'high' | 'low' | 'minimal' | null;
 }
 
 const KEY = 'marchland.settings';
-const DEFAULTS: Settings = { volume: 0.6, edgeScroll: true };
+const DEFAULTS: Settings = { volume: 0.6, edgeScroll: true, quality: null };
 
 export function loadSettings(): Settings {
   try {

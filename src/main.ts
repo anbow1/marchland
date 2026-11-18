@@ -154,7 +154,8 @@ function prepareScene(game: Game, scene: string): void {
 async function run(): Promise<void> {
   const askedDifficulty = params.get('d');
   let difficulty: Difficulty = askedDifficulty === 'easy' || askedDifficulty === 'hard' ? askedDifficulty : 'normal';
-  let quality = askedQuality() ?? defaultQuality();
+  // The address (measurements, a reload that carries it), else what this device chose last, else a default by device.
+  let quality = askedQuality() ?? loadSettings().quality ?? defaultQuality();
   // Back from choosing another place for the keeps (below): straight into the game, and the next reload
   // shows the menu again, on the place chosen.
   const chosenAlready = params.has('go');
@@ -179,7 +180,13 @@ async function run(): Promise<void> {
   if (!autostart && !chosenAlready && !loadSave) {
     const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT, mode, character, mission }, saved, loadProgress());
     difficulty = choice.difficulty;
-    quality = askedQuality() ?? choice.quality;
+    // The menu's choice wins over a `q` left in the address by an earlier start (it was ignored before, so
+    // Minimal chosen on a tablet still loaded Low or High), and is kept for the next start.
+    quality = choice.quality;
+    params.set('q', quality);
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
+    settings.quality = quality;
+    storeSettings(settings);
     mode = choice.mode;
     character = choice.character;
     sound.unlock();
@@ -262,6 +269,7 @@ async function run(): Promise<void> {
     if (game.world.winner !== -1) return;
     game.loop.paused = true;
     menu.pause(loadedSeconds, {
+      graphics: `${quality === 'high' ? T.qualityHigh : quality === 'low' ? T.qualityLow : T.qualityMinimal} (${view.stage.backendName})`,
       resume: () => {
         game.loop.paused = false;
         menu.hide();

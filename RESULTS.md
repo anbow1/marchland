@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Wybór grafiki z menu był ignorowany
+
+- Tab S2: ustawienia grafiki prawie nic nie zmieniały, a na „Bardzo niskiej” dalej była trawa.
+- Przyczyna: `q=…` w adresie (zostawione przez wcześniejsze uruchomienie albo zakładkę, np. `q=high`) miało
+  pierwszeństwo przed wyborem w menu. Gra wczytywała więc ustawienie z adresu, a nie wybrane.
+- Teraz:
+  - wybór z menu wygrywa i trafia do adresu;
+  - jest też zapamiętany na urządzeniu (`settings.quality`), więc start z czystego adresu (ikona na ekranie
+    głównym) bierze ostatni wybór, a dopiero bez niego domyślne ustawienie urządzenia;
+  - menu pauzy pokazuje ustawienie i renderer, które są naprawdę wczytane („Grafika: Bardzo niska (WebGL2)”).
+- Sprawdzone w przeglądarce: adres z `q=high` i wybór „Bardzo niska” wczytują Bardzo niską; nowa karta
+  z czystym adresem ma zaznaczoną Bardzo niską. Testy 109/109.
+
 ## 2026-11-18 · Obrót dwoma palcami w dobrą stronę
 
 - Obracając dwoma palcami zgodnie z ruchem wskazówek zegara, gracz widział mapę obracającą się przeciwnie.
