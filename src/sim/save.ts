@@ -202,7 +202,10 @@ function upgrade(world: World): World {
     r.queue ??= [];
     r.maxMen ??= r.initialMen;
   }
-  for (const a of world.arrows) a.shooterId ??= -1;
+  for (const a of world.arrows) {
+    a.shooterId ??= -1;
+    a.rollM ??= 0;
+  }
   world.campaign ??= null;
   if (world.ai) world.ai.walled ??= false;
   return world;

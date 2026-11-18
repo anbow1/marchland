@@ -479,6 +479,10 @@ export interface UnitDef {
   missileHighArc: boolean;
   /** Everyone within this distance of where it lands is hurt; 0 = one man at most. */
   missileSplashM: number;
+  /** A gun's ball goes on along the ground this far after it lands, striking whoever stands in its way. */
+  missileRollM?: number;
+  /** Aim error against the usual (MISSILE.spreadAtRangeM): a mortar's stone is deadly where it falls, but falls wide. */
+  missileSpreadFactor?: number;
   /** Damage one missile does to a building. */
   missileSiegeDamage: number;
   reloadS: number;
@@ -509,22 +513,22 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   militia: { ...FOOT, defenceOnly: true, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.25, morale: 45, runSpeedMs: 3.1, bounty: 1 },
   // A hedge of pikes: the answer to horsemen, open to arrows.
   pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, bounty: 2 },
-  archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 9, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
+  archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 15, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
   // Sword, shield and mail: the line that wins a straight fight on foot.
   swordsmen: { ...FOOT, barracksLevel: 2, goldCost: 90, equipment: { weapon: 1, mailArmor: 1 }, hp: 36, attack: 9, defence: 9, armour: 0.4, damage: 7, attackIntervalS: 1.4, chargeBonus: 2, chargeShock: 3, missileBlock: 0.35, morale: 75, runSpeedMs: 2.7, bounty: 3 },
   // Two-handed polearms: hit harder than swords and stop horses, but carry no shield.
   halberdiers: { ...FOOT, barracksLevel: 2, goldCost: 100, equipment: { weapon: 1, mailArmor: 1 }, hp: 34, attack: 10, defence: 6, armour: 0.35, damage: 10, reachM: 2.3, bonusVsCavalry: 5, chargeBonus: 2, chargeShock: 3, morale: 70, runSpeedMs: 2.7, bounty: 3 },
   // Slow to span, flat-shooting, and a bolt goes through mail.
-  crossbowmen: { ...FOOT, barracksLevel: 2, goldCost: 80, equipment: { bow: 1, leatherArmor: 1, wood: 1 }, hp: 26, attack: 4, defence: 5, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileBlock: 0.3, missileRangeM: 70, missileDamage: 16, missilePierce: 0.6, missileSpeedMs: 60, missileSiegeDamage: 2, reloadS: 10, morale: 55, runSpeedMs: 2.9, bounty: 3 },
+  crossbowmen: { ...FOOT, barracksLevel: 2, goldCost: 80, equipment: { bow: 1, leatherArmor: 1, wood: 1 }, hp: 26, attack: 4, defence: 5, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileBlock: 0.3, missileRangeM: 70, missileDamage: 30, missilePierce: 0.6, missileSpeedMs: 60, missileSiegeDamage: 2, reloadS: 10, morale: 55, runSpeedMs: 2.9, bounty: 3 },
   lightCavalry: { ...HORSE, barracksLevel: 2, goldCost: 100, equipment: { horse: 1, weapon: 1, leatherArmor: 1 }, hp: 40, attack: 7, defence: 5, armour: 0.2, damage: 6, reachM: 1.9, chargeBonus: 8, chargeShock: 9, morale: 65, runSpeedMs: 8.5, bounty: 4 },
   // Knights: the charge that breaks a line.
   heavyCavalry: { ...HORSE, barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 12, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.3, bounty: 6 },
   // Two field guns cast at the foundry: a ball on a flat line to 120 m that goes through any armour and
   // knocks holes in walls; helpless once reached.
-  cannon: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
+  cannon: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileRollM: 12, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
   // One mortar (the foundry's second level): it lobs a heavy ball high over walls; it scatters a formation
   // and brings down walls, towers and the keep. Cannot shoot closer than 40 m.
-  mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 4.5, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
+  mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 3.5, missileSpreadFactor: 3, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
 };
 
 export const ARMY = {
@@ -636,7 +640,13 @@ export const MISSILE = {
   spreadAtRangeM: 2.2,
   /** An arrow hits a man standing within this distance of where it lands. */
   hitRadiusM: 0.9,
-  hitChance: 0.4,
+  /** Of the shots that come down by a man, the share that strikes him (before his shield and armour): 25 to 50
+   * dead for 250 crossbow bolts at an advancing regiment (tests/combat.test.ts). */
+  hitChance: 0.75,
+  /** A gun's ball rolling through the ranks strikes this share of the men in its path. */
+  ballStrikeChance: 0.75,
+  /** Men one ball can strike on its way through the ranks. */
+  ballMaxStruck: 4,
   forestHitFactor: 0.5,
   /** Height the arrow leaves from and arrives at (a man's chest). */
   chestHeightM: 1.3,
@@ -721,15 +731,17 @@ export const CAMPAIGN = {
   mergeRadiusM: 30,
   /** Mission 1: what the invader demands and how long he gives. */
   tribute: { gold: 600, bread: 200, weapon: 40 },
-  tributeSeconds: 900,
+  tributeSeconds: 1800,
   /** Where the invader camps: this far along the line from the player's keep to the far one. */
   campAlong: 0.64,
-  /** The invader's host in mission 1 (full regiments of CAMPAIGN.regimentMaxMen). */
+  /** The invader's host in mission 1 (full regiments of CAMPAIGN.regimentMaxMen): two hundred men. */
   invaders: ['heavyCavalry', 'heavyCavalry', 'swordsmen', 'swordsmen', 'swordsmen', 'halberdiers', 'halberdiers', 'crossbowmen', 'crossbowmen', 'crossbowmen'],
   /** Mission 2: what is left in the camp once he has scattered to plunder, and the foragers who come back. */
   campGarrison: ['swordsmen', 'halberdiers', 'crossbowmen'],
   foragers: ['lightCavalry', 'swordsmen'],
   foragersBackEveryS: 300,
+  /** Mission 1: won once every regiment of the host has been fleeing this long without a break. */
+  routWinS: 180,
 } as const;
 
 export const DEFENCE = {

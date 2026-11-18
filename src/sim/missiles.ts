@@ -39,6 +39,8 @@ export interface Arrow {
   buildingPlot: number;
   /** The regiment that loosed it, credited with whom it brings down; -1 for a keep or a tower. */
   shooterId: number;
+  /** A gun's ball: how far it rolls on through the ranks after it lands (0 for anything else). */
+  rollM: number;
 }
 
 /** What a shot carries, from the unit (or the keep) that looses it. */
@@ -51,6 +53,8 @@ interface Shot {
   siegeDamage: number;
   look: number;
   shooterId: number;
+  /** A gun's ball rolls on this far, striking whoever stands in its way (0: an arrow, a bolt, a stone). */
+  rollM: number;
 }
 
 function shotOf(r: Regiment): Shot {
@@ -59,17 +63,17 @@ function shotOf(r: Regiment): Shot {
 
 function shotOfDef(d: UnitDef): Shot {
   const look = d.missileSplashM > 0 ? 3 : d.engine ? 2 : d.missilePierce > 0 ? 1 : 0;
-  return { speedMs: d.missileSpeedMs, highArc: d.missileHighArc, damage: d.missileDamage, pierce: d.missilePierce, splashM: d.missileSplashM, siegeDamage: d.missileSiegeDamage, look, shooterId: -1 };
+  return { speedMs: d.missileSpeedMs, highArc: d.missileHighArc, damage: d.missileDamage, pierce: d.missilePierce, splashM: d.missileSplashM, siegeDamage: d.missileSiegeDamage, look, shooterId: -1, rollM: d.missileRollM ?? 0 };
 }
 
-const KEEP_SHOT: Shot = { speedMs: MISSILE.arrowSpeedMs, highArc: false, damage: TOWN.keepArrowDamage, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, shooterId: -1 };
+const KEEP_SHOT: Shot = { speedMs: MISSILE.arrowSpeedMs, highArc: false, damage: TOWN.keepArrowDamage, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, shooterId: -1, rollM: 0 };
 
 const AT_SOLDIERS = -2;
 
 export function createArrowPool(): Arrow[] {
   const pool: Arrow[] = [];
   for (let i = 0; i < MISSILE.poolSize; i++) {
-    pool.push({ active: false, side: 0, x0: 0, y0: 0, z0: 0, vx: 0, vy: 0, vz: 0, ageS: 0, flightS: 0, damage: 0, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, buildingSide: 0, buildingPlot: AT_SOLDIERS, shooterId: -1 });
+    pool.push({ active: false, side: 0, x0: 0, y0: 0, z0: 0, vx: 0, vy: 0, vz: 0, ageS: 0, flightS: 0, damage: 0, pierce: 0, splashM: 0, siegeDamage: 0, look: 0, buildingSide: 0, buildingPlot: AT_SOLDIERS, shooterId: -1, rollM: 0 });
   }
   return pool;
 }
@@ -121,6 +125,7 @@ function launch(world: World, side: Side, shot: Shot, x0: number, y0: number, z0
     a.buildingSide = buildingSide;
     a.buildingPlot = buildingPlot;
     a.shooterId = shot.shooterId;
+    a.rollM = shot.rollM;
     // A gun's report and smoke, a mortar's thump, or the twang of a bow.
     const heavy = shot.siegeDamage >= WALLS.breakingShotMin;
     world.events.push(heavy ? (shot.highArc ? 'mortarShot' : 'gunShot') : 'arrowShot', x0, z0, side);
@@ -163,6 +168,45 @@ function breakWalls(world: World, a: Arrow, x: number, z: number): void {
   }
 }
 
+/**
+ * A gun's ball does not stop where it lands: it bounds on along the ground through the ranks, striking
+ * whoever stands in its path (most of them; a little less hard the further it has run), up to MISSILE.ballMaxStruck men.
+ */
+function rollThrough(world: World, a: Arrow, x: number, z: number): void {
+  const len = hypot2(a.vx, a.vz) || 1;
+  const dx = a.vx / len;
+  const dz = a.vz / len;
+  const shooter = findRegiment(world, a.shooterId);
+  let struck = 0;
+  for (const r of world.regiments) {
+    if (r.side === a.side || r.aliveMen === 0) continue;
+    // Far off the ball's path: none of its men can be in the way.
+    const cx = r.centreX - x;
+    const cz = r.centreZ - z;
+    const along = cx * dx + cz * dz;
+    if (along < -r.radiusM - 1 || along > a.rollM + r.radiusM + 1 || Math.abs(cx * dz - cz * dx) > r.radiusM + 1) continue;
+    let hurt = false;
+    for (const s of r.soldiers) {
+      if (!s.alive) continue;
+      const px = s.x - x;
+      const pz = s.z - z;
+      const t = px * dx + pz * dz;
+      if (t < -0.8 || t > a.rollM || Math.abs(px * dz - pz * dx) > 0.55 + r.def.bodyRadiusM * 0.5) continue;
+      if (world.rng.next() >= MISSILE.ballStrikeChance) continue;
+      const spent = 1 - 0.5 * Math.max(0, t) / a.rollM;
+      wound(world, s, a.damage * spent * (1 - r.def.armour * (1 - a.pierce)), a.side, shooter);
+      hurt = true;
+      if (++struck >= MISSILE.ballMaxStruck) break;
+    }
+    if (hurt) {
+      r.sinceShotS = 0;
+      r.morale -= MORALE.arrowHitShock * 3;
+    }
+    if (struck >= MISSILE.ballMaxStruck) break;
+  }
+  if (struck > 0) world.events.push('arrowHit', x, z, a.side);
+}
+
 function land(world: World, a: Arrow): void {
   if (a.buildingPlot !== AT_SOLDIERS) {
     if (buildingStands(world, a.buildingSide, a.buildingPlot)) damageBuilding(world, a.buildingSide, a.buildingPlot, a.siegeDamage);
@@ -177,6 +221,10 @@ function land(world: World, a: Arrow): void {
   }
   // A gun's ball breaks the wall it strikes (an arrow's siege damage is for burning thatch, not stone).
   if (a.siegeDamage >= WALLS.breakingShotMin) breakWalls(world, a, x, z);
+  if ((a.rollM ?? 0) > 0) {
+    rollThrough(world, a, x, z);
+    return;
+  }
   let victim: Soldier | null = null;
   let bestD2 = MISSILE.hitRadiusM * MISSILE.hitRadiusM;
   for (const r of world.regiments) {
@@ -251,7 +299,7 @@ function shootAtRegiment(world: World, r: Regiment, target: Regiment): void {
     // is in the air far longer than its speed over the ground suggests.
     const elevation = launchElevationRad(distanceM, 0, shot.speedMs, MISSILE.gravityMs2, shot.highArc);
     const flightS = Number.isNaN(elevation) ? 0 : distanceM / (shot.speedMs * Math.cos(elevation));
-    const spread = MISSILE.spreadAtRangeM * (1 / 3 + (2 / 3) * Math.min(1, distanceM / r.def.missileRangeM));
+    const spread = MISSILE.spreadAtRangeM * (r.def.missileSpreadFactor ?? 1) * (1 / 3 + (2 / 3) * Math.min(1, distanceM / r.def.missileRangeM));
     const tx = victim.x + victim.vx * flightS + world.rng.gauss() * spread;
     const tz = victim.z + victim.vz * flightS + world.rng.gauss() * spread;
     const y0 = heightAtM(s.x, s.z) + MISSILE.chestHeightM;

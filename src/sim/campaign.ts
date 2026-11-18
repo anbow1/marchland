@@ -67,6 +67,8 @@ export interface CampaignState {
   thinkS: number;
   /** Men the player had at the start (the second star of mission 2 wants losses under 30 %). */
   startMen: number;
+  /** Seconds every enemy regiment has been fleeing without a break (mission 1: three minutes of it wins). Absent in old saves. */
+  routS?: number;
   /** Stars earned when the mission ends: 1 for winning, 2 with its extra goal. */
   stars: number;
 }
@@ -273,9 +275,13 @@ export function stepCampaign(world: World, c: CampaignState, dtSeconds: number):
       win(world, c, c.regimentsAtPayment >= 4 ? 2 : 1);
       return;
     }
-    // Beaten in the field (rarely: the host is made to win nine times in ten).
-    if (enemies.length === 0) {
-      win(world, c, 1);
+    // Beaten in the field: the host gone, or every one of its regiments fleeing for CAMPAIGN.routWinS
+    // without a break (however many men it still has). Stars by what the defence cost.
+    const allFleeing = c.attacking && enemies.length > 0 && enemies.every((r) => r.state === 'routing');
+    c.routS = allFleeing ? (c.routS ?? 0) + 1 : 0;
+    if (enemies.length === 0 || c.routS >= CAMPAIGN.routWinS) {
+      const left = world.regiments.filter((r) => r.side === PLAYER).reduce((n, r) => n + r.aliveMen, 0);
+      win(world, c, left >= 100 ? 3 : left >= 50 ? 2 : 1);
       return;
     }
     if (!c.attacking && world.timeS >= c.dueS) c.attacking = true;

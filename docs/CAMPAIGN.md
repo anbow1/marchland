@@ -17,10 +17,15 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 - **Mapa:** *Przeprawa* (rzeka, grobla i dwa brody — jest). Twoje miasto na zachodnim brzegu: zamek
   poziomu 1, kilka chat, zagroda, drwal. Obóz najeźdźcy na wschodnim brzegu, **w zasięgu wzroku**
   zza rzeki: 5–6 dużych oddziałów (ciężka jazda, miecznicy, kusznicy, razem ok. 70 ludzi), bez miasta.
-- **Żądanie:** 600 złota, 200 chleba i 40 sztuk broni w ciągu 15 minut, pasek odliczania u góry.
+- **Żądanie:** 600 złota, 200 chleba i 40 sztuk broni w ciągu 30 minut, pasek odliczania u góry.
   Trybut wpłaca się przyciskiem w panelu zamku, gdy wszystko leży w magazynie.
-- **Wygrana:** trybut zapłacony. **Gdy czas minie:** obóz rusza na miasto. Misję można wtedy jeszcze
-  wygrać, odpierając atak; przegrana, gdy padnie zamek.
+- **Wygrana:** trybut zapłacony. **Gdy czas minie:** obóz (200 ludzi: 2 ciężka jazda, 3 miecznicy,
+  2 halabardnicy, 3 kusznicy) rusza na miasto. Misję można wtedy jeszcze wygrać: gdy wszystkie jego
+  oddziały uciekają przez 3 minuty (`CAMPAIGN.routWinS`) albo giną; przegrana, gdy padnie zamek.
+- **Obrona (pomiar, tests/campaign.test.ts):** mniejsza armia (1 konnica, 3 piechoty, 3 kusznicy,
+  2 moździerze, 1 działo) za murem z 3 wieżami obsadzonymi kusznikami wygrywa (6/6 w pomiarze, 4/4 w teście),
+  tracąc 40–80% ludzi; ta sama armia bez murów zwykle przegrywa (2/6); pełna armia ok. 210 ludzi w polu
+  wygrywa pewnie (6/6, straty 7–22%).
 - **Cel dodatkowy (gwiazdka):** w chwili zapłaty masz co najmniej 4 oddziały. Przydadzą się w misji 2.
 - **Uczy:** gospodarki pod presją czasu. Wróg stoi i patrzy, ale nie atakuje, dopóki nie minie czas.
 

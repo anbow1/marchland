@@ -38,10 +38,10 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 
 | Jednostka | Zasięg | Obrażenia | Przebicie pancerza | Przeładowanie | Rozprysk | Obrażenia budynków |
 |---|---|---|---|---|---|---|
-| **Łucznicy** | 80 m | 9 | 0 % | 6 s | — | 1.5 |
-| **Kusznicy** | 70 m | 16 | 60 % | 10 s | — | 2 |
+| **Łucznicy** | 80 m | 15 | 0 % | 6 s | — | 1.5 |
+| **Kusznicy** | 70 m | 30 | 60 % | 10 s | — | 2 |
 | **Armaty** | 10–120 m | 55 | 90 % | 10 s | — | 30 |
-| **Moździerz** | 40–150 m | 30 | 50 % | 15 s | 4.5 m | 110 |
+| **Moździerz** | 40–150 m | 30 | 50 % | 15 s | 3.5 m | 110 |
 
 Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 

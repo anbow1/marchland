@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN, TOWN } from '../src/config.ts';
-import { canPayTribute, carryOut, payTribute } from '../src/sim/campaign.ts';
-import { cmdMerge, cmdReinforce, missingMen } from '../src/sim/commands.ts';
+import { canPayTribute, carryOut, fillRegiment, payTribute } from '../src/sim/campaign.ts';
+import { cmdBuild, cmdBuildWall, cmdMerge, cmdReinforce, missingMen } from '../src/sim/commands.ts';
 import { isBuilt } from '../src/sim/economy.ts';
 import { DEPOSITS, facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
@@ -70,32 +70,57 @@ describe('campaign', () => {
     expect(marching).toBeGreaterThan(ahead.length / 2);
   });
 
-  // A strong defence against the host, one game per seed; at most one in ten may be won.
-  const defence: { seed: number; won: boolean; left: number; theirs: number }[] = [];
-  for (const seed of [1, 2, 3, 4, 5, 6]) {
-    it(`mission 1: the host against a strong defence (seed ${seed})`, { timeout: 120_000 }, async () => {
-      const world = mission(1, seed);
-      const c = world.campaign;
-      if (!c) throw new Error('no campaign');
-      // What a player could raise in the fifteen minutes, and more: eight regiments.
-      const kinds: UnitKind[] = ['pikemen', 'pikemen', 'swordsmen', 'swordsmen', 'archers', 'archers', 'crossbowmen', 'halberdiers'];
-      kinds.forEach((kind, i) => {
-        const r = spawnRegiment(world, PLAYER, kind, rallyX(PLAYER) + ((i % 4) - 1.5) * 16, rallyZ(PLAYER) + Math.floor(i / 4) * 14, facingToEnemy(PLAYER));
-        campaignRegiment(r);
+  // The host of two hundred against the player's smaller army (one horse, three foot, three crossbows, two
+  // mortars, a gun): behind a wall with three watchtowers manned by crossbowmen it holds, at a heavy price;
+  // in the open it mostly falls. The defenders stand and shoot; the host is beaten when it all flees.
+  const walled: { won: boolean; left: number; start: number }[] = [];
+  const open: { won: boolean; left: number; start: number }[] = [];
+  for (const [label, list, wall] of [['walls', walled, true], ['open', open, false]] as const) {
+    for (const seed of [1, 2, 3, 4]) {
+      it(`mission 1: a smaller army against the host, ${label} (seed ${seed})`, { timeout: 120_000 }, async () => {
+        const world = mission(1, seed);
+        const c = world.campaign;
+        if (!c) throw new Error('no campaign');
+        const kx = townX(PLAYER);
+        const kz = townZ(PLAYER);
+        if (wall) {
+          const stock = world.towns[PLAYER].stock;
+          stock.stone = 99999;
+          stock.gold = 99999;
+          stock.wood = 99999;
+          // 65 m out: clear of the river's ford (a wall cannot stand in water).
+          const d = 65;
+          for (const [x, z] of [[kx + d, kz - d / 3], [kx + d, kz - d], [kx + d / 3, kz - d]] as const) expect(cmdBuild(world, PLAYER, 'tower', x, z, 0)).toBe('ok');
+          for (const b of world.towns[PLAYER].plots) {
+            if (!b || b.kind !== 'tower') continue;
+            b.constructionLeftS = 0;
+            b.garrison = 4;
+            b.garrisonKind = 'crossbowmen';
+          }
+          expect(cmdBuildWall(world, PLAYER, kx + d, 339, kx + d, kz - d)).toBe('ok');
+          expect(cmdBuildWall(world, PLAYER, kx + d, kz - d, -339, kz - d)).toBe('ok');
+        }
+        const kinds: UnitKind[] = ['heavyCavalry', 'swordsmen', 'halberdiers', 'pikemen', 'crossbowmen', 'crossbowmen', 'crossbowmen', 'mortar', 'mortar', 'cannon'];
+        kinds.forEach((kind, i) => {
+          const r = spawnRegiment(world, PLAYER, kind, rallyX(PLAYER) + ((i % 4) - 1.5) * 16 - 20, rallyZ(PLAYER) + Math.floor(i / 4) * 14 + 20, facingToEnemy(PLAYER));
+          campaignRegiment(r);
+          if (!r.def.engine) fillRegiment(r, r.def.cavalry ? 12 : CAMPAIGN.regimentMaxMen);
+        });
+        const start = men(world, PLAYER);
+        world.timeS = c.dueS - 1;
+        for (let t = 0; t < 1200 && world.winner === -1; t += 5) {
+          runUntil(world, 5, () => world.winner !== -1);
+          await new Promise((resolve) => setTimeout(resolve, 0));
+        }
+        list.push({ won: world.winner === PLAYER, left: men(world, PLAYER), start });
       });
-      world.timeS = c.dueS - 1;
-      // In stretches of five seconds, letting the test runner breathe between them.
-      for (let t = 0; t < 900 && world.winner === -1; t += 5) {
-        runUntil(world, 5, () => world.winner !== -1);
-        await new Promise((resolve) => setTimeout(resolve, 0));
-      }
-      defence.push({ seed, won: world.winner === PLAYER, left: men(world, PLAYER), theirs: men(world, COMPUTER) });
-    });
+    }
   }
-  it('mission 1: the host wins against that defence at least nine times in ten', () => {
-    console.log('mission 1 defence:', JSON.stringify(defence));
-    expect(defence.length).toBe(6);
-    expect(defence.filter((d) => d.won).length / defence.length).toBeLessThanOrEqual(0.1);
+  it('mission 1: behind walls and towers the smaller army holds, at a price; in the open it mostly falls', () => {
+    console.log('mission 1 walled:', JSON.stringify(walled), 'open:', JSON.stringify(open));
+    expect(walled.filter((d) => d.won).length).toBeGreaterThanOrEqual(3);
+    for (const d of walled.filter((q) => q.won)) expect(d.left).toBeLessThanOrEqual(d.start * 0.8);
+    expect(open.filter((d) => d.won).length).toBeLessThanOrEqual(2);
   });
 
   it('mission 2: the camp and its foragers; won when no enemy is left, with the carried army', () => {

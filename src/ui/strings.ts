@@ -388,7 +388,7 @@ const pl: Strings = {
     {
       title: 'Trybut',
       briefing:
-        'Najeźdźca stanął obozem za rzeką: dwieście ludzi, ciężka jazda, miecznicy i kusznicy. Żąda trybutu: 600 złota, 200 chleba i 40 sztuk broni w ciągu 15 minut. Zapłać, a odejdzie. Jeśli nie zapłacisz, uderzy na miasto, a jego armii nie zatrzymasz. Broń trzeba zamówić w zakładce Produkcja, bo kuźnia czeka na zamówienie. Trybut wpłacasz przyciskiem na pasku u góry. Druga gwiazdka: w chwili zapłaty masz co najmniej 4 oddziały.',
+        'Najeźdźca stanął obozem za rzeką: dwustu ludzi, ciężka jazda, miecznicy, halabardnicy i kusznicy. Żąda trybutu: 600 złota, 200 chleba i 40 sztuk broni w ciągu 30 minut. Zapłać, a odejdzie. Jeśli nie zapłacisz, uderzy na miasto. Obronisz je za murem z wieżami obsadzonymi kusznikami, z kusznikami, moździerzami i działem za plecami piechoty: z trudem i kosztem strat. W otwartym polu potrzeba armii równej jego. Wygrywasz, gdy wszystkie jego oddziały uciekają przez 3 minuty. Broń trzeba zamówić w zakładce Produkcja, bo kuźnia czeka na zamówienie. Trybut wpłacasz przyciskiem na pasku u góry. Druga gwiazdka: w chwili zapłaty masz co najmniej 4 oddziały.',
     },
     {
       title: 'Obóz za rzeką',
@@ -775,7 +775,7 @@ const en: Strings = {
     {
       title: 'Tribute',
       briefing:
-        'The invader has camped across the river: two hundred men, knights, swordsmen and crossbowmen. He demands a tribute: 600 gold, 200 bread and 40 weapons within 15 minutes. Pay, and he goes. If you do not, he falls on the town, and his host cannot be stopped. Weapons must be ordered on the Production tab: the smithy waits for an order. Pay with the button on the bar at the top. Second star: four regiments or more when you pay.',
+        'The invader has camped across the river: two hundred men, knights, swordsmen, halberdiers and crossbowmen. He demands a tribute: 600 gold, 200 bread and 40 weapons within 30 minutes. Pay, and he goes. If you do not, he falls on the town. A wall with watchtowers manned by crossbowmen, with crossbows, mortars and a gun behind the foot, holds it, hardly and at a price; in the open field you need an army as large as his. You win when all his regiments have been fleeing for 3 minutes. Weapons must be ordered on the Production tab: the smithy waits for an order. Pay with the button on the bar at the top. Second star: four regiments or more when you pay.',
     },
     {
       title: 'The camp across the river',

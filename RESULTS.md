@@ -5,6 +5,42 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Ostrzał, który się liczy; misja 1: 30 minut i obrona za murami
+
+- **Pomiar**: kusznicy, wieże i moździerze oddali ok. 250 strzałów, zanim najeźdźca dotarł do obrońców,
+  a zabili 2 ludzi. Kalibracja (oddział strzelców, 20 mieczników maszeruje na nich ze 160 m):
+  kusze 1% zabitych na strzał, łuki 0%, działo ok. 12%.
+  - Około 60% pocisków spadało przy człowieku (celowanie z wyprzedzeniem działa).
+  - Trafiało 0,4 z nich minus osłona celu.
+  - Bełt zabierał miecznikowi 13 z 36 punktów życia, a kula armatnia zabijała jednego człowieka.
+- **Zmiany** (`config.ts`, `missiles.ts`):
+  - trafienie 0,4 → 0,75;
+  - łucznicy i kusznicy trafiają jednakowo, ale bełt ma 2× większe obrażenia (strzała 15, bełt 30,
+    a bełt dalej przebija zbroję); łucznik strzela częściej (6 s wobec 10 s);
+  - kula armatnia toczy się 12 m przez szereg i trafia do 4 ludzi stojących na jej drodze (75% każdy),
+    z siłą malejącą z odległością;
+  - moździerz zabójczy, ale mało celny: obrażenia 30, rozprysk 3,5 m, 3× większy rozrzut.
+- **Po zmianach**:
+  - kusze 14% na strzał (25–50 zabitych na 250 bełtów), łuki 3–5%, działo ok. 1 zabity na strzał;
+  - nowy test w `tests/combat.test.ts`;
+  - trzy stare testy dostosowane, bo nasycały się (oddział ginął cały przed końcem pomiaru).
+- **Mur przez bród**: w wodzie nie da się stawiać muru, więc mur przecinający bród zostawia przejście
+  (42 m na Przeprawie). Mur 65 m od zamku omija rzekę i jest szczelny.
+- **Misja 1**:
+  - 30 minut do ataku; najeźdźca znów 200 ludzi;
+  - wygrana, gdy wszystkie jego oddziały uciekają nieprzerwanie przez 3 minuty (albo gdy giną);
+  - gwiazdki według tego, ilu ludzi zostało.
+  - Pomiar (obrońcy stoją i strzelają):
+
+    | Obrona | Wygrane | Straty |
+    |---|---|---|
+    | pełna armia ok. 210 w polu | 6/6 | 7–22% |
+    | 1 konnica, 3 piechoty, 3 kusznicy, 2 moździerze, 1 działo za murem z 3 wieżami | 6/6 | 37–83% |
+    | ta sama armia bez murów | 2/6 | — |
+
+  - Test kampanii sprawdza drugi i trzeci wiersz (4 partie każdy).
+- Odprawa misji mówi o tym wszystkim. Testy 114/114.
+
 ## 2026-11-18 · Miasto na siatce, w dzielnicach; pola nie na złożach
 
 - Planista miasta (gotowe miasto w kampanii i miasto komputera) stawiał chaty, warsztaty i resztę w pierścieniach

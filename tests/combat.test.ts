@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { CAPTAIN, ELEVATION, MAP, MISSILE, MORALE, POINTS, UNITS, VETERANS } from '../src/config.ts';
+import { CAPTAIN, ELEVATION, MAP, MISSILE, MORALE, POINTS, SIM, UNITS, VETERANS } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdFireAtWill, cmdFormation, cmdHalt, cmdMove, cmdMoveGroup, cmdPace, cmdQueue, cmdRanks, cmdStance } from '../src/sim/commands.ts';
 import { launchElevationRad, reachM } from '../src/sim/missiles.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
-import { frontageM, hasCaptain, type Regiment, slotX, slotZ, veteranRank } from '../src/sim/regiment.ts';
+import { frontageM, hasCaptain, isEngaged, type Regiment, slotX, slotZ, veteranRank } from '../src/sim/regiment.ts';
 import { heightAtM, SIDE_X, SIDE_Z, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
-import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
+import { createWorld, spawnRegiment, stepWorld, type World } from '../src/sim/world.ts';
+import { campaignRegiment, fillRegiment } from '../src/sim/campaign.ts';
 import { run, runUntil } from './helpers.ts';
 
 // All fights happen on the level ground of the open field near the map's centre.
@@ -239,19 +240,26 @@ describe('the wider roster', () => {
     expect(result.a).toBeGreaterThan(result.b + 3);
   });
 
-  it('a crossbow bolt goes through mail that turns arrows', () => {
-    const losses = (shooters: UnitKind): number => {
+  it('a crossbow bolt goes through mail that turns arrows: shot for shot it brings down more', () => {
+    const perShot = (shooters: UnitKind): number => {
       let lost = 0;
+      let shots = 0;
       for (let seed = 1; seed <= 4; seed++) {
         const world = emptyWorld(seed);
         spawnRegiment(world, PLAYER, shooters, 0, 0, Math.PI);
         const target = spawnRegiment(world, COMPUTER, 'swordsmen', 0, -55, 0);
-        run(world, 120);
+        // Short enough that neither empties the target's ranks.
+        for (let step = 0; step < 40 / SIM.stepSeconds; step++) {
+          world.events.clear();
+          stepWorld(world, SIM.stepSeconds);
+          for (let i = 0; i < world.events.count; i++) if ((world.events.items[i] as (typeof world.events.items)[number]).kind === 'arrowShot') shots++;
+        }
         lost += target.initialMen - target.aliveMen;
       }
-      return lost;
+      return lost / Math.max(1, shots);
     };
-    expect(losses('crossbowmen')).toBeGreaterThan(losses('archers') + 4);
+    // A bolt does twice an arrow's harm and goes through more of the mail.
+    expect(perShot('crossbowmen')).toBeGreaterThan(perShot('archers') * 1.5);
   }, 30_000);
 
   it('cannon reach where archers cannot, and shoot nothing inside their minimum range', () => {
@@ -290,7 +298,8 @@ describe('the wider roster', () => {
     const world = emptyWorld();
     spawnRegiment(world, PLAYER, 'mortar', 0, 0, Math.PI);
     const target = spawnRegiment(world, COMPUTER, 'militia', 0, -100, 0);
-    run(world, 150);
+    // A mortar is deadly where its stone falls, but falls wide: give it time.
+    run(world, 300);
     expect(target.aliveMen === 0 || target.state === 'routing' || target.initialMen - target.aliveMen >= 3).toBe(true);
 
     const siege = emptyWorld();
@@ -361,11 +370,12 @@ describe('formations and stances', () => {
   });
 
   it('open order and a shield wall take fewer arrows', () => {
-    const inLine = arrowLosses('militia', () => {});
-    const open = arrowLosses('militia', (world, t) => cmdFormation(world, t.id, 'loose'));
+    // Thirty seconds: long enough to tell, short of emptying the ranks.
+    const inLine = arrowLosses('militia', () => {}, 30);
+    const open = arrowLosses('militia', (world, t) => cmdFormation(world, t.id, 'loose'), 30);
     expect(open).toBeLessThan(inLine * 0.75);
     // The militia carry wooden shields: raised, they take fewer arrows.
-    const shields = arrowLosses('militia', (world, t) => cmdStance(world, t.id, 'shields'));
+    const shields = arrowLosses('militia', (world, t) => cmdStance(world, t.id, 'shields'), 30);
     expect(shields).toBeLessThan(inLine * 0.75);
   }, 30_000);
 
@@ -527,5 +537,39 @@ describe('queued orders', () => {
     cmdQueue(world, r.id, { kind: 'move', x: 0, z: 40, facingRad: 0, run: false });
     expect(cmdHalt(world, r.id)).toBe('ok');
     expect(r.queue.length).toBe(0);
+  });
+});
+
+describe('missiles against an advancing regiment', () => {
+  // Shooters standing, twenty swordsmen marching on them from 160 m: what falls before the blow is struck.
+  const volley = (shooter: UnitKind): { shots: number; kills: number } => {
+    const world = createWorld({ seed: 2, difficulty: 'normal', computerPlays: false });
+    const x = townX(PLAYER) + 60;
+    const z = townZ(PLAYER) - 60;
+    const s = spawnRegiment(world, PLAYER, shooter, x, z, Math.PI);
+    campaignRegiment(s);
+    if (!s.def.engine) fillRegiment(s, 20);
+    const t = spawnRegiment(world, COMPUTER, 'swordsmen', x, z - 160, 0);
+    campaignRegiment(t);
+    fillRegiment(t, 20);
+    cmdMove(world, t.id, x, z - 3, null, false);
+    let shots = 0;
+    for (let step = 0; step < 300 / SIM.stepSeconds && !isEngaged(t) && t.aliveMen > 0; step++) {
+      world.events.clear();
+      stepWorld(world, SIM.stepSeconds);
+      for (let i = 0; i < world.events.count; i++) {
+        const e = world.events.items[i] as (typeof world.events.items)[number];
+        if ((e.kind === 'arrowShot' || e.kind === 'gunShot' || e.kind === 'mortarShot') && e.side === PLAYER) shots++;
+      }
+    }
+    return { shots, kills: 20 - t.aliveMen };
+  };
+  it('crossbow bolts bring down one man in ten or so, a gun near one a shot', () => {
+    const bolts = volley('crossbowmen');
+    // 25 to 50 dead for 250 bolts.
+    expect(bolts.kills / bolts.shots).toBeGreaterThanOrEqual(0.08);
+    expect(bolts.kills / bolts.shots).toBeLessThanOrEqual(0.25);
+    const balls = volley('cannon');
+    expect(balls.kills / balls.shots).toBeGreaterThanOrEqual(0.5);
   });
 });
