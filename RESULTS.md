@@ -5,6 +5,13 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Pasek zasobów na tablecie w dwóch rzędach
+
+- W trybie ikon („Aa”) grupy zasobów nie zaczynają już osobnych wierszy (`display: contents`).
+  Wszystkie 21 zasobów płynie jednym ciągiem, a ludzie, racje, wojsko, zegar i przyciski prędkości dosuwają się
+  do wolnego miejsca w drugim rzędzie.
+- Szerokość 1024 px (Tab S2) i 1080 px (iPad 7): 2 rzędy zamiast 4, pasek ma 58 px wysokości.
+
 ## 2026-11-18 · Grafika „Bardzo niska” i błędy startu do skopiowania
 
 - Tablet z Adreno 510: obraz lepszy po 1,5 piksela na Niskiej, ale gra mocno się zacina i czasem nie startuje,

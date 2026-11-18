@@ -201,7 +201,12 @@ button.link { background: none; border: none; color: #f0d67a; text-decoration: u
 /* The resource bar with icons only (the "Aa" switch; touch screens start so). */
 .compact .chip em { display: none; }
 .compact .chip { padding: 1px 4px; gap: 2px; }
-.compact .topbar { gap: 3px 6px; padding: 3px 6px; }
+.compact .chip b { min-width: 1.2em; }
+.compact .topbar { gap: 3px 4px; padding: 3px 6px; }
+/* Icons only: the resource groups flow as one row (no group starting a line of its own), and the
+   people, clock and speed buttons follow on the same line where there is room: three rows on a tablet. */
+.compact .topbar > .chips:not(.right) { display: contents; }
+.compact .chips.right { gap: 3px 4px; }
 /* Notes and banners can be put away: a touch on a note, the × on a banner. */
 .toast { pointer-events: auto; cursor: pointer; }
 .banner .x { pointer-events: auto; float: right; margin: -2px -8px 0 10px; padding: 0 7px; background: transparent; border: 1px solid #8a7d4a; color: #efe6c8; font-size: 15px; line-height: 20px; }
