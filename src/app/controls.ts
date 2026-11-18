@@ -171,7 +171,8 @@ export class Controls {
       let turned = angle - this.twistRad;
       if (turned > Math.PI) turned -= Math.PI * 2;
       else if (turned < -Math.PI) turned += Math.PI * 2;
-      this.camera.rotate(turned);
+      // Fingers turning clockwise on the screen turn the map clockwise with them: the camera goes the other way.
+      this.camera.rotate(-turned);
       this.twistRad = angle;
       for (const other of this.pointers.values()) other.dragging = true;
       return;

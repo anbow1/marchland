@@ -5,6 +5,12 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Obrót dwoma palcami w dobrą stronę
+
+- Obracając dwoma palcami zgodnie z ruchem wskazówek zegara, gracz widział mapę obracającą się przeciwnie.
+- Rachunek: obrót kamery o d obraca każdy punkt mapy na ekranie o −d (oś y ekranu w dół). Kamera musi więc
+  obrócić się o −(kąt palców), żeby mapa szła za palcami (`controls.ts`).
+
 ## 2026-11-18 · Grupy budowy przełączały się tylko bez budynku w ręce
 
 - Z wybranym budynkiem (np. Chata) panel przy każdym odświeżeniu (co 0,25 s) wracał do grupy tego budynku.
