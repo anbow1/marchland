@@ -77,7 +77,7 @@ export class WorldView {
     // Phones render at 2× device pixels and let the governor lower the scale (rules §9).
     // Low (tablets, phones): one and a half pixels per CSS pixel, about half a Retina screen's (one pixel
     // was too soft on an iPad); the governor may take it down to one, no further.
-    this.stage = new Stage(canvas, { quality, maxPixelRatio: quality === 'low' ? 1.5 : 2 });
+    this.stage = new Stage(canvas, { quality, maxPixelRatio: quality === 'minimal' ? 1 : quality === 'low' ? 1.5 : 2 });
   }
 
   async load(onProgress: (share: number) => void): Promise<void> {
@@ -94,6 +94,8 @@ export class WorldView {
     const terrain = buildTerrain(surfaces, this.works.texture);
     scene.add(terrain);
     this.grass = new GrassView(terrain.userData['grid'] as TerrainGrid, this.works.texture, quality);
+    // Minimal: no blades at all (the ground's own colour reads as grass from above).
+    this.grass.field.group.visible = quality !== 'minimal';
     scene.add(this.grass.field.group);
     const land = buildLand(surfaces, (AFTERNOON.skyIlluminanceLux / Math.PI) * this.lighting.exposure);
     for (const part of land.parts) scene.add(part);

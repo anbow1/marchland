@@ -17,10 +17,55 @@ export const FORCE_GL_KEY = 'marchland.forceWebGL';
 let pipelineFault = false;
 let shown = false;
 
-function note(text: string): void {
+/** Every error of this run, graphics or not, kept on the device for the next start (a tablet that cannot
+ * take a screenshot: the menu offers the text to copy). */
+const LAST_KEY = 'marchland.lastErrors';
+const others: string[] = [];
+
+function keep(): void {
+  try {
+    localStorage.setItem(LAST_KEY, JSON.stringify({ at: new Date().toISOString(), lines: [...caught, ...others].slice(0, 20) }));
+  } catch {
+    // No storage: this run's box only.
+  }
+}
+
+function note(text: string, error: boolean): void {
   if (PIPELINE_FAULT.test(text)) pipelineFault = true;
-  if (caught.length >= MAX || !PATTERN.test(text) || HARMLESS.test(text)) return;
-  caught.push(text.length > 600 ? `${text.slice(0, 600)}…` : text);
+  if (HARMLESS.test(text)) return;
+  const line = text.length > 600 ? `${text.slice(0, 600)}…` : text;
+  if (PATTERN.test(text)) {
+    if (caught.length >= MAX) return;
+    caught.push(line);
+  } else if (error && others.length < MAX) others.push(line);
+  else return;
+  keep();
+}
+
+/** The errors kept from the last run that had any, as text to copy; null when there were none. */
+export function lastErrors(): string | null {
+  try {
+    const raw = localStorage.getItem(LAST_KEY);
+    if (!raw) return null;
+    const kept = JSON.parse(raw) as { at: string; lines: string[] };
+    return kept.lines.length > 0 ? [`Marchland · ${kept.at}`, `GPU: ${gpuName()}`, navigator.userAgent, '', ...kept.lines].join('\n') : null;
+  } catch {
+    return null;
+  }
+}
+
+/** True once this run has met an error worth keeping. */
+export function errorsThisRun(): boolean {
+  return caught.length + others.length > 0;
+}
+
+/** Forgets the kept errors (the player copied them, or the run went well). */
+export function clearLastErrors(): void {
+  try {
+    localStorage.removeItem(LAST_KEY);
+  } catch {
+    // Nothing kept.
+  }
 }
 
 /** Starts listening: call before the renderer is made. */
@@ -30,15 +75,17 @@ export function watchGraphics(): void {
     const original = console[level].bind(console);
     console[level] = (...args: unknown[]): void => {
       try {
-        note(args.map((a) => (a instanceof Error ? `${a.name}: ${a.message}` : String(a))).join(' '));
+        note(args.map((a) => (a instanceof Error ? `${a.name}: ${a.message}` : String(a))).join(' '), level === 'error');
       } catch {
         // Never let the report break the game.
       }
       original(...args);
     };
   }
-  window.addEventListener('error', (e) => note(`${e.message} (${e.filename}:${e.lineno})`));
-  window.addEventListener('unhandledrejection', (e) => note(String((e as PromiseRejectionEvent).reason)));
+  window.addEventListener('error', (e) => note(`${e.message} (${e.filename}:${e.lineno})`, true));
+  window.addEventListener('unhandledrejection', (e) => note(String((e as PromiseRejectionEvent).reason), true));
+  // A lost GPU context (memory pressure on a small tablet) leaves the view black.
+  window.addEventListener('webglcontextlost', () => note('WebGL context lost', true), true);
 }
 
 /**
@@ -75,6 +122,7 @@ function gpuName(): string {
 /** Shows the report if graphics errors were caught (or `force`). `backend` names the renderer in use. */
 export function reportGraphics(root: HTMLElement, backend: string, force = false): void {
   if (shown || (caught.length === 0 && !force)) return;
+  caught.push(...others);
   shown = true;
   const box = document.createElement('div');
   box.className = 'gfxReport';
@@ -101,5 +149,33 @@ export function reportGraphics(root: HTMLElement, backend: string, force = false
   close.textContent = T.closeNote;
   close.addEventListener('click', () => box.remove());
   box.append(text, pre, retry, close);
+  root.appendChild(box);
+}
+
+/** A box with the last run's errors as text to copy (where a screenshot cannot be taken), and a close. */
+export function showLastErrors(root: HTMLElement, text: string): void {
+  const box = document.createElement('div');
+  box.className = 'gfxReport';
+  const area = document.createElement('textarea');
+  area.value = text;
+  area.readOnly = true;
+  area.rows = 12;
+  area.style.width = '100%';
+  const copy = document.createElement('button');
+  copy.textContent = T.copyText;
+  copy.addEventListener('click', () => {
+    area.select();
+    void navigator.clipboard?.writeText(text).catch(() => document.execCommand('copy'));
+    copy.textContent = T.copied;
+  });
+  const close = document.createElement('button');
+  close.textContent = T.closeNote;
+  close.addEventListener('click', () => {
+    clearLastErrors();
+    box.remove();
+  });
+  const head = document.createElement('p');
+  head.textContent = T.lastErrorsAbout;
+  box.append(head, area, copy, close);
   root.appendChild(box);
 }

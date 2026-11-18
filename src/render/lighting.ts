@@ -92,7 +92,7 @@ export class Lighting {
 
     this.sun.color.setRGB(preset.sunTint[0], preset.sunTint[1], preset.sunTint[2]);
     this.sun.intensity = preset.sunIlluminanceLux * this.exposure;
-    this.sun.castShadow = true;
+    this.sun.castShadow = quality !== 'minimal';
     const px = quality === 'high' ? 2048 : 1024;
     this.sun.shadow.mapSize.set(px, px);
     this.sun.shadow.bias = -0.0004;

@@ -17,7 +17,7 @@ import type { Quality } from './render/stage.ts';
 import { Menu } from './ui/menu.ts';
 import { Sound } from './ui/sound.ts';
 import { startOffline } from './ui/offline.ts';
-import { fallBackToWebGL, reportGraphics, watchGraphics } from './ui/gfxReport.ts';
+import { clearLastErrors, errorsThisRun, fallBackToWebGL, lastErrors, reportGraphics, showLastErrors, watchGraphics } from './ui/gfxReport.ts';
 import { loadProgress, missionWon } from './ui/campaignStore.ts';
 import { carryOut, MISSIONS } from './sim/campaign.ts';
 
@@ -48,16 +48,43 @@ const menu = new Menu(document.getElementById('ui') as HTMLElement);
 const sound = new Sound();
 const autostart = params.has('autostart');
 startOffline();
+// The last run's errors (kept on the device), to read before this one adds its own: offered as text.
+const previousErrors = lastErrors();
 watchGraphics();
+if (previousErrors && !autostart) {
+  const button = document.createElement('button');
+  button.className = 'lastErrorsButton';
+  button.textContent = T.lastErrors;
+  button.addEventListener('click', () => {
+    button.remove();
+    showLastErrors(document.body, previousErrors);
+  });
+  document.body.appendChild(button);
+}
 
 function askedQuality(): Quality | null {
   const q = params.get('q');
-  return q === 'high' || q === 'low' ? q : null;
+  return q === 'high' || q === 'low' || q === 'minimal' ? q : null;
 }
 
-/** Phones and tablets start on Low; a desktop on High. */
+/** Phones and tablets start on Low (Minimal on a weak GPU); a desktop on High. */
 function defaultQuality(): Quality {
-  return matchMedia('(pointer: coarse)').matches ? 'low' : 'high';
+  if (!matchMedia('(pointer: coarse)').matches) return 'high';
+  return weakGpu() ? 'minimal' : 'low';
+}
+
+/** Older phone and tablet GPUs that stutter even on Low: Adreno 3xx–5xx, Mali-T and Mali-G5x, PowerVR. */
+function weakGpu(): boolean {
+  try {
+    const gl = document.createElement('canvas').getContext('webgl2');
+    if (!gl) return true;
+    const ext = gl.getExtension('WEBGL_debug_renderer_info');
+    const name = String(ext ? gl.getParameter(ext.UNMASKED_RENDERER_WEBGL) : gl.getParameter(gl.RENDERER));
+    gl.getExtension('WEBGL_lose_context')?.loseContext();
+    return /Adreno \(TM\) [3-5]\d\d|Mali-T|Mali-G5\d|PowerVR/i.test(name);
+  } catch {
+    return false;
+  }
 }
 
 /** Prepared situations for screenshots and benchmarks. */
@@ -195,6 +222,8 @@ async function run(): Promise<void> {
     }
   }
   menu.loading(0);
+  // A load that never ends (a small tablet out of memory, a shader that hangs): after 90 s, the report.
+  const loadWatch = window.setTimeout(() => reportGraphics(document.body, 'loading', true), 90_000);
   const loadStart = performance.now();
   const view = new WorldView(canvas, quality);
   await view.load((share) => menu.loading(share));
@@ -216,6 +245,12 @@ async function run(): Promise<void> {
   if (loadSave && savedText) game.loadSaved(loadWorld(savedText));
   game.setEdgeScroll(settings.edgeScroll && !autostart);
   menu.hide();
+  window.clearTimeout(loadWatch);
+  document.querySelector('.lastErrorsButton')?.remove();
+  // A minute's play without a fault: nothing from earlier runs is worth keeping.
+  window.setTimeout(() => {
+    if (!errorsThisRun()) clearLastErrors();
+  }, 60_000);
   // Graphics errors in the first seconds (shaders refused, a lost context): a report to photograph.
   // `?gfxreport` shows it regardless, to see what a device reports.
   // A WebGPU that refuses our pipelines (an older phone GPU): straight over to WebGL2, kept for next time.

@@ -43,6 +43,7 @@ interface Strings {
   quality: string;
   qualityHigh: string;
   qualityLow: string;
+  qualityMinimal: string;
   difficultyLabel: string;
   /** The choice of where the keeps stand, and the names of the three places. */
   startLabel: string;
@@ -140,6 +141,10 @@ interface Strings {
   gunOrders: string;
   closeNote: string;
   gfxProblem: string;
+  lastErrors: string;
+  lastErrorsAbout: string;
+  copyText: string;
+  copied: string;
   listTip: string;
   underConstructionShort: string;
   idleShort: string;
@@ -374,6 +379,7 @@ const pl: Strings = {
   quality: 'Grafika',
   qualityHigh: 'Wysoka',
   qualityLow: 'Niska',
+  qualityMinimal: 'Bardzo niska',
   difficultyLabel: 'Przeciwnik',
   startLabel: 'Zamek',
   modeLabel: 'Tryb',
@@ -488,6 +494,10 @@ const pl: Strings = {
   compactBar: 'Zasoby: same ikony albo ikony z nazwami',
   gunOrders: 'Działa: prawy przycisk na wrogi mur — ostrzał, aż runie wyłom; na budynek albo oddział — atak; na ziemię — przejazd. Strzelają z miejsca, nie w ruchu.',
   closeNote: 'Zamknij',
+  lastErrors: 'Błędy z poprzedniego uruchomienia',
+  lastErrorsAbout: 'Tak zakończyło się poprzednie uruchomienie. Skopiuj tekst i wklej go w wiadomości: to pomoże naprawić błąd.',
+  copyText: 'Kopiuj',
+  copied: 'Skopiowano',
   gfxProblem: 'Grafika nie ruszyła na tym urządzeniu. Zrób zrzut tego okna i wyślij go: to pomoże naprawić błąd.',
   listTip: 'Kliknij: pokaż następny budynek tego rodzaju i otwórz jego panel.',
   underConstructionShort: 'w budowie',
@@ -756,6 +766,7 @@ const en: Strings = {
   quality: 'Graphics',
   qualityHigh: 'High',
   qualityLow: 'Low',
+  qualityMinimal: 'Minimal',
   difficultyLabel: 'Opponent',
   startLabel: 'Keep',
   modeLabel: 'Mode',
@@ -870,6 +881,10 @@ const en: Strings = {
   compactBar: 'Resources: icons only, or icons with names',
   gunOrders: 'Guns: right-click an enemy wall to batter it until it breaches; a building or regiment to attack it; the ground to move. They fire standing, not on the move.',
   closeNote: 'Close',
+  lastErrors: 'Errors from the last run',
+  lastErrorsAbout: 'This is how the last run ended. Copy the text and paste it into a message: it helps fix the fault.',
+  copyText: 'Copy',
+  copied: 'Copied',
   gfxProblem: 'The graphics did not start on this device. Take a screenshot of this box and send it: it helps fix the fault.',
   listTip: 'Click: go to the next building of this kind and open its panel.',
   underConstructionShort: 'building',

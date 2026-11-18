@@ -5,6 +5,23 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Grafika „Bardzo niska” i błędy startu do skopiowania
+
+- Tablet z Adreno 510: obraz lepszy po 1,5 piksela na Niskiej, ale gra mocno się zacina i czasem nie startuje,
+  a zrzutu ekranu nie da się zrobić.
+- **Nowe ustawienie „Bardzo niska” (`minimal`)**:
+  - bez cieni (mapa cieni nie jest liczona), bez trawy, bez przejścia wygładzającego;
+  - 1 piksel na piksel CSS; regulator płynności schodzi najwyżej do 0,75.
+  - Wybiera się samo na ekranie dotykowym ze słabym układem graficznym: Adreno 3xx–5xx, Mali-T, Mali-G5x, PowerVR
+    (nazwa z `WEBGL_debug_renderer_info`). W menu można je zmienić.
+  - Scena miasta: 142 wywołania rysowania, bez błędów (WebGL2, SwiftShader).
+- **Błędy do skopiowania**:
+  - każdy błąd uruchomienia (grafika i inne, utrata kontekstu WebGL) zostaje zapisany na urządzeniu;
+  - przy następnym starcie przycisk „Błędy z poprzedniego uruchomienia” otwiera je jako tekst z przyciskiem „Kopiuj”;
+  - wczytywanie dłuższe niż 90 s pokazuje raport od razu;
+  - minuta gry bez błędów kasuje zapis.
+- Testy 109/109.
+
 ## 2026-11-18 · iPad: podgląd budowy nad panelem, ostrzejszy obraz
 
 - **Podgląd budynku pod panelem**: Safari po stuknięciu wysyła ruch myszy w miejsce palca, także po stuknięciu

@@ -18,7 +18,8 @@ import { installWebGpuCompat } from './webgpuCompat.ts';
 // its warm shift suits sunlit grass and thatch; AgX stays an option for later
 // (rules §2.1 asks for the choice to be written down).
 
-export type Quality = 'high' | 'low';
+/** 'minimal': weak tablet GPUs (an Adreno 510) — no shadows, no grass, no anti-aliasing pass, a pixel per CSS pixel. */
+export type Quality = 'high' | 'low' | 'minimal';
 
 export interface StageSettings {
   quality: Quality;
@@ -80,14 +81,14 @@ export class Stage {
     this.renderer.outputColorSpace = SRGBColorSpace;
     // Khronos PBR Neutral: keeps hue and saturation through the curve, where ACES greyed the scans.
     this.renderer.toneMapping = NeutralToneMapping;
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = settings.quality !== 'minimal';
     this.camera = new PerspectiveCamera(CAMERA.fovDeg, 16 / 9, CAMERA_NEAR_M, CAMERA_FAR_M);
     this.scene.add(this.camera);
     this.passTimer.mainScene = this.scene;
     this.passTimer.mainCamera = this.camera;
     // Low starts sharper (more pixels) but may give fewer back: never below two thirds, which on a tablet
     // is a pixel per CSS pixel; under that the picture went soft as a photo out of focus.
-    const steps = settings.quality === 'low' ? GOVERNOR_STEPS.filter((s) => s.scale >= 0.66) : GOVERNOR_STEPS;
+    const steps = settings.quality === 'low' ? GOVERNOR_STEPS.filter((s) => s.scale >= 0.66) : settings.quality === 'minimal' ? GOVERNOR_STEPS.filter((s) => s.scale >= 0.75) : GOVERNOR_STEPS;
     this.governor = new FrameGovernor(steps, (step) => {
       if (step.scale !== this.dynamicScale) {
         this.dynamicScale = step.scale;
@@ -127,6 +128,9 @@ export class Stage {
       // Sun on helmets and blades is the only thing bright enough to bloom.
       const lit = aa.add(bloom(aa, 0.04, 0.3, 0));
       pipeline.outputNode = grade(sharpen(lit, 0.3));
+    } else if (this.settings.quality === 'minimal') {
+      // No anti-aliasing pass: the colour as drawn, graded.
+      pipeline.outputNode = grade(colour as unknown as Node<'vec4'>);
     } else {
       pipeline.outputNode = grade(fxaa(colour) as unknown as Node<'vec4'>);
     }

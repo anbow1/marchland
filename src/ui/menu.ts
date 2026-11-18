@@ -125,7 +125,7 @@ export class Menu {
     const sheet = this.show(
       `<h1>${T.title}</h1><p class="sub">${T.subtitle}</p>` +
         choiceRow(T.difficultyLabel, 'difficulty', [['easy', T.difficulty.easy], ['normal', T.difficulty.normal], ['hard', T.difficulty.hard]], choice.difficulty) +
-        choiceRow(T.quality, 'quality', [['high', T.qualityHigh], ['low', T.qualityLow]], choice.quality) +
+        choiceRow(T.quality, 'quality', [['high', T.qualityHigh], ['low', T.qualityLow], ['minimal', T.qualityMinimal]], choice.quality) +
         choiceRow(T.modeLabel, 'mode', (['skirmish', 'defence', 'tutorial', 'campaign'] as const).map((m) => [m, T.modes[m]] as const), choice.mode) +
         `<div class="skirmishOnly"${campaign ? ' style="display:none"' : ''}>` +
         choiceRow(T.characterLabel, 'character', (['balanced', 'builder', 'raider'] as const).map((c) => [c, T.characters[c]] as const), choice.character) +
