@@ -102,7 +102,7 @@ ViktorKom), jazda bez klipu jazdy (jeździec kołysze się w takt konia).
 
 ## Spis plików w grze (`public/`)
 
-Stan z 17.11, ze wszystkimi klipami. Źródło każdego pliku: tabela wyżej i `public/*/CREDITS.md`; tekstury
+Stan z 18.11, ze wszystkimi klipami. Źródło każdego pliku: tabela wyżej i `public/*/CREDITS.md`; tekstury
 powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
 
 | Plik | Rodzaj | Trójkąty | Kości | Klipy (klatki) |
@@ -148,13 +148,14 @@ powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
 | `farm` | 1, 2, 3 | 3036 / 3152 / 3152 |
 | `fisher` | 1, 2, 3 | 2612 / 3432 / 4252 |
 | `fletcher` | 1, 2, 3 | 3484 / 3512 / 3540 |
+| `fortress` | 1 | 29999 |
 | `house` | 1, 2, 3 | 4936 / 5368 / 8124 |
 | `ironMine` | 1, 2, 3 | 2628 / 2788 / 2788 |
 | `keep` | 1 | 21790 |
 | `pigFarm` | 1, 2, 3 | 756 / 756 / 756 |
 | `quarry` | 1, 2, 3 | 1764 / 1896 / 2028 |
 | `smelter` | 1, 2, 3 | 2132 / 2168 / 2168 |
-| `smithy` | 1, 2, 3 | 2566 / 12000 / 12000 |
+| `smithy` | 1, 2, 3 | 2566 / 11991 / 11991 |
 | `stable` | 1, 2, 3 | 952 / 952 / 952 |
 | `tannery` | 1, 2, 3 | 1460 / 1644 / 1644 |
 | `tower` | 1, 2, 3 | 6620 / 6700 / 7016 |

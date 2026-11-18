@@ -102,7 +102,8 @@ Skany Poly Haven (CC0), po 1024 px: `color.jpg` (sRGB), `normal.jpg` (konwencja 
 | `soldiers/halberdier.json` | szkielet | 3449 | 24 | upward_thrust (71), chop (37), greatslash (56), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/horse.json` | koń bez szkieletu (części) | 3591 | — | — |
 | `soldiers/knight.json` | ciało z częściami (limbs) | 3189 | — | jedna poza |
-| `soldiers/pikeman.json` | szkielet | 3431 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/militia.json` | szkielet | 1683 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/pikeman.json` | szkielet | 3551 | 24 | stab (99), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/rider.json` | ciało z częściami (limbs) | 3199 | — | jedna poza |
 | `soldiers/swordsman.json` | szkielet | 3523 | 24 | slash (46), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/warhorse.json` | szkielet + siodło | 2999 | 40 | idle (62), walk (33), gallop (16), graze (151), fall (25) |
@@ -114,16 +115,17 @@ Skany Poly Haven (CC0), po 1024 px: `color.jpg` (sRGB), `normal.jpg` (konwencja 
 | `barracks` | 1, 2, 3 | 4768 / 4944 / 4944 |
 | `butcher` | 1, 2, 3 | 3748 / 3924 / 3968 |
 | `farm` | 1, 2, 3 | 3036 / 3152 / 3152 |
-| `fisher` | 1, 2, 3 | 1080 / 1240 / 1400 |
+| `fisher` | 1, 2, 3 | 2612 / 3432 / 4252 |
 | `fletcher` | 1, 2, 3 | 3484 / 3512 / 3540 |
+| `fortress` | 1 | 29999 |
 | `house` | 1, 2, 3 | 4936 / 5368 / 8124 |
 | `ironMine` | 1, 2, 3 | 2628 / 2788 / 2788 |
 | `keep` | 1 | 21790 |
-| `pigFarm` | 1, 2, 3 | 1348 / 1496 / 1644 |
+| `pigFarm` | 1, 2, 3 | 756 / 756 / 756 |
 | `quarry` | 1, 2, 3 | 1764 / 1896 / 2028 |
 | `smelter` | 1, 2, 3 | 2132 / 2168 / 2168 |
-| `smithy` | 1, 2, 3 | 2566 / 12000 / 12000 |
-| `stable` | 1, 2, 3 | 1424 / 1660 / 1660 |
+| `smithy` | 1, 2, 3 | 2566 / 11991 / 11991 |
+| `stable` | 1, 2, 3 | 952 / 952 / 952 |
 | `tannery` | 1, 2, 3 | 1460 / 1644 / 1644 |
 | `tower` | 1, 2, 3 | 6620 / 6700 / 7016 |
 | `vineyard` | 1, 2, 3 | 1764 / 1820 / 1876 |

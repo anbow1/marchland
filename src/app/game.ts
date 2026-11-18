@@ -1,6 +1,6 @@
 import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCellAt } from '../sim/nav.ts';
@@ -175,6 +175,8 @@ export class Game implements ControlTarget {
       merge: (kind) => this.mergeSelected(kind),
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
+      unselectRegiment: (id) => this.unselectRegiment(id),
+      unselectAll: () => this.unselectAll(),
       orderRegiment: (id) => this.attackRegiment(id),
       setSpeed: (speed) => {
         this.loop.speed = speed;
@@ -805,11 +807,26 @@ export class Game implements ControlTarget {
     }
     this.selected.add(id);
     this.selectedPlot = NOWHERE;
-    this.setHint(T.hintArmy);
+    this.setHint(this.controls.touchInput ? T.hintArmyTouch : T.hintArmy);
     this.sound.play('click');
   }
 
-  select(screenX: number, screenY: number, additive: boolean): void {
+  /** Takes one regiment out of the selection (its card's ×, or Ctrl and a click on it). */
+  private unselectRegiment(id: number): void {
+    if (!this.selected.delete(id)) return;
+    if (this.selected.size === 0) this.setHint(T.hintIdle);
+    this.sound.play('click');
+  }
+
+  /** Puts the whole selection down (the panel's button, or Esc). */
+  private unselectAll(): void {
+    this.selected.clear();
+    this.selectedPlot = NOWHERE;
+    this.setHint(T.hintIdle);
+    this.sound.play('click');
+  }
+
+  select(screenX: number, screenY: number, additive: boolean, remove = false): void {
     this.sound.unlock();
     if (!this.ground(screenX, screenY, this.hit)) return;
     if (this.tool) {
@@ -817,6 +834,11 @@ export class Game implements ControlTarget {
       return;
     }
     const r = this.regimentAt(this.hit.x, this.hit.z, PLAYER);
+    // Ctrl and a click: out of the selection; on anything else it does nothing.
+    if (remove) {
+      if (r) this.unselectRegiment(r.id);
+      return;
+    }
     if (r) {
       const now = performance.now();
       const twice = this.lastPick.id === r.id && now - this.lastPick.atMs < 350;
@@ -834,8 +856,8 @@ export class Game implements ControlTarget {
     this.setHint(T.hintIdle);
   }
 
-  boxSelect(x0: number, y0: number, x1: number, y1: number, additive: boolean): void {
-    if (!additive) this.selected.clear();
+  boxSelect(x0: number, y0: number, x1: number, y1: number, additive: boolean, remove = false): void {
+    if (!additive && !remove) this.selected.clear();
     const left = Math.min(x0, x1);
     const right = Math.max(x0, x1);
     const top = Math.min(y0, y1);
@@ -843,11 +865,18 @@ export class Game implements ControlTarget {
     for (const r of this.world.regiments) {
       if (r.side !== PLAYER || r.aliveMen === 0) continue;
       if (!this.view.project(r.centreX, heightAtM(r.centreX, r.centreZ) + 1, r.centreZ, this.screen)) continue;
-      if (this.screen.x >= left && this.screen.x <= right && this.screen.y >= top && this.screen.y <= bottom) this.selected.add(r.id);
+      if (this.screen.x < left || this.screen.x > right || this.screen.y < top || this.screen.y > bottom) continue;
+      // Ctrl and a box: the regiments in it come out of the selection.
+      if (remove) this.selected.delete(r.id);
+      else this.selected.add(r.id);
+    }
+    if (remove) {
+      if (this.selected.size === 0) this.setHint(T.hintIdle);
+      return;
     }
     if (this.selected.size > 0) {
       this.selectedPlot = NOWHERE;
-      this.setHint(T.hintArmy);
+      this.setHint(this.controls.touchInput ? T.hintArmyTouch : T.hintArmy);
     }
   }
 
@@ -970,28 +999,13 @@ export class Game implements ControlTarget {
   }
 
   /**
-   * The facing a right-button drag sets. Dragged sideways, the drag is the front itself (the line looks
-   * square to it, away from where the troops stand); dragged straight away, it points the way to look.
+   * The facing a right-button drag sets: the drag is the front, and the line looks to its left side, so a
+   * drag to the right on the screen faces away from the camera, a drag to the left towards it. One rule all
+   * the way round: sweeping the drag through a full circle turns the facing smoothly through 360°. (It used to
+   * pick whichever side looked away from the troops, and flipped by half a circle as the drag crossed them.)
    */
   private dragFacing(x: number, z: number, toX: number, toZ: number): number {
-    const along = Math.atan2(toX - x, toZ - z);
-    // The two facings square to the drag: the one looking away from the troops' middle.
-    let cx = 0;
-    let cz = 0;
-    let n = 0;
-    for (const id of this.selected) {
-      const r = findRegiment(this.world, id);
-      if (!r) continue;
-      cx += r.centreX;
-      cz += r.centreZ;
-      n++;
-    }
-    if (n === 0) return along;
-    const a = along - Math.PI / 2;
-    const b = along + Math.PI / 2;
-    const awayX = x - cx / n;
-    const awayZ = z - cz / n;
-    return Math.sin(a) * awayX + Math.cos(a) * awayZ >= Math.sin(b) * awayX + Math.cos(b) * awayZ ? a : b;
+    return dragFacing(x, z, toX, toZ);
   }
 
   /** The kept formation whose living regiments are exactly the ones selected, if any. */
@@ -1065,6 +1079,11 @@ export class Game implements ControlTarget {
       return;
     }
     const own = this.regimentAt(this.hit.x, this.hit.z, PLAYER);
+    // A tap on a regiment already chosen takes it out of the selection (two quick taps still choose all of its kind).
+    if (own && this.selected.has(own.id) && !double) {
+      this.unselectRegiment(own.id);
+      return;
+    }
     const ownPlot = this.plotAt(this.hit.x, this.hit.z, PLAYER);
     // With troops selected, a tap anywhere but on one's own troops or town is an order.
     if (this.selected.size > 0 && !own && ownPlot === -2) this.order(screenX, screenY, double, null, null);
@@ -1114,7 +1133,7 @@ export class Game implements ControlTarget {
       this.selected.clear();
       for (const id of ids) this.selected.add(id);
       this.selectedPlot = NOWHERE;
-      this.setHint(T.hintArmy);
+      this.setHint(this.controls.touchInput ? T.hintArmyTouch : T.hintArmy);
       if (again) {
         // Twice quickly: the camera goes to them.
         let x = 0;
@@ -1150,7 +1169,7 @@ export class Game implements ControlTarget {
       if (seen && p.x >= 0 && p.y >= 0 && p.x <= w && p.y <= h) this.selected.add(r.id);
     }
     this.selectedPlot = NOWHERE;
-    this.setHint(T.hintArmy);
+    this.setHint(this.controls.touchInput ? T.hintArmyTouch : T.hintArmy);
   }
 
   private lastPick = { id: -1, atMs: 0 };
@@ -1203,7 +1222,7 @@ export class Game implements ControlTarget {
     for (const r of this.world.regiments) if (r.side === PLAYER && r.aliveMen > 0 && r.state === 'formed') this.selected.add(r.id);
     if (this.selected.size > 0) {
       this.selectedPlot = NOWHERE;
-      this.setHint(T.hintArmy);
+      this.setHint(this.controls.touchInput ? T.hintArmyTouch : T.hintArmy);
     }
   }
 

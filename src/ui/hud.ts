@@ -55,6 +55,9 @@ export interface HudActions {
   merge(kind: UnitKind): void;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
+  /** Out of the selection: one regiment, or all of them. */
+  unselectRegiment(id: number): void;
+  unselectAll(): void;
   /** The order button pressed on a regiment's card: attack it, if it is an enemy. */
   orderRegiment(id: number): void;
   setSpeed(speed: number): void;
@@ -422,6 +425,12 @@ export class Hud {
         break;
       case 'pick':
         this.actions.selectRegiment(Number(arg), false);
+        break;
+      case 'unpick':
+        this.actions.unselectRegiment(Number(arg));
+        break;
+      case 'none':
+        this.actions.unselectAll();
         break;
       default:
         throw new Error(`unknown HUD action '${name}'`);
@@ -803,13 +812,13 @@ export class Hud {
   }
 
   private armyHtml(world: World, selected: ReadonlySet<number>): string {
-    let html = `<div class="row"><button class="option" data-act="halt" data-tip="${T.halt}"><span class="name">${T.halt}</span></button><button class="option" data-act="all" data-tip="${T.selectAll}"><span class="name">${T.selectAll}</span></button></div><div class="row wrap">`;
+    let html = `<div class="row"><button class="option" data-act="halt" data-tip="${T.halt}"><span class="name">${T.halt}</span></button><button class="option" data-act="all" data-tip="${T.selectAll}"><span class="name">${T.selectAll}</span></button><button class="option" data-act="none" data-tip="${T.unselectAllTip}"><span class="name">${T.unselectAll}</span></button></div><div class="row wrap">`;
     for (const r of world.regiments) {
       if (!selected.has(r.id) || r.aliveMen === 0) continue;
       const morale = Math.min(100, Math.max(0, Math.round((r.morale / r.def.morale) * 100)));
       const rank = veteranRank(r);
       const record = `${rank > 0 ? ` · ${T.ranks3[rank]}` : ''}${hasCaptain(r) ? '' : ` · ${T.noCaptain}`}`;
-      html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about} ${T.ranks3[rank]}: ${T.rankTip}"><span class="glyph">${UNIT_GLYPH[r.kind]}${'★'.repeat(rank)}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${Math.max(r.initialMen, r.maxMen)} ${T.men} · ${this.stateText(world, r)}${record}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
+      html += `<div class="unit" data-act="pick" data-arg="${r.id}" data-tip="${T.units[r.kind].name}: ${T.units[r.kind].about} ${T.ranks3[rank]}: ${T.rankTip}"><button class="x" data-act="unpick" data-arg="${r.id}" data-tip="${T.unselectOne}">×</button><span class="glyph">${UNIT_GLYPH[r.kind]}${'★'.repeat(rank)}</span><span class="name">${T.units[r.kind].name}</span><span class="small">${r.aliveMen}/${Math.max(r.initialMen, r.maxMen)} ${T.men} · ${this.stateText(world, r)}${record}</span><span class="bar"><i style="width:${morale}%" class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}"></i></span><span class="bar thin"><i style="width:${Math.round(r.fatigue * 100)}%" class="tired"></i></span></div>`;
     }
     html += '</div>';
     // Two or more of a kind chosen (the campaign's regiments grow to twenty): merge them.

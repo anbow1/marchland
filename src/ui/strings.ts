@@ -161,6 +161,9 @@ interface Strings {
   queue: string;
   halt: string;
   selectAll: string;
+  unselectAll: string;
+  unselectAllTip: string;
+  unselectOne: string;
   men: string;
   morale: string;
   fatigue: string;
@@ -173,6 +176,7 @@ interface Strings {
   needsFoundryLevel: string;
   hintIdle: string;
   hintArmy: string;
+  hintArmyTouch: string;
   starving: string;
   fed: string;
   routed: string;
@@ -515,6 +519,9 @@ const pl: Strings = {
   queue: 'W szkoleniu',
   halt: 'Stój (H)',
   selectAll: 'Całe wojsko (Ctrl+A)',
+  unselectAll: 'Odznacz (Esc)',
+  unselectAllTip: 'Odznacz wszystkie oddziały (Esc). Jeden oddział: × na jego karcie albo Ctrl + klik na nim; Ctrl + ramka odznacza oddziały w ramce.',
+  unselectOne: 'Odznacz ten oddział (albo Ctrl + klik na nim)',
   men: 'ludzi',
   morale: 'Morale',
   fatigue: 'Zmęczenie',
@@ -526,6 +533,7 @@ const pl: Strings = {
   needsBarracksLevel: 'koszary poz.',
   needsFoundryLevel: 'ludwisarnia poz.',
   hintIdle: 'Wybierz budynek z listy i wskaż miejsce na mapie. Kliknij oddział, żeby wydać rozkaz.',
+  hintArmyTouch: 'Stuknij w mapę: marsz (dwa stuknięcia: bieg). Przytrzymaj palec i przeciągnij: front i kierunek. Na wroga: atak. Stuknij zaznaczony oddział albo × na karcie: odznacz.',
   hintArmy: 'Prawy przycisk: marsz. Dwa kliknięcia albo B: bieg. Przytrzymaj prawy i przeciągnij: linia i kierunek. Na wroga: atak. Shift: do kolejki. Spacja: pauza. Ctrl+cyfra: grupa i jej szyk.',
   starving: 'Głód! Produkcja zwalnia, podatki ustają, morale spada.',
   fed: 'Miasto znów ma co jeść.',
@@ -543,11 +551,11 @@ const pl: Strings = {
     'WASD / strzałki / krawędź ekranu: przesuwanie mapy',
     'Kółko myszy: zoom (do widoku całej mapy) · środkowy przycisk: przesuwanie mapy · prawy przycisk przeciągnięty albo Q / E: obrót',
     'Budowa: wybierz budynek, R obraca, lewy przycisk stawia, prawy anuluje · G: droga',
-    'Lewy przycisk: zaznacz · przeciągnij: ramka · Shift: dodaj',
+    'Lewy przycisk: zaznacz · przeciągnij: ramka · Shift: dodaj · Ctrl: odznacz (klik albo ramka)',
     'Prawy przycisk (klik): marsz / atak · dwa kliknięcia: bieg · B: marsz albo bieg · Ctrl + przeciągnięcie prawym: front',
     'H: stój · Ctrl+A: całe wojsko · Esc: odznacz / pauza · F3: pomiar',
     'Ctrl+1…9: zapamiętaj grupę · 1…9: zaznacz (dwa razy: kamera do niej) · dwuklik oddziału: wszystkie tego rodzaju na ekranie · Ctrl+F5…F8: zapamiętaj widok, F5…F8: wróć',
-    'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje',
+    'Dotyk: palec przesuwa, dwa palce przybliżają i obracają, stuknięcie zaznacza, stawia i rozkazuje · przytrzymaj i przeciągnij: front oddziałów · stuknij zaznaczony oddział: odznacz',
   ],
   groupKept: 'Zapamiętano grupę',
   formationKept: 'Zapamiętano szyk (oddziały idą razem w tym ustawieniu) pod klawiszem',
@@ -902,6 +910,9 @@ const en: Strings = {
   queue: 'In training',
   halt: 'Halt (H)',
   selectAll: 'Whole army (Ctrl+A)',
+  unselectAll: 'Deselect (Esc)',
+  unselectAllTip: 'Deselect all regiments (Esc). One regiment: the × on its card, or Ctrl + click on it; Ctrl + box deselects the regiments in the box.',
+  unselectOne: 'Deselect this regiment (or Ctrl + click on it)',
   men: 'men',
   morale: 'Morale',
   fatigue: 'Fatigue',
@@ -913,6 +924,7 @@ const en: Strings = {
   needsBarracksLevel: 'barracks lvl',
   needsFoundryLevel: 'foundry lvl',
   hintIdle: 'Pick a building from the list and point at the map. Click a regiment to give orders.',
+  hintArmyTouch: 'Tap the map: march (two taps: run). Hold a finger and drag: front and facing. On an enemy: attack. Tap a chosen regiment or the × on its card: deselect.',
   hintArmy: 'Right click: march. Double click or B: run. Hold right and drag: line and facing. On an enemy: attack. Shift: queue. Space: pause. Ctrl+digit: group and its formation.',
   starving: 'Hunger! Production slows, taxes stop, morale falls.',
   fed: 'The town has food again.',
@@ -930,11 +942,11 @@ const en: Strings = {
     'WASD / arrows / screen edge: move the map',
     'Mouse wheel: zoom (out to the whole map) · middle button: move the map · right drag or Q / E: turn',
     'Building: pick a building, R turns it, left button places, right button cancels · G: road',
-    'Left button: select · drag: box · Shift: add',
+    'Left button: select · drag: box · Shift: add · Ctrl: deselect (click or box)',
     'Right click: march / attack · double click: run · B: march or run · Ctrl + right drag: set the front',
     'H: halt · Ctrl+A: whole army · Esc: deselect / pause · F3: measurements',
     'Ctrl+1…9: keep a group · 1…9: select it (twice: camera to it) · double-click a regiment: all of its kind on screen · Ctrl+F5…F8: keep a view, F5…F8: go back to it',
-    'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders',
+    'Touch: one finger moves, two fingers zoom and turn, a tap selects, places and orders · hold and drag: the troops\' front · tap a chosen regiment: deselect',
   ],
   groupKept: 'Group kept',
   formationKept: 'Formation kept (the regiments march together in this shape) on key',

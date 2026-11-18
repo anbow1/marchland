@@ -5,6 +5,47 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Obracanie oddziałów przez 360°, odznaczanie, front palcem na tablecie
+
+- **Obracanie przeskakiwało**:
+  - przeciągnięcie prawym przyciskiem wyznaczało front, a z dwóch możliwych zwrotów gra brała ten „od środka
+    oddziałów”;
+  - gdy przeciągnięcie mijało linię przez oddziały, kierunek zmieniał się nagle o 180°.
+- **Teraz jedna reguła**: oddział patrzy zawsze w lewo od kierunku przeciągnięcia (`dragFacing`).
+  - Przeciągnięcie w prawo: oddział patrzy od kamery. W lewo: ku kamerze.
+  - Pomiar w przeglądarce: prawy przycisk przeciągnięty po pełnym kole (37 punktów co 10°) obraca kierunek
+    o 360° bez przeskoku. Największy krok to 28° na 10° koła, bo kamera patrzy na teren ukośnie.
+  - Test `tests/orders.test.ts`: 360 kroków po 1°, każdy obraca kierunek o 1° w tę samą stronę.
+- **Odznaczanie w walce**:
+  - przycisk „Odznacz (Esc)” w panelu wojska i × na karcie każdego zaznaczonego oddziału;
+  - na komputerze Ctrl + klik na oddziale albo Ctrl + ramka usuwa oddziały z zaznaczenia (Shift + klik działa
+    jak dotąd);
+  - na tablecie stuknięcie w zaznaczony oddział go odznacza (dwa szybkie stuknięcia nadal wybierają wszystkie
+    oddziały tego rodzaju na ekranie).
+- **Front i kierunek na tablecie** (dotąd nie było na to sposobu: rozkaz ustawiał oddział przodem do marszu):
+  - przy zaznaczonych oddziałach przytrzymanie palca na mapie (350 ms, krótka wibracja), a potem przeciągnięcie
+    pokazuje front jak prawy przycisk myszy; puszczenie wydaje rozkaz;
+  - przytrzymanie bez przeciągnięcia działa jak zwykłe stuknięcie;
+  - szybki ruch palcem dalej przesuwa mapę; drugi palec przerywa ustawianie (zoom, obrót).
+- Sprawdzone w przeglądarce z emulacją dotyku: front przy przeciągnięciu w prawo patrzy od kamery, rozkaz
+  wydany z tym kierunkiem; stuknięcie odznacza; × na karcie i Ctrl + klik odznaczają.
+- Podpowiedzi wojska na dotyku opisują gesty; pomoc w menu wspomina Ctrl do odznaczania.
+
+## 2026-11-18 · Dokumentacja i paczka assetów
+
+- `PLAYBOOK.md`:
+  - §4.5 opisuje taczkę: obrót wokół osi koła do rąk tragarza i ładunek na dnie skrzyni;
+  - nowy §4.6 o ruchu wojska: koszt brzegu w A*, kolumna po śladzie, sprawdzanie drogi pasem o szerokości
+    frontu, kolejka na przeprawach, front przeciągnięciem i gestem na tablecie;
+  - §5 opisuje mur pod dowolnym kątem;
+  - trzy nowe wiersze w tabeli pułapek.
+- Spis modeli i budynków w `ASSETS.md` i w `FORMATS.md` paczki odświeżony z plików:
+  - zmieniła się liczba trójkątów rybaka (ryby i kosze), pikiniera i innych;
+  - `FORMATS.md` nie miał milicji.
+- Paczka (`node tools/pack-assets.mjs`, 63,8 MB, zip 29,6 MB) ma teraz:
+  - `sounds/` z 18 nagraniami walki (Kenney, CC0) i ich podpisem w `CREDITS.md`;
+  - milicjanta w przykładzie i w README.
+
 ## 2026-11-18 · Mur pod dowolnym kątem bez schodków
 
 - Mur stawiany pod kątem innym niż 0°, 45° i 90° rozpadał się na schodki z przerwami.

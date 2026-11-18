@@ -3,6 +3,7 @@
 //   node tools/pack-assets.mjs            → asset-pack-out/marchland-assets/ and marchland-assets.zip
 //
 // models/   every baked model and animation the game loads (public/soldiers, people, props, buildings)
+// sounds/   the recorded fighting sounds (public/sounds, Kenney, CC0)
 // textures/ the scanned CC0 surfaces (src/assets/photo)
 // loader/   a three.js module that puts each format on screen (asset-pack/loader)
 // example/  one page with every asset, offline (three.js r186 copied into vendor/)
@@ -28,6 +29,7 @@ const copy = (from, to) => {
 };
 
 for (const dir of ['soldiers', 'people', 'props', 'buildings']) copy(`public/${dir}`, `models/${dir}`);
+copy('public/sounds', 'sounds');
 copy('src/assets/photo', 'textures');
 copy('asset-pack/loader', 'loader');
 copy('asset-pack/example', 'example');
@@ -61,6 +63,7 @@ const credits = [
 for (const dir of ['soldiers', 'people', 'props', 'buildings']) {
   credits.push(`## models/${dir}`, '', readFileSync(join(root, `public/${dir}/CREDITS.md`), 'utf8').replace(/^# .*\n/, '').trim(), '');
 }
+credits.push('## sounds', '', readFileSync(join(root, 'public/sounds/CREDITS.md'), 'utf8').replace(/^# .*\n/, '').trim(), '');
 credits.push('## textures', '', readFileSync(join(root, 'src/assets/photo/LICENSE.md'), 'utf8').replace(/^# .*\n/, '').trim(), '');
 credits.push('## vendor/three', '', 'three.js r186, MIT licence (vendor/three/LICENSE).', '');
 writeFileSync(join(out, 'CREDITS.md'), credits.join('\n'));

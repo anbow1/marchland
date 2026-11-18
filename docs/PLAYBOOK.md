@@ -164,6 +164,35 @@ wspólny. Co trzecia osoba to kobieta. Klip wynika z tego, co robi: niesie skrzy
 kuje, żnie, stoi albo idzie. Niesiony towar to osobna instancja, barwiona rodzajem towaru. Kowal przy
 hucie, kuźni i płatnerzu to model z własną animacją pracy (`workersView.ts`), każdy w swojej fazie.
 
+**Taczka** (`pushedBarrow` w `peopleView.ts`): model z Sketchfabu stoi w pozie spoczynkowej, na nóżkach.
+Przy wczytaniu wierzchołki i normalne są obracane wokół osi koła, aż końce rączek trafią w dłonie tragarza
+(0,85 m nad ziemią, 0,4 m przed nim), a koło zostaje na ziemi. Ten sam obrót wyznacza dno skrzyni, na którym
+leży ładunek. Niesiony towar jest zbudowany na wysokości dłoni, więc w taczce opuszcza się go o różnicę
+wysokości.
+
+### 4.6 Ruch wojska: kolumna, przeprawy, kolejka (`movement.ts`, `nav.ts`)
+
+- **Oddział to kotwica i miejsca w szyku.** Kotwica (czoło) idzie do celu, a każdy żołnierz do swojego
+  miejsca. Gdy woda, skała albo mur leżą na drodze, `findRoute` (A* po komórkach 2 m) wyznacza punkty trasy,
+  a oddział idzie po nich w kolumnie trzech.
+- **Trasa środkiem przejścia.** Dla oddziałów komórka 1–2 komórki od wody, skały albo cudzego muru kosztuje
+  więcej (`EDGE_COST`). Dzięki temu trasa przez bród albo bramę biegnie środkiem, a nie krawędzią.
+- **Kolumna jak wąż.** Kotwica zostawia ślad (punkt co 2 m), a w kolumnie szereg *k* stoi na śladzie
+  *k · odstęp szeregów* za czołem (`snakePlace` w `regiment.ts`). Ogon idzie więc tam, gdzie szło czoło,
+  i nie zatacza łuku przez rzekę przy skręcie. Kolumna rozwija się w szyk, dopiero gdy przejdzie jej ostatni
+  szereg (`columnLeftM`).
+- **Pas, nie linia.** Czy droga jest wolna, sprawdza się w pasie o szerokości frontu (`wideBlocked`). Linia
+  szersza niż brama przechodzi więc w kolumnie, zamiast utknąć skrzydłami na murze.
+- **Kolejka na przeprawach.** Brody, grobla i bramy to przeprawy (bramy zebrane z komórek muru). Oddział
+  w odległości 12 m od przeprawy, którego trasa w nią wchodzi, czeka, jeśli przez przeprawę idzie inny
+  oddział jego strony albo inny jest bliżej wejścia. Reguła nie ma stanu: liczy się co krok z położeń, więc
+  jest deterministyczna i nie trzeba jej zapisywać. `tests/crossing.test.ts` puszcza po 4 oddziały przez
+  bród i przez bramę.
+- **Front przeciągnięciem** (`dragFacing` w `commands.ts`): przeciągnięcie wyznacza front, a oddział patrzy
+  zawsze w lewo od kierunku przeciągnięcia. Jedna reguła daje płynny obrót przez 360°. Wcześniejsza reguła
+  „od środka oddziałów” przeskakiwała o 180°. Na dotyku to samo robi przytrzymany palec (350 ms), potem
+  przeciągnięty. Ponowne stuknięcie zaznaczonego oddziału albo × na jego karcie odznacza go.
+
 ## 5. Budynki
 
 - **Zestaw skryptów Blendera** (`tools/blender/kit.py`, `parts.py`, `buildings.py`, `build.py`): ściany
@@ -183,7 +212,9 @@ hucie, kuźni i płatnerzu to model z własną animacją pracy (`workersView.ts`
   (`onObjectUpdate`, `userData.cutY`), więc jeden materiał tnie każdy plac inaczej; cienie są ucinane tak
   samo.
 - **Mur** (`wallView.ts`): odcinek z modelu powtarzany co 2 m wzdłuż narysowanej linii; brama otwiera
-  skrzydła, gdy podchodzą swoi.
+  skrzydła, gdy podchodzą swoi. Linia pod dowolnym kątem to schodki komórek, które znają swój kierunek tylko
+  z dokładnością do 45°. Kierunek odcinka bierze się więc z osi głównej komórek tej samej linii w promieniu
+  3 komórek: odcinek stoi na tej osi i ma długość od komórki do komórki, z naddatkiem 6%.
 
 ## 6. Assety: skąd i na jakich zasadach
 
@@ -251,6 +282,9 @@ Pełna lista z autorami i licencjami jest w `ASSETS.md`, a podpisy w `public/*/C
 | Gra offline nie startuje (JS i CSS) | `cache.match` respektuje `Vary` | `ignoreVary: true` |
 | Wdrożenie Pages pada | Pełny limit artefaktów Actions na koncie | Wypychanie na gałąź `gh-pages` |
 | `.exe` nie trafia do wydania | Token Actions bez zgody na tworzenie wydań (HTTP 403) | Zgoda w ustawieniach repozytorium albo instalacja z przeglądarki |
+| Żołnierze w głębokiej wodzie na brodzie pod kątem | Trasa krawędzią brodu; sztywna kolumna przy skręcie zatacza łuk ogonem | Koszt komórek przy brzegu, kolumna po śladzie czoła (§4.6) |
+| Mur pod kątem rozpada się na schodki | Odcinki obrócone do najbliższej wielokrotności 45° | Kierunek z osi głównej sąsiednich komórek (§5) |
+| Kierunek oddziału przeskakuje o 180° przy przeciąganiu | Zwrot wybierany „od środka oddziałów” | Stały zwrot: w lewo od przeciągnięcia (§4.6) |
 | Długie złożone polecenia w powłoce odrzucane | Kontrola bezpieczeństwa narzędzia | Dzielić na krótsze kroki |
 
 ## 10. Nowa gra z gotowych assetów: kolejność pracy

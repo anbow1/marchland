@@ -541,6 +541,16 @@ export function cmdMoveGroup(world: World, regimentIds: readonly number[], x: nu
 const lineScratch: number[] = [];
 
 /**
+ * The facing a drag from (x, z) to (toX, toZ) lays out: the drag is the front, the line looks to its left (seen
+ * from above, the way the camera sees the ground). Turning the drag turns the facing with it, through 360°, with
+ * no jump. In −π…π.
+ */
+export function dragFacing(x: number, z: number, toX: number, toZ: number): number {
+  const a = Math.atan2(toX - x, toZ - z) + Math.PI / 2;
+  return a > Math.PI ? a - Math.PI * 2 : a;
+}
+
+/**
  * Where a group order puts each regiment: one line, the shooters in a second line behind (or in front when
  * there is no one else), each row ordered as the regiments stand now. Writes id, x, z, frontage per regiment.
  */

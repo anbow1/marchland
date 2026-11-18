@@ -11,10 +11,11 @@ Paczkę składa skrypt `marchland/tools/pack-assets.mjs` (`node tools/pack-asset
 
 | Katalog | Zawartość |
 |---|---|
-| `models/soldiers/` | miecznik, halabardnik, pikinier, łucznik, kusznik (każdy ze szkieletem, bronią i 8–10 klipami), koń z chodem, galopem, postojem, skubaniem trawy i upadkiem, jeździec w siodle, starszy rycerz i koń bez szkieletu |
+| `models/soldiers/` | miecznik, halabardnik, pikinier, łucznik, kusznik, milicjant z włócznią i małą tarczą (każdy ze szkieletem, bronią i 8–10 klipami), koń z chodem, galopem, postojem, skubaniem trawy i upadkiem, jeździec w siodle, starszy rycerz i koń bez szkieletu |
 | `models/people/` | czterech mieszczan i trzy mieszczanki (po 11 klipów pracy: noszenie skrzyni, kopanie, połów, rąbanie, młot, żniwa, podnoszenie i odkładanie, marsz, postój), kowal z własną animacją pracy |
-| `models/props/` | armata, moździerz, wóz, taczka, świnia; towary do noszenia i stosów (deski, kamień, worek, beczka, skrzynia, chleb, mięso, strzały) |
+| `models/props/` | armata, moździerz, wóz, taczka (gra przechyla ją do rąk tragarza: `PLAYBOOK.md` §4.5), świnia; towary do noszenia i stosów (deski, kamień, worek, beczka, skrzynia, chleb, mięso, strzały) |
 | `models/buildings/` | 20 budynków po 3 poziomy (chata, młyn, piekarnia, kuźnia, koszary, wieża…), zamek, odcinek muru i brama |
+| `sounds/` | 18 nagrań walki (MP3 mono): szczęk broni, uderzenia w zbroję, ciosy, upadki, pękający kamień — Kenney „Impact Sounds”, CC0 |
 | `textures/` | 18 skanów powierzchni z Poly Haven (CC0): łąka, ziemia, błoto, tynk, belki, deski, strzecha, gont, dachówka, kamień łamany i ciosany, kora, liście, skała… |
 | `loader/marchland-assets.js` | `rigged()`, `body()`, `mount()`, `prop()`, `building()`: każdy format na ekran w kilku linijkach |
 | `example/` | strona z każdym modelem i klipem (wybór modelu i klipu w panelu) |

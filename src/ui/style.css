@@ -57,7 +57,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .cost { display: inline-flex; align-items: center; gap: 3px; }
 .cost i { width: 14px; height: 14px; display: inline-block; vertical-align: -3px; }
 .cost.short { color: #ff9a88; }
-.unit { display: flex; flex-direction: column; gap: 2px; width: 150px; padding: 4px 7px; background: #33362a; border: 1px solid #5d5843; border-radius: 3px; cursor: pointer; }
+.unit { position: relative; display: flex; flex-direction: column; gap: 2px; width: 150px; padding: 4px 7px; background: #33362a; border: 1px solid #5d5843; border-radius: 3px; cursor: pointer; }
+.unit > .x { position: absolute; top: 1px; right: 1px; width: 26px; height: 26px; padding: 0; border: 0; border-radius: 3px; background: transparent; color: #d8cfb4; font-size: 18px; line-height: 26px; cursor: pointer; }
+.unit > .x:hover { background: #5d5843; color: #fff; }
 .unit .glyph { font-size: 16px; line-height: 16px; }
 .unit .name { font-weight: 600; }
 .small { font-size: 11px; color: #b9b29c; }

@@ -12,8 +12,8 @@ export interface ControlTarget {
   /** Ground point under a screen point; false when there is none. */
   ground(screenX: number, screenY: number, out: { x: number; z: number }): boolean;
   /** A click or tap that selects. */
-  select(screenX: number, screenY: number, additive: boolean): void;
-  boxSelect(x0: number, y0: number, x1: number, y1: number, additive: boolean): void;
+  select(screenX: number, screenY: number, additive: boolean, remove?: boolean): void;
+  boxSelect(x0: number, y0: number, x1: number, y1: number, additive: boolean, remove?: boolean): void;
   showBox(x0: number, y0: number, x1: number, y1: number, visible: boolean): void;
   /** An order at a screen point; `faceX/faceZ` set when the player dragged out a facing. */
   order(screenX: number, screenY: number, run: boolean, faceToX: number | null, faceToZ: number | null, queued?: boolean): void;
@@ -28,6 +28,8 @@ export interface ControlTarget {
 
 const DRAG_PX = 7;
 const DOUBLE_MS = 380;
+/** A finger held this long on the map with troops chosen, then dragged, lays out their line like a right-button drag. */
+const HOLD_MS = 350;
 
 interface Pointer {
   id: number;
@@ -38,6 +40,10 @@ interface Pointer {
   button: number;
   touch: boolean;
   dragging: boolean;
+  /** A held finger laying out the selected troops' line and facing. */
+  facing?: boolean;
+  /** When it touched down (the event's own time, not when it was handled). */
+  downStamp?: number;
 }
 
 export class Controls {
@@ -106,8 +112,24 @@ export class Controls {
       this.mouseY = e.clientY;
       this.mouseInside = true;
     }
-    this.pointers.set(e.pointerId, { id: e.pointerId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, button: e.button, touch, dragging: false });
+    const p: Pointer = { id: e.pointerId, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY, button: e.button, touch, dragging: false, downStamp: e.timeStamp };
+    this.pointers.set(e.pointerId, p);
+    if (touch && this.pointers.size === 1 && this.target.hasSelection()) {
+      // Held still, the finger starts laying out the line (a short buzz says so); moved first, it drags the map.
+      setTimeout(() => {
+        if (this.pointers.get(p.id) !== p || this.pointers.size !== 1 || p.dragging || !this.target.hasSelection()) return;
+        p.facing = true;
+        navigator.vibrate?.(15);
+        this.target.showFacing(p.startX, p.startY, p.x, p.y, true);
+      }, HOLD_MS);
+    }
     if (this.pointers.size === 2) {
+      // A second finger: a pinch or a twist, not a line.
+      for (const q of this.pointers.values()) {
+        if (!q.facing) continue;
+        q.facing = false;
+        this.target.showFacing(0, 0, 0, 0, false);
+      }
       this.pinchPx = this.pinchDistance();
       this.twistRad = this.pinchAngle();
     }
@@ -157,7 +179,18 @@ export class Controls {
       this.mouseX = p.x;
       this.mouseY = p.y;
     }
-    if (!p.dragging && Math.hypot(p.x - p.startX, p.y - p.startY) > DRAG_PX) p.dragging = true;
+    if (!p.dragging && Math.hypot(p.x - p.startX, p.y - p.startY) > DRAG_PX) {
+      p.dragging = true;
+      // The finger was moving before the hold was up (its events only handled late, on a busy frame): a map drag after all.
+      if (p.facing && e.timeStamp - (p.downStamp ?? 0) < HOLD_MS) {
+        p.facing = false;
+        this.target.showFacing(0, 0, 0, 0, false);
+      }
+    }
+    if (p.facing) {
+      this.target.showFacing(p.startX, p.startY, p.x, p.y, true);
+      return;
+    }
     if (this.pointers.size === 2 && p.touch) {
       // Pinch: zoom about the midpoint of the two fingers.
       const now = this.pinchDistance();
@@ -196,6 +229,14 @@ export class Controls {
     this.pointers.delete(e.pointerId);
     const now = performance.now();
     if (p.touch) {
+      if (p.facing) {
+        this.target.showFacing(0, 0, 0, 0, false);
+        // The line laid out: the order, facing as dragged. Held without a drag, it is only a tap.
+        if (p.dragging && this.target.ground(p.x, p.y, this.a)) {
+          this.target.order(p.startX, p.startY, false, this.a.x, this.a.z, false);
+          return;
+        }
+      }
       if (!p.dragging) {
         this.target.tap(p.x, p.y, now - this.lastTapMs < DOUBLE_MS);
         this.lastTapMs = now;
@@ -204,8 +245,10 @@ export class Controls {
     }
     if (p.button === 0) {
       this.target.showBox(0, 0, 0, 0, false);
-      if (p.dragging) this.target.boxSelect(p.startX, p.startY, p.x, p.y, this.actions.isHeld('add'));
-      else this.target.select(p.x, p.y, this.actions.isHeld('add'));
+      // Ctrl: out of the selection instead of into it.
+      const remove = this.actions.isCtrlHeld();
+      if (p.dragging) this.target.boxSelect(p.startX, p.startY, p.x, p.y, this.actions.isHeld('add'), remove);
+      else this.target.select(p.x, p.y, this.actions.isHeld('add'), remove);
     } else if (p.button === 2) {
       // The second of two quick clicks on one spot means "run".
       const double = now - this.lastOrderMs < DOUBLE_MS && Math.hypot(p.startX - this.lastOrderX, p.startY - this.lastOrderY) < 24;

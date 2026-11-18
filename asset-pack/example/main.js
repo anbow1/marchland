@@ -60,7 +60,7 @@ const place = (o, x, z, turn = 0) => {
 };
 
 // Soldiers (they face -Z: turned to the camera).
-const soldiers = ['swordsman', 'halberdier', 'pikeman', 'archer', 'crossbowman', 'knight'];
+const soldiers = ['swordsman', 'halberdier', 'pikeman', 'archer', 'crossbowman', 'militia', 'knight'];
 for (const [i, name] of soldiers.entries()) {
   const data = await loadJSON(`${M}soldiers/${name}.json`);
   if (!data.bones) {
