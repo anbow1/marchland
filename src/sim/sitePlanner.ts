@@ -1,6 +1,6 @@
-import { TOWN } from '../config.ts';
+import { ROADS, TOWN } from '../config.ts';
 import { keepRules } from './economy.ts';
-import { checkSite, yawToKeep } from './placement.ts';
+import { checkSite, squareYawToKeep, yawToKeep } from './placement.ts';
 import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeRadiusAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
 import { type BuildingKind, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
@@ -67,6 +67,64 @@ function planTower(world: World, side: Side, kind: BuildingKind): boolean {
       if (tryAt(world, side, kind, x, z, Math.atan2(t * FORWARD_X, t * FORWARD_Z))) return true;
     }
   }
+  return false;
+}
+
+/**
+ * The town's quarters, so the goods go short ways: homes (and the well, chapel, tavern, market) behind the
+ * keep; the food trades beside the village street where the grain comes in; the timber, iron and leather
+ * trades with a storehouse on the other side; barracks, stable and foundry towards the enemy. Each is a
+ * point (forward, across) from the keep in the side's own frame.
+ */
+type Quarter = 'home' | 'food' | 'craft' | 'army';
+const QUARTER: Partial<Record<BuildingKind, Quarter>> = {
+  house: 'home',
+  well: 'home',
+  chapel: 'home',
+  tavern: 'home',
+  market: 'home',
+  windmill: 'food',
+  bakery: 'food',
+  brewery: 'food',
+  butcher: 'food',
+  winery: 'food',
+  storehouse: 'craft',
+  sawmill: 'craft',
+  smelter: 'craft',
+  smithy: 'craft',
+  armourer: 'craft',
+  fletcher: 'craft',
+  tannery: 'craft',
+  barracks: 'army',
+  stable: 'army',
+  foundry: 'army',
+};
+const QUARTER_AT: Record<Quarter, readonly [number, number]> = { home: [-26, 0], food: [6, 32], craft: [-4, -32], army: [30, -16] };
+
+/** Grid squares (TOWN.gridM, lined up with the keep and the road cells, as the player's grid), nearest the
+ * middle of the building's quarter first; doors squared to the keep. */
+function planQuarter(world: World, side: Side, kind: BuildingKind): boolean {
+  const quarter = QUARTER[kind];
+  if (!quarter) return false;
+  const t = turnOf(side);
+  const [forward, across] = QUARTER_AT[quarter];
+  const qx = townX(side) + t * (FORWARD_X * forward + SIDE_X * across);
+  const qz = townZ(side) + t * (FORWARD_Z * forward + SIDE_Z * across);
+  const ox = Math.round(townX(side) / ROADS.cellM) * ROADS.cellM;
+  const oz = Math.round(townZ(side) / ROADS.cellM) * ROADS.cellM;
+  const g = TOWN.gridM;
+  const ci = Math.round((qx - ox) / g);
+  const cj = Math.round((qz - oz) / g);
+  const squares: [number, number, number][] = [];
+  for (let i = ci - 6; i <= ci + 6; i++) {
+    for (let j = cj - 6; j <= cj + 6; j++) {
+      const x = ox + i * g;
+      const z = oz + j * g;
+      squares.push([hypot2(x - qx, z - qz), x, z]);
+    }
+  }
+  squares.sort((a, b) => a[0] - b[0]);
+  for (const [, x, z] of squares) if (tryAt(world, side, kind, x, z, squareYawToKeep(side, x, z))) return true;
   return false;
 }
 
@@ -146,8 +204,8 @@ export function planSite(world: World, side: Side, kind: BuildingKind): Plan | n
   if (need === 'forest') found = planForest(world, side, kind);
   else if (need === 'water') found = planLake(world, side, kind);
   else if (need === 'stone' || need === 'ore') found = planDeposit(world, side, kind, need);
-  else if (kind === 'farm' || kind === 'vineyard' || kind === 'pigFarm' || kind === 'stable') found = planVillage(world, side, kind) || planTown(world, side, kind);
+  else if (kind === 'farm' || kind === 'vineyard' || kind === 'pigFarm') found = planVillage(world, side, kind) || planTown(world, side, kind);
   else if (kind === 'tower') found = planTower(world, side, kind) || planTown(world, side, kind);
-  else found = planTown(world, side, kind);
+  else found = planQuarter(world, side, kind) || planTown(world, side, kind);
   return found ? plan : null;
 }

@@ -5,6 +5,25 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Miasto na siatce, w dzielnicach; pola nie na złożach
+
+- Planista miasta (gotowe miasto w kampanii i miasto komputera) stawiał chaty, warsztaty i resztę w pierścieniach
+  wokół zamku, na promieniach koła, bez względu na przeznaczenie. Pola zagród mogły zachodzić na skałę rudy.
+- Teraz (`sitePlanner.ts`, `planQuarter`):
+  - budynki stoją na siatce 16 m (tej samej co siatka gracza), drzwiami do zamku, w dzielnicach:
+    - mieszkalna: chaty, studnia, kaplica, karczma, targ, za zamkiem;
+    - spożywcza: młyn, piekarnia, browar, rzeźnia, winiarnia, przy ulicy wsi z zagrodami;
+    - rzemieślnicza: skład, tartak, huta, kuźnia, płatnerz, łuczarz, garbarnia;
+    - wojskowa: koszary, stajnia, ludwisarnia, od strony wroga;
+  - tragarze mają krótsze drogi między powiązanymi warsztatami;
+  - zagrody, chlewnia i winnica dalej przy ulicy wsi, drwal, rybak, kamieniołom i kopalnia przy swoich zasobach;
+  - pole zagrody kończy się przed skałą złoża kamienia lub rudy (`placement.ts`).
+- Misja 1: 4 chaty w bloku 2×2, huta z kuźnią razem, młyn z piekarnią od strony zagród.
+- Tempo komputera: po 18 min tyle samo budynków i ludzi co przedtem (dzielnice przybliżone do zamku), ale
+  pierwsze uderzenie na biernego gracza wypada ok. 5 minut później (45 zamiast 40 min, ziarno 5).
+  Test całej partii ma granicę 48 min zamiast 42.
+- Nowy test: w misji 1 budynki na siatce, chaty obok siebie, żadne pole na złożu. Testy 111/111.
+
 ## 2026-11-18 · Mur szczelnie łączy się z wieżą
 
 - Mur postawiony od wieży do wieży kończył się na krawędzi zabudowanego terenu wieży, ok. 6 m od jej środka.

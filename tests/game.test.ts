@@ -17,18 +17,20 @@ describe('a whole game', () => {
   // A session is 25–35 minutes (docs/GAMEPLAY.md §1). The computer's militia stays home as a guard, so the
   // first attack waits for regular troops, and the keeps stand 600 m apart near the corners: it razes a
   // town that does nothing at about 40 minutes (seeds 5 and 6), having raised its keep to the second level.
-  it('the computer builds a town, raises an army and razes an idle player within 42 minutes (it raises its keep to the second level on the way)', async () => {
+  // 48 minutes: the town laid out in quarters on the grid (sitePlanner.ts) spreads a little wider than the
+  // old rings round the keep, and the first blow falls some five minutes later (45 against 40 on this seed).
+  it('the computer builds a town, raises an army and razes an idle player within 48 minutes', async () => {
     const world = createWorld({ seed: 5, difficulty: 'normal', computerPlays: true });
     let firstRegimentS = -1;
     let peakMen = 0;
-    const seconds = await runUntilAsync(world, 42 * 60, () => {
+    const seconds = await runUntilAsync(world, 48 * 60, () => {
       const men = menAlive(world, COMPUTER);
       if (men > 0 && firstRegimentS < 0) firstRegimentS = world.timeS;
       if (men > peakMen) peakMen = men;
       return world.winner !== -1;
     });
     expect(world.winner).toBe(COMPUTER);
-    expect(seconds).toBeLessThan(42 * 60);
+    expect(seconds).toBeLessThan(48 * 60);
     // Not a rush either: the player gets time to build.
     expect(seconds).toBeGreaterThan(20 * 60);
     expect(firstRegimentS).toBeGreaterThan(120);

@@ -138,8 +138,9 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
       const back = FIELDS.firstStripM + k * (FIELDS.stripWidthM + FIELDS.stripGapM);
       const sx = x - Math.sin(yawRad) * back;
       const sz = z - Math.cos(yawRad) * back;
-      // Land that is wet, wooded or taken ends the farm's fields there.
+      // Land that is wet, wooded, taken or the rock of an outcrop (stone, ore) ends the farm's fields there.
       if (isImpassable(sx, sz) || forestCoverAt(sx, sz) > 0.5 || touchesAnything(world, sx, sz, FIELDS.stripWidthM / 2)) break;
+      if (DEPOSITS.some((d) => hypot2(sx - d.x, sz - d.z) < TOWN.depositRadiusM + FIELDS.stripWidthM / 2 + 2)) break;
       site.strips.push({ x: sx, z: sz });
     }
     if (site.strips.length < (FIELDS.stripsPerLevel[0] as number)) return fail('needsLand');

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { CAMPAIGN } from '../src/config.ts';
+import { CAMPAIGN, TOWN } from '../src/config.ts';
 import { canPayTribute, carryOut, payTribute } from '../src/sim/campaign.ts';
 import { cmdMerge, cmdReinforce, missingMen } from '../src/sim/commands.ts';
 import { isBuilt } from '../src/sim/economy.ts';
-import { facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
+import { DEPOSITS, facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
 import { campaignRegiment } from '../src/sim/campaign.ts';
@@ -42,6 +42,20 @@ describe('campaign', () => {
     run(world, 2);
     expect(world.winner).toBe(PLAYER);
     expect(c.stars).toBeGreaterThanOrEqual(1);
+  });
+
+  it('mission 1: the ready town stands in quarters on the grid, and no field lies on an outcrop', () => {
+    const world = mission(1);
+    const town = world.towns[PLAYER];
+    const built = town.plots.filter((b): b is NonNullable<typeof b> => b !== null);
+    // Homes, crafts and food trades on the 16 m grid squared to the keep.
+    for (const b of built.filter((q) => q.kind === 'house' || q.kind === 'smithy' || q.kind === 'smelter' || q.kind === 'bakery' || q.kind === 'windmill')) {
+      expect(Math.abs(Math.sin(b.yawRad * 2))).toBeLessThan(1e-6);
+    }
+    // The houses together: each within two squares of another.
+    const houses = built.filter((b) => b.kind === 'house');
+    for (const h of houses) expect(Math.min(...houses.filter((o) => o !== h).map((o) => Math.hypot(o.x - h.x, o.z - h.z)))).toBeLessThanOrEqual(2 * 16 + 0.5);
+    for (const b of built) for (const strip of b.strips) for (const d of DEPOSITS) expect(Math.hypot(strip.x - d.x, strip.z - d.z)).toBeGreaterThan(TOWN.depositRadiusM);
   });
 
   it('mission 1: unpaid, the host marches on the town when the time is up', () => {
