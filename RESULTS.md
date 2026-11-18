@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Grupy budowy przełączały się tylko bez budynku w ręce
+
+- Z wybranym budynkiem (np. Chata) panel przy każdym odświeżeniu (co 0,25 s) wracał do grupy tego budynku.
+  Stuknięcie w „Żywność” czy „Surowce” znikało po chwili.
+- Teraz grupa otwiera się sama tylko w chwili wybrania nowego budynku (np. skrótem z innej grupy). Potem można
+  przeglądać pozostałe grupy z budynkiem w ręce.
+- Sprawdzone stuknięciami na emulowanym iPadzie (Osada → Żywność → Surowce → Broń i wojsko → Obrona → Osada).
+
 ## 2026-11-18 · Pasek zasobów na tablecie w dwóch rzędach
 
 - W trybie ikon („Aa”) grupy zasobów nie zaczynają już osobnych wierszy (`display: contents`).

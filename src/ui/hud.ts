@@ -530,12 +530,19 @@ export class Hud {
 
   /** The list of buildings to place, and the road. */
   private buildGroup: BuildGroup = 'town';
+  /** The tool the group was last opened for. */
+  private groupTool = '';
 
   private buildHtml(town: Town, tool: string): string {
-    // The group of the building in hand stays open (a hot key may pick one from another group).
-    const inHand = GROUP_OF.get(tool as BuildingKind);
-    if (inHand) this.buildGroup = inHand;
-    else if (tool === 'road' || tool === 'wall' || tool === 'gate') this.buildGroup = 'defence';
+    // A building picked (by a hot key, say, from another group) opens its group, once: after that the
+    // player may look through the other groups with it still in hand. (Doing this on every redraw held
+    // the panel on that group, and the group buttons did nothing.)
+    if (tool !== this.groupTool) {
+      this.groupTool = tool;
+      const inHand = GROUP_OF.get(tool as BuildingKind);
+      if (inHand) this.buildGroup = inHand;
+      else if (tool === 'road' || tool === 'wall' || tool === 'gate') this.buildGroup = 'defence';
+    }
     const group = this.buildGroup;
     let html = '<div class="row groups">';
     for (const g of Object.keys(BUILD_GROUPS) as BuildGroup[]) html += `<button class="group${g === group ? ' on' : ''}" data-act="group" data-arg="${g}">${T.buildGroups[g]}</button>`;
