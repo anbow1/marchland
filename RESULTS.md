@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Odgłosy walki z nagrań (CC0)
+
+- Walka brzmiała jak z syntezatora: wszystkie dźwięki były robione w kodzie z szumu i tonów.
+- Teraz z nagrań (`public/sounds`, 18 plików, 116 kB): Kenney „Impact Sounds”, CC0. Strony z nagraniami
+  (kenney.nl, opengameart, freesound) są w tym środowisku zablokowane; paczka pochodzi z repozytorium na GitHubie
+  z licencją CC0.
+  - Szczęk broni: 7 nagrań metalu i uderzeń w zbroję.
+  - Trafienie i upadek: 7 nagrań ciosów i upadków.
+  - Spadająca kula, kruszony mur: 3 nagrania pękającej skały.
+  - Wystrzał z działa i moździerza: to samo nagranie skały spowolnione 2× (moździerz bardziej) pod syntetycznym hukiem.
+- Każde odtworzenie bierze losowe nagranie z kilku, z wysokością tonu ±10%, więc walka nie powtarza jednej próbki.
+- Synteza zostaje dla świstu strzały, rogów i fanfary, a także zastępuje nagrania, dopóki się nie wczytają.
+- Pliki są w spisie trybu offline (sw.js). Sprawdzone w przeglądarce: 17 nagrań zdekodowanych, odtwarzanie
+  bez błędów.
+
 ## 2026-11-18 · Wyłom w murze: gruz i kruszące się krawędzie
 
 - Zburzone pole muru dotąd znikało i zostawała gładko ucięta przerwa. Teraz:

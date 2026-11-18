@@ -342,6 +342,8 @@ export class Game implements ControlTarget {
         this.view.gunSmoke(e.x, e.z, true);
         break;
       case 'stoneFall':
+        this.sound.play('stone', distanceM);
+        break;
       case 'arrowHit':
       case 'death':
         this.sound.play('thud', distanceM);
@@ -370,7 +372,7 @@ export class Game implements ControlTarget {
         if (mine) this.hud.toast(T.garrisoned, 'good');
         break;
       case 'wallBroken':
-        this.sound.play('thud', distanceM);
+        this.sound.play('stone', distanceM);
         if (!mine) this.hud.toast(T.wallBroken, 'bad', [e.x, e.z]);
         break;
       case 'rearmed':

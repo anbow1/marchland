@@ -46,6 +46,7 @@ const canvas = document.getElementById('view') as HTMLCanvasElement;
 const hudRoot = document.getElementById('hud') as HTMLElement;
 const menu = new Menu(document.getElementById('ui') as HTMLElement);
 const sound = new Sound();
+sound.setBase(import.meta.env.BASE_URL);
 const autostart = params.has('autostart');
 startOffline();
 // The last run's errors (kept on the device), to read before this one adds its own: offered as text.
