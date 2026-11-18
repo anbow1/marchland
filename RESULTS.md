@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-18 · Drogi i mury: odcinek to początek i koniec
+
+- Dotąd koniec odcinka był od razu początkiem następnego, więc każde kliknięcie przedłużało drogę.
+- Teraz:
+  - odcinek to początek i koniec, a następne kliknięcie zaczyna nowy odcinek;
+  - z Shift kolejny odcinek zaczyna się na końcu poprzedniego (droga za róg);
+  - prawy przycisk, Esc albo „Droga” / „Mur” wybrane jeszcze raz anulują postawiony punkt początkowy,
+    a za drugim razem kończą budowę dróg; na dotyku ten przycisk w menu jest jedynym sposobem;
+  - podpowiedzi mówią o tym wszystkim.
+- Sprawdzone w przeglądarce:
+  - wybór → A (start) → B (droga, bez startu) → C (nowy start);
+  - „Droga” anuluje start, a drugi raz odkłada narzędzie;
+  - z Shift po A, B start zostaje w B.
+- Testy 109/109.
+
 ## 2026-11-18 · Menu na telefonie poziomo: przewijane, nie ucięte
 
 - Telefon poziomo (ok. 360 px wysokości): menu startowe i menu pauzy były wyższe niż ekran i wyśrodkowane.

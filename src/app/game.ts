@@ -593,6 +593,11 @@ export class Game implements ControlTarget {
       this.setHint(T.hintIdle);
       return;
     }
+    // The road (or wall) picked again: first lets go of a start point already set, then puts the tool down.
+    if ((tool.kind === 'road' || tool.kind === 'wall') && this.tool?.kind === tool.kind) {
+      this.dropTool();
+      return;
+    }
     this.tool = tool;
     this.selected.clear();
     this.selectedPlot = NOWHERE;
@@ -663,10 +668,15 @@ export class Game implements ControlTarget {
       const result = tool.kind === 'wall' ? cmdBuildWall(this.world, PLAYER, tool.fromX, tool.fromZ, x, z) : cmdBuildRoad(this.world, PLAYER, tool.fromX, tool.fromZ, x, z);
       this.report(result);
       if (result !== 'ok') return;
+      // A stretch is a start and an end: the next click begins a new one. With Shift the next stretch
+      // goes on from this end instead (a road round a corner).
+      if (!keep) {
+        tool.started = false;
+        return;
+      }
     } else {
       this.sound.play('click');
     }
-    // The next stretch starts where this one ended.
     tool.fromX = x;
     tool.fromZ = z;
     tool.started = true;
