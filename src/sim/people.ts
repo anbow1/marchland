@@ -66,6 +66,8 @@ export interface Person {
   navVersion: number;
   /** Seconds he has stood behind another cart (carts keep their distance, but not for ever). Absent in old saves. */
   queueS?: number;
+  /** His number in the town (the order people came): spreads carriers over the keep's bays and the yard. Absent in old saves. */
+  n?: number;
 }
 
 /** Where people come and go: before the keep's gate (towards the enemy), or outside a building's door. A building that is gone sends them to the keep. */
@@ -116,6 +118,7 @@ export function spawnPerson(world: World, side: Side, x: number, z: number, home
     goalZ: z,
     navVersion: -1,
     queueS: 0,
+    n: world.people.length,
   };
   world.people.push(p);
   return p;

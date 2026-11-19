@@ -941,6 +941,9 @@ export const AI = {
  */
 export const CARTS = { wagonGapM: 5.5, barrowGapM: 2.6, laneM: 1.8, queueS: 4 };
 
+/** Bays round the keep where carriers hand goods over (`outM` from its wall), and where idle carriers wait (from `idleFromM` out). */
+export const KEEP_BAYS = { count: 10, outM: 2.5, idleFromM: 9 };
+
 export const CAMERA = {
   minDistanceM: 25,
   /** Far enough to see the whole 680 m map at once on a wide screen. */

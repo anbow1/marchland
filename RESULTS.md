@@ -5,6 +5,37 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-19 · Zator przy zamku, dźwięki, przycisk „stój”, grobla
+
+- **Zator przy zamku**: wszyscy tragarze oddawali i brali towar w jednym punkcie przed drzwiami zamku, a taczki
+  czekały jedna za drugą; bezczynni tragarze też stali w tym miejscu.
+  - Zamek ma teraz 10 stanowisk dookoła murów. Tragarz idzie do stanowiska od strony drugiego końca swojej
+    drogi, a sąsiedzi rozkładają się na sąsiednie stanowiska.
+  - Bezczynni czekają rozproszeni na placu 9–16 m od zamku.
+  - Pomiar (20 min, taczki, komputer buduje): tragarzy czekających w kolejce 2,0 → 0,4, ludzi tłoczących się tuż
+    przy zamku 12,8 → 3,2, produkcja miasta komputera +8% (2413 → 2610).
+  - Plan dróg sprawdzony i zostawiony bez zmian. Obwodnica wokół zamku i sieć dróg (każda droga do najbliższej)
+    dawały 4–5 razy więcej czekania w misji 2, bo taczki jechały jedna za drugą po wspólnych drogach. Drogi
+    zakończone przy stanowisku od strony budynku dawały 2,5 raza więcej. Osobna droga każdego budynku do zamku
+    razem ze stanowiskami wypada najlepiej.
+- **Dźwięki**: z syntezatora grały strzały (dużo łuczników i kuszników w misji 2), rogi, fanfara, kliknięcia i
+  budowa.
+  - Teraz z nagrań Kenney „RPG Audio” (CC0): strzała (świst ostrza, wyżej), budowa (dwa uderzenia), kliknięcie,
+    odmowa.
+  - Rogi i fanfara nadal z kodu (nie ma wolnych nagrań rogu w dostępnych źródłach), ale jak instrument dęty: dwa
+    głosy rozstrojone o kilka centów, filtr otwierający się z narastaniem dźwięku, wejście lekko poniżej tonu,
+    późne vibrato i pogłos sali.
+- **Przycisk „stój”**: zaznaczony oddział w ruchu (albo atakujący) ma pod kartą nad sobą czerwony przycisk ■, który
+  zatrzymuje go w miejscu; obok jest dotychczasowy „Stój (H)” w panelu. Karty zaznaczonych oddziałów leżą nad
+  innymi, żeby przycisku nie zasłaniały.
+- **Grobla**:
+  - oddział, który czeka w kolejce dłużej niż 30 s, rusza mimo kolejki i ma 45 s na przejście, więc żadne
+    zakleszczenie (np. czekający stoją przy wylocie, którym ma wyjść idący z przeciwka) nie trwa wiecznie;
+  - nowy test: 6 oddziałów z obu brzegów naraz przez groblę, wszyscy przechodzą, nikt w wodzie;
+  - grupa 6 i 9 oddziałów jednym rozkazem przechodzi po kolei, w około 250 s;
+  - domy wsi, kopalnia i kamieniołom na mapie z rzeką stoją teraz na brzegach obok drogi, nie na wylotach przeprawy.
+- Test werbunku: w czasie marszu rekrutów do koszar może się urodzić do 4 ludzi (było 2).
+
 ## 2026-11-19 · Kampania dorobiona: Dolina, ruiny, miasto w twierdzy
 
 - **Mapa *Dolina*** (`MARCHLAND_MAP=valley`; misje 3–4, także w potyczce):

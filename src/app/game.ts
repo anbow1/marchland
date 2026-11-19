@@ -168,6 +168,10 @@ export class Game implements ControlTarget {
         this.sound.play('click');
       },
       halt: () => this.haltSelected(),
+      haltRegiment: (id) => {
+        this.report(cmdHalt(this.world, id));
+        this.sound.play('click');
+      },
       runMode: () => this.runMode,
       payTribute: () => {
         const c = this.world.campaign;

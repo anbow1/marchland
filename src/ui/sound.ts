@@ -1,8 +1,10 @@
 // Sound (WebAudio). The fighting is recorded: blades on blades and on plate, blows and falls, stone
-// breaking (Kenney's "Impact Sounds" and "RPG Audio", CC0, public/sounds); each play picks one of a few
-// takes at a slightly different pitch, so a melee is not one sample on repeat. The rest is made in code: the
-// arrow's hiss, a gun's boom under its recorded crack, horns and the fanfare. Until the files are in (or if
-// they fail) the code's sounds stand in. Every sound is placed by its distance from the camera: quieter with
+// breaking, the swish of a loosed arrow, the knock of building, the clicks of the panel (Kenney's "Impact
+// Sounds" and "RPG Audio", CC0, public/sounds); each play picks one of a few takes at a slightly different
+// pitch, so a melee is not one sample on repeat. Made in code: a gun's boom under its recorded crack, and the
+// horns and fanfare, as brass (two voices a little apart, a filter that opens as the note swells, a slow
+// vibrato) in a short hall's echo, not bare oscillators. Until the files are in (or if they fail) the code's
+// sounds stand in. Every sound is placed by its distance from the camera: quieter with
 // distance, and later by the time sound takes to arrive (343 m/s, rules §8).
 
 const SPEED_OF_SOUND_MS = 343;
@@ -16,6 +18,10 @@ const TAKES: Partial<Record<SoundKind, { files: readonly string[]; level: number
   clash: { files: ['impact_metal_medium_000', 'impact_metal_medium_001', 'impact_metal_medium_002', 'impact_metal_light_000', 'impact_metal_light_001', 'impact_plate_medium_000', 'impact_plate_medium_001'], level: 0.55 },
   thud: { files: ['impact_soft_medium_000', 'impact_soft_medium_001', 'impact_punch_medium_000', 'impact_punch_medium_001', 'impact_soft_heavy_000', 'impact_soft_heavy_001', 'impact_punch_heavy_000'], level: 0.7 },
   stone: { files: ['impact_mining_000', 'impact_mining_001', 'impact_mining_002'], level: 0.8 },
+  arrow: { files: ['rpg_knife_slice', 'rpg_knife_slice_2'], level: 0.28 },
+  build: { files: ['rpg_chop'], level: 0.6 },
+  click: { files: ['rpg_metal_click'], level: 0.35 },
+  deny: { files: ['rpg_metal_latch'], level: 0.5 },
 };
 
 /** Least seconds between two sounds of one kind: a melee would otherwise be one long noise. */
@@ -120,6 +126,8 @@ export class Sound {
         this.tone(at, 0.12, 1900 + Math.random() * 900, 'triangle', gain * 0.12);
         break;
       case 'arrow':
+        // The bolt or arrow swishing off, higher than the blade it was recorded from.
+        if (this.take('arrow', at, gain * (TAKES.arrow?.level ?? 1), 1.35)) break;
         this.burst(at, 0.16, 5200, 1.2, gain * 0.22);
         break;
       case 'cannon':
@@ -143,23 +151,29 @@ export class Sound {
         this.burst(at, 0.14, 220, 1.5, gain * 0.6);
         break;
       case 'horn':
-        this.tone(at, 0.9, 233, 'sawtooth', gain * 0.22);
-        this.tone(at + 0.28, 0.9, 311, 'sawtooth', gain * 0.22);
+        // A call of two notes, the second a fourth up.
+        this.brass(at, 0.85, 233, gain * 0.2);
+        this.brass(at + 0.55, 1.1, 311, gain * 0.2);
         break;
       case 'hornLow':
-        this.tone(at, 1.3, 155, 'sawtooth', gain * 0.26);
+        this.brass(at, 1.6, 147, gain * 0.26);
         break;
       case 'fanfare':
-        [262, 330, 392, 523].forEach((hz, i) => this.tone(at + i * 0.22, 0.5, hz, 'sawtooth', 0.2));
+        [262, 330, 392].forEach((hz, i) => this.brass(at + i * 0.2, 0.32, hz, 0.16));
+        this.brass(at + 0.6, 1.2, 523, 0.17);
         break;
       case 'build':
+        // Two knocks of the mallet.
+        if (this.take('build', at, TAKES.build?.level ?? 1) && this.take('build', at + 0.22, (TAKES.build?.level ?? 1) * 0.8, 1.1)) break;
         this.burst(at, 0.05, 900, 4, 0.5);
         this.burst(at + 0.16, 0.05, 1100, 4, 0.5);
         break;
       case 'click':
+        if (this.take('click', at, TAKES.click?.level ?? 1, 1.2)) break;
         this.burst(at, 0.025, 2400, 3, 0.25);
         break;
       case 'deny':
+        if (this.take('deny', at, TAKES.deny?.level ?? 1, 0.8)) break;
         this.tone(at, 0.14, 140, 'square', 0.12);
         break;
     }
@@ -219,6 +233,78 @@ export class Sound {
     osc.connect(g).connect(this.master as GainNode);
     osc.start(at);
     osc.stop(at + seconds + 0.02);
+  }
+
+  /** The hall's echo the horns sound in: a second and a half of decaying noise, made once. */
+  private hall: ConvolverNode | null = null;
+
+  private echo(): AudioNode {
+    const ctx = this.ctx as AudioContext;
+    if (!this.hall) {
+      const seconds = 1.6;
+      const buffer = ctx.createBuffer(2, Math.floor(ctx.sampleRate * seconds), ctx.sampleRate);
+      for (let c = 0; c < 2; c++) {
+        const data = buffer.getChannelData(c);
+        let seed = 777 + c * 31;
+        for (let i = 0; i < data.length; i++) {
+          seed = (Math.imul(seed, 1103515245) + 12345) | 0;
+          data[i] = ((seed >>> 8) / 8388608 - 1) * (1 - i / data.length) ** 3;
+        }
+      }
+      this.hall = ctx.createConvolver();
+      this.hall.buffer = buffer;
+      const wet = ctx.createGain();
+      wet.gain.value = 0.35;
+      this.hall.connect(wet).connect(this.master as GainNode);
+    }
+    return this.hall;
+  }
+
+  /**
+   * A brass note (a horn, the fanfare): two sawtooth voices a few cents apart, through a low-pass that opens as
+   * the note swells and closes as it dies (the bright middle of a blown note), a slow vibrato coming in late,
+   * dry and into the hall's echo.
+   */
+  private brass(at: number, seconds: number, hz: number, level: number): void {
+    const ctx = this.ctx as AudioContext;
+    const filter = ctx.createBiquadFilter();
+    filter.type = 'lowpass';
+    filter.Q.value = 1.2;
+    filter.frequency.value = hz * 1.5;
+    filter.frequency.setValueAtTime(hz * 1.5, at);
+    filter.frequency.linearRampToValueAtTime(hz * 6, at + Math.min(0.12, seconds * 0.3));
+    filter.frequency.exponentialRampToValueAtTime(hz * 2.5, at + seconds);
+    const g = ctx.createGain();
+    g.gain.value = 0;
+    g.gain.setValueAtTime(0.0001, at);
+    g.gain.linearRampToValueAtTime(level, at + Math.min(0.09, seconds * 0.25));
+    g.gain.setValueAtTime(level * 0.85, at + seconds * 0.7);
+    g.gain.exponentialRampToValueAtTime(0.0008, at + seconds);
+    const vibrato = ctx.createOscillator();
+    vibrato.frequency.value = 5.2;
+    const depth = ctx.createGain();
+    depth.gain.value = 0;
+    depth.gain.setValueAtTime(0, at + seconds * 0.35);
+    depth.gain.linearRampToValueAtTime(hz * 0.006, at + seconds * 0.6);
+    vibrato.connect(depth);
+    for (const cents of [-6, 7]) {
+      const osc = ctx.createOscillator();
+      osc.type = 'sawtooth';
+      osc.frequency.value = hz;
+      osc.detune.value = cents;
+      // The lip finds the note: a little under it at first.
+      osc.frequency.setValueAtTime(hz * 0.97, at);
+      osc.frequency.exponentialRampToValueAtTime(hz, at + 0.06);
+      depth.connect(osc.frequency);
+      osc.connect(filter);
+      osc.start(at);
+      osc.stop(at + seconds + 0.05);
+    }
+    vibrato.start(at);
+    vibrato.stop(at + seconds + 0.05);
+    filter.connect(g);
+    g.connect(this.master as GainNode);
+    g.connect(this.echo());
   }
 
   /** A tone through a low-pass, with a soft attack and release. */

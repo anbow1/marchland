@@ -223,7 +223,14 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
     if (trail.length > 80) trail.splice(0, 2);
   }
   // At a ford or a gate another regiment of its side is going through: it waits its turn.
-  const waiting = leg !== null && !isEngaged(r) && mustWait(world, r, leg.x, leg.z);
+  // Waited long enough (whatever holds the crossing up): it goes, and has a while to get through.
+  const pushing = (r.queuePushUntilS ?? -1) > world.timeS;
+  const waiting = leg !== null && !isEngaged(r) && !pushing && mustWait(world, r, leg.x, leg.z);
+  r.waitS = waiting ? (r.waitS ?? 0) + dtSeconds : 0;
+  if ((r.waitS ?? 0) > QUEUE_MAX_WAIT_S) {
+    r.waitS = 0;
+    r.queuePushUntilS = world.timeS + QUEUE_PUSH_S;
+  }
   r.waiting = waiting;
   if (leg) {
     goalX = leg.x;
@@ -317,6 +324,9 @@ interface Passage {
 }
 
 const QUEUE_APPROACH_M = 12;
+/** No regiment waits at a crossing longer than this: then it goes anyway, and the queue lets it through for this long. */
+const QUEUE_MAX_WAIT_S = 30;
+const QUEUE_PUSH_S = 45;
 let passageVersion = -1;
 let passageNav: World['nav'] | null = null;
 const passageList: Passage[] = [];

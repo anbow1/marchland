@@ -30,6 +30,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .card .stars { text-align: center; font-size: 8px; line-height: 9px; color: #f2c94c; letter-spacing: -1px; }
 .card .bar { height: 4px; background: #000a; }
 .card .bar i { display: block; height: 100%; background: #9fd070; }
+.card.selected { z-index: 2; }
+.card .stop { margin-top: 2px; height: 22px; padding: 0; border: 1px solid #c9b98a; border-radius: 3px; background: #6b2a22; color: #fff; font-size: 11px; line-height: 20px; cursor: pointer; }
+.card .stop:hover { background: #8e3a2f; }
 .card.warn .bar i { background: #e2c14a; }
 .card.bad .bar i { background: #e0624a; }
 .card.flee { opacity: 0.75; }

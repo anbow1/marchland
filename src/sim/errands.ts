@@ -1,4 +1,5 @@
-import { BUILDINGS, FOOD, PEOPLE, PRIORITY, WINE } from '../config.ts';
+import { BUILDINGS, FOOD, KEEP_BAYS, PEOPLE, PRIORITY, TOWN, WINE } from '../config.ts';
+import { townX, townZ } from './terrain.ts';
 import { type Building, carryCapacity, carryPace, isBuilt, outputFull, rationsIn, type Town } from './economy.ts';
 import { doorX, doorZ, type Person, walkTo } from './people.ts';
 import { KEEP, NOWHERE } from './types.ts';
@@ -225,6 +226,35 @@ function deliver(town: Town, p: Person): void {
   p.load = null;
 }
 
+const BAY = { x: 0, z: 0 };
+
+/**
+ * Where a carrier hands goods over at the keep: one of KEEP_BAYS.count bays round its walls, the one facing the
+ * other end of his errand (so he does not walk round it), his neighbours in the town's order on the bays either
+ * side. One door for everyone made a queue of barrows there.
+ */
+function keepBay(town: Town, p: Person, other: number): void {
+  const kx = townX(town.side);
+  const kz = townZ(town.side);
+  const ox = other === KEEP || other === NOWHERE ? kx + 1 : doorX(town, other);
+  const oz = other === KEEP || other === NOWHERE ? kz : doorZ(town, other);
+  const step = (Math.PI * 2) / KEEP_BAYS.count;
+  const bay = Math.round(Math.atan2(ox - kx, oz - kz) / step) + (((p.n ?? 0) % 3) - 1);
+  const a = bay * step;
+  BAY.x = kx + Math.sin(a) * (TOWN.keepRadiusM + KEEP_BAYS.outM);
+  BAY.z = kz + Math.cos(a) * (TOWN.keepRadiusM + KEEP_BAYS.outM);
+}
+
+/** Where an idle carrier waits: about the keep's yard, each on his own spot, out of the way of the bays. */
+function idleSpot(town: Town, p: Person): void {
+  const n = p.n ?? 0;
+  // The golden angle round, a little further out every few: an even scatter.
+  const a = n * 2.399963 + town.side;
+  const r = TOWN.keepRadiusM + KEEP_BAYS.idleFromM + (n % 4) * 2.2;
+  BAY.x = townX(town.side) + Math.sin(a) * r;
+  BAY.z = townZ(town.side) + Math.cos(a) * r;
+}
+
 export function stepCarrier(world: World, town: Town, p: Person, dtSeconds: number): void {
   if (p.errand === 'none') {
     p.thinkS -= dtSeconds;
@@ -232,12 +262,20 @@ export function stepCarrier(world: World, town: Town, p: Person, dtSeconds: numb
       p.thinkS = 0.7;
       if (findErrand(town, p)) return;
     }
-    // Nothing to carry: wait by the keep's gate.
-    p.act = walkTo(world, p, doorX(town, KEEP), doorZ(town, KEEP), dtSeconds) ? 'stand' : 'walk';
+    // Nothing to carry: wait about the keep's yard.
+    idleSpot(town, p);
+    p.act = walkTo(world, p, BAY.x, BAY.z, dtSeconds) ? 'stand' : 'walk';
     return;
   }
   const to = p.holding ? p.dst : p.src;
-  if (!walkTo(world, p, doorX(town, to), doorZ(town, to), dtSeconds, carryPace(town))) {
+  let tx = doorX(town, to);
+  let tz = doorZ(town, to);
+  if (to === KEEP) {
+    keepBay(town, p, p.holding ? p.src : p.dst);
+    tx = BAY.x;
+    tz = BAY.z;
+  }
+  if (!walkTo(world, p, tx, tz, dtSeconds, carryPace(town))) {
     p.act = 'walk';
     return;
   }

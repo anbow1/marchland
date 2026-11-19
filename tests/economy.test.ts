@@ -527,7 +527,8 @@ describe('recruiting', () => {
     runUntil(world, 300, () => world.regiments.length > 0);
     expect(world.regiments[0]?.aliveMen).toBe(UNITS.militia.men);
     expect(town.underArms).toBe(UNITS.militia.men);
-    expect(world.people.filter((p) => p.alive && p.side === PLAYER).length).toBeLessThanOrEqual(living - UNITS.militia.men + 2);
+    // The twelve left the town (a few may have been born in the houses while they walked to the barracks).
+    expect(world.people.filter((p) => p.alive && p.side === PLAYER).length).toBeLessThanOrEqual(living - UNITS.militia.men + 4);
   });
 
   it('raising the keep costs, takes a minute, and widens the town, hardens the keep and lets the barracks rise', () => {

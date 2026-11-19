@@ -9,4 +9,7 @@ pitch.
   **"Impact Sounds"** by **Kenney** (www.kenney.nl), licensed **CC0 1.0** (public domain), as packed in
   github.com/Boyquotes/kenney-impact-sounds-for-godot.
 
-Kenney's "RPG Audio" (CC0, github.com/Boyquotes/kenney-rpg-audio-for-godot) was looked through and is not used yet.
+- `rpg_knife_slice*` (an arrow or bolt loosed, played higher), `rpg_chop` (the knock of building), `rpg_metal_click`
+  (a click of the panel), `rpg_metal_latch` (an order refused) — from **"RPG Audio"** by **Kenney**
+  (www.kenney.nl), licensed **CC0 1.0** (public domain), as packed in
+  github.com/Boyquotes/kenney-rpg-audio-for-godot.

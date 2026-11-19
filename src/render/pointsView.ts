@@ -28,14 +28,17 @@ const DRESSING: Record<Point['kind'], { model: string; at: [number, number] }[]>
   ],
 };
 
-/** On the crossing the places stand on the river's line (the fords, the causeway): their buildings go on the banks. */
+/**
+ * On the crossing the places stand on the river's line (the fords, the causeway): their buildings go on the banks,
+ * beside the way over and back from the water, never at the ends of the crossing where the regiments come off it.
+ */
 const DRESSING_RIVER: Record<Point['kind'], { model: string; at: [number, number] }[]> = {
-  mine: [{ model: 'ironMine_1.glb', at: [0, 17] }],
-  quarry: [{ model: 'quarry_1.glb', at: [0, -17] }],
+  mine: [{ model: 'ironMine_1.glb', at: [24, 24] }],
+  quarry: [{ model: 'quarry_1.glb', at: [-24, -24] }],
   village: [
-    { model: 'house_1.glb', at: [6, 19] },
-    { model: 'house_2.glb', at: [-6, -19] },
-    { model: 'house_1.glb', at: [14, -21] },
+    { model: 'house_1.glb', at: [24, 26] },
+    { model: 'house_2.glb', at: [-24, -27] },
+    { model: 'house_1.glb', at: [-26, 30] },
   ],
 };
 

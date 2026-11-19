@@ -50,6 +50,8 @@ export interface HudActions {
   togglePause(): void;
   selectPlot(plot: number): void;
   halt(): void;
+  /** Stops one regiment where it stands (the stop button under its card). */
+  haltRegiment(id: number): void;
   /** Whether the player's orders go at the run (the pace buttons and B). */
   runMode(): boolean;
   /** The campaign: pay the tribute (mission 1); merge the selected regiments of a kind. */
@@ -279,6 +281,10 @@ export class Hud {
       const card = (e.target as HTMLElement).closest('.card') as HTMLElement | null;
       if (!card) return;
       e.stopPropagation();
+      if ((e.target as HTMLElement).closest('.stop')) {
+        actions.haltRegiment(Number(card.dataset['id']));
+        return;
+      }
       // The card sits over the map: it takes the same buttons the map does.
       if (e.button === 2) actions.orderRegiment(Number(card.dataset['id']));
       else if (card.dataset['own'] === '1') actions.selectRegiment(Number(card.dataset['id']), e.shiftKey);
@@ -905,14 +911,16 @@ export class Hud {
       const strength = Math.round((r.aliveMen / r.initialMen) * 100);
       const morale = r.state === 'routing' ? 'flee' : r.morale > r.def.morale * 0.55 ? 'ok' : r.morale > r.def.morale * 0.25 ? 'warn' : 'bad';
       const rank = veteranRank(r);
-      const key = `${r.id}|${r.kind}|${r.side}|${strength}|${morale}|${rank}|${selected.has(r.id) ? 1 : 0}`;
+      // A chosen regiment of the player's on the move (or at an enemy) carries a stop button under its card.
+      const stoppable = r.side === PLAYER && selected.has(r.id) && r.order !== 'hold';
+      const key = `${r.id}|${r.kind}|${r.side}|${strength}|${morale}|${rank}|${selected.has(r.id) ? 1 : 0}|${stoppable ? 1 : 0}`;
       if (this.cardKeys[used] !== key) {
         this.cardKeys[used] = key;
         card.dataset['id'] = String(r.id);
         card.dataset['own'] = r.side === PLAYER ? '1' : '0';
         card.className = `card ${morale}${selected.has(r.id) ? ' selected' : ''}`;
         card.style.borderColor = TEAM_CSS[r.side];
-        card.innerHTML = `<span class="glyph" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span>${rank > 0 ? `<span class="stars">${'★'.repeat(rank)}</span>` : ''}<span class="bar"><i style="width:${strength}%"></i></span>`;
+        card.innerHTML = `<span class="glyph" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span>${rank > 0 ? `<span class="stars">${'★'.repeat(rank)}</span>` : ''}<span class="bar"><i style="width:${strength}%"></i></span>${stoppable ? `<button class="stop" title="${T.halt}">■</button>` : ''}`;
       }
       card.style.display = 'flex';
       card.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y)}px) translate(-50%, -100%)`;

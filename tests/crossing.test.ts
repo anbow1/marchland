@@ -80,6 +80,26 @@ describe.runIf(HAS_RIVER)('over a ford', () => {
   });
 });
 
+describe.runIf(HAS_RIVER)('over the causeway from both banks', () => {
+  it('regiments meeting at the causeway from either side all get across (no one waits for ever)', { timeout: 120_000 }, () => {
+    const world = quiet();
+    const kinds: UnitKind[] = ['swordsmen', 'pikemen', 'crossbowmen', 'heavyCavalry', 'halberdiers', 'archers'];
+    const sent = kinds.map((kind, i) => {
+      const from = i % 2 === 0 ? -1 : 1;
+      const [x0, z0] = at(from * (40 + Math.floor(i / 2) * 18), (i - 2.5) * 12);
+      const [x, z] = at(-from * (55 + Math.floor(i / 2) * 15), (i - 2.5) * 10);
+      const r = spawnRegiment(world, PLAYER, kind, x0, z0, Math.atan2(-from * FORWARD_X, -from * FORWARD_Z));
+      fillRegiment(r, kind === 'heavyCavalry' ? 12 : 20);
+      expect(cmdMove(world, r.id, x, z, null, false)).toBe('ok');
+      return { r, x, z };
+    });
+    const got = march(world, sent, 600, (px, pz) => Math.abs(px * FORWARD_X + pz * FORWARD_Z) < 9 && Math.abs(px * SIDE_X + pz * SIDE_Z) < 12);
+    console.log('both ways over the causeway:', JSON.stringify(got));
+    expect(got.arrived.every((a) => a >= 0)).toBe(true);
+    expect(got.wet).toBe(0);
+  });
+});
+
 describe('through a gate', () => {
   it('four regiments sent through the same gate go one after another and all get through', { timeout: 60_000 }, () => {
     const world = quiet();

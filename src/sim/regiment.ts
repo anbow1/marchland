@@ -126,8 +126,10 @@ export interface Regiment {
   trail?: number[];
   /** Metres the column still marches after its way round is done, so its tail is through before it deploys. */
   columnLeftM?: number;
-  /** Standing back from a ford or a gate while another regiment of its side goes through. */
+  /** Standing back from a ford or a gate while another regiment of its side goes through; how long so far, and until when it goes through regardless (it waited its fill). */
   waiting?: boolean;
+  waitS?: number;
+  queuePushUntilS?: number;
   routeGoalX: number;
   routeGoalZ: number;
   routeVersion: number;
