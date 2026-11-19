@@ -1,7 +1,8 @@
-import { Box3, type BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
-import { TOWN } from '../config.ts';
+import { Box3, BufferAttribute, BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
+import { CAMPAIGN, TOWN } from '../config.ts';
+import { fortressFrame, fortressPoint } from '../sim/fortress.ts';
 import type { Building } from '../sim/economy.ts';
-import { heightAtM, townX, townZ } from '../sim/terrain.ts';
+import { HAS_FORTRESS, heightAtM, townX, townZ } from '../sim/terrain.ts';
 import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -75,7 +76,7 @@ export class TownView {
   private readonly ghostMaterial: MeshBasicNodeMaterial;
 
   constructor(
-    scene: Scene,
+    private readonly scene: Scene,
     private readonly lib: SurfaceLibrary,
   ) {
     this.material = surfaceMaterial(lib, 'building');
@@ -214,9 +215,33 @@ export class TownView {
       }
     });
     await Promise.all(jobs);
+    if (HAS_FORTRESS) await this.loadDonjon(base, loader);
     // Shown buildings pick up their models at the next update.
     for (const shown of this.shown) shown.fill('');
     return this.models.size / 2;
+  }
+
+  /**
+   * The fortress's donjon (map layout 'fortress'): cut out of the Medieval Castle model (its walls and towers are
+   * the game's own, laid by the scenario, so they can be breached), stood in the inner yard facing the player.
+   */
+  private async loadDonjon(base: string, loader: GLTFLoader): Promise<void> {
+    try {
+      const gltf = await loader.loadAsync(freshUrl(base, 'buildings/fortress_1.glb'));
+      const body = surfaceModel(gltf.scene, this.lib, TEAM_HEX[1]).body;
+      const g = cutOut(body, DONJON_IN_MODEL);
+      g.translate(-(DONJON_IN_MODEL.minX + DONJON_IN_MODEL.maxX) / 2, 0, -(DONJON_IN_MODEL.minZ + DONJON_IN_MODEL.maxZ) / 2);
+      const mesh = new Mesh(g, this.material);
+      mesh.name = 'donjon';
+      const [x, z] = fortressPoint(0, CAMPAIGN.fortress.donjonAtM);
+      mesh.position.set(x, heightAtM(x, z), z);
+      mesh.rotation.y = fortressFrame().yawRad;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      this.scene.add(mesh);
+    } catch (error) {
+      console.warn(`[models] fortress_1.glb did not load: ${String(error)}`);
+    }
   }
 
   private geometry(kind: BuildingKind, level: number, side: Side): BufferGeometry {
@@ -389,4 +414,29 @@ export function groundUnder(x: number, z: number, yawRad: number): [number, numb
     }
   }
   return [low, high];
+}
+
+/** The donjon's footprint in the Medieval Castle model (metres, its gate towards +Z): the keep in the middle of its yard. */
+const DONJON_IN_MODEL = { minX: -19, maxX: 18, minZ: -46, maxZ: -8 };
+
+/** The triangles of a geometry whose middles lie over a box (x, z), as a geometry of their own. */
+function cutOut(source: BufferGeometry, box: { minX: number; maxX: number; minZ: number; maxZ: number }): BufferGeometry {
+  const g = source.index ? source.toNonIndexed() : source;
+  const pos = g.getAttribute('position');
+  const keep: number[] = [];
+  for (let t = 0; t < pos.count; t += 3) {
+    const x = (pos.getX(t) + pos.getX(t + 1) + pos.getX(t + 2)) / 3;
+    const z = (pos.getZ(t) + pos.getZ(t + 1) + pos.getZ(t + 2)) / 3;
+    if (x >= box.minX && x <= box.maxX && z >= box.minZ && z <= box.maxZ) keep.push(t);
+  }
+  const out = new BufferGeometry();
+  for (const [name, attr] of Object.entries(g.attributes)) {
+    const size = attr.itemSize;
+    const src = attr.array as Float32Array;
+    const dst = new (src.constructor as Float32ArrayConstructor)(keep.length * 3 * size);
+    keep.forEach((t, k) => dst.set(src.subarray(t * size, (t + 3) * size), k * 3 * size));
+    out.setAttribute(name, new BufferAttribute(dst, size, attr.normalized));
+  }
+  out.computeBoundingSphere();
+  return out;
 }

@@ -332,6 +332,14 @@ export class Game implements ControlTarget {
       const lost = (c.buildingsLost ?? 0) > 0 ? ` · ${T.buildingsLost}: ${c.buildingsLost}` : '';
       return `<b>${title}</b> · ${mark(army.men >= CAMPAIGN.armyGoalMen && army.regiments >= CAMPAIGN.armyGoalRegiments, `${T.armyGoal} ${army.men}/${CAMPAIGN.armyGoalMen} ${T.men}, ${army.regiments}/${CAMPAIGN.armyGoalRegiments}`)} · ${mark(keep >= CAMPAIGN.keepGoalLevel, `${T.keepGoal} ${keep}/${CAMPAIGN.keepGoalLevel}`)} · ${raid}${lost}`;
     }
+    if (c.mission === 5) {
+      const guard = (c.guardIds ?? []).map((id) => world.regiments.find((r) => r.id === id)).filter((r) => r && r.aliveMen > 0 && r.state !== 'routing');
+      const guardMen = guard.reduce((n, r) => n + (r?.aliveMen ?? 0), 0);
+      const breach = (c.breachS ?? -1) >= 0 ? `<span class="ok">${T.breachMade} ${clock(c.breachS as number)}</span>` : `${T.noBreach} · ${clock(world.timeS)}`;
+      const due = CAMPAIGN.fortressReliefAtS - world.timeS;
+      const relief = due > 0 ? ` · ${T.reliefIn} ${clock(due)}` : '';
+      return `<b>${title}</b> · ${T.guardLeft}: ${guard.length} (${guardMen} ${T.men}) · ${breach}${relief}`;
+    }
     const enemies = world.regiments.filter((r) => r.side === COMPUTER && r.aliveMen > 0).length;
     const foragers = c.foragerIds.length > 0 ? ` · ${T.foragersBack} ${clock(Math.max(0, c.foragersBackS))}` : '';
     return `<b>${title}</b> · ${T.campLeft}: ${enemies}${foragers}`;
@@ -449,6 +457,13 @@ export class Game implements ControlTarget {
       case 'reliefCame':
         this.hud.toast(T.reliefHere, 'bad', [e.x, e.z]);
         this.sound.play('hornLow');
+        break;
+      case 'sally':
+        this.hud.toast(T.sallyOut, 'bad', [e.x, e.z]);
+        this.sound.play('horn');
+        break;
+      case 'breach':
+        this.hud.toast(`${T.breachMade}!`, 'good', [e.x, e.z]);
         break;
       case 'raidCame':
         this.hud.toast(T.raidComing, 'bad', [e.x, e.z]);

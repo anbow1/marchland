@@ -4,6 +4,9 @@ import type { Side } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
 import { LAYOUT, PLAYER_SITE } from './layout.ts';
 
+/** The sides whose town has a lake beside it: the fortress (the campaign's last map) stands on dry upland. */
+export const LAKE_SIDES: readonly Side[] = LAYOUT === 'fortress' ? [0] : [0, 1];
+
 // The map as functions of (x, z): height, forest, water, and the outcrops of
 // stone and ore. The renderer draws from the same functions, so what the
 // player sees is what the rules use (rules §9).
@@ -66,6 +69,7 @@ export function lakeRadiusAt(side: Side, x: number, z: number): number {
 /** Distance from the nearer lake's middle, in that lake's radii in that direction (below 1 = inside the bowl). */
 export function lakeShare(x: number, z: number): number {
   const s0 = hypot2(x - lakeX(0), z - lakeZ(0)) / lakeRadiusAt(0, x, z);
+  if (!LAKE_SIDES.includes(1)) return s0;
   const s1 = hypot2(x - lakeX(1), z - lakeZ(1)) / lakeRadiusAt(1, x, z);
   return Math.min(s0, s1);
 }
@@ -73,6 +77,18 @@ export function lakeShare(x: number, z: number): number {
 // ---- the river (map layout 'river') -----------------------------------------
 
 const RIVER = LAYOUT === 'river';
+
+// ---- the fortress (map layout 'fortress', the campaign's last mission) --------------------------------
+// The computer's keep stands on a broad level plateau above the plain, with room for two rings of walls:
+// no lake, no outcrops and no woods on it.
+
+const FORTRESS = LAYOUT === 'fortress';
+export const HAS_FORTRESS = FORTRESS;
+
+/** Distance from the fortress's middle (the computer's keep); infinite on the other layouts. */
+function fortressDistanceM(x: number, z: number): number {
+  return FORTRESS ? hypot2(x - townX(1), z - townZ(1)) : Number.POSITIVE_INFINITY;
+}
 
 /** Where the river runs across the side axis: through the middle and through each knoll's line, bending between. */
 function riverCentreF(s: number): number {
@@ -289,11 +305,13 @@ export function heightAtM(x: number, z: number): number {
   // On the crossing the river runs where the knolls would stand: they are fords instead.
   const knolls = RIVER ? 0 : knoll(x, z, kx, kz) + knoll(x, z, -kx, -kz);
   const town = smoothstep(MAP.townFlatRadiusM, MAP.townBlendRadiusM, distanceToNearestTownM(x, z));
+  // The fortress's plateau: level, and raised above the plain it falls away to.
+  const fort = FORTRESS ? smoothstep(MAP.fortressFlatRadiusM, MAP.fortressBlendRadiusM, fortressDistanceM(x, z)) : 1;
   const share = lakeShare(x, z);
   const shore = smoothstep(1.0, 1.6, share);
   // A bowl: level with the land at the rim, deepest in the middle.
   const bowl = share < 1 ? -TOWN.lakeDepthM * (1 - share * share) : 0;
-  const land = ((rolling + folds) * onField + knolls) * town * shore + bowl + heapHeightM(x, z);
+  const land = ((rolling + folds) * onField + knolls) * town * fort * shore + bowl + heapHeightM(x, z) + MAP.fortressRiseM * (FORTRESS ? 1 - fort : 0);
   if (!RIVER) return land;
   const river = riverBed(x, z);
   return land * (1 - river.share) + river.bedM * river.share;
@@ -330,7 +348,8 @@ function layOutDeposits(): Deposit[] {
     const inside = (v: number): number => Math.max(-MAP.halfM + TOWN.depositRadiusM + 10, Math.min(MAP.halfM - TOWN.depositRadiusM - 10, v));
     const [sx, sz] = at(30, -66);
     const [ox, oz] = at(30, 66);
-    out.push({ kind: 'stone', x: inside(sx), z: inside(sz) }, { kind: 'ore', x: inside(ox), z: inside(oz) });
+    // The fortress's plateau has no outcrops on it (its walls stand there).
+    if (!(FORTRESS && side === 1)) out.push({ kind: 'stone', x: inside(sx), z: inside(sz) }, { kind: 'ore', x: inside(ox), z: inside(oz) });
     // A second outcrop out on the flank, at the edge of the side's reach: ore on the player's, stone on the computer's.
     const [fx, fz] = at(118, 96);
     out.push({ kind: side === 0 ? 'ore' : 'stone', x: fx, z: fz });
@@ -385,7 +404,8 @@ export function forestCoverAt(x: number, z: number): number {
   let offPlace = 1;
   for (const p of POINTS.list) offPlace = Math.min(offPlace, smoothstep(POINTS.radiusM + 14, POINTS.radiusM + 34, hypot2(x - SIDE_X * p.sideM, z - SIDE_Z * p.sideM)));
   const woods = forest ? smoothstep(-0.5, -0.3, patches) : smoothstep(0.02, 0.22, patches);
-  return woods * nearTown * offField * offLake * offRock * offHeap * offPlace;
+  const offFort = FORTRESS ? smoothstep(MAP.fortressClearM, MAP.fortressClearM + 25, fortressDistanceM(x, z)) : 1;
+  return woods * nearTown * offField * offLake * offRock * offHeap * offPlace * offFort;
 }
 
 export function isForest(x: number, z: number): boolean {

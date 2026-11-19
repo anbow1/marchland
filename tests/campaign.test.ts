@@ -3,6 +3,8 @@ import { CAMPAIGN, TOWN } from '../src/config.ts';
 import { canPayTribute, carryOut, fillRegiment, payTribute, settlement } from '../src/sim/campaign.ts';
 import { cmdBuild, cmdBuildWall, cmdMerge, cmdMove, cmdReinforce, missingMen } from '../src/sim/commands.ts';
 import { fight } from '../src/sim/ai.ts';
+import { fortressPoint, INNER, insideRing, OUTER } from '../src/sim/fortress.ts';
+import { blockedBetween, damageWall, findRoute, wallCellAt } from '../src/sim/nav.ts';
 import { isBuilt } from '../src/sim/economy.ts';
 import { DEPOSITS, facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
@@ -264,3 +266,90 @@ describe('campaign, missions 3 and 4', () => {
     expect(c.stars).toBe(2);
   });
 });
+
+describe('campaign, mission 5', () => {
+  it('the fortress: two closed rings of walls with their towers and gates, the garrison, the sally and the guard inside', () => {
+    const world = mission(5);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    const towers = world.towns[COMPUTER].plots.filter((b) => b !== null && b.kind === 'tower');
+    expect(towers.length).toBe(12);
+    for (const t of towers) expect(t?.garrison).toBe(CAMPAIGN.fortress.towerCrossbowmen);
+    expect(world.gates.filter((g) => g.side === COMPUTER).length).toBe(2);
+    expect(c.guardIds?.length).toBe(CAMPAIGN.guard.length);
+    for (const id of c.guardIds ?? []) {
+      const r = world.regiments.find((q) => q.id === id) as (typeof world.regiments)[number];
+      expect(insideRing(INNER, r.centreX, r.centreZ)).toBe(true);
+    }
+    for (const id of c.campIds) {
+      const r = world.regiments.find((q) => q.id === id) as (typeof world.regiments)[number];
+      expect(insideRing(OUTER, r.centreX, r.centreZ) && !insideRing(INNER, r.centreX, r.centreZ)).toBe(true);
+    }
+    // Closed: from the field there is no way in for the player's men but through a breach.
+    const out = new Float32Array(2 * 64);
+    const [fx, fz] = fortressPoint(0, OUTER.frontM + 40);
+    const [ix, iz] = fortressPoint(0, CAMPAIGN.fortress.inner.frontM - 6);
+    world.nav.budget = 1e9;
+    const n = findRoute(world.nav, PLAYER, fx, fz, ix, iz, out);
+    let reached = false;
+    if (n > 0) reached = Math.hypot((out[(n - 1) * 2] as number) - ix, (out[(n - 1) * 2 + 1] as number) - iz) < 4 && !blockedThrough(world, out, n, fx, fz);
+    expect(reached).toBe(false);
+    // The siege train came along.
+    expect(world.regiments.filter((r) => r.side === PLAYER && r.def.engine).length).toBe(CAMPAIGN.siegeTrain.length);
+  });
+
+  it('the guard broken: won; a breach in time and no gun lost, two stars', () => {
+    const world = mission(5, 2);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    // A breach: a stretch of the outer wall knocked down.
+    const [wx, wz] = fortressPoint(30, OUTER.frontM);
+    const cell = wallCellAt(world.nav, wx, wz);
+    expect(cell).toBeGreaterThanOrEqual(0);
+    damageWall(world.nav, cell, 1e6);
+    run(world, 2);
+    expect(c.breachS).toBeGreaterThanOrEqual(0);
+    for (const id of c.guardIds ?? []) {
+      const r = world.regiments.find((q) => q.id === id);
+      if (!r) continue;
+      for (const s of r.soldiers) s.alive = false;
+      r.aliveMen = 0;
+    }
+    run(world, 2);
+    expect(world.winner).toBe(PLAYER);
+    expect(c.stars).toBe(2);
+  });
+
+  it('the sally goes out at guns that come near the gate', () => {
+    const world = mission(5, 3);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    const gun = world.regiments.find((r) => r.side === PLAYER && r.def.engine);
+    if (!gun) throw new Error('no guns');
+    const [x, z] = fortressPoint(0, OUTER.frontM + 120);
+    gun.anchorX = x;
+    gun.anchorZ = z;
+    for (const s of gun.soldiers) {
+      s.x = x;
+      s.z = z;
+    }
+    run(world, 3);
+    expect(c.sallyOutS).toBeGreaterThanOrEqual(0);
+    const sally = world.regiments.filter((r) => (c.sallyIds ?? []).includes(r.id));
+    expect(sally.some((r) => r.order === 'attackRegiment')).toBe(true);
+  });
+});
+
+/** True when the way found crosses a wall that stops the player (the search's last leg is straight at the goal). */
+function blockedThrough(world: World, out: Float32Array, n: number, fx: number, fz: number): boolean {
+  let px = fx;
+  let pz = fz;
+  for (let k = 0; k < n; k++) {
+    const x = out[k * 2] as number;
+    const z = out[k * 2 + 1] as number;
+    if (blockedBetween(world.nav, PLAYER, px, pz, x, z)) return true;
+    px = x;
+    pz = z;
+  }
+  return false;
+}

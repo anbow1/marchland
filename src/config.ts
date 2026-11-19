@@ -30,6 +30,11 @@ export const MAP = {
   /** Ground is level inside this radius of a keep, then blends into the hills. */
   townFlatRadiusM: 26,
   townBlendRadiusM: 85,
+  /** The fortress layout (the campaign's last mission): the computer's keep on a level plateau this wide, raised this much, falling away to the plain by this far; no woods nearer than this. */
+  fortressFlatRadiusM: 100,
+  fortressBlendRadiusM: 165,
+  fortressRiseM: 7,
+  fortressClearM: 125,
   /** Peak-to-mean height of the rolling hills, of the finer folds on them, and of the two knolls that flank the field. */
   hillHeightM: 13,
   foldHeightM: 2.2,
@@ -765,6 +770,36 @@ export const CAMPAIGN = {
     { atS: 960, kinds: ['lightCavalry', 'swordsmen', 'crossbowmen'] },
     { atS: 1440, kinds: ['heavyCavalry', 'swordsmen', 'halberdiers', 'crossbowmen'] },
   ],
+  /**
+   * Mission 5, the fortress (map layout 'fortress'), in metres about the computer's keep: across (`halfWidthM`
+   * either side) and along the way to the player's camp (`backM` behind, `frontM` before). The outer ring has
+   * eight towers and its gate in the front wall, the inner four and its gate in its left wall (no straight way
+   * from one to the other); the donjon stands in the inner yard. Its walls take `wallHpFactor` times the blows.
+   */
+  fortress: {
+    outer: { halfWidthM: 62, backM: 56, frontM: 56 },
+    inner: { halfWidthM: 42, backM: 40, frontM: 30 },
+    donjonAtM: -10,
+    donjonHalfM: 17,
+    wallHpFactor: 2,
+    towerCrossbowmen: 2,
+  },
+  /** Mission 5: who holds the fortress — between the rings, at the outer gate (they sally at the guns), and the lord's guard in the inner yard. */
+  fortressGarrison: ['crossbowmen', 'swordsmen', 'pikemen', 'halberdiers'],
+  sally: ['heavyCavalry', 'swordsmen'],
+  guard: ['heavyCavalry', 'heavyCavalry'],
+  /** The sally goes out when a gun or mortar of the player's comes this near the outer gate, at most this often, and back after this long. */
+  sallyWithinM: 230,
+  sallyEveryS: 240,
+  sallyForS: 150,
+  /** His relief, from behind the player's camp, and when. */
+  fortressRelief: ['heavyCavalry', 'swordsmen', 'crossbowmen'],
+  fortressReliefAtS: 900,
+  /** The player's siege train at the start, and the second star: a breach this soon, and no engine lost. */
+  siegeTrain: ['cannon', 'cannon', 'mortar', 'mortar'],
+  breachStarS: 600,
+  /** Lost when the player has had no regiment at all for this long. */
+  noArmyLostS: 60,
 } as const;
 
 export const DEFENCE = {

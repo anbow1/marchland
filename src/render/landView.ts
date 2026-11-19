@@ -3,7 +3,7 @@ import { BufferAttribute, BufferGeometry, Color, DataTexture, InstancedMesh, Lin
 import { MAP, TOWN } from '../config.ts';
 import { fbm2, tileFbm } from '../core/noise.ts';
 import { Rng } from '../core/rng.ts';
-import { DEPOSITS, forestCoverAt, FORWARD_X, FORWARD_Z, HAS_RIVER, HEAPS, heapShare, heightAtM, isWater, lakeShare, lakeX, lakeZ, riverPoint, WATER_LEVEL_M } from '../sim/terrain.ts';
+import { DEPOSITS, forestCoverAt, FORWARD_X, FORWARD_Z, HAS_RIVER, HEAPS, heapShare, heightAtM, isWater, LAKE_SIDES, lakeShare, lakeX, lakeZ, riverPoint, WATER_LEVEL_M } from '../sim/terrain.ts';
 import type { Side } from '../sim/types.ts';
 import { chunkedInstances } from './chunks.ts';
 import { MeshBuilder, type Paint, type Vec3 } from './meshBuilder.ts';
@@ -224,7 +224,7 @@ function causeway(lib: SurfaceLibrary): Mesh {
 function buildWater(lib: SurfaceLibrary): Mesh[] {
   const material = lakeMaterial();
   const meshes: Mesh[] = [];
-  for (const side of [0, 1] as const satisfies readonly Side[]) {
+  for (const side of LAKE_SIDES) {
     const mesh = new Mesh(lakeGrid(side), material);
     mesh.name = `lake ${side}`;
     mesh.renderOrder = 5;

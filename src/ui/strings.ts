@@ -73,6 +73,10 @@ interface Strings {
   raidIn: string;
   raidsOver: string;
   raidComing: string;
+  guardLeft: string;
+  breachMade: string;
+  noBreach: string;
+  sallyOut: string;
   buildingsLost: string;
   missionWon: string;
   missionLost: string;
@@ -94,7 +98,7 @@ interface Strings {
   nextWave: string;
   startSites: readonly [string, string, string];
   mapLabel: string;
-  layouts: Record<'field' | 'river' | 'forest', string>;
+  layouts: Record<'field' | 'river' | 'forest' | 'fortress', string>;
   loading: string;
   victory: string;
   defeat: string;
@@ -420,7 +424,11 @@ const pl: Strings = {
       briefing:
         'Osada jest znów Twoja, a jej targ płaci złotem i zbożem. Rozbuduj miasto i wystaw wielką armię: co najmniej 160 ludzi w 10 oddziałach (koszary uzupełniają oddział do 20, dwa oddziały tego rodzaju można połączyć) i zamek na poziomie 3. Wróg nie odpuszcza: w 8., 16. i 24. minucie przychodzą zagony, coraz silniejsze, i idą na zamek. Druga gwiazdka: wróg nie zburzy ani jednego budynku.',
     },
-    { title: 'Twierdza', briefing: 'Czas zakończyć tę wojnę pod murami jego zamku: działa na mury, a on uderzy wypadami i odsieczą.' },
+    {
+      title: 'Twierdza',
+      briefing:
+        'Czas zakończyć tę wojnę pod murami jego zamku. Twierdza stoi na płaskowyżu: dwa pierścienie murów dwa razy twardszych od Twoich, 12 wież z kusznikami, brama zewnętrzna od Twojej strony, wewnętrzna z boku. Między murami stoi załoga, przy bramie oddział wypadowy, a na dziedzińcu przed donżonem gwardia pana zamku: dwa oddziały ciężkiej jazdy. Masz armię z poprzedniej misji, dwa działa i dwa moździerze oraz koszary z ludwisarnią w obozie. Moździerze robią wyłomy w murach, działa łamią bramy. Gdy działa podejdą pod bramę, wyjdzie wypad, a w 15. minucie od tyłu nadejdzie odsiecz. Wygrana: gwardia na dziedzińcu rozbita. Przegrana: padnie obóz albo przez minutę nie masz żadnego oddziału. Druga gwiazdka: wyłom w ciągu 10 minut i żadne działo nie stracone.',
+    },
   ],
   campaignTitle: 'Kampania',
   missionLabel: 'Misja',
@@ -444,6 +452,10 @@ const pl: Strings = {
   raidIn: 'zagon za',
   raidsOver: 'zagony odparte',
   raidComing: 'Zagon wroga idzie na miasto!',
+  guardLeft: 'gwardia',
+  breachMade: 'wyłom',
+  noBreach: 'mury całe',
+  sallyOut: 'Wypad z bramy! Idą na Twoje działa.',
   buildingsLost: 'zburzone budynki',
   missionWon: 'Misja wygrana',
   missionLost: 'Misja przegrana',
@@ -473,7 +485,7 @@ const pl: Strings = {
   nextWave: 'następna za',
   startSites: ['Róg', 'Zachód', 'Południe'],
   mapLabel: 'Mapa',
-  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór' },
+  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór', fortress: 'Twierdza' },
   loading: 'Wczytywanie',
   victory: 'Zwycięstwo',
   defeat: 'Porażka',
@@ -830,7 +842,11 @@ const en: Strings = {
       briefing:
         'The settlement is yours again and its market pays gold and grain. Build up the town and raise a great army: at least 160 men in 10 regiments (the barracks fill a regiment to 20, two of a kind can merge) and the keep at level 3. The enemy does not let go: in the 8th, 16th and 24th minute raids come, each stronger, and go for the keep. Second star: he razes not a single building.',
     },
-    { title: 'The fortress', briefing: 'End this war under the walls of his castle: guns on the walls, while he strikes back with sallies and a relief army.' },
+    {
+      title: 'The fortress',
+      briefing:
+        'Time to end this war under the walls of his castle. The fortress stands on a plateau: two rings of walls twice as hard as yours, 12 towers manned by crossbowmen, the outer gate on your side, the inner on a flank. A garrison stands between the walls, a sally party by the gate, and before the donjon the lord\'s guard: two regiments of heavy horse. You have the army of the last mission, two guns and two mortars, and barracks and a gun foundry in your camp. Mortars breach walls, guns break gates. When your guns come near the gate a sally comes out, and in the 15th minute his relief comes at your back. Won when the guard in the yard is broken. Lost when the camp falls or you have had no regiment for a minute. Second star: a breach within 10 minutes and no gun lost.',
+    },
   ],
   campaignTitle: 'Campaign',
   missionLabel: 'Mission',
@@ -854,6 +870,10 @@ const en: Strings = {
   raidIn: 'raid in',
   raidsOver: 'raids beaten off',
   raidComing: 'An enemy raid is coming for the town!',
+  guardLeft: 'guard',
+  breachMade: 'breach',
+  noBreach: 'walls whole',
+  sallyOut: 'A sally from the gate! They are going for your guns.',
   buildingsLost: 'buildings razed',
   missionWon: 'Mission won',
   missionLost: 'Mission lost',
@@ -883,7 +903,7 @@ const en: Strings = {
   nextWave: 'next in',
   startSites: ['Corner', 'West', 'South'],
   mapLabel: 'Map',
-  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road' },
+  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road', fortress: 'The fortress' },
   loading: 'Loading',
   victory: 'Victory',
   defeat: 'Defeat',

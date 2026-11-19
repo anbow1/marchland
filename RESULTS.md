@@ -5,6 +5,42 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-19 · Kampania: misja 5 (Twierdza) grywalna — cała kampania gotowa
+
+- **Nowy układ mapy *Twierdza*** (`MARCHLAND_MAP=fortress`, tylko w kampanii):
+  - zamek wroga na płaskowyżu: płasko do 100 m od środka, 7 m nad równiną, łagodny spadek do 165 m;
+  - na płaskowyżu nie ma jeziora wroga, jego dwóch złóż ani lasu (do 125 m).
+- **Twierdza z murów gry** (wyłomy działają jak wszędzie), stawiana scenariuszem:
+  - pierścień zewnętrzny 124 × 112 m: 8 wież, brama od strony gracza;
+  - pierścień wewnętrzny 84 × 70 m: 4 wieże, brama w lewym murze, bez prostej drogi od bramy zewnętrznej;
+  - mury i bramy 2 × twardsze od zwykłych; na każdej z 12 wież 2 kuszników;
+  - donżon to środek modelu „Medieval Castle” (Uğur Yakışık, CC BY 4.0): przy wczytaniu zostają tylko trójkąty
+    nad jego obrysem (`cutOut`), postawione przodem do gracza; teren pod nim zabudowany, więc nikt przez niego nie
+    przechodzi.
+- **Obrońcy**:
+  - między murami: kusznicy, miecznicy, pikinierzy, halabardnicy; biją każdego, kto wszedł za mur zewnętrzny,
+    i wracają na miejsca;
+  - przy bramie oddział wypadowy (ciężka jazda, miecznicy): gdy działo lub moździerz gracza podejdzie na 230 m,
+    wychodzi i bije w działa, po 150 s wraca, najwyżej co 4 minuty;
+  - gwardia (2 oddziały ciężkiej jazdy) na dziedzińcu przed donżonem broni pierścienia wewnętrznego;
+  - odsiecz w 15. minucie zza obozu gracza (ciężka jazda, miecznicy, kusznicy) idzie na obóz.
+- **Gracz**: armia z misji 4, 2 działa i 2 moździerze, miasto z koszarami i ludwisarnią, 1500 złota.
+  - Wygrana: gwardia rozbita (zabita albo w ucieczce).
+  - Przegrana: obóz padnie albo przez minutę nie ma żadnego oddziału.
+  - Druga gwiazdka: wyłom w ciągu 10 minut i żadne działo nie stracone.
+  - Pasek u góry: gwardia (oddziały i ludzie), wyłom albo czas, czas do odsieczy.
+- **Pomiar** (bot szturmujący, pełna armia 8 × 20 + 4 działa):
+  - pierwsza wersja (4 kuszników na wieży, 2 oddziały kuszników, 3 oddziały gwardii, odsiecz 4 oddziały):
+    wyłom po ok. 8,5 minuty, ale przy szturmie przez wyłom armia traciła ok. 95 ludzi w 100 s: 0 z 5 wygranych;
+  - po zmniejszeniu (2 kuszników na wieżę, w załodze miecznicy zamiast drugich kuszników, gwardia 2 oddziały,
+    odsiecz 3) i z rozsądnym planem bota (najpierw rozbić wypad i odsiecz przed murami, potem szturm; atakować
+    tylko tych, do których da się dojść): 2 z 3 wygranych (2 i 1 gwiazdka), 90–113 ludzi straconych; trzecia próba
+    utknęła przy 4 ludziach przeciw 13.
+- Testy misji 5 (uruchamiane w `npm test` także na mapie *Twierdza*): 12 wież z załogą, 2 bramy, gwardia
+  w pierścieniu wewnętrznym, załoga między pierścieniami, brak drogi do środka bez wyłomu; wyłom i rozbita
+  gwardia dają 2 gwiazdki; wypad wychodzi na działo pod bramą.
+- Sprawdzone w przeglądarce: twierdza z dwoma pierścieniami, wieżami z kusznikami i donżonem, pasek misji.
+
 ## 2026-11-19 · Kampania: misje 3 i 4 grywalne
 
 - **Misja 3 — Odbicie osady** (*Otwarte pole*, zamek w drugim miejscu):

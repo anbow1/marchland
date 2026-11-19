@@ -77,6 +77,29 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 
 ### Misja 5 — Twierdza
 
+> **Stan (19.11):** grywalna na nowym układzie *Twierdza* (`MARCHLAND_MAP=fortress`). Zamek wroga stoi na
+> płaskowyżu (płasko do 100 m, 7 m nad równiną, bez jeziora, złóż i lasu na nim). Mury i wieże to mury gry, więc
+> da się zrobić w nich wyłom:
+> - pierścień zewnętrzny 124 × 112 m: 8 wież, brama od strony gracza;
+> - pierścień wewnętrzny 84 × 70 m: 4 wieże, brama w lewym murze (bez prostej drogi od bramy zewnętrznej);
+> - mury i bramy 2 × twardsze od zwykłych; na każdej wieży 2 kuszników.
+>
+> Donżon to środek modelu „Medieval Castle” (wycięty w kodzie, `cutOut` w `townView.ts`).
+>
+> Załoga i odsiecz:
+> - między murami: kusznicy, miecznicy, pikinierzy, halabardnicy;
+> - przy bramie wypad (ciężka jazda, miecznicy): wychodzi, gdy działo lub moździerz gracza podejdzie na 230 m,
+>   bije w działa i po 150 s wraca;
+> - na dziedzińcu gwardia: 2 oddziały ciężkiej jazdy;
+> - odsiecz w 15. minucie zza obozu gracza: ciężka jazda, miecznicy, kusznicy.
+>
+> Gracz zaczyna z armią z misji 4, 2 działami i 2 moździerzami, z miastem z koszarami i ludwisarnią.
+> Wygrana: gwardia rozbita; przegrana: obóz padnie albo przez minutę nie ma żadnego oddziału. Druga gwiazdka:
+> wyłom w 10 minut i żadne działo nie stracone.
+>
+> Pomiar (bot: moździerze w mur, armaty w bramę, piechota rozbija wypad i odsiecz przed murami, potem
+> szturmuje): pełna armia 8 × 20 wygrywa 2 z 3, tracąc 90–113 ludzi; wyłom po ok. 8,5 minuty.
+
 *Czas zakończyć tę wojnę pod murami jego zamku.*
 
 - **Mapa:** nowa, *Twierdza* (§4): na wzgórzu **twierdza większa i bardziej obronna niż zwykły zamek**
@@ -169,4 +192,4 @@ Oba układy przydadzą się też w potyczce, więc menu „Mapa” urośnie z tr
 | Misja 2 (obóz: 3 oddziały, 2 zagony wracające co 5 min) | ✔ grywalna; palisada i namioty obozu — później |
 | Misja 3 (osada: wieś w środku *Otwartego pola*, 5 oddziałów i wieża z kusznikami, odsiecz w 12. minucie) | ✔ grywalna; układ *Dolina* — później |
 | Misja 4 (osada Twoja, cel: 160 ludzi w 10 oddziałach i zamek 3, trzy zagony) | ✔ grywalna; ruiny do odbudowy za pół ceny — później |
-| Misja 5 (układ *Twierdza*, mury scenariuszem, wypady, odsiecz) | model twierdzy gotowy (`fortress_1.glb`, „Medieval Castle”, Uğur Yakışık, CC BY 4.0); misja do zrobienia |
+| Misja 5 (układ *Twierdza*, mury scenariuszem, wypady, odsiecz) | ✔ grywalna: płaskowyż, dwa pierścienie murów gry (12 wież, 2 bramy), donżon wycięty z `fortress_1.glb` |

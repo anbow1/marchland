@@ -1,9 +1,10 @@
-import { CAMPAIGN, REINFORCE, TOWN } from '../config.ts';
+import { CAMPAIGN, GATE, REINFORCE, TOWN, WALLS } from '../config.ts';
 import { hypot2 } from '../core/hypot.ts';
 import { adjustStances, fight } from './ai.ts';
-import { cmdBuild, cmdBuildRoad, cmdMove } from './commands.ts';
+import { cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, wallCellsFor } from './commands.ts';
 import { startBuilding } from './economy.ts';
-import { stampBuilding } from './nav.ts';
+import { cellX, cellZ, gateCells, layGate, layWall, stampBuilding } from './nav.ts';
+import { fortressFrame, fortressPoint, INNER, insideRing, OUTER, ringCorners } from './fortress.ts';
 import type { Point } from './points.ts';
 import { doorX, doorZ, KEEP } from './people.ts';
 import { assignSlots, newSoldier, type Regiment } from './regiment.ts';
@@ -22,7 +23,7 @@ export interface MissionDef {
   /** 1…5. */
   n: number;
   /** The map and the place of the keeps (sim/layout.ts), set in the page's address. */
-  layout: 'field' | 'river' | 'forest';
+  layout: 'field' | 'river' | 'forest' | 'fortress';
   start: number;
   /** Ready to play (the later missions come in later stages). */
   ready: boolean;
@@ -33,7 +34,7 @@ export const MISSIONS: readonly MissionDef[] = [
   { n: 2, layout: 'river', start: 0, ready: true },
   { n: 3, layout: 'field', start: 1, ready: true },
   { n: 4, layout: 'field', start: 1, ready: true },
-  { n: 5, layout: 'forest', start: 2, ready: false },
+  { n: 5, layout: 'fortress', start: 0, ready: true },
 ];
 
 /** A regiment carried from one mission to the next. */
@@ -82,6 +83,17 @@ export interface CampaignState {
   raidIds?: number[];
   /** The player's buildings destroyed by the enemy during the mission (mission 4's second star wants none). */
   buildingsLost?: number;
+  /** Mission 5: the lord's guard in the inner yard, the sally and when it went out (-1 in) or may next, the fortress's wall cells at the start and when the first fell (-1 not yet), the player's engines at the start, and how long he has had no army. */
+  guardIds?: number[];
+  guardPosts?: number[];
+  sallyIds?: number[];
+  sallyPosts?: number[];
+  sallyOutS?: number;
+  sallyNextS?: number;
+  fortWallCells?: number;
+  breachS?: number;
+  enginesAtStart?: number;
+  noArmyS?: number;
   /** Stars earned when the mission ends: 1 for winning, 2 with its extra goal. */
   stars: number;
 }
@@ -190,10 +202,10 @@ export function settlement(world: World): Point {
 }
 
 /** A watchtower of `side` put up by the scenario at (x, z) (or the nearest open ground), built and manned by crossbowmen. */
-function scenarioTower(world: World, side: Side, x: number, z: number, crossbowmen: number): void {
+function scenarioTower(world: World, side: Side, x: number, z: number, crossbowmen: number, exact = false): void {
   let px = x;
   let pz = z;
-  for (let k = 0; k < 24 && isImpassable(px, pz); k++) {
+  for (let k = 0; k < 24 && !exact && isImpassable(px, pz); k++) {
     px = x + Math.sin(k) * (4 + k);
     pz = z + Math.cos(k) * (4 + k);
   }
@@ -210,6 +222,94 @@ function scenarioTower(world: World, side: Side, x: number, z: number, crossbowm
   b.matWaiting.wood = b.matWaiting.stone = b.matWaiting.planks = 0;
   b.garrison = crossbowmen;
   b.garrisonKind = 'crossbowmen';
+}
+
+const fortCells: number[] = [];
+
+/** A wall of the fortress from one point to another, `factor` times as hard to break as the player's. */
+function fortressWall(world: World, from: [number, number], to: [number, number]): void {
+  wallCellsFor(world, COMPUTER, from[0], from[1], to[0], to[1], fortCells);
+  layWall(world.nav, fortCells, COMPUTER, from[0], from[1], to[0], to[1], WALLS.hp * CAMPAIGN.fortress.wallHpFactor);
+}
+
+/** A gate into the fortress's wall at a point (its stretch must be straight there). */
+function fortressGate(world: World, at: [number, number]): void {
+  if (gateCells(world.nav, at[0], at[1], COMPUTER, GATE.cells, fortCells) < GATE.cells) throw new Error(`no straight wall for the fortress's gate at ${at[0].toFixed(0)}, ${at[1].toFixed(0)}`);
+  const middle = fortCells[(GATE.cells - 1) >> 1] as number;
+  world.gates.push({ side: COMPUTER, cells: [...fortCells], x: cellX(middle), z: cellZ(middle), dir: world.nav.wallDir[middle] as number });
+  layGate(world.nav, fortCells, GATE.hp * CAMPAIGN.fortress.wallHpFactor);
+}
+
+/** Regiments of `kinds` at the given points of the fortress (across, along), facing the player's camp, full. */
+function posted(world: World, kinds: readonly UnitKind[], at: readonly [number, number][]): { ids: number[]; posts: number[] } {
+  const facing = fortressFrame().yawRad;
+  const ids: number[] = [];
+  const posts: number[] = [];
+  kinds.forEach((kind, i) => {
+    const [a, b] = at[i % at.length] as [number, number];
+    const [x, z] = fortressPoint(a, b);
+    const r = spawnRegiment(world, COMPUTER, kind, x, z, facing);
+    campaignRegiment(r);
+    fillRegiment(r, r.def.engine ? r.def.men : CAMPAIGN.regimentMaxMen);
+    ids.push(r.id);
+    posts.push(x, z);
+  });
+  return { ids, posts };
+}
+
+/** Mission 5: the fortress — two rings of walls with their towers and gates, the donjon's ground, and its men. */
+function layFortress(world: World, c: CampaignState): void {
+  const F = CAMPAIGN.fortress;
+  const o = F.outer;
+  const n = F.inner;
+  // Towers first: the walls run into them. The outer ring's corners, the middles of its sides, either side of its gate.
+  const outerTowers: [number, number][] = [
+    [-o.halfWidthM, -o.backM], [o.halfWidthM, -o.backM], [o.halfWidthM, o.frontM], [-o.halfWidthM, o.frontM],
+    [-o.halfWidthM, (o.frontM - o.backM) / 2], [o.halfWidthM, (o.frontM - o.backM) / 2], [-15, o.frontM], [15, o.frontM],
+  ];
+  const innerTowers: [number, number][] = [[-n.halfWidthM, -n.backM], [n.halfWidthM, -n.backM], [n.halfWidthM, n.frontM], [-n.halfWidthM, n.frontM]];
+  for (const [a, b] of [...outerTowers, ...innerTowers]) {
+    const [x, z] = fortressPoint(a, b);
+    scenarioTower(world, COMPUTER, x, z, F.towerCrossbowmen, true);
+  }
+  for (const ring of [OUTER, INNER]) {
+    const corners = ringCorners(ring);
+    corners.forEach((p, i) => fortressWall(world, p, corners[(i + 1) % 4] as [number, number]));
+  }
+  // The outer gate in the middle of the front wall, the inner in the middle of its left wall: no straight way through.
+  fortressGate(world, fortressPoint(0, o.frontM));
+  fortressGate(world, fortressPoint(-n.halfWidthM, (n.frontM - n.backM) / 2));
+  // The donjon's ground: built over, so nobody walks through it.
+  const h = F.donjonHalfM;
+  for (let a = -h + 3; a <= h - 3; a += 5) for (let b = -h + 3; b <= h - 3; b += 5) {
+    const [x, z] = fortressPoint(a, F.donjonAtM + b);
+    stampBuilding(world.nav, x, z, 4.5, true);
+  }
+  // Between the rings: crossbowmen behind the outer gate's wall, pikes and halberds on the flanks; the sally by the gate.
+  const garrison = posted(world, CAMPAIGN.fortressGarrison, [[-30, o.frontM - 14], [30, o.frontM - 14], [-(o.halfWidthM + n.halfWidthM) / 2, 0], [(o.halfWidthM + n.halfWidthM) / 2, 0]]);
+  c.campIds = garrison.ids;
+  c.posts = garrison.posts;
+  const sally = posted(world, CAMPAIGN.sally, [[-8, o.frontM - 30], [10, o.frontM - 30]]);
+  c.sallyIds = sally.ids;
+  c.sallyPosts = sally.posts;
+  c.sallyOutS = -1;
+  c.sallyNextS = 0;
+  // The lord's guard in the inner yard, before the donjon.
+  const yard = (F.donjonAtM + F.donjonHalfM + n.frontM) / 2;
+  const guard = posted(world, CAMPAIGN.guard, [[-16, yard], [16, yard], [0, yard]]);
+  c.guardIds = guard.ids;
+  c.guardPosts = guard.posts;
+  c.fortWallCells = fortressWallCells(world);
+  c.breachS = -1;
+  c.noArmyS = 0;
+}
+
+/** Standing wall cells of the fortress (the computer's). */
+function fortressWallCells(world: World): number {
+  let n = 0;
+  const nav = world.nav;
+  for (let i = 0; i < nav.wallHp.length; i++) if (nav.wallHp[i] !== 0 && nav.wallSide[i] === COMPUTER) n++;
+  return n;
 }
 
 /** Lays the mission out over a new world (the map and keeps are the address's) and returns its state. */
@@ -235,8 +335,9 @@ export function setupCampaign(world: World, setup: CampaignSetup): CampaignState
     startMen: 0,
     stars: 0,
   };
-  // The invader has no town before the last mission: only his camp, the settlement he holds, his raids.
-  if (setup.mission <= 4) {
+  // The invader has no working town in the campaign: his camp, the settlement he holds, his raids, and in
+  // the last mission his fortress (its walls, towers and donjon laid by the scenario, its keep not a target).
+  {
     enemy.absent = true;
     enemy.keepHp = 0;
     world.people = world.people.filter((p) => p.side !== COMPUTER);
@@ -246,6 +347,7 @@ export function setupCampaign(world: World, setup: CampaignSetup): CampaignState
   const town: BuildingKind[] = ['house', 'house', 'house', 'house', 'farm', 'farm', 'windmill', 'bakery', 'woodcutter', 'quarry', 'ironMine', 'smelter', 'smithy'];
   if (setup.mission >= 2) town.push('house', 'house', 'barracks', 'pigFarm', 'tannery', 'armourer');
   if (setup.mission >= 4) town.push('house', 'house', 'farm', 'windmill', 'bakery', 'stable', 'fletcher', 'market');
+  if (setup.mission >= 5) town.push('foundry');
   for (const kind of town) buildNow(world, kind);
   if (setup.mission === 1) {
     player.stock.gold += 300;
@@ -300,6 +402,23 @@ export function setupCampaign(world: World, setup: CampaignSetup): CampaignState
     c.raidsSent = 0;
     c.raidIds = [];
     bringArmy(world, setup.carried, ['swordsmen', 'pikemen', 'crossbowmen', 'heavyCavalry']);
+  } else if (setup.mission === 5) {
+    player.stock.gold += 1500;
+    player.stock.wood += 300;
+    player.stock.stone += 200;
+    player.stock.iron += 40;
+    player.stock.bread += 250;
+    layFortress(world, c);
+    bringArmy(world, setup.carried, ['swordsmen', 'swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'crossbowmen', 'heavyCavalry', 'heavyCavalry']);
+    // The siege train: guns for the gates, mortars for the walls.
+    const facing = facingToEnemy(PLAYER);
+    CAMPAIGN.siegeTrain.forEach((kind, i) => {
+      const x = rallyX(PLAYER) + Math.cos(facing) * (i - 1.5) * 14 + Math.sin(facing) * 24;
+      const z = rallyZ(PLAYER) - Math.sin(facing) * (i - 1.5) * 14 + Math.cos(facing) * 24;
+      campaignRegiment(spawnRegiment(world, PLAYER, kind, x, z, facing));
+    });
+    c.enginesAtStart = CAMPAIGN.siegeTrain.length;
+    c.reliefIds = [];
   }
   c.buildingsLost = 0;
   c.startMen = world.regiments.filter((r) => r.side === PLAYER).reduce((n, r) => n + r.aliveMen, 0);
@@ -391,6 +510,7 @@ export function stepCampaign(world: World, c: CampaignState, dtSeconds: number):
   }
   if (c.mission === 3) stepSettlement(world, c);
   else if (c.mission === 4) stepRebuilding(world, c);
+  else if (c.mission === 5) stepFortress(world, c);
 }
 
 /** Mission 3: the garrison holds the settlement, the relief comes; won once the settlement is the player's. */
@@ -434,6 +554,100 @@ function stepSettlement(world: World, c: CampaignState): void {
   // The relief, once at the settlement, stands with the garrison and fights there.
   const arrived = coming.filter((r) => r.order !== 'move');
   if (arrived.length > 0) fight(world, arrived, CAMPAIGN.garrisonReachM, false);
+}
+
+/** Sends each of `army` at the nearest of the player's regiments that `inside` holds for; back to its post when there is none. */
+function holdGround(world: World, army: readonly Regiment[], ids: readonly number[], posts: readonly number[], inside: (r: Regiment) => boolean): void {
+  const foes = world.regiments.filter((r) => r.side === PLAYER && r.aliveMen > 0 && inside(r));
+  for (const r of army) {
+    const i = ids.indexOf(r.id);
+    const px = posts[i * 2] ?? r.anchorX;
+    const pz = posts[i * 2 + 1] ?? r.anchorZ;
+    let best: Regiment | null = null;
+    let bestD = Number.POSITIVE_INFINITY;
+    for (const f of foes) {
+      const d = hypot2(f.centreX - r.centreX, f.centreZ - r.centreZ);
+      if (d < bestD) {
+        best = f;
+        bestD = d;
+      }
+    }
+    if (best) {
+      // Shooters shoot from where they stand.
+      if (r.def.missileRangeM > 0) continue;
+      if (r.order !== 'attackRegiment' || r.targetRegimentId !== best.id) cmdAttackRegiment(world, r.id, best.id);
+    } else if (r.order !== 'move' && hypot2(r.anchorX - px, r.anchorZ - pz) > 8) cmdMove(world, r.id, px, pz, fortressFrame().yawRad, false);
+  }
+}
+
+/** Mission 5: the fortress holds; the sally strikes at the guns; the relief comes from behind; won when the guard is broken. */
+function stepFortress(world: World, c: CampaignState): void {
+  const guard = living(world, c.guardIds ?? []);
+  const army = playerArmy(world);
+  // The player's walls are down when the fortress has lost its first stretch.
+  if ((c.breachS ?? -1) < 0 && fortressWallCells(world) < (c.fortWallCells ?? 0)) {
+    c.breachS = world.timeS;
+    world.events.push('breach', fortressFrame().x, fortressFrame().z, PLAYER);
+  }
+  if (guard.every((r) => r.state === 'routing')) {
+    const engines = world.regiments.filter((r) => r.side === PLAYER && r.aliveMen > 0 && r.def.engine).length;
+    win(world, c, (c.breachS ?? -1) >= 0 && (c.breachS as number) <= CAMPAIGN.breachStarS && engines >= (c.enginesAtStart ?? 0) ? 2 : 1);
+    return;
+  }
+  // No army left at all (and none raised) for a minute: the war is lost.
+  c.noArmyS = army.regiments === 0 ? (c.noArmyS ?? 0) + 1 : 0;
+  if ((c.noArmyS ?? 0) >= CAMPAIGN.noArmyLostS) {
+    world.winner = COMPUTER;
+    world.events.push('gameOver', 0, 0, COMPUTER);
+    return;
+  }
+  adjustStances(world, COMPUTER);
+  // Between the rings: whoever has come over the outer wall. In the inner yard: whoever has come over the inner.
+  holdGround(world, living(world, c.campIds), c.campIds, c.posts ?? [], (r) => insideRing(OUTER, r.centreX, r.centreZ));
+  holdGround(world, guard, c.guardIds ?? [], c.guardPosts ?? [], (r) => insideRing(INNER, r.centreX, r.centreZ));
+  // The sally: out of the gate at the nearest gun when one comes near, back in after a while.
+  const sally = living(world, c.sallyIds ?? []);
+  const [gx, gz] = fortressPoint(0, OUTER.frontM);
+  const guns = world.regiments.filter((r) => r.side === PLAYER && r.aliveMen > 0 && r.def.engine && hypot2(r.centreX - gx, r.centreZ - gz) < CAMPAIGN.sallyWithinM);
+  const out = (c.sallyOutS ?? -1) >= 0;
+  if (!out && sally.length > 0 && guns.length > 0 && world.timeS >= (c.sallyNextS ?? 0)) {
+    c.sallyOutS = world.timeS;
+    world.events.push('sally', gx, gz, COMPUTER);
+  }
+  if ((c.sallyOutS ?? -1) >= 0) {
+    const over = world.timeS - (c.sallyOutS as number) > CAMPAIGN.sallyForS || guns.length === 0;
+    for (const r of sally) {
+      const i = (c.sallyIds ?? []).indexOf(r.id);
+      if (over) {
+        cmdMove(world, r.id, c.sallyPosts?.[i * 2] ?? gx, c.sallyPosts?.[i * 2 + 1] ?? gz, fortressFrame().yawRad, false);
+        continue;
+      }
+      const target = r.order === 'attackRegiment' ? findRegiment(world, r.targetRegimentId) : null;
+      if (target && target.aliveMen > 0 && target.def.engine) continue;
+      let best: Regiment | null = null;
+      for (const g of guns) if (!best || hypot2(g.centreX - r.centreX, g.centreZ - r.centreZ) < hypot2(best.centreX - r.centreX, best.centreZ - r.centreZ)) best = g;
+      if (best) cmdAttackRegiment(world, r.id, best.id);
+    }
+    if (over) {
+      c.sallyOutS = -1;
+      c.sallyNextS = world.timeS + CAMPAIGN.sallyEveryS;
+    }
+  } else holdGround(world, sally, c.sallyIds ?? [], c.sallyPosts ?? [], (r) => insideRing(OUTER, r.centreX, r.centreZ));
+  // The relief, from behind the player's camp.
+  if ((c.reliefIds ?? []).length === 0 && world.timeS >= CAMPAIGN.fortressReliefAtS) {
+    const [rx, rz] = behindCamp();
+    c.reliefIds = host(world, CAMPAIGN.fortressRelief, rx, rz, 4);
+    world.events.push('reliefCame', rx, rz, COMPUTER);
+  }
+  const relief = living(world, c.reliefIds ?? []);
+  if (relief.length > 0) fight(world, relief, 600, true);
+}
+
+/** A point behind the player's camp, on the map, where his relief comes from. */
+function behindCamp(): [number, number] {
+  const f = fortressFrame();
+  const limit = 330;
+  return [Math.max(-limit, Math.min(limit, townX(PLAYER) + f.fx * 70)), Math.max(-limit, Math.min(limit, townZ(PLAYER) + f.fz * 70))];
 }
 
 /** Men and regiments the player fields (engines count as regiments, their crews as men). */

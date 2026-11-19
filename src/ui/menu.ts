@@ -6,7 +6,7 @@ import type { Quality } from '../render/stage.ts';
 import { T } from './strings.ts';
 import { MAP } from '../config.ts';
 import { HEAPS } from '../sim/terrain.ts';
-import { type Layout, LAYOUTS } from '../sim/layout.ts';
+import { type Layout, SKIRMISH_LAYOUTS } from '../sim/layout.ts';
 import type { SaveHeader } from '../sim/save.ts';
 import type { GameMode } from '../sim/world.ts';
 import type { AiCharacter } from '../config.ts';
@@ -133,7 +133,7 @@ export class Menu {
         choiceRow(T.modeLabel, 'mode', (['skirmish', 'defence', 'tutorial', 'campaign'] as const).map((m) => [m, T.modes[m]] as const), choice.mode) +
         `<div class="skirmishOnly"${campaign ? ' style="display:none"' : ''}>` +
         choiceRow(T.characterLabel, 'character', (['balanced', 'builder', 'raider'] as const).map((c) => [c, T.characters[c]] as const), choice.character) +
-        choiceRow(T.mapLabel, 'map', LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
+        choiceRow(T.mapLabel, 'map', SKIRMISH_LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
         choiceRow(T.startLabel, 'start', T.startSites.map((name, i) => [String(i), `${i + 1}. ${name}`] as const), String(choice.start)) +
         `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div></div>` +
         `<div class="campaignBox"${campaign ? '' : ' style="display:none"'}>${progress ? campaignHtml(progress, choice.mission) : ''}</div>` +

@@ -26,7 +26,9 @@ export const START = asked();
  * The lie of the land between the keeps: the open field (the first), a crossing (a river through the
  * middle, a causeway and two fords), or a road through the forest (two clearings and a ride between them).
  */
-export const LAYOUTS = ['field', 'river', 'forest'] as const;
+export const LAYOUTS = ['field', 'river', 'forest', 'fortress'] as const;
+/** The layouts a skirmish may be played on (the fortress is the campaign's last mission's). */
+export const SKIRMISH_LAYOUTS = ['field', 'river', 'forest'] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export const LAYOUT: Layout = ((): Layout => {
   const asked = setting('map', 'MARCHLAND_MAP');

@@ -9,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run && MARCHLAND_MAP=river vitest run tests/crossing.test.ts",
+    "test": "vitest run && MARCHLAND_MAP=river vitest run tests/crossing.test.ts && MARCHLAND_MAP=fortress vitest run tests/campaign.test.ts -t 'mission 5'",
     "docs": "vite-node tools/write-docs.ts",
     "timeline": "vite-node tools/timeline.ts"
   },
