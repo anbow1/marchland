@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN, TOWN } from '../src/config.ts';
-import { canPayTribute, carryOut, fillRegiment, payTribute } from '../src/sim/campaign.ts';
-import { cmdBuild, cmdBuildWall, cmdMerge, cmdReinforce, missingMen } from '../src/sim/commands.ts';
+import { canPayTribute, carryOut, fillRegiment, payTribute, settlement } from '../src/sim/campaign.ts';
+import { cmdBuild, cmdBuildWall, cmdMerge, cmdMove, cmdReinforce, missingMen } from '../src/sim/commands.ts';
+import { fight } from '../src/sim/ai.ts';
 import { isBuilt } from '../src/sim/economy.ts';
 import { DEPOSITS, facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
@@ -174,5 +175,92 @@ describe('campaign', () => {
     expect(cmdMerge(world, a.id, c.id)).toBe('ok');
     expect(a.aliveMen).toBe(CAMPAIGN.regimentMaxMen);
     expect(c.aliveMen).toBe(12 - 5);
+  });
+});
+
+describe('campaign, missions 3 and 4', () => {
+  it('mission 3: the settlement held by four regiments and a manned watchtower; the relief comes at its hour', () => {
+    const world = mission(3);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    expect(world.towns[COMPUTER].absent).toBe(true);
+    const village = settlement(world);
+    expect(village.owner).toBe(COMPUTER);
+    expect(men(world, COMPUTER)).toBe(CAMPAIGN.settlementGarrison.length * CAMPAIGN.regimentMaxMen);
+    const tower = world.towns[COMPUTER].plots.find((b) => b !== null && b.kind === 'tower');
+    expect(tower?.garrison).toBe(CAMPAIGN.towerCrossbowmen);
+    expect(Math.hypot((tower?.x ?? 0) - village.x, (tower?.z ?? 0) - village.z)).toBeLessThan(60);
+    // The settlement is some 270 m from the player's keep.
+    expect(Math.hypot(village.x - townX(PLAYER), village.z - townZ(PLAYER))).toBeGreaterThan(200);
+    world.timeS = CAMPAIGN.reliefAtS - 1;
+    run(world, 3);
+    expect(c.reliefIds?.length).toBe(CAMPAIGN.relief.length);
+    expect(world.winner).toBe(-1);
+  });
+
+  it('mission 3: taken back (a regiment on the market, no enemy near) the mission is won, with two stars before the relief', () => {
+    const world = mission(3, 2);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    for (const r of world.regiments) if (r.side === COMPUTER) for (const s of r.soldiers) s.alive = false;
+    for (const r of world.regiments) if (r.side === COMPUTER) r.aliveMen = 0;
+    const village = settlement(world);
+    const mine = world.regiments.find((r) => r.side === PLAYER && !r.def.engine);
+    if (!mine) throw new Error('no army');
+    cmdMove(world, mine.id, village.x, village.z, null, true);
+    runUntil(world, 600, () => world.winner !== -1);
+    expect(world.winner).toBe(PLAYER);
+    expect(c.stars).toBe(2);
+  });
+
+  // A seasoned army out of mission 2 (six full regiments) sent at the settlement as the computer would send it.
+  const tries: { won: boolean; atS: number; left: number }[] = [];
+  for (const seed of [1, 2, 3]) {
+    it(`mission 3: a seasoned army takes the settlement back (seed ${seed})`, { timeout: 120_000 }, async () => {
+      const carried = (['swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'crossbowmen', 'heavyCavalry'] as UnitKind[]).map((kind) => ({ kind, men: kind === 'heavyCavalry' ? 12 : 20, xp: 0.3 }));
+      const world = mission(3, seed, carried);
+      const village = settlement(world);
+      for (let t = 0; t < 1500 && world.winner === -1; t += 5) {
+        const mine = world.regiments.filter((r) => r.side === PLAYER && r.aliveMen > 0 && r.state === 'formed');
+        const near = world.regiments.some((r) => r.side === COMPUTER && r.aliveMen > 0 && Math.hypot(r.centreX - village.x, r.centreZ - village.z) < 200);
+        if (near && mine.length > 0) fight(world, mine, 400, false);
+        else for (const r of mine) if (r.order !== 'move' && Math.hypot(r.centreX - village.x, r.centreZ - village.z) > 15) cmdMove(world, r.id, village.x, village.z, null, false);
+        runUntil(world, 5, () => world.winner !== -1);
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      }
+      tries.push({ won: world.winner === PLAYER, atS: Math.round(world.timeS), left: men(world, PLAYER) });
+    });
+  }
+  it('mission 3: the seasoned army wins, mostly before the relief', () => {
+    console.log('mission 3:', JSON.stringify(tries));
+    expect(tries.filter((d) => d.won).length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('mission 4: the settlement is the player\'s; raids come; won with the army and the keep, the second star if nothing was razed', () => {
+    const world = mission(4, 5);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    expect(settlement(world).owner).toBe(PLAYER);
+    expect(men(world, COMPUTER)).toBe(0);
+    world.timeS = (CAMPAIGN.raids[0]?.atS ?? 0) - 1;
+    run(world, 3);
+    expect(c.raidsSent).toBe(1);
+    expect(men(world, COMPUTER)).toBeGreaterThan(0);
+    expect(world.winner).toBe(-1);
+    // The army and the keep raised: won.
+    for (const r of world.regiments) if (r.side === COMPUTER) for (const s of r.soldiers) s.alive = false;
+    for (const r of world.regiments) if (r.side === COMPUTER) r.aliveMen = 0;
+    const kinds: UnitKind[] = ['swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'archers', 'heavyCavalry'];
+    for (const kind of kinds) {
+      const r = spawnRegiment(world, PLAYER, kind, rallyX(PLAYER), rallyZ(PLAYER) + 30, facingToEnemy(PLAYER));
+      campaignRegiment(r);
+      fillRegiment(r, r.def.cavalry ? 12 : 20);
+    }
+    run(world, 2);
+    expect(world.winner).toBe(-1);
+    world.towns[PLAYER].keepLevel = CAMPAIGN.keepGoalLevel;
+    run(world, 2);
+    expect(world.winner).toBe(PLAYER);
+    expect(c.stars).toBe(2);
   });
 });

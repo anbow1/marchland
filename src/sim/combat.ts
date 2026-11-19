@@ -75,6 +75,8 @@ export function damageBuilding(world: World, side: Side, plot: number, damage: n
     town.plots[plot] = null;
     stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, false);
     world.events.push('destroyed', b.x, b.z, side);
+    // The campaign counts what the enemy has razed (mission 4's second star wants nothing lost).
+    if (world.campaign && side === 0) world.campaign.buildingsLost = (world.campaign.buildingsLost ?? 0) + 1;
   }
 }
 

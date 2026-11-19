@@ -37,7 +37,9 @@ function campaignHtml(progress: CampaignProgress, chosen: number): string {
   for (const m of MISSIONS) {
     const open = m.ready && m.n <= progress.unlocked;
     const stars = progress.stars[m.n - 1] ?? 0;
-    const why = !m.ready ? T.missionSoon : m.n > progress.unlocked ? T.missionLocked : '★'.repeat(stars) + '☆'.repeat(2 - stars);
+    // Mission 1 gives up to three stars (by what the defence cost), the others two.
+    const most = m.n === 1 ? 3 : 2;
+    const why = !m.ready ? T.missionSoon : m.n > progress.unlocked ? T.missionLocked : '★'.repeat(Math.min(stars, most)) + '☆'.repeat(Math.max(0, most - stars));
     html += `<button class="choice mission${m.n === chosen ? ' on' : ''}${open ? '' : ' off'}" data-name="mission" data-value="${m.n}"${open ? '' : ' disabled'}>${m.n}. ${T.missions[m.n - 1]?.title ?? ''} <span class="small">${why}</span></button>`;
   }
   return `${html}</div><p class="briefing">${T.missions[chosen - 1]?.briefing ?? ''}</p><p class="small">${T.carriedNote}</p>`;

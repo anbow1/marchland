@@ -5,6 +5,38 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-19 · Kampania: misje 3 i 4 grywalne
+
+- **Misja 3 — Odbicie osady** (*Otwarte pole*, zamek w drugim miejscu):
+  - osada to wieś w środku mapy, 274 m od zamku: trzy domy i maszt w barwach właściciela;
+  - wróg trzyma ją 5 pełnymi oddziałami (miecznicy, pikinierzy, halabardnicy, kusznicy, łucznicy), a przed
+    wsią stoi jego wieża strażnicza z 4 kusznikami (postawiona scenariuszem, można ją zburzyć);
+  - załoga bije każdego w promieniu 140 m i wraca na swoje miejsca;
+  - odbicie jak zajęcie punktu: oddział 20 s na rynku bez wroga w promieniu 30 m;
+  - odsiecz (ciężka jazda, miecznicy, kusznicy) w 12. minucie od skraju mapy; jeśli zastanie osadę w rękach
+    wroga, po 3 minutach wszyscy ruszają na miasto;
+  - druga gwiazdka: osada odbita przed odsieczą;
+  - pasek u góry: stan osady, postęp zajmowania (x/20 s), czas do odsieczy.
+- **Misja 4 — Odbudowa i wielka armia** (ta sama mapa):
+  - osada jest Twoja i jej targ płaci złotem i zbożem; miasto większe na starcie (stajnia, łuczarz, targ);
+  - cel: co najmniej 160 ludzi w 10 oddziałach i zamek na poziomie 3;
+  - zagony 2, 3 i 4 pełnych oddziałów w 8., 16. i 24. minucie idą na zamek;
+  - druga gwiazdka: wróg nie zburzy ani jednego budynku (licznik w stanie misji);
+  - pasek: wojsko x/160 ludzi, oddziały x/10, zamek x/3, czas do zagonu.
+- **Pomiar misji 3** (armia sterowana jak komputer: bije wroga w promieniu 400 m, potem staje na rynku):
+  - 6 pełnych oddziałów z misji 2 (112 ludzi) przeciw 4 oddziałom załogi: 3/3 wygrane w 3 minuty, 37–48 ludzi
+    straconych, za łatwo; po dodaniu piątego oddziału: 4/4 wygrane w 3–6 minut, 50–84 ludzi straconych;
+  - 4 oddziały po 15 ludzi: 4/4 przegrane (po odsieczy wróg bierze miasto ok. 18. minuty), czyli trzeba
+    najpierw rozbudować wojsko.
+- **Pomiar misji 4** (bez werbunku, tylko obrona przy zamku): zagon idzie na zamek ok. 6 minut; 5 oddziałów
+  (84 ludzi) odpiera dwa pierwsze, trzeci łącznie z resztkami bierze zamek ok. 26. minuty. Do celu i tak
+  trzeba werbować.
+- **Poprawka menu kampanii**: misja 1 daje do 3 gwiazdek, a lista rysowała 2 − gwiazdki pustych; przy 3 gwiazdkach
+  `'☆'.repeat(-1)` rzucał wyjątkiem i lista misji się nie otwierała.
+- Testy kampanii: osada, wieża i odsiecz misji 3; wygrana po odbiciu (2 gwiazdki); 3 próby odbicia (co najmniej
+  2 wygrane); misja 4: zagon, wygrana z armią i zamkiem.
+- Sprawdzone w przeglądarce: start misji 3 z paskiem, wsią w barwach wroga i obsadzoną wieżą.
+
 ## 2026-11-18 · Obracanie oddziałów przez 360°, odznaczanie, front palcem na tablecie
 
 - **Obracanie przeskakiwało**:

@@ -1,4 +1,4 @@
-import { AI, type AiCharacter, CAMERA, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
+import { AI, type AiCharacter, CAMERA, CAMPAIGN, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
 import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
@@ -7,7 +7,7 @@ import { cellX, cellZ, gateCells, roadCells, wallCellAt } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, nearestOwnBuildingM, reachOf, yawToKeep } from '../sim/placement.ts';
 import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type ResourceId, type Side, type UnitKind } from '../sim/types.ts';
-import { type CampaignSetup, type CampaignState, canPayTribute, payTribute } from '../sim/campaign.ts';
+import { type CampaignSetup, type CampaignState, canPayTribute, payTribute, playerArmy, settlement } from '../sim/campaign.ts';
 import { createWorld, findRegiment, type GameMode, stepWorld, type World } from '../sim/world.ts';
 import { workState } from '../sim/economy.ts';
 import { CpuTimer } from '../render/perf.ts';
@@ -315,6 +315,23 @@ export class Game implements ControlTarget {
       const button = canPayTribute(world, c) ? ` <button data-act="tribute" title="${T.tributeTip}">${T.tributePay}</button>` : '';
       return `<b>${T.tributeTitle}</b> · ${goods} · ${T.tributeLeft} ${clock(Math.max(0, c.dueS - world.timeS))}${button}`;
     }
+    if (c.mission === 3) {
+      const village = settlement(world);
+      const taking = village.taker === PLAYER ? ` · <span class="ok">${T.settlementTaking} ${Math.floor(village.progressS)}/${POINTS.holdS} s</span>` : '';
+      const due = CAMPAIGN.reliefAtS - world.timeS;
+      const struck = (c.reliefAtSettlementS ?? -1) >= 0 ? CAMPAIGN.reliefStrikesAfterS - (world.timeS - (c.reliefAtSettlementS as number)) : null;
+      const relief = due > 0 ? `${T.reliefIn} ${clock(due)}` : struck !== null && struck <= 0 ? T.reliefStrikes : struck !== null ? `${T.reliefStrikes}: ${clock(struck)}` : T.reliefHere;
+      return `<b>${title}</b> · ${T.settlementHis}${taking} · ${relief}`;
+    }
+    if (c.mission === 4) {
+      const army = playerArmy(world);
+      const keep = world.towns[PLAYER].keepLevel;
+      const mark = (ok: boolean, text: string): string => `<span class="${ok ? 'ok' : 'short'}">${text}</span>`;
+      const next = CAMPAIGN.raids[c.raidsSent ?? 0];
+      const raid = next ? `${T.raidIn} ${clock(Math.max(0, next.atS - world.timeS))}` : T.raidsOver;
+      const lost = (c.buildingsLost ?? 0) > 0 ? ` · ${T.buildingsLost}: ${c.buildingsLost}` : '';
+      return `<b>${title}</b> · ${mark(army.men >= CAMPAIGN.armyGoalMen && army.regiments >= CAMPAIGN.armyGoalRegiments, `${T.armyGoal} ${army.men}/${CAMPAIGN.armyGoalMen} ${T.men}, ${army.regiments}/${CAMPAIGN.armyGoalRegiments}`)} · ${mark(keep >= CAMPAIGN.keepGoalLevel, `${T.keepGoal} ${keep}/${CAMPAIGN.keepGoalLevel}`)} · ${raid}${lost}`;
+    }
     const enemies = world.regiments.filter((r) => r.side === COMPUTER && r.aliveMen > 0).length;
     const foragers = c.foragerIds.length > 0 ? ` · ${T.foragersBack} ${clock(Math.max(0, c.foragersBackS))}` : '';
     return `<b>${title}</b> · ${T.campLeft}: ${enemies}${foragers}`;
@@ -428,6 +445,14 @@ export class Game implements ControlTarget {
           this.sound.play('build');
           this.hud.toast(T.keepRaised, 'good', [e.x, e.z]);
         }
+        break;
+      case 'reliefCame':
+        this.hud.toast(T.reliefHere, 'bad', [e.x, e.z]);
+        this.sound.play('hornLow');
+        break;
+      case 'raidCame':
+        this.hud.toast(T.raidComing, 'bad', [e.x, e.z]);
+        this.sound.play('hornLow');
         break;
       case 'pointTaken': {
         const p = this.world.points.find((q) => Math.hypot(q.x - e.x, q.z - e.z) < 1);

@@ -43,6 +43,12 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 
 ### Misja 3 — Odbicie osady
 
+> **Stan (19.11):** grywalna na *Otwartym polu* (zamek w drugim miejscu), zanim powstanie *Dolina*. Osada to
+> wieś w środku mapy (trzy domy, 274 m od zamku), trzymana przez 5 pełnych oddziałów (miecznicy, pikinierzy,
+> halabardnicy, kusznicy, łucznicy) i wieżę z 4 kusznikami. Odsiecz (ciężka jazda, miecznicy, kusznicy) w 12.
+> minucie; jeśli zastanie osadę w rękach wroga, po 3 minutach wszystko rusza na miasto. Pomiar: 6 pełnych
+> oddziałów (112 ludzi) wygrywa 4/4 w 3–6 minut, tracąc 50–75 ludzi; 4 oddziały po 15 przegrywają 4/4.
+
 *W czasie wojny wróg zajął Twoją osadę w dolinie. Zbierz wojsko i odbij ją.*
 
 - **Mapa:** nowa, *Dolina* (§4): Twój zamek przy jednym końcu, osada 250 m dalej (zabudowania, mała
@@ -54,6 +60,10 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 - **Gwiazdka:** osada odbita przed nadejściem odsieczy.
 
 ### Misja 4 — Odbudowa i wielka armia
+
+> **Stan (19.11):** grywalna na tej samej mapie: osada jest Twoja (jej targ płaci), cel 160 ludzi w 10
+> oddziałach i zamek poziomu 3; zagony 2, 3 i 4 pełnych oddziałów w 8., 16. i 24. minucie idą na zamek.
+> Druga gwiazdka: wróg nie zburzy żadnego budynku. Ruiny do odbudowy — później.
 
 *Osada jest Twoja, ale w ruinach. Odbuduj ją i wystaw armię, jakiej marchia jeszcze nie widziała.*
 
@@ -157,6 +167,6 @@ Oba układy przydadzą się też w potyczce, więc menu „Mapa” urośnie z tr
 | Przenoszenie wojska i złota, postęp na urządzeniu (`src/ui/campaignStore.ts`), ekran końca misji | ✔ |
 | Misja 1 (trybut, pasek z odliczaniem i przyciskiem zapłaty, najeźdźca 10 × 20 za rzeką) | ✔ grywalna |
 | Misja 2 (obóz: 3 oddziały, 2 zagony wracające co 5 min) | ✔ grywalna; palisada i namioty obozu — później |
-| Misja 3 (układ *Dolina*, przejęcie osady) | do zrobienia |
-| Misja 4 (ruiny, odbudowa, zagony) | do zrobienia |
+| Misja 3 (osada: wieś w środku *Otwartego pola*, 5 oddziałów i wieża z kusznikami, odsiecz w 12. minucie) | ✔ grywalna; układ *Dolina* — później |
+| Misja 4 (osada Twoja, cel: 160 ludzi w 10 oddziałach i zamek 3, trzy zagony) | ✔ grywalna; ruiny do odbudowy za pół ceny — później |
 | Misja 5 (układ *Twierdza*, mury scenariuszem, wypady, odsiecz) | model twierdzy gotowy (`fortress_1.glb`, „Medieval Castle”, Uğur Yakışık, CC BY 4.0); misja do zrobienia |

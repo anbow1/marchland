@@ -745,6 +745,26 @@ export const CAMPAIGN = {
   foragersBackEveryS: 300,
   /** Mission 1: won once every regiment of the host has been fleeing this long without a break. */
   routWinS: 180,
+  /**
+   * Mission 3: the settlement (the village in the middle of the map) held by the enemy: its garrison, the
+   * crossbowmen in its watchtower, how far the garrison goes out to fight, and the relief, when it comes
+   * and how long it waits at a settlement still his before his whole force marches on the town.
+   */
+  settlementGarrison: ['swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'archers'],
+  towerCrossbowmen: 4,
+  garrisonReachM: 140,
+  reliefAtS: 720,
+  relief: ['heavyCavalry', 'swordsmen', 'crossbowmen'],
+  reliefStrikesAfterS: 180,
+  /** Mission 4: the army to raise (men, regiments) and the keep's level; the raids on the way, when and who. */
+  armyGoalMen: 160,
+  armyGoalRegiments: 10,
+  keepGoalLevel: 3,
+  raids: [
+    { atS: 480, kinds: ['lightCavalry', 'swordsmen'] },
+    { atS: 960, kinds: ['lightCavalry', 'swordsmen', 'crossbowmen'] },
+    { atS: 1440, kinds: ['heavyCavalry', 'swordsmen', 'halberdiers', 'crossbowmen'] },
+  ],
 } as const;
 
 export const DEFENCE = {

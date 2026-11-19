@@ -63,6 +63,17 @@ interface Strings {
   hostComing: string;
   campLeft: string;
   foragersBack: string;
+  settlementHis: string;
+  settlementTaking: string;
+  reliefIn: string;
+  reliefHere: string;
+  reliefStrikes: string;
+  armyGoal: string;
+  keepGoal: string;
+  raidIn: string;
+  raidsOver: string;
+  raidComing: string;
+  buildingsLost: string;
   missionWon: string;
   missionLost: string;
   missionNext: string;
@@ -399,8 +410,16 @@ const pl: Strings = {
       briefing:
         'Najeźdźca wziął trybut i nie odszedł, ale rozpuścił ludzi po wsiach. W obozie zostały trzy oddziały, dwa zagony grabią wioski po obu stronach i co pięć minut jeden z nich wraca do obozu. Przejdź rzekę brodem i rozbij ich, zanim się zbiorą. Wygrana: nie zostaje żaden oddział wroga. Druga gwiazdka: straty poniżej 30 %.',
     },
-    { title: 'Odbicie osady', briefing: 'W czasie wojny wróg zajął Twoją osadę w dolinie. Zbierz wojsko i odbij ją, zanim nadejdzie odsiecz.' },
-    { title: 'Odbudowa i wielka armia', briefing: 'Osada jest Twoja, ale w ruinach. Odbuduj ją i wystaw armię, jakiej marchia jeszcze nie widziała.' },
+    {
+      title: 'Odbicie osady',
+      briefing:
+        'W czasie wojny wróg zajął Twoją osadę: wieś w środku doliny. Trzymają ją cztery pełne oddziały (miecznicy, pikinierzy, halabardnicy, kusznicy), a przed wsią stoi wieża strażnicza z czterema kusznikami. Zbierz wojsko i odbij ją: osada jest Twoja, gdy Twój oddział stoi 20 s na rynku, a w promieniu 30 m nie ma wroga. W 12. minucie od skraju mapy nadejdzie odsiecz: ciężka jazda, miecznicy i kusznicy. Jeśli zastanie osadę w rękach swoich, po 3 minutach wszyscy ruszą na Twoje miasto. Druga gwiazdka: osada odbita przed nadejściem odsieczy.',
+    },
+    {
+      title: 'Odbudowa i wielka armia',
+      briefing:
+        'Osada jest znów Twoja, a jej targ płaci złotem i zbożem. Rozbuduj miasto i wystaw wielką armię: co najmniej 160 ludzi w 10 oddziałach (koszary uzupełniają oddział do 20, dwa oddziały tego rodzaju można połączyć) i zamek na poziomie 3. Wróg nie odpuszcza: w 8., 16. i 24. minucie przychodzą zagony, coraz silniejsze, i idą na zamek. Druga gwiazdka: wróg nie zburzy ani jednego budynku.',
+    },
     { title: 'Twierdza', briefing: 'Czas zakończyć tę wojnę pod murami jego zamku: działa na mury, a on uderzy wypadami i odsieczą.' },
   ],
   campaignTitle: 'Kampania',
@@ -415,6 +434,17 @@ const pl: Strings = {
   hostComing: 'Najeźdźca nadciąga! Jego armii nie zatrzymasz w polu: broń zamku.',
   campLeft: 'oddziały wroga',
   foragersBack: 'następny zagon wraca za',
+  settlementHis: 'osada w rękach wroga',
+  settlementTaking: 'zajmujesz osadę',
+  reliefIn: 'odsiecz za',
+  reliefHere: 'Odsiecz wroga nadciąga od skraju mapy!',
+  reliefStrikes: 'wróg rusza na miasto',
+  armyGoal: 'wojsko',
+  keepGoal: 'zamek',
+  raidIn: 'zagon za',
+  raidsOver: 'zagony odparte',
+  raidComing: 'Zagon wroga idzie na miasto!',
+  buildingsLost: 'zburzone budynki',
   missionWon: 'Misja wygrana',
   missionLost: 'Misja przegrana',
   missionNext: 'Następna misja',
@@ -790,8 +820,16 @@ const en: Strings = {
       briefing:
         'The invader took the tribute and stayed, but sent his men off to plunder. Three regiments hold the camp, two bands of foragers raid the villages on either side, and every five minutes one of them comes back. Cross at a ford and break them before they gather. Won when no enemy regiment is left. Second star: losses under 30 %.',
     },
-    { title: 'The settlement retaken', briefing: 'In the war the enemy took your settlement in the valley. Raise an army and take it back before his relief comes.' },
-    { title: 'Rebuilding and a great army', briefing: 'The settlement is yours again, in ruins. Rebuild it and raise an army such as the march has never seen.' },
+    {
+      title: 'The settlement retaken',
+      briefing:
+        'In the war the enemy took your settlement, the village in the middle of the valley. Four full regiments hold it (swordsmen, pikemen, halberdiers, crossbowmen), and a watchtower with four crossbowmen stands before it. Raise an army and take it back: it is yours when a regiment of yours stands 20 s on its market with no enemy within 30 m. In the 12th minute his relief comes from the edge of the map: heavy horse, swordsmen and crossbowmen. If it finds the settlement still his, after 3 minutes they all march on your town. Second star: the settlement taken before the relief comes.',
+    },
+    {
+      title: 'Rebuilding and a great army',
+      briefing:
+        'The settlement is yours again and its market pays gold and grain. Build up the town and raise a great army: at least 160 men in 10 regiments (the barracks fill a regiment to 20, two of a kind can merge) and the keep at level 3. The enemy does not let go: in the 8th, 16th and 24th minute raids come, each stronger, and go for the keep. Second star: he razes not a single building.',
+    },
     { title: 'The fortress', briefing: 'End this war under the walls of his castle: guns on the walls, while he strikes back with sallies and a relief army.' },
   ],
   campaignTitle: 'Campaign',
@@ -806,6 +844,17 @@ const en: Strings = {
   hostComing: 'The invader is coming! His host cannot be stopped in the field: defend the keep.',
   campLeft: 'enemy regiments',
   foragersBack: 'next foragers back in',
+  settlementHis: 'the settlement is his',
+  settlementTaking: 'taking the settlement',
+  reliefIn: 'relief in',
+  reliefHere: 'His relief is coming from the edge of the map!',
+  reliefStrikes: 'he marches on the town',
+  armyGoal: 'army',
+  keepGoal: 'keep',
+  raidIn: 'raid in',
+  raidsOver: 'raids beaten off',
+  raidComing: 'An enemy raid is coming for the town!',
+  buildingsLost: 'buildings razed',
   missionWon: 'Mission won',
   missionLost: 'Mission lost',
   missionNext: 'Next mission',
