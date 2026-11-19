@@ -47,6 +47,8 @@ export interface Building {
   constructionTotalS: number;
   /** Timber and stone for the work in hand: still at the keep, and how much of the total has reached the site. */
   matWaiting: { wood: number; stone: number; planks: number };
+  /** Burnt out (the campaign's ruined settlement): makes nothing, houses nobody, until rebuilt for half its price (cmdRebuild). Absent in old saves. */
+  ruin?: boolean;
   matDelivered: number;
   matTotal: number;
   /** Goods waiting to be used, goods made and not yet carried off, and goods a carrier is bringing. */
@@ -229,6 +231,30 @@ function orderWork(town: Town, b: Building, level: number, seconds: number): voi
   b.constructionTotalS = seconds;
 }
 
+/** What rebuilding a ruin costs: half of building it new, rounded up. */
+export function rebuildCost(kind: BuildingKind, resource: ResourceId): number {
+  return Math.ceil(buildingCost(kind, 1, resource) / 2);
+}
+
+/** Rebuilds a ruin: half the price paid, its site raised again by builders with half the timber and stone. */
+export function startRebuild(town: Town, plot: number): CommandResult {
+  plotIndexOk(town, plot);
+  const b = town.plots[plot];
+  if (!b) return 'plotEmpty';
+  if (!b.ruin) return 'alreadyBuilt';
+  for (const id of RESOURCE_IDS) if (town.stock[id] < rebuildCost(b.kind, id)) return 'cannotAfford';
+  for (const id of RESOURCE_IDS) town.stock[id] -= rebuildCost(b.kind, id);
+  b.matWaiting.wood = rebuildCost(b.kind, 'wood');
+  b.matWaiting.stone = rebuildCost(b.kind, 'stone');
+  b.matWaiting.planks = rebuildCost(b.kind, 'planks');
+  b.matTotal = b.matWaiting.wood + b.matWaiting.stone + b.matWaiting.planks;
+  b.matDelivered = 0;
+  b.constructionTotalS = BUILDINGS[b.kind].buildSeconds;
+  b.constructionLeftS = b.constructionTotalS;
+  b.ruin = false;
+  return 'ok';
+}
+
 function plotIndexOk(town: Town, plot: number): void {
   if (!Number.isInteger(plot) || plot < 0 || plot >= town.plots.length) throw new Error(`plot '${plot}' is not in 0…${town.plots.length - 1}`);
 }
@@ -321,7 +347,7 @@ export function togglePaused(town: Town, plot: number): CommandResult {
 
 /** True for a building that is finished and not being upgraded. */
 export function isBuilt(b: Building): boolean {
-  return b.constructionLeftS <= 0;
+  return b.constructionLeftS <= 0 && !b.ruin;
 }
 
 /** What the keep's present level allows (KEEP_LEVELS). */
@@ -627,6 +653,8 @@ export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): vo
   for (let plot = 0; plot < town.plots.length; plot++) {
     const b = town.plots[plot];
     if (!b) continue;
+    // A ruin stands burnt out until it is rebuilt.
+    if (b.ruin) continue;
     if (b.constructionLeftS > 0) {
       construct(town, b, plot, dtSeconds);
       continue;

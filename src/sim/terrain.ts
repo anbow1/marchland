@@ -170,6 +170,23 @@ interface Heap {
 
 function layOutHeaps(): Heap[] {
   const out: Heap[] = [];
+  if (LAYOUT === 'valley') {
+    // Two ridges along the valley, a peak every so often, each of its own shape; the pass at the far end.
+    const v = MAP.valley;
+    const at = (f: number, sd: number): [number, number] => [FORWARD_X * f + SIDE_X * sd, FORWARD_Z * f + SIDE_Z * sd];
+    let seed = 90;
+    for (let f = v.fromM; f <= v.toM; f += v.everyM) {
+      for (const sd of [-v.ridgeSideM, v.ridgeSideM]) {
+        const [x, z] = at(f, sd + Math.sin(f * 0.05 + sd) * 14);
+        out.push({ x, z, radiusM: v.radiusM, heightM: v.heightM * (0.8 + 0.4 * Math.abs(Math.sin(f * 0.031 + sd * 0.01))), blockShare: MAP.mountainBlockShare, turn: 1, seed: seed++ });
+      }
+    }
+    for (const sd of [-v.passSideM - v.passRadiusM, v.passSideM + v.passRadiusM]) {
+      const [x, z] = at(v.passAtM, sd);
+      out.push({ x, z, radiusM: v.passRadiusM, heightM: v.heightM, blockShare: MAP.mountainBlockShare, turn: 1, seed: seed++ });
+    }
+    return out;
+  }
   const m = MAP.mountainOffsetM;
   // The massifs sit in the two corners the towns do not hold, (+,+) and (−,−): each is the other half-turned.
   for (const turn of [1, -1]) {

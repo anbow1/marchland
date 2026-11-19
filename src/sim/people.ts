@@ -256,7 +256,7 @@ function assignRoles(world: World, town: Town): void {
     if (p.role === 'carrier' || p.role === 'builder') free++;
   }
   let sites = 0;
-  for (const b of town.plots) if (b && !isBuilt(b)) sites++;
+  for (const b of town.plots) if (b && b.constructionLeftS > 0 && !b.ruin) sites++;
   // The last carriers stay carriers (without them nothing reaches the workshops), and while anything is
   // being built one more stays free to build it: houses must go up, or the town never grows.
   const keepFree = PEOPLE.minCarriers + (sites > 0 ? 1 : 0);

@@ -82,6 +82,12 @@ export const MAP = {
     [-75, -155],
     [75, 155],
   ],
+  /**
+   * The valley (map layout 'valley', the campaign's missions 3–4): two ridges of mountains along the way
+   * between the keeps, this far to either side of it, from `fromM` to `toM` along it (a peak every `everyM`);
+   * at the far end a pass between two spurs this far from the middle.
+   */
+  valley: { ridgeSideM: 175, fromM: -190, toM: 170, everyM: 52, radiusM: 62, heightM: 46, passAtM: 225, passSideM: 112, passRadiusM: 58 },
 } as const;
 
 export const TOWN = {
@@ -762,6 +768,8 @@ export const CAMPAIGN = {
   relief: ['heavyCavalry', 'swordsmen', 'crossbowmen'],
   reliefStrikesAfterS: 180,
   /** Mission 4: the army to raise (men, regiments) and the keep's level; the raids on the way, when and who. */
+  /** Mission 4: what burnt in the settlement in mission 3, round its market, to rebuild for half the price. */
+  ruins: ['house', 'house', 'house', 'bakery', 'windmill', 'market'],
   armyGoalMen: 160,
   armyGoalRegiments: 10,
   keepGoalLevel: 3,
@@ -784,6 +792,19 @@ export const CAMPAIGN = {
     wallHpFactor: 2,
     towerCrossbowmen: 2,
   },
+  /**
+   * Mission 5: his town between the fortress's rings — (kind, across as a share of the side yard's middle,
+   * along) — its stock, how often his barracks send out a regiment (while they stand) and which, in turn;
+   * and his keep's strength (the donjon: not worth battering).
+   */
+  fortressTown: [
+    ['house', -1, -42], ['house', -1, -24], ['house', 1, -42], ['house', 1, -24],
+    ['bakery', -1, 18], ['smithy', 1, 18], ['barracks', -0.86, 44], ['storehouse', 0.86, 44],
+  ],
+  fortressStock: { gold: 50000, bread: 20000, flour: 2000, iron: 400, wood: 1000, stone: 1000 },
+  fortressRecruitEveryS: 300,
+  fortressRecruits: ['swordsmen', 'crossbowmen', 'pikemen'],
+  fortressKeepHp: 1000000,
   /** Mission 5: who holds the fortress — between the rings, at the outer gate (they sally at the guns), and the lord's guard in the inner yard. */
   fortressGarrison: ['crossbowmen', 'swordsmen', 'pikemen', 'halberdiers'],
   sally: ['heavyCavalry', 'swordsmen'],

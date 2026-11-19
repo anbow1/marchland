@@ -1,5 +1,5 @@
 import { ARMY, CAMPAIGN, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
-import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
+import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRebuild, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCellAt, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
@@ -33,7 +33,7 @@ export function cmdTurnSite(world: World, side: Side, plot: number, turns: numbe
   const town = world.towns[side];
   const b = town.plots[plot];
   if (!b) return 'plotEmpty';
-  if (b.level !== 1 || isBuilt(b)) return 'alreadyBuilt';
+  if (b.level !== 1 || isBuilt(b) || b.ruin) return 'alreadyBuilt';
   const yawRad = b.yawRad + (turns * Math.PI) / 4;
   // Checked as if it were not there yet.
   town.plots[plot] = null;
@@ -218,6 +218,12 @@ export function cmdDemolish(world: World, side: Side, plot: number): CommandResu
   const result = demolish(world.towns[side], plot);
   if (result === 'ok' && b) stampBuilding(world.nav, b.x, b.z, TOWN.buildingRadiusM, false);
   return result;
+}
+
+/** Rebuilds a ruin of the side's for half its price (the campaign's burnt settlement). */
+export function cmdRebuild(world: World, side: Side, plot: number): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  return startRebuild(world.towns[side], plot);
 }
 
 export function cmdTogglePaused(world: World, side: Side, plot: number): CommandResult {

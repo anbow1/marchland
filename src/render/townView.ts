@@ -59,6 +59,8 @@ export class TownView {
   private plinthCache: BufferGeometry | null = null;
   /** Building sites: the buildings' own material, cut off above each site's height reached (`userData.cutY`). */
   private readonly siteMaterial: MeshStandardNodeMaterial;
+  /** A ruin (the campaign's burnt settlement): its walls cut off low and charred. */
+  private readonly ruinMaterial: MeshStandardNodeMaterial;
   /** Each slot's scaffold, shown while its building goes up; geometries by the building's size. */
   private readonly scaffolds: Mesh[][] = [[], []];
   private readonly scaffoldCache = new Map<string, BufferGeometry>();
@@ -88,6 +90,11 @@ export class TownView {
     const own = this.siteMaterial.colorNode as Node<'vec3'>;
     const grey = dot(own, vec3(0.299, 0.587, 0.114)).mul(1.1);
     this.siteMaterial.colorNode = mix(own, vec3(grey), 0.85);
+    this.ruinMaterial = surfaceMaterial(lib, 'ruin');
+    this.ruinMaterial.maskNode = positionWorld.y.lessThan(cut);
+    // Soot: the stone and timber darkened, blackest towards the broken tops.
+    const ruinOwn = this.ruinMaterial.colorNode as Node<'vec3'>;
+    this.ruinMaterial.colorNode = ruinOwn.mul(0.32).add(vec3(0.03, 0.025, 0.02));
     for (const side of [0, 1] as const satisfies readonly Side[]) {
       const tx = townX(side);
       const tz = townZ(side);
@@ -357,6 +364,14 @@ export class TownView {
           const built = b.constructionLeftS > 0 && b.constructionTotalS > 0 ? 1 - b.constructionLeftS / b.constructionTotalS : 1;
           const site = built < 1;
           const scaffold = (this.scaffolds[side] as Mesh[])[slot] as Mesh;
+          if (b.ruin) {
+            // Burnt out: the walls broken off at under half their height, black with soot; no roof, no sails.
+            mesh.material = this.ruinMaterial;
+            mover.visible = false;
+            scaffold.visible = false;
+            mesh.userData['cutY'] = mesh.position.y + (mesh.userData['height'] as number) * RUIN_SHARE;
+            continue;
+          }
           mesh.material = site ? this.siteMaterial : this.material;
           mover.visible = mover.userData['part'] === true && !site;
           scaffold.visible = site && built >= FOOTING_SHARE;
@@ -396,6 +411,9 @@ function body(geometry: BufferGeometry): Box3 | null {
   return found;
 }
 const bodies = new WeakMap<BufferGeometry, Box3 | null>();
+
+/** A ruin's walls stand to this share of the building's height. */
+const RUIN_SHARE = 0.38;
 
 /**
  * The lowest and highest ground under a building's footprint (a square about 8 m across, turned with it),

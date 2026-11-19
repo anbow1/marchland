@@ -1,7 +1,7 @@
 import { BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost, lotPrice } from '../sim/commands.ts';
-import { trainingLevel, type Building, buildingCost, canAffordBuilding, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
+import { trainingLevel, type Building, buildingCost, canAffordBuilding, rebuildCost, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
 import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS, WORKLESS } from '../sim/types.ts';
@@ -30,6 +30,8 @@ export interface HudActions {
   turnSite(plot: number): void;
   upgradeKeep(): void;
   demolish(plot: number): void;
+  /** Rebuilds a ruin for half its price. */
+  rebuild(plot: number): void;
   trade(good: ResourceId, buying: boolean): void;
   togglePaused(plot: number): void;
   recruit(kind: UnitKind): void;
@@ -361,6 +363,9 @@ export class Hud {
         break;
       case 'demolish':
         this.actions.demolish(this.plotInPanel);
+        break;
+      case 'rebuild':
+        this.actions.rebuild(this.plotInPanel);
         break;
       case 'trade': {
         const [good, way] = arg.split(':');
@@ -720,6 +725,18 @@ export class Hud {
   private plotHtml(world: World, town: Town, plot: number): string {
     const b: Building | null = town.plots[plot] ?? null;
     if (!b) return this.idleHtml(world, town, '');
+    if (b.ruin) {
+      // Burnt out: what it was, and the rebuilding at half its price.
+      let cost = '';
+      let short = false;
+      for (const id of RESOURCE_IDS) {
+        const amount = rebuildCost(b.kind, id);
+        if (amount === 0) continue;
+        if (town.stock[id] < amount) short = true;
+        cost += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
+      }
+      return `<div class="heading">${T.buildings[b.kind].name} · <span class="status alarm">${T.ruin}</span></div><div class="status">${T.ruinAbout}</div><div class="row"><button class="option${short ? ' off' : ''}" data-act="rebuild" data-tip="${T.rebuildTip}"><span class="name">${T.rebuild}</span><span class="costs">${cost}</span></button><button class="option" data-act="demolish" data-tip="${T.demolish}"><span class="name">${T.demolish}</span></button></div>`;
+    }
     const state = workState(b);
     let status: string = T.work[state];
     if (state === 'building') {

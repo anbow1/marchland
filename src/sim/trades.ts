@@ -338,7 +338,7 @@ function canBuildNow(b: Building): boolean {
 
 export function stepBuilder(world: World, town: Town, p: Person, dtSeconds: number): void {
   let b = p.work >= 0 ? town.plots[p.work] : null;
-  if (!b || isBuilt(b)) {
+  if (!b || isBuilt(b) || b.ruin) {
     p.work = NOWHERE;
     p.thinkS -= dtSeconds;
     if (p.thinkS > 0) {
@@ -350,7 +350,7 @@ export function stepBuilder(world: World, town: Town, p: Person, dtSeconds: numb
     let bestScore = Number.POSITIVE_INFINITY;
     for (let plot = 0; plot < town.plots.length; plot++) {
       const site = town.plots[plot];
-      if (!site || isBuilt(site)) continue;
+      if (!site || isBuilt(site) || site.ruin) continue;
       let hands = 0;
       for (const other of world.people) if (other.alive && other.side === p.side && other.role === 'builder' && other.work === plot) hands++;
       if (hands >= PEOPLE.maxBuildersPerSite) continue;

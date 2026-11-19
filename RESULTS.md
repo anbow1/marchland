@@ -5,6 +5,35 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-19 · Kampania dorobiona: Dolina, ruiny, miasto w twierdzy
+
+- **Mapa *Dolina*** (`MARCHLAND_MAP=valley`; misje 3–4, także w potyczce):
+  - dwa grzbiety gór wzdłuż drogi między zamkami: szczyt co 52 m, 175 m od osi, każdy innego kształtu;
+  - przy drugim końcu przełęcz między dwoma ostrogami (ok. 220 m od środka), skąd idą odsiecz i zagony;
+  - kopalnia, kamieniołom i osada zostają na dnie doliny, a jeziora i las po bokach;
+  - starsze mapy bez zmian.
+- **Ruiny w misji 4** (budynek w stanie `ruin`):
+  - wokół rynku osady 6 spalonych budynków: 3 chaty, piekarnia, młyn, targ;
+  - ruina nic nie robi, nikogo nie mieści i nie dostaje robotników; w widoku ma mury ułamane na 38% wysokości,
+    w sadzy;
+  - przycisk „Odbuduj (½ ceny)” w panelu (`cmdRebuild`): połowa ceny nowego budynku, a budowniczowie stawiają go
+    od fundamentów z połową drewna i kamienia;
+  - pasek misji liczy ruiny odbudowane.
+- **Miasto wroga w twierdzy (misja 5)**:
+  - między pierścieniami stoją 4 chaty, piekarnia, kuźnia, koszary i spichlerz, z mieszkańcami i zapasami;
+  - koszary co 5 minut wystawiają oddział (miecznicy, kusznicy, pikinierzy na zmianę), który dołącza do załogi;
+    po zburzeniu koszar werbunek ustaje;
+  - zamek wroga to donżon, za mocny, żeby go burzyć.
+- **Pomiar misji 5** z miastem (bot jak poprzednio, plus jeden moździerz w koszary i bez pościgu pod wieże):
+  - werbunek co 4 minuty z ciężką jazdą i kaplicą (premia morale obrońców): 0 z 3 wygranych;
+  - co 5 minut, sama piechota, spichlerz zamiast kaplicy: 2 z 3 wygranych, 80–88 ludzi straconych, trzecia prawie
+    remis (4 przeciw 2); koszary zburzone we wszystkich próbach.
+- **Misja 3 na *Dolinie***: doświadczona armia (112 ludzi) wygrywa 3 z 3, ale zostaje jej 5–25 ludzi (na polu
+  28–62), bo dolina zwęża walkę.
+- Testy: ruiny (nic nie robią, odbudowa za pół ceny, budowniczowie kończą), miasto w twierdzy (budynki między
+  pierścieniami, mieszkańcy, werbunek do zburzenia koszar). `npm test` uruchamia misje 3–4 także na *Dolinie*.
+- Sprawdzone w przeglądarce: dolina z grzbietami i osadą, ruiny wokół rynku, miasto między murami twierdzy.
+
 ## 2026-11-19 · Kampania: misja 5 (Twierdza) grywalna — cała kampania gotowa
 
 - **Nowy układ mapy *Twierdza*** (`MARCHLAND_MAP=fortress`, tylko w kampanii):

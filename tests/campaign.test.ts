@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { CAMPAIGN, TOWN } from '../src/config.ts';
 import { canPayTribute, carryOut, fillRegiment, payTribute, settlement } from '../src/sim/campaign.ts';
-import { cmdBuild, cmdBuildWall, cmdMerge, cmdMove, cmdReinforce, missingMen } from '../src/sim/commands.ts';
+import { cmdBuild, cmdBuildWall, cmdMerge, cmdMove, cmdRebuild, cmdReinforce, missingMen } from '../src/sim/commands.ts';
 import { fight } from '../src/sim/ai.ts';
 import { fortressPoint, INNER, insideRing, OUTER } from '../src/sim/fortress.ts';
 import { blockedBetween, damageWall, findRoute, wallCellAt } from '../src/sim/nav.ts';
-import { isBuilt } from '../src/sim/economy.ts';
+import { buildingCost, isBuilt, rebuildCost } from '../src/sim/economy.ts';
 import { DEPOSITS, facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
 import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
@@ -353,3 +353,58 @@ function blockedThrough(world: World, out: Float32Array, n: number, fx: number, 
   }
   return false;
 }
+
+describe('campaign, mission 4 ruins', () => {
+  it('the burnt settlement: ruins make nothing until rebuilt for half the price, then builders raise them', () => {
+    const world = mission(4, 6);
+    const town = world.towns[PLAYER];
+    const ruins = town.plots.map((b, i) => [b, i] as const).filter(([b]) => b !== null && b.ruin);
+    expect(ruins.length).toBe(CAMPAIGN.ruins.length);
+    const village = settlement(world);
+    for (const [b] of ruins) expect(Math.hypot((b?.x ?? 0) - village.x, (b?.z ?? 0) - village.z)).toBeLessThan(70);
+    const [house, plot] = ruins.find(([b]) => b?.kind === 'house') as [NonNullable<(typeof ruins)[number][0]>, number];
+    run(world, 30);
+    expect(house.residents).toBe(0);
+    expect(isBuilt(house)).toBe(false);
+    town.stock.gold = 1000;
+    town.stock.wood = 500;
+    town.stock.stone = 500;
+    town.stock.planks = 500;
+    const gold = town.stock.gold;
+    expect(cmdRebuild(world, PLAYER, plot)).toBe('ok');
+    expect(gold - town.stock.gold).toBe(Math.ceil(buildingCost('house', 1, 'gold') / 2));
+    expect(house.ruin).toBe(false);
+    expect(house.matTotal).toBe(rebuildCost('house', 'wood') + rebuildCost('house', 'stone') + rebuildCost('house', 'planks'));
+    expect(cmdRebuild(world, PLAYER, plot)).toBe('alreadyBuilt');
+    runUntil(world, 900, () => isBuilt(house));
+    expect(isBuilt(house)).toBe(true);
+  });
+});
+
+describe('campaign, mission 5 town', () => {
+  it('his town works between the rings; its barracks send out a regiment every few minutes until they fall', () => {
+    const world = mission(5, 7);
+    const c = world.campaign;
+    if (!c) throw new Error('no campaign');
+    const town = world.towns[COMPUTER];
+    const kinds = town.plots.filter((b) => b !== null && b.kind !== 'tower').map((b) => b?.kind);
+    expect(kinds).toContain('barracks');
+    expect(kinds.length).toBe(CAMPAIGN.fortressTown.length);
+    for (const b of town.plots) if (b && b.kind !== 'tower') expect(insideRing(OUTER, b.x, b.z) && !insideRing(INNER, b.x, b.z)).toBe(true);
+    // Nobody of his walks the field; his people are at home.
+    expect(world.people.filter((p) => p.side === COMPUTER).length).toBeGreaterThan(0);
+    const garrison = c.campIds.length;
+    world.timeS = CAMPAIGN.fortressRecruitEveryS - 1;
+    run(world, 3);
+    expect(c.campIds.length).toBe(garrison + 1);
+    const recruit = world.regiments.find((r) => r.id === c.campIds[c.campIds.length - 1]);
+    expect(recruit && insideRing(OUTER, recruit.centreX, recruit.centreZ)).toBe(true);
+    // The barracks razed: no more.
+    const plot = town.plots.findIndex((b) => b !== null && b.kind === 'barracks');
+    town.plots[plot] = null;
+    world.timeS += CAMPAIGN.fortressRecruitEveryS;
+    run(world, 3);
+    expect(c.campIds.length).toBe(garrison + 1);
+    expect(world.winner).toBe(-1);
+  });
+});

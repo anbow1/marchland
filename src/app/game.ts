@@ -1,6 +1,6 @@
 import { AI, type AiCharacter, CAMERA, CAMPAIGN, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdRebuild, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCellAt } from '../sim/nav.ts';
@@ -135,6 +135,7 @@ export class Game implements ControlTarget {
         else this.report(last);
       },
       demolish: (plot) => this.report(cmdDemolish(this.world, PLAYER, plot)),
+      rebuild: (plot) => this.report(cmdRebuild(this.world, PLAYER, plot)),
       trade: (good, buying) => this.report(cmdTrade(this.world, PLAYER, good, buying)),
       togglePaused: (plot) => this.report(cmdTogglePaused(this.world, PLAYER, plot)),
       recruit: (kind) => this.report(cmdRecruit(this.world, PLAYER, kind)),
@@ -330,7 +331,10 @@ export class Game implements ControlTarget {
       const next = CAMPAIGN.raids[c.raidsSent ?? 0];
       const raid = next ? `${T.raidIn} ${clock(Math.max(0, next.atS - world.timeS))}` : T.raidsOver;
       const lost = (c.buildingsLost ?? 0) > 0 ? ` · ${T.buildingsLost}: ${c.buildingsLost}` : '';
-      return `<b>${title}</b> · ${mark(army.men >= CAMPAIGN.armyGoalMen && army.regiments >= CAMPAIGN.armyGoalRegiments, `${T.armyGoal} ${army.men}/${CAMPAIGN.armyGoalMen} ${T.men}, ${army.regiments}/${CAMPAIGN.armyGoalRegiments}`)} · ${mark(keep >= CAMPAIGN.keepGoalLevel, `${T.keepGoal} ${keep}/${CAMPAIGN.keepGoalLevel}`)} · ${raid}${lost}`;
+      const town = world.towns[PLAYER];
+      const ruins = town.plots.filter((b) => b !== null && b.ruin).length;
+      const rebuilt = ` · ${T.ruinsRebuilt}: ${CAMPAIGN.ruins.length - ruins}/${CAMPAIGN.ruins.length}`;
+      return `<b>${title}</b> · ${mark(army.men >= CAMPAIGN.armyGoalMen && army.regiments >= CAMPAIGN.armyGoalRegiments, `${T.armyGoal} ${army.men}/${CAMPAIGN.armyGoalMen} ${T.men}, ${army.regiments}/${CAMPAIGN.armyGoalRegiments}`)} · ${mark(keep >= CAMPAIGN.keepGoalLevel, `${T.keepGoal} ${keep}/${CAMPAIGN.keepGoalLevel}`)} · ${raid}${rebuilt}${lost}`;
     }
     if (c.mission === 5) {
       const guard = (c.guardIds ?? []).map((id) => world.regiments.find((r) => r.id === id)).filter((r) => r && r.aliveMen > 0 && r.state !== 'routing');

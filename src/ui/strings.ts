@@ -98,7 +98,7 @@ interface Strings {
   nextWave: string;
   startSites: readonly [string, string, string];
   mapLabel: string;
-  layouts: Record<'field' | 'river' | 'forest' | 'fortress', string>;
+  layouts: Record<'field' | 'river' | 'forest' | 'valley' | 'fortress', string>;
   loading: string;
   victory: string;
   defeat: string;
@@ -112,6 +112,11 @@ interface Strings {
   build: string;
   upgrade: string;
   demolish: string;
+  ruin: string;
+  ruinAbout: string;
+  rebuild: string;
+  rebuildTip: string;
+  ruinsRebuilt: string;
   turnSite: string;
   sell: string;
   buy: string;
@@ -485,7 +490,7 @@ const pl: Strings = {
   nextWave: 'następna za',
   startSites: ['Róg', 'Zachód', 'Południe'],
   mapLabel: 'Mapa',
-  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór', fortress: 'Twierdza' },
+  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór', valley: 'Dolina', fortress: 'Twierdza' },
   loading: 'Wczytywanie',
   victory: 'Zwycięstwo',
   defeat: 'Porażka',
@@ -499,6 +504,11 @@ const pl: Strings = {
   build: 'Buduj',
   upgrade: 'Ulepsz',
   demolish: 'Rozbierz',
+  ruin: 'ruina',
+  ruinAbout: 'Spalony w walkach o osadę. Nic nie robi, dopóki go nie odbudujesz: za połowę ceny nowego, budowniczowie stawiają go od fundamentów z połową drewna i kamienia.',
+  rebuild: 'Odbuduj (½ ceny)',
+  rebuildTip: 'Odbuduj za połowę ceny nowego budynku.',
+  ruinsRebuilt: 'ruiny odbudowane',
   turnSite: 'Obróć (R)',
   sell: 'Sprzedaj',
   buy: 'Kup',
@@ -903,7 +913,7 @@ const en: Strings = {
   nextWave: 'next in',
   startSites: ['Corner', 'West', 'South'],
   mapLabel: 'Map',
-  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road', fortress: 'The fortress' },
+  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road', valley: 'The valley', fortress: 'The fortress' },
   loading: 'Loading',
   victory: 'Victory',
   defeat: 'Defeat',
@@ -917,6 +927,11 @@ const en: Strings = {
   build: 'Build',
   upgrade: 'Upgrade',
   demolish: 'Demolish',
+  ruin: 'ruin',
+  ruinAbout: 'Burnt in the fighting for the settlement. It does nothing until rebuilt: for half the price of a new one, builders raise it from its footings with half the timber and stone.',
+  rebuild: 'Rebuild (½ price)',
+  rebuildTip: 'Rebuild for half the price of a new building.',
+  ruinsRebuilt: 'ruins rebuilt',
   turnSite: 'Turn (R)',
   sell: 'Sell',
   buy: 'Buy',

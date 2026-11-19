@@ -2,7 +2,7 @@ import { CAMPAIGN, GATE, REINFORCE, TOWN, WALLS } from '../config.ts';
 import { hypot2 } from '../core/hypot.ts';
 import { adjustStances, fight } from './ai.ts';
 import { cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, wallCellsFor } from './commands.ts';
-import { startBuilding } from './economy.ts';
+import { isBuilt, startBuilding } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layWall, stampBuilding } from './nav.ts';
 import { fortressFrame, fortressPoint, INNER, insideRing, OUTER, ringCorners } from './fortress.ts';
 import type { Point } from './points.ts';
@@ -23,7 +23,7 @@ export interface MissionDef {
   /** 1…5. */
   n: number;
   /** The map and the place of the keeps (sim/layout.ts), set in the page's address. */
-  layout: 'field' | 'river' | 'forest' | 'fortress';
+  layout: 'field' | 'river' | 'forest' | 'valley' | 'fortress';
   start: number;
   /** Ready to play (the later missions come in later stages). */
   ready: boolean;
@@ -32,8 +32,8 @@ export interface MissionDef {
 export const MISSIONS: readonly MissionDef[] = [
   { n: 1, layout: 'river', start: 0, ready: true },
   { n: 2, layout: 'river', start: 0, ready: true },
-  { n: 3, layout: 'field', start: 1, ready: true },
-  { n: 4, layout: 'field', start: 1, ready: true },
+  { n: 3, layout: 'valley', start: 1, ready: true },
+  { n: 4, layout: 'valley', start: 1, ready: true },
   { n: 5, layout: 'fortress', start: 0, ready: true },
 ];
 
@@ -83,6 +83,9 @@ export interface CampaignState {
   raidIds?: number[];
   /** The player's buildings destroyed by the enemy during the mission (mission 4's second star wants none). */
   buildingsLost?: number;
+  /** Mission 5: when his barracks next send out a regiment, and how many they have. Absent in old saves. */
+  recruitNextS?: number;
+  recruited?: number;
   /** Mission 5: the lord's guard in the inner yard, the sally and when it went out (-1 in) or may next, the fortress's wall cells at the start and when the first fell (-1 not yet), the player's engines at the start, and how long he has had no army. */
   guardIds?: number[];
   guardPosts?: number[];
@@ -285,11 +288,33 @@ function layFortress(world: World, c: CampaignState): void {
     const [x, z] = fortressPoint(a, F.donjonAtM + b);
     stampBuilding(world.nav, x, z, 4.5, true);
   }
-  // Between the rings: crossbowmen behind the outer gate's wall, pikes and halberds on the flanks; the sally by the gate.
-  const garrison = posted(world, CAMPAIGN.fortressGarrison, [[-30, o.frontM - 14], [30, o.frontM - 14], [-(o.halfWidthM + n.halfWidthM) / 2, 0], [(o.halfWidthM + n.halfWidthM) / 2, 0]]);
+  // His town between the rings: houses, a bakery and a smithy in the side yards, the barracks and the chapel
+  // either side of the gate yard. Built and stocked; its people work in it.
+  const side = (o.halfWidthM + n.halfWidthM) / 2;
+  const front = (o.frontM + n.frontM) / 2;
+  const town = world.towns[COMPUTER];
+  CAMPAIGN.fortressTown.forEach(([kind, a, b]) => {
+    const [x, z] = fortressPoint(a * side, b);
+    const kept = { ...town.stock };
+    for (const id of RESOURCE_IDS) town.stock[id] += 10000;
+    const yaw = Math.atan2(fortressFrame().x - x, fortressFrame().z - z);
+    const plot = startBuilding(town, kind as BuildingKind, { x, z, yawRad: yaw, spotX: x + Math.sin(yaw) * 8, spotZ: z + Math.cos(yaw) * 8, strips: [] });
+    Object.assign(town.stock, kept);
+    stampBuilding(world.nav, x, z, TOWN.buildingRadiusM, true);
+    const built = town.plots[plot];
+    if (!built) return;
+    built.constructionLeftS = 0;
+    built.matDelivered = built.matTotal;
+    built.matWaiting.wood = built.matWaiting.stone = built.matWaiting.planks = 0;
+  });
+  for (const [id, n] of Object.entries(CAMPAIGN.fortressStock)) town.stock[id as ResourceId] += n;
+  c.recruitNextS = CAMPAIGN.fortressRecruitEveryS;
+  c.recruited = 0;
+  // Between the rings: crossbowmen and swordsmen in the gate yard, pikes and halberds in the side yards; the sally by the gate.
+  const garrison = posted(world, CAMPAIGN.fortressGarrison, [[-30, front], [30, front], [-side, 0], [side, 0]]);
   c.campIds = garrison.ids;
   c.posts = garrison.posts;
-  const sally = posted(world, CAMPAIGN.sally, [[-8, o.frontM - 30], [10, o.frontM - 30]]);
+  const sally = posted(world, CAMPAIGN.sally, [[-9, o.frontM - 10], [9, o.frontM - 10]]);
   c.sallyIds = sally.ids;
   c.sallyPosts = sally.posts;
   c.sallyOutS = -1;
@@ -310,6 +335,38 @@ function fortressWallCells(world: World): number {
   const nav = world.nav;
   for (let i = 0; i < nav.wallHp.length; i++) if (nav.wallHp[i] !== 0 && nav.wallSide[i] === COMPUTER) n++;
   return n;
+}
+
+/** Mission 4: the settlement's burnt buildings round its market, the player's, to rebuild for half their price. */
+function layRuins(world: World): void {
+  const village = settlement(world);
+  const town = world.towns[PLAYER];
+  let placed = 0;
+  for (let k = 0; k < 24 && placed < CAMPAIGN.ruins.length; k++) {
+    const a = (k / 24) * Math.PI * 2 + 0.3;
+    const radius = 46 + (k % 2) * 12;
+    const x = village.x + Math.sin(a) * radius;
+    const z = village.z + Math.cos(a) * radius;
+    const r = TOWN.buildingRadiusM;
+    if ([[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]].some(([dx, dz]) => isImpassable(x + (dx as number), z + (dz as number)))) continue;
+    if (town.plots.some((b) => b !== null && hypot2(b.x - x, b.z - z) < r * 2 + TOWN.buildingGapM + 2)) continue;
+    const kind = CAMPAIGN.ruins[placed] as BuildingKind;
+    const kept = { ...town.stock };
+    for (const id of RESOURCE_IDS) town.stock[id] += 10000;
+    // Doors towards the market.
+    const yaw = Math.atan2(village.x - x, village.z - z);
+    const plot = startBuilding(town, kind, { x, z, yawRad: yaw, spotX: x + Math.sin(yaw) * 9, spotZ: z + Math.cos(yaw) * 9, strips: [] });
+    Object.assign(town.stock, kept);
+    stampBuilding(world.nav, x, z, r, true);
+    const b = town.plots[plot];
+    if (!b) continue;
+    b.constructionLeftS = 0;
+    b.constructionTotalS = 0;
+    b.matDelivered = b.matTotal = 0;
+    b.matWaiting.wood = b.matWaiting.stone = b.matWaiting.planks = 0;
+    b.ruin = true;
+    placed++;
+  }
 }
 
 /** Lays the mission out over a new world (the map and keeps are the address's) and returns its state. */
@@ -335,10 +392,12 @@ export function setupCampaign(world: World, setup: CampaignSetup): CampaignState
     startMen: 0,
     stars: 0,
   };
-  // The invader has no working town in the campaign: his camp, the settlement he holds, his raids, and in
-  // the last mission his fortress (its walls, towers and donjon laid by the scenario, its keep not a target).
-  {
-    enemy.absent = true;
+  // The invader has no town of his own in the campaign: his camp, the settlement he holds, his raids. In the
+  // last mission his town works behind the fortress's walls (laid by the scenario, no computer player): its
+  // keep is the donjon, drawn from the castle model, too strong to be worth battering; the war is won in its yard.
+  enemy.absent = true;
+  if (setup.mission === 5) enemy.keepHp = CAMPAIGN.fortressKeepHp;
+  else {
     enemy.keepHp = 0;
     world.people = world.people.filter((p) => p.side !== COMPUTER);
   }
@@ -397,8 +456,9 @@ export function setupCampaign(world: World, setup: CampaignSetup): CampaignState
     player.stock.wood += 250;
     player.stock.stone += 250;
     player.stock.bread += 200;
-    // The settlement taken back in mission 3 is the player's: its market pays.
+    // The settlement taken back in mission 3 is the player's: its market pays; what burnt in the fighting stands in ruins.
     settlement(world).owner = PLAYER;
+    layRuins(world);
     c.raidsSent = 0;
     c.raidIds = [];
     bringArmy(world, setup.carried, ['swordsmen', 'pikemen', 'crossbowmen', 'heavyCavalry']);
@@ -633,6 +693,22 @@ function stepFortress(world: World, c: CampaignState): void {
       c.sallyNextS = world.timeS + CAMPAIGN.sallyEveryS;
     }
   } else holdGround(world, sally, c.sallyIds ?? [], c.sallyPosts ?? [], (r) => insideRing(OUTER, r.centreX, r.centreZ));
+  // His barracks send out a regiment every few minutes while they stand: it joins the garrison between the rings.
+  if (world.timeS >= (c.recruitNextS ?? Number.POSITIVE_INFINITY)) {
+    c.recruitNextS = world.timeS + CAMPAIGN.fortressRecruitEveryS;
+    const town = world.towns[COMPUTER];
+    const plot = town.plots.findIndex((b) => b !== null && b.kind === 'barracks' && isBuilt(b));
+    if (plot >= 0) {
+      const kind = CAMPAIGN.fortressRecruits[(c.recruited ?? 0) % CAMPAIGN.fortressRecruits.length] as UnitKind;
+      c.recruited = (c.recruited ?? 0) + 1;
+      const r = spawnRegiment(world, COMPUTER, kind, doorX(town, plot), doorZ(town, plot), fortressFrame().yawRad);
+      campaignRegiment(r);
+      fillRegiment(r, CAMPAIGN.regimentMaxMen);
+      c.campIds.push(r.id);
+      (c.posts ??= []).push(r.anchorX, r.anchorZ);
+      world.events.push('recruited', r.anchorX, r.anchorZ, COMPUTER);
+    }
+  }
   // The relief, from behind the player's camp.
   if ((c.reliefIds ?? []).length === 0 && world.timeS >= CAMPAIGN.fortressReliefAtS) {
     const [rx, rz] = behindCamp();
