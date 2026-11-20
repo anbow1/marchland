@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-20 · Wszystkie zasady gry w jednym dokumencie
+
+- Nowy `docs/RULES.md`, generowany z `src/config.ts` (`tools/rulesDoc.ts`, `npm run docs`; test dokumentów pilnuje,
+  żeby nie rozjechał się z grą): cel i tryby, mapa (teren, las, wysokość, punkty), miasto w skrócie, wojsko
+  (limit, werbunek, milicja, żołd, łup, uzupełnianie, przezbrajanie, łączenie), ruch, **walka wręcz** (wzór szansy
+  trafienia, atak i obrona ze wszystkimi składnikami, kierunek ciosu, obrażenia, szarża i jej zatrzymanie),
+  **ostrzał** (szansa, blok tarczą każdej jednostki, przebicie, kula toczona, moździerz), zmęczenie, **morale**
+  (górna granica, co obniża, co podnosi, ucieczka, zbiórka, rozbicie), doświadczenie i kapitan, szyki i postawy,
+  mury, bramy, wieże i oblężenie, komputer (fale według poziomu i charakteru), kampania.
+- Odnośniki w `docs/README.md`, `MANUAL.md` i README.
+
 ## 2026-11-20 · Pola zagrody i winnicy: rezerwa pod rozbudowę widać w podglądzie i na mapie
 
 - Podgląd stawiania zagrody i winnicy pokazywał wszystkie 12 pasków jednym kolorem, choć poziom 1 uprawia 4:

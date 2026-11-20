@@ -2,6 +2,7 @@
 
 Wszystko, co gracz widzi i czym steruje: menu i ustawienia, ekran gry z każdą liczbą na nim, panele, sterowanie
 myszą, klawiaturą i dotykiem, prowadzenie wojska, gospodarka w skrócie, animacje pracy i walki, kampania.
+Wszystkie zasady (walka, morale, ostrzał, oblężenie, ruch, komputer, kampania) z liczbami: [RULES.md](RULES.md).
 Liczby reguł (ceny, siła jednostek, produkcja) są w dokumentach generowanych z `src/config.ts`:
 [UNITS.md](UNITS.md), [BUILDINGS.md](BUILDINGS.md), [ECONOMY.md](ECONOMY.md); jak gra jest zrobiona
 (techniki) — w [PLAYBOOK.md](PLAYBOOK.md); misje — w [CAMPAIGN.md](CAMPAIGN.md). Napisy w nawiasach

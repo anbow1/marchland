@@ -4,12 +4,14 @@
 //   docs/BUILDINGS.md   every building: what it needs, makes and costs (English)
 //   docs/ECONOMY.md     people, logistics, food, roads, placement (Polish)
 //   docs/UNITS.md       every unit: price, equipment, statistics, use (Polish)
+//   docs/RULES.md       every rule of play: aims, map, army, movement, combat, morale, siege, AI, campaign (Polish)
 //
 //   npm run docs        rewrite them after any change to the rules (tools/write-docs.ts)
 //
 // tests/docs.test.ts fails while a document on disk is not what this produces.
 import { existsSync } from 'node:fs';
 import { AI, ARMY, BUILDINGS, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, DEMOLISH_REFUND, REARM, FIELDS, FOOD, GATHER, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, ROADS, TOWN, UNITS, UPGRADE_SECONDS, VINES, WALLS, WINE } from '../src/config.ts';
+import { rulesDoc } from './rulesDoc.ts';
 import { BUILDING_KINDS, type BuildingKind, type Cost, RESOURCE_IDS, type ResourceId, SITE_NEED, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 
 const GOOD_EN: Record<ResourceId, string> = {
@@ -36,7 +38,7 @@ const GOOD_EN: Record<ResourceId, string> = {
   horse: 'horses',
 };
 
-const GOOD_PL: Record<ResourceId, string> = {
+export const GOOD_PL: Record<ResourceId, string> = {
   gold: 'złoto',
   wood: 'drewno',
   planks: 'deski',
@@ -357,7 +359,7 @@ winnica, winiarnia.
 `;
 }
 
-const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
+export const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
   militia: { name: 'Milicja z tarczami', use: 'Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia.' },
   pikemen: { name: 'Pikinierzy', use: 'Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców.' },
   archers: { name: 'Łucznicy', use: 'Daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.' },
@@ -464,4 +466,5 @@ export const DOCS: readonly { path: string; render: () => string }[] = [
   { path: 'docs/BUILDINGS.md', render: buildingsDoc },
   { path: 'docs/ECONOMY.md', render: economyDoc },
   { path: 'docs/UNITS.md', render: unitsDoc },
+  { path: 'docs/RULES.md', render: rulesDoc },
 ];
