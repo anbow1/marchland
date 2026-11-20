@@ -23,7 +23,9 @@ jeszcze nie mierzyłem.
   - §7.1–7.4: zamawianie towarów i uzbrojenia (−/+ po 12, ∞, ×1/×2/×5 na oddziały, łańcuch od wyrobu do rudy),
     werbunek krok po kroku (płatność z góry, kolejka do 3, rekruci z miasta, szkolenie, powody wyszarzenia),
     uzupełnianie i przezbrajanie, priorytety towarów (tragarze) i rodzajów warsztatów (surowiec), kolejki:
-    rozkazów (Shift, do 12), na przeprawach, taczek, budów.
+    rozkazów (Shift, do 12), na przeprawach, taczek, budów;
+  - §7.5: ulepszanie budynków (koszt ×1,5 i ×2,5, połowa drewna jako deski, przebieg i przestój, koszary do
+    poziomu zamku) z tabelą, co daje każdy poziom, oraz zamek, transport i rozbiórka.
 - `PLAYBOOK.md` §4.7: scenariusze kampanii, osada jako punkt, ruiny, twierdza z murów gry i donżon wycięty
   z modelu, strojenie botem, stanowiska przy zamku, synteza rogów; trzy nowe pułapki w tabeli.
 - `docs/README.md` wymienia MANUAL, PLAYBOOK, CAMPAIGN i ASSETS; podręcznik trafia też do paczki assetów.

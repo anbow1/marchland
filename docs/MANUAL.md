@@ -422,6 +422,39 @@ różnicę sprzętu i po kilku sekundach zmienia rodzaj („przezbraja się → 
 - **Budowy**: budowniczowie idą tam, gdzie leży dostarczony materiał; budowa rośnie tylko tak, jak pozwala
   drewno i kamień na placu („Budowa: 40% · drewno/kamień 12/30”).
 
+### 7.5 Ulepszanie budynków
+
+- **Jak:** klik w budynek → **Ulepsz** (w przycisku koszt następnego poziomu; brakujące towary na czerwono).
+  Każdy budynek ma 3 poziomy; na trzecim zamiast przycisku jest napis „Najwyższy poziom”. Na dotyku tak samo.
+- **Koszt:** poziom 2 kosztuje 1,5 ×, poziom 3 — 2,5 × ceny budowy (każdy towar). Od poziomu 2 połowa drewna
+  przychodzi jako **deski**, więc do ulepszeń potrzebny jest tartak.
+- **Przebieg:** złoto schodzi od razu, a drewno, deski i kamień tragarze niosą na plac jak na nową budowę.
+  Budowniczowie pracują około 15 s, gdy materiał jest na miejscu; panel pokazuje „Budowa: x% · materiał
+  dostarczony/potrzebny”, a budynek ma rusztowanie. **W tym czasie budynek nie pracuje.** Koszary i ludwisarnia
+  szkolą wtedy dalej na starym poziomie. Nowy poziom widać od razu w nagłówku, działa po ukończeniu.
+- **Warunki:** koszary nie mogą być wyżej niż pozwala zamek (zamek poziomu N → koszary do poziomu N); inne
+  budynki tylko 3 poziomy.
+
+**Co daje poziom:**
+
+| Budynek | Poziom 1 | Poziom 2 | Poziom 3 |
+|---|---|---|---|
+| warsztaty i zbieracze (tempo cyklu) | × 1 | × 1,6 | × 2,3 |
+| chata (mieszkańców) | 8 | 12 | 16 |
+| zagroda, winnica (obrabianych pasków pola) | 4 | 8 | 12 |
+| koszary (milicja szkoli się przy zamku, bez koszar) | pikinierzy, łucznicy | + miecznicy, halabardnicy, kusznicy, lekka jazda | + ciężka jazda |
+| ludwisarnia | armata | + moździerz | — |
+| każdy budynek (wytrzymałość) | × 1 | × 2 | × 3 |
+
+Wyższy poziom ma też własny model (większy, z dodatkowymi detalami). Zagroda i winnica dostają więcej pasków tylko wtedy, gdy za budynkiem jest na nie miejsce (panel
+pokazuje „Pola: obrabiane/wszystkie”). Dokładne receptury i ile czego daje każdy poziom: [BUILDINGS.md](BUILDINGS.md).
+
+**Inne ulepszenia** (w panelu zamku i w zakładce Produkcja): **zamek** (poziom 2 i 3: zasięg budowy,
+wytrzymałość, szybsze strzały, wyższe koszary; 60 s, §4.6) i **transport** (wózki ręczne, potem wozy konne,
+§4.3).
+
+**Rozbierz** oddaje połowę ceny budowy. Komputer też ulepsza swoje budynki, tym wyżej, im dłużej trwa wojna.
+
 ---
 
 ## 8. Animacje
