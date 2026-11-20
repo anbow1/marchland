@@ -173,8 +173,8 @@ Każda jednostka: znak, nazwa, koszt (złoto i ekwipunek). Wyszarzona z powodem:
 „(ludwisarnia poz. N)”, „(w zamku, bez koszar)” dla milicji, brak ludzi, pełna armia. Dymek: opis i „Dobrzy
 na: … Słabi na: …”.
 
-**Zamów uzbrojenie** ×1 / ×2 / ×5: warsztaty zrobią sprzęt na tyle oddziałów i staną.
-**W szkoleniu:** kolejka i ilu rekrutów jeszcze idzie do koszar albo ile sekund zostało.
+**Zamów uzbrojenie** ×1 / ×2 / ×5: warsztaty zrobią sprzęt na tyle oddziałów i staną (§7.1).
+**W szkoleniu:** kolejka (do 3 oddziałów) i ilu rekrutów jeszcze idzie do koszar albo ile sekund zostało (§7.2).
 
 ### 4.3 Produkcja
 
@@ -205,7 +205,7 @@ w wiersz: kamera do następnego budynku tego rodzaju i jego panel.
 
 - **Nagłówek:** nazwa · poziom N/3 · stan: *Pracuje*, *Budowa: x% · drewno/kamień dostarczone/potrzebne*,
   *Wstrzymany*, *Brak pracownika*, *Czeka na surowiec*, *Podwórze pełne — czeka na tragarzy*, *Brak dorosłych
-  drzew w zasięgu*; chata: mieszkańcy x/y i głód; koszary: szkoli poziom N.
+  drzew w zasięgu*, *Zamówienie wykonane — czeka na następne*; chata: mieszkańcy x/y i głód; koszary: szkoli poziom N.
 - Opis z recepturą (co z czego, ile na cykl).
 - **Skład** (surowce w warsztacie) i **Podwórze** (gotowe towary); chata: zapasy jedzenia.
 - Wieża: **Załoga** x/4 (rodzaj), **Wyprowadź załogę**. Zagroda: **Pola** obrabiane/wszystkie.
@@ -365,11 +365,62 @@ niecelny); oba strzelają z miejsca.
   odstęp jedna za drugą.
 - **Drogi** przyspieszają ludzi; ludzie sami je wybierają. **Skład** to drugi magazyn — tragarze idą do
   najbliższego.
-- **Zamówienia i priorytety** (§4.3) sterują, co się robi i co się nosi najpierw.
+- **Zamówienia i priorytety** sterują, co się robi i co się nosi najpierw (§7.1–7.3).
 - **Pola**: zagroda obsiewa 4/8/12 pasków (poziomy 1–3) jeden po drugim, więc stoją w różnych fazach. Winnica
   podobnie. **Leśnik** sadzi przy pniach; drwal tnie tylko dorosłe drzewa.
 - **Targ** ratuje zatkany łańcuch, ale po złym kursie.
 - Pełne liczby: [ECONOMY.md](ECONOMY.md), [BUILDINGS.md](BUILDINGS.md).
+
+### 7.1 Zamówienia towarów i uzbrojenia
+
+- **Warsztaty uzbrojenia gracza stoją, dopóki czegoś nie zamówisz.** Dotyczy to broni, łuków, zbroi
+  skórzanych, kolczug i koni: w zakładce Produkcja mają zamówienie 0. Komputer pracuje bez limitu.
+- **Zamówienie towaru** (Produkcja, kolumna „zamówione”): **−** i **+** zmieniają je o 12 sztuk (konie o 4),
+  środkowy przycisk przełącza na **∞** (bez limitu). Warsztat robi, aż zamówienie spadnie do zera, i staje ze stanem
+  „Zamówienie wykonane — czeka na następne”. Każda zrobiona sztuka zmniejsza zamówienie.
+- **Zamówienie pociąga za sobą łańcuch.** Zamówione 36 kolczug „chce” 72 sztuk żelaza, więc huta pracuje
+  dalej, choć samo żelazo ma zamówienie 0; podobnie ruda dla huty. Łańcuch rusza sam od zamówionego wyrobu.
+- **Zamów uzbrojenie** (Werbunek) ×1 / ×2 / ×5 przy każdym rodzaju: dodaje do zamówień dokładnie tyle sprzętu,
+  ile potrzeba na tyle oddziałów (np. pikinierzy: 12 broni i 12 zbroi skórzanych na oddział). Dymek pokazuje
+  listę. Towar ustawiony na ∞ zostaje bez limitu. Drewno i złoto nie są zamawiane (drewno się ścina).
+- **Wstrzymaj / Wznów** w panelu budynku zatrzymuje jeden warsztat niezależnie od zamówień.
+
+### 7.2 Werbunek i kolejka szkolenia
+
+1. Klik w jednostkę (Werbunek, panel koszar albo ludwisarni). Złoto i cały sprzęt oddziału (np. 12 broni)
+   **schodzą z zamku od razu**; bez nich przycisk jest wyszarzony.
+2. Rozkaz trafia do **kolejki szkolenia**: najwyżej **3 oddziały naraz**. Kolejka liczy się do limitu wojska
+   (żołnierze w polu, w wieżach i w kolejce nie mogą przekroczyć 100, w kampanii 200).
+3. **Rekruci idą z miasta** (wolni tragarze i budowniczowie; kilku zawsze zostaje) do koszar, milicja do
+   zamku, załogi dział do ludwisarni. W panelu: „W szkoleniu: Pikinierzy, Łucznicy — 5 rekrutów w drodze”.
+4. Gdy wszyscy doszli, oddział **szkoli się kilka–kilkanaście sekund** („(8 s)”) i staje przy budynku.
+   Kolejka idzie po kolei.
+5. Przycisk jest wyszarzony z powodem: za niski poziom koszar lub ludwisarni, za mało wolnych ludzi, pełna
+   armia, pełna kolejka, brak złota albo sprzętu.
+
+**Uzupełnij** działa tak samo, tylko dla ludzi brakujących w oddziale: koszt za każdego nowego, ludzie idą
+z miasta, oddział czeka przy koszarach („czeka na uzupełnienie”). **Przezbrój**: oddział przy koszarach płaci
+różnicę sprzętu i po kilku sekundach zmienia rodzaj („przezbraja się → Miecznicy (6 s)”).
+
+### 7.3 Priorytety
+
+- **Priorytet towaru** (Produkcja, kolumna „priorytet”, ▲ · ▼): mówi **tragarzom**, co nosić najpierw.
+  ▲ to towar wybierany przed innymi zadaniami, ▼ — gdy nie ma nic pilniejszego. Kliknięcie przełącza
+  · → ▲ → ▼ → ·. Przydaje się, gdy np. budowa czeka na kamień albo armia na broń leżącą przy kuźni.
+- **Priorytet rodzaju warsztatu** (Budynki, ▲ · ▼): mówi, **który warsztat pierwszy dostaje surowiec**, gdy
+  kilka chce tego samego (np. żelazo: kuźnia przed płatnerzem).
+- Bez ustawienia tragarze kierują się pilnością: najpierw jedzenie dla głodnych chat i warsztat, któremu
+  surowca brakuje zupełnie, potem budowy, potem odbiór pełnych podwórzy.
+
+### 7.4 Inne kolejki
+
+- **Kolejka rozkazów oddziału** (Shift + prawy przycisk): do 12 rozkazów (marsze, ataki, szturmy)
+  wykonywanych po kolei; zwykły rozkaz bez Shift kasuje kolejkę. Kolejne miejsca widać na mapie.
+- **Kolejka na przeprawie** (bród, grobla, brama): jeden oddział strony naraz, najbliższy następny, najwyżej
+  30 s czekania (§6.5).
+- **Taczki i wozy** trzymają odstęp na drodze; przy zamku rozkładają się na 10 stanowisk.
+- **Budowy**: budowniczowie idą tam, gdzie leży dostarczony materiał; budowa rośnie tylko tak, jak pozwala
+  drewno i kamień na placu („Budowa: 40% · drewno/kamień 12/30”).
 
 ---
 

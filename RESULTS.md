@@ -19,7 +19,11 @@ jeszcze nie mierzyłem.
     przeprawach, morale, zmęczenie, doświadczenie, żołd, uzupełnianie, przezbrajanie, łączenie, mury i działa;
   - gospodarka w skrócie, animacje pracy mieszkańców (który ruch przy której pracy), żołnierzy, koni, machin
     i budynków, dźwięk, komputer, kampania, zapis i tryb offline;
-  - spis, gdzie w PLAYBOOK są opisane techniki.
+  - spis, gdzie w PLAYBOOK są opisane techniki;
+  - §7.1–7.4: zamawianie towarów i uzbrojenia (−/+ po 12, ∞, ×1/×2/×5 na oddziały, łańcuch od wyrobu do rudy),
+    werbunek krok po kroku (płatność z góry, kolejka do 3, rekruci z miasta, szkolenie, powody wyszarzenia),
+    uzupełnianie i przezbrajanie, priorytety towarów (tragarze) i rodzajów warsztatów (surowiec), kolejki:
+    rozkazów (Shift, do 12), na przeprawach, taczek, budów.
 - `PLAYBOOK.md` §4.7: scenariusze kampanii, osada jako punkt, ruiny, twierdza z murów gry i donżon wycięty
   z modelu, strojenie botem, stanowiska przy zamku, synteza rogów; trzy nowe pułapki w tabeli.
 - `docs/README.md` wymienia MANUAL, PLAYBOOK, CAMPAIGN i ASSETS; podręcznik trafia też do paczki assetów.
