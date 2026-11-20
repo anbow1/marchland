@@ -21,7 +21,7 @@ Paczkę składa skrypt `marchland/tools/pack-assets.mjs` (`node tools/pack-asset
 | `example/` | strona z każdym modelem i klipem (wybór modelu i klipu w panelu) |
 | `vendor/three/` | three.js r186 (licencja MIT), żeby przykład działał bez internetu |
 | `tools/blender/` | skrypty Blendera, którymi powstały modele (wypiekanie postaci Mixamo, koni, budynków) |
-| `docs/` | `PLAYBOOK.md` (wszystkie techniki gry krok po kroku), `ASSETS.md` (skąd co jest), `BLENDER.md` |
+| `docs/` | `PLAYBOOK.md` (wszystkie techniki gry krok po kroku), `MANUAL.md` (podręcznik: menu, ekran, sterowanie, wojsko, animacje), `ASSETS.md` (skąd co jest), `BLENDER.md` |
 | `FORMATS.md` | dokładny opis każdego formatu i spis modeli z klipami |
 | `CREDITS.md` | autorzy i licencje: **przeczytaj przed publikacją czegokolwiek** |
 

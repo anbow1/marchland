@@ -8,7 +8,7 @@
 // loader/   a three.js module that puts each format on screen (asset-pack/loader)
 // example/  one page with every asset, offline (three.js r186 copied into vendor/)
 // tools/    the Blender scripts that made the models, to bake new ones the same way
-// docs/     the playbook, the asset list and the Blender notes
+// docs/     the playbook, the player's manual, the asset list and the Blender notes
 // README.md, FORMATS.md, CREDITS.md (every author and licence; read before publishing anything)
 
 import { execFileSync } from 'node:child_process';
@@ -35,7 +35,7 @@ copy('asset-pack/loader', 'loader');
 copy('asset-pack/example', 'example');
 copy('asset-pack/README.md', 'README.md');
 copy('asset-pack/FORMATS.md', 'FORMATS.md');
-for (const f of ['PLAYBOOK.md', 'ASSETS.md', 'BLENDER.md']) copy(`docs/${f}`, `docs/${f}`);
+for (const f of ['PLAYBOOK.md', 'MANUAL.md', 'ASSETS.md', 'BLENDER.md']) copy(`docs/${f}`, `docs/${f}`);
 for (const f of readdirSync(join(root, 'tools/blender'))) if (f.endsWith('.py')) copy(`tools/blender/${f}`, `tools/blender/${f}`);
 for (const f of [
   'build/three.webgpu.js',

@@ -201,7 +201,8 @@ export class Menu {
     const minutes = Math.floor(world.timeS / 60);
     const sheet = this.show(
       `<h1 class="${won ? 'won' : 'lost'}">${won ? T.missionWon : T.missionLost}</h1><p class="sub">${T.missionLabel} ${mission}: ${T.missions[mission - 1]?.title ?? ''}</p>` +
-        (won ? `<p class="stars">${'★'.repeat(stars)}${'☆'.repeat(2 - stars)}</p>` : '') +
+        // Mission 1 gives up to three stars, the others two.
+        (won ? `<p class="stars">${'★'.repeat(stars)}${'☆'.repeat(Math.max(0, (mission === 1 ? 3 : 2) - stars))}</p>` : '') +
         `<table><tr><td>${T.time}</td><td>${minutes}:${String(Math.floor(world.timeS % 60)).padStart(2, '0')}</td></tr>` +
         `<tr><td>${T.kills}</td><td>${world.kills[0]}</td></tr><tr><td>${T.losses}</td><td>${world.kills[1]}</td></tr></table>` +
         (won && actions.next ? `<button class="primary" data-do="next">${T.missionNext}</button>` : '') +

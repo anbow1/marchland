@@ -5,6 +5,27 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-20 · Podręcznik gry i techniki w dokumentacji
+
+- Nowy `docs/MANUAL.md` (podręcznik gry, po polsku):
+  - menu główne (każdy wiersz i co zmienia, w tym co robi każdy poziom grafiki), tryby, mapy, parametry adresu;
+  - menu w czasie gry i ekrany końca;
+  - ekran gry: pasek zasobów i każda liczba w prawej części, paski trybu i misji, komunikaty, dymki, karty nad
+    oddziałami (znaki rodzajów, gwiazdki, pasek siły w kolorze morale, ■ stój), minimapa;
+  - panel dolny: zakładki Buduj, Werbunek, Produkcja (kolumny tabeli, priorytety, zamówienia, zatory),
+    Budynki; panele budynku, ruiny, zamku i wojska ze wszystkimi przyciskami;
+  - sterowanie: klawiatura, mysz i dotyk w tabelach;
+  - wojsko: werbunek, wszystkie rozkazy, zaznaczanie i odznaczanie, szyki i postawy, kolumna i kolejka na
+    przeprawach, morale, zmęczenie, doświadczenie, żołd, uzupełnianie, przezbrajanie, łączenie, mury i działa;
+  - gospodarka w skrócie, animacje pracy mieszkańców (który ruch przy której pracy), żołnierzy, koni, machin
+    i budynków, dźwięk, komputer, kampania, zapis i tryb offline;
+  - spis, gdzie w PLAYBOOK są opisane techniki.
+- `PLAYBOOK.md` §4.7: scenariusze kampanii, osada jako punkt, ruiny, twierdza z murów gry i donżon wycięty
+  z modelu, strojenie botem, stanowiska przy zamku, synteza rogów; trzy nowe pułapki w tabeli.
+- `docs/README.md` wymienia MANUAL, PLAYBOOK, CAMPAIGN i ASSETS; podręcznik trafia też do paczki assetów.
+- Poprawka: ekran końca misji rysował −1 pustą gwiazdkę przy 3 gwiazdkach z misji 1 (wyjątek), jak wcześniej
+  lista misji.
+
 ## 2026-11-19 · Zator przy zamku, dźwięki, przycisk „stój”, grobla
 
 - **Zator przy zamku**: wszyscy tragarze oddawali i brali towar w jednym punkcie przed drzwiami zamku, a taczki

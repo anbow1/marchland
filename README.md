@@ -35,7 +35,7 @@ that changed, and starts next time (or at once from the note at the top of the s
 Status: playable from the first building to the fall of a keep. The ground,
 walls and roofs are scanned CC0 surfaces; soldiers, horses, engines, buildings
 and trees are still geometry made in code. What comes next:
-[`docs/GAMEPLAY.md`](docs/GAMEPLAY.md) (the gameplay plan and milestones), [`docs/ASSETS.md`](docs/ASSETS.md) (models and animations: what we have and what we still need),
+[`docs/MANUAL.md`](docs/MANUAL.md) (the player's manual, in Polish: menus and settings, every value on screen, every panel, mouse, keyboard and touch, the army, the economy, the animations, the campaign), [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md) (the gameplay plan and milestones), [`docs/ASSETS.md`](docs/ASSETS.md) (models and animations: what we have and what we still need),
 [`docs/PLAYBOOK.md`](docs/PLAYBOOK.md) (how the game is made: every technique, the asset pipeline, the
 pitfalls; `node tools/pack-assets.mjs` packs every ready asset with a three.js loader, see
 [`asset-pack/README.md`](asset-pack/README.md)),
