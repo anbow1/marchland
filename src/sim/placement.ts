@@ -88,6 +88,30 @@ function touchesAnything(world: World, x: number, z: number, r: number): boolean
 
 const found = { x: 0, z: 0 };
 
+/** The middle of a farm's `k`-th strip behind it, or null where the land is wet, wooded, taken or rock. */
+function stripAt(world: World, x: number, z: number, yawRad: number, k: number): { x: number; z: number } | null {
+  const back = FIELDS.firstStripM + k * (FIELDS.stripWidthM + FIELDS.stripGapM);
+  const sx = x - Math.sin(yawRad) * back;
+  const sz = z - Math.cos(yawRad) * back;
+  if (isImpassable(sx, sz) || forestCoverAt(sx, sz) > 0.5 || touchesAnything(world, sx, sz, FIELDS.stripWidthM / 2)) return null;
+  if (DEPOSITS.some((d) => hypot2(sx - d.x, sz - d.z) < TOWN.depositRadiusM + FIELDS.stripWidthM / 2 + 2)) return null;
+  return { x: sx, z: sz };
+}
+
+/**
+ * A farm or vineyard raised a level whose land was cut short when it was placed (an old save, or ground taken
+ * since) takes what its new level works where the land behind is free now; returns how many strips it has.
+ */
+export function moreStrips(world: World, b: Building): number {
+  const want = Math.min(FIELDS.maxStrips, FIELDS.stripsPerLevel[b.level - 1] as number);
+  while (b.strips.length < want) {
+    const strip = stripAt(world, b.x, b.z, b.yawRad, b.strips.length);
+    if (!strip) break;
+    b.strips.push({ state: 'wild', growth: 0, x: strip.x, z: strip.z });
+  }
+  return b.strips.length;
+}
+
 /**
  * Checks a place for a building of `kind` whose door looks along `yawRad`. On 'ok' the returned
  * site holds everything the building needs to know about its ground.
@@ -133,15 +157,12 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   } else if (need === 'stone' || need === 'ore') {
     if (!depositNear(need, x, z, TOWN.depositReachM)) return fail(need === 'stone' ? 'needsStone' : 'needsOre');
   } else if (need === 'fields') {
-    // The fields run out behind the farm, away from its door.
+    // The fields run out behind the farm, away from its door: the land for all its levels is taken at once (so a
+    // farm raised later always has it); the preview and the ground show which strips which level works.
     for (let k = 0; k < FIELDS.maxStrips; k++) {
-      const back = FIELDS.firstStripM + k * (FIELDS.stripWidthM + FIELDS.stripGapM);
-      const sx = x - Math.sin(yawRad) * back;
-      const sz = z - Math.cos(yawRad) * back;
-      // Land that is wet, wooded, taken or the rock of an outcrop (stone, ore) ends the farm's fields there.
-      if (isImpassable(sx, sz) || forestCoverAt(sx, sz) > 0.5 || touchesAnything(world, sx, sz, FIELDS.stripWidthM / 2)) break;
-      if (DEPOSITS.some((d) => hypot2(sx - d.x, sz - d.z) < TOWN.depositRadiusM + FIELDS.stripWidthM / 2 + 2)) break;
-      site.strips.push({ x: sx, z: sz });
+      const strip = stripAt(world, x, z, yawRad, k);
+      if (!strip) break;
+      site.strips.push(strip);
     }
     if (site.strips.length < (FIELDS.stripsPerLevel[0] as number)) return fail('needsLand');
   }

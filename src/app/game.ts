@@ -740,11 +740,13 @@ export class Game implements ControlTarget {
     if (!tool) {
       this.tiles.count = 0;
       this.tiles.values.length = 0;
+      this.tiles.levels = undefined;
       return this.previewFacing() ? 'tiles' : 'none';
     }
     const pointing = this.controls.cursor(this.cursor) && this.ground(this.cursor.x, this.cursor.y, this.hit);
     this.tiles.count = 0;
     this.tiles.values.length = 0;
+    this.tiles.levels = undefined;
     if (tool.kind === 'build') {
       if (!pointing) {
         this.setHint(`${T.buildings[tool.building].name}: ${this.controls.touchInput ? T.hintBuildTouch : T.hintBuild}`);
@@ -759,8 +761,13 @@ export class Game implements ControlTarget {
       this.ghost.z = gz;
       this.ghost.yawRad = yaw;
       this.ghost.allowed = check.result === 'ok';
-      // A farm shows the fields it would take.
-      for (const strip of check.site.strips) this.tiles.values.push(strip.x, strip.z, FIELDS.stripLengthM, FIELDS.stripWidthM, yaw);
+      // A farm shows the fields it would take, each strip in the colour of the level that works it.
+      const levels: number[] = [];
+      check.site.strips.forEach((strip, k) => {
+        this.tiles.values.push(strip.x, strip.z, FIELDS.stripLengthM, FIELDS.stripWidthM, yaw);
+        levels.push(FIELDS.stripsPerLevel.findIndex((n) => k < n) + 1);
+      });
+      this.tiles.levels = levels;
       this.tiles.count = check.site.strips.length;
       if (this.gridOn) {
         // The neighbouring grid cells, faintly: where the next buildings of the block would go.

@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-20 · Pola zagrody i winnicy: rezerwa pod rozbudowę widać w podglądzie i na mapie
+
+- Podgląd stawiania zagrody i winnicy pokazywał wszystkie 12 pasków jednym kolorem, choć poziom 1 uprawia 4:
+  pole wyglądało na trzy razy większe niż w grze, a reszta zarezerwowanej ziemi stała pusta i niewidoczna.
+- Ziemia pod wszystkie poziomy jest nadal rezerwowana przy stawianiu (ulepszenie zawsze ma gdzie urosnąć —
+  zgodnie z życzeniem: „jeśli rozbudowa ma zająć miejsce, to ok”), ale teraz to widać:
+  - w podglądzie paski mają kolor poziomu, od którego są uprawiane: zielone (1), bursztynowe (2), jasne (3);
+  - na mapie ziemia czekająca na wyższy poziom ma wydeptaną miedzę dookoła każdego paska.
+- Gdy ziemi zabrakło przy stawianiu (stary zapis, później zajęty teren), ulepszenie dobiera paski za ostatnim,
+  jeśli tam jest wolne (`moreStrips`).
+- Sprawdzone na zrzutach: podgląd przy jeziorze (4 zielone, 4 bursztynowe, reszta odcięta wodą) i zagroda po
+  postawieniu.
+
 ## 2026-11-20 · Podręcznik gry i techniki w dokumentacji
 
 - Nowy `docs/MANUAL.md` (podręcznik gry, po polsku):

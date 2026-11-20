@@ -22,6 +22,9 @@ const SELECT_COLOUR = new Color(0xf2e6a0);
 const GHOST_COLOUR = new Color(0x9fe08a);
 const PLOT_SELECTED = new Color(0xffffff);
 const TILE_OK = new Color(0x9fe08a);
+/** A farm's land for its second and third levels: amber, then pale straw, so the player sees what each level takes. */
+const TILE_LEVEL2 = new Color(0xe0b040);
+const TILE_LEVEL3 = new Color(0xf1e6c0);
 const TILE_BAD = new Color(0xe0604a);
 const MAX_TILES = 400;
 /** The outline of where the player may build: a dash every few metres round the land within reach. */
@@ -36,6 +39,8 @@ export interface GroundTiles {
   values: number[];
   count: number;
   allowed: boolean;
+  /** Per tile, which level of a farm its strip of land belongs to (1…3; absent: 1): drawn in that level's colour. */
+  levels?: number[];
 }
 
 export class Markers {
@@ -197,7 +202,8 @@ export class Markers {
         this.q.setFromAxisAngle(this.up, tiles.values[i * 5 + 4] as number);
         this.s.set(tiles.values[i * 5 + 2] as number, 1, tiles.values[i * 5 + 3] as number);
         this.tiles.setMatrixAt(shown, this.m.compose(this.p, this.q, this.s));
-        this.tiles.setColorAt(shown, colour);
+        const level = tiles.levels?.[i] ?? 1;
+        this.tiles.setColorAt(shown, !tiles.allowed || level <= 1 ? colour : level === 2 ? TILE_LEVEL2 : TILE_LEVEL3);
         shown++;
       }
     }

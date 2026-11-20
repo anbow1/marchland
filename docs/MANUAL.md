@@ -159,6 +159,11 @@ Grupy: **Osada** (chata, skład, targ, karczma, kaplica, studnia), **Żywność*
 czerwono). Dymek: do czego służy i co z czego robi. **Siatka (T)**: budynki przyciągają się do siatki co 16 m
 równoległej do dróg, drzwiami w jednym z czterech kierunków.
 
+**Zagroda i winnica** zajmują od razu ziemię na wszystkie trzy poziomy (paski za budynkiem, aż do wody, lasu,
+skały albo innego budynku; co najmniej 4). Podgląd pokazuje paski w kolorach poziomów: zielone — uprawiane od
+poziomu 1, bursztynowe — od poziomu 2, jasne — od poziomu 3. Na mapie ziemia czekająca na wyższy poziom ma
+wydeptaną miedzę dookoła: jest zajęta, nic na niej nie stanie, a ulepszenie zawsze ma gdzie urosnąć.
+
 **Stawianie:** wybierz, wskaż miejsce, lewy klik stawia (z Shift — kolejne), R obraca (z siatką o 90°), prawy
 klik albo Esc anuluje. Na dotyku: stuknięcie stawia, ten sam budynek w menu anuluje; podgląd stoi na środku
 mapy, przesuwanej palcem.

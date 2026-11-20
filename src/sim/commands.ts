@@ -1,7 +1,7 @@
 import { ARMY, CAMPAIGN, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRebuild, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCellAt, wallCells } from './nav.ts';
-import { checkSite, doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
+import { checkSite, doorOfX, doorOfZ, mayLayRoadAt, moreStrips } from './placement.ts';
 import { callUp, freePeople } from './people.ts';
 import { buildingStands, holdHere } from './movement.ts';
 import { assignSlots, type Formation, frontageM, isArcher, type QueuedOrder, type Regiment, type Stance } from './regiment.ts';
@@ -71,7 +71,11 @@ export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x
 
 export function cmdUpgrade(world: World, side: Side, plot: number): CommandResult {
   if (world.winner !== -1) return 'gameOver';
-  return startUpgrade(world.towns[side], plot);
+  const result = startUpgrade(world.towns[side], plot);
+  // A farm or vineyard raised takes the land its new level works, where it is free.
+  const b = world.towns[side].plots[plot];
+  if (result === 'ok' && b && b.strips.length > 0) moreStrips(world, b);
+  return result;
 }
 
 /** Sets how many men a regiment of foot puts in its front rank, from the number of ranks wanted; the block keeps to it as men fall. */

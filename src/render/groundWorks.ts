@@ -80,6 +80,31 @@ export class GroundWorks {
     }
   }
 
+  /** The edge of a strip of land not yet worked: a thin band of trodden earth round it, half strength. */
+  private balk(x: number, z: number, yawRad: number, lengthM: number, widthM: number): void {
+    const perM = WORKS_PX / MAP.sizeM;
+    const sin = Math.sin(yawRad);
+    const cos = Math.cos(yawRad);
+    const reach = Math.hypot(lengthM, widthM) / 2;
+    const x0 = Math.max(1, Math.floor(this.toPx(x - reach)));
+    const x1 = Math.min(WORKS_PX - 2, Math.ceil(this.toPx(x + reach)));
+    const y0 = Math.max(1, Math.floor(this.toPx(z - reach)));
+    const y1 = Math.min(WORKS_PX - 2, Math.ceil(this.toPx(z + reach)));
+    const edge = Math.max(0.9, 2 / perM);
+    for (let py = y0; py <= y1; py++) {
+      for (let px = x0; px <= x1; px++) {
+        const dx = (px + 0.5) / perM - MAP.halfM - x;
+        const dz = (py + 0.5) / perM - MAP.halfM - z;
+        const deep = Math.abs(dx * sin + dz * cos);
+        const across = Math.abs(dx * cos - dz * sin);
+        if (deep > widthM / 2 || across > lengthM / 2) continue;
+        if (deep < widthM / 2 - edge && across < lengthM / 2 - edge) continue;
+        const o = (py * WORKS_PX + px) * 4;
+        this.data[o] = Math.max(this.data[o] as number, 190);
+      }
+    }
+  }
+
   /** Call once a frame; redraws only when something on the ground has changed. */
   update(world: World, frameSeconds: number): void {
     this.ageS += frameSeconds;
@@ -111,6 +136,11 @@ export class GroundWorks {
         if (!b) continue;
         // A farm's land: only the strips its level works, once they are broken.
         const worked = Math.min(FIELDS.stripsPerLevel[b.level - 1] as number, b.strips.length);
+        // The land kept for its higher levels: marked out by a trodden edge (a balk), so the player sees it is taken.
+        for (let i = worked; i < b.strips.length; i++) {
+          const s = b.strips[i] as (typeof b.strips)[number];
+          this.balk(s.x, s.z, b.yawRad, FIELDS.stripLengthM, FIELDS.stripWidthM);
+        }
         for (let i = 0; i < worked; i++) {
           const s = b.strips[i] as (typeof b.strips)[number];
           if (s.state === 'wild') continue;
