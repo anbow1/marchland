@@ -945,11 +945,14 @@ export const CARTS = { wagonGapM: 5.5, barrowGapM: 2.6, laneM: 1.8, queueS: 4 };
 export const KEEP_BAYS = { count: 10, outM: 2.5, idleFromM: 9 };
 
 export const CAMERA = {
-  minDistanceM: 25,
+  /** Close enough to read a soldier's kit and a roof's thatch; below `closeFromM` the camera levels out towards `pitchCloseRad`. */
+  minDistanceM: 9,
+  closeFromM: 25,
+  pitchCloseRad: 0.36,
   /** Far enough to see the whole 680 m map at once on a wide screen. */
   maxDistanceM: 1430,
   startDistanceM: 110,
-  /** Pitch below the horizon: flatter up close to see the ranks, nearly straight down from afar to read the map. */
+  /** Pitch below the horizon at `closeFromM` and at the far end: flatter up close to see the ranks, nearly straight down from afar to read the map. */
   pitchNearRad: 0.68,
   pitchFarRad: 1.36,
   fovDeg: 40,
@@ -963,7 +966,9 @@ export const CAMERA = {
   minTiltRad: -0.55,
   maxTiltRad: 0.5,
   /** The pitch never goes flatter or steeper than these, however zoom and tilt add up. */
-  minPitchRad: 0.3,
+  minPitchRad: 0.2,
+  /** The camera never goes nearer the ground (or a roof's ridge under it) than this. */
+  clearanceM: 2.5,
   maxPitchRad: 1.5,
   /** Turn of one press of the on-screen rotate buttons. */
   rotateStepRad: Math.PI / 4,

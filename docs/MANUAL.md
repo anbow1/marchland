@@ -277,7 +277,7 @@ szybsze strzały łuczników z murów i wyższe koszary (60 s budowy).
 | prawy przeciągnięty (z zaznaczeniem) | front i kierunek nowej linii (§6.2) |
 | prawy przeciągnięty (bez zaznaczenia) | obrót i pochylenie kamery |
 | środkowy | przesuwanie mapy |
-| kółko | zoom do kursora, aż do widoku całej mapy |
+| kółko | zoom do kursora: od 9 m (z bliska widok poziomieje, kamera przechodzi nad dachami) aż do widoku całej mapy |
 
 ### 5.3 Dotyk (tablet, telefon)
 

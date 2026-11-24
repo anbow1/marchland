@@ -50,7 +50,13 @@ describe('strategy camera', () => {
   });
 
   it('looks flatter up close than from afar, and eases to its goal', () => {
-    expect(pitchForDistance(CAMERA.minDistanceM)).toBeCloseTo(CAMERA.pitchNearRad, 10);
+    expect(pitchForDistance(CAMERA.closeFromM)).toBeCloseTo(CAMERA.pitchNearRad, 10);
+    expect(pitchForDistance(CAMERA.minDistanceM)).toBeCloseTo(CAMERA.pitchCloseRad, 10);
+    // Flatter all the way in, with no step anywhere.
+    for (let d = CAMERA.minDistanceM; d < CAMERA.maxDistanceM; d += 0.5) {
+      expect(pitchForDistance(d + 0.5)).toBeGreaterThanOrEqual(pitchForDistance(d));
+      expect(pitchForDistance(d + 0.5) - pitchForDistance(d)).toBeLessThan(0.02);
+    }
     expect(pitchForDistance(CAMERA.maxDistanceM)).toBeCloseTo(CAMERA.pitchFarRad, 10);
     const cam = new RtsCamera(0, 0, 0);
     cam.jumpTo(100, 0);

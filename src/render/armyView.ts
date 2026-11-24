@@ -1,4 +1,4 @@
-import { abs, attribute, cos, Fn, int, ivec2, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
+import { abs, attribute, cos, Fn, int, ivec2, max, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
 import { BufferAttribute, BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, Vector3, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
 import { ARMY, CAMPAIGN, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
@@ -20,6 +20,8 @@ import { freshUrl } from '../version.ts';
 // instanced mesh.
 
 /** The kinds that fight in plate, on the modelled knight's body. */
+/** The least roughness of bare metal on a soldier (worn, not polished, steel). */
+const ARMOUR_ROUGHNESS = 0.52;
 const PLATE_KINDS: readonly UnitKind[] = ['swordsmen', 'halberdiers'];
 
 /** Men of one kind on the field at once: both sides at the limit, plus the fallen still shown. */
@@ -92,7 +94,9 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
   })();
   m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, mix(vec3(teams[0].r, teams[0].g, teams[0].b), vec3(teams[1].r, teams[1].g, teams[1].b), side), surface.z);
   m.metalnessNode = surface.x;
-  m.roughnessNode = surface.y;
+  // Field armour is scuffed and oiled, not polished: below about 0.5 roughness the plates mirror the sky and
+  // read as chrome up close.
+  m.roughnessNode = max(surface.y, surface.x.mul(ARMOUR_ROUGHNESS));
   return m;
 }
 
@@ -372,7 +376,9 @@ export function skinnedMaterial(bones: DataTexture, mounted = false): MeshStanda
   })();
   m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, mix(vec3(teams[0].r, teams[0].g, teams[0].b), vec3(teams[1].r, teams[1].g, teams[1].b), side), surface.z);
   m.metalnessNode = surface.x;
-  m.roughnessNode = surface.y;
+  // Field armour is scuffed and oiled, not polished: below about 0.5 roughness the plates mirror the sky and
+  // read as chrome up close.
+  m.roughnessNode = max(surface.y, surface.x.mul(ARMOUR_ROUGHNESS));
   return m;
 }
 

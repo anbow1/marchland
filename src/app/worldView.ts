@@ -2,7 +2,8 @@ import { WorkersView } from '../render/workersView.ts';
 import { AnimalsView } from '../render/animalsView.ts';
 import { ShotSmokeView } from '../render/shotSmokeView.ts';
 import { Vector3 } from 'three/webgpu';
-import { heightAtM } from '../sim/terrain.ts';
+import { heightAtM, townX, townZ } from '../sim/terrain.ts';
+import { CAMERA, TOWN } from '../config.ts';
 import type { BuildingKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { ArmyView } from '../render/armyView.ts';
@@ -157,7 +158,11 @@ export class WorldView {
     const targetY = heightAtM(pose.targetX, pose.targetZ);
     camera.offset(this.offset);
     const cam = this.stage.camera;
-    cam.position.set(pose.targetX + this.offset.x, targetY + this.offset.y, pose.targetZ + this.offset.z);
+    const cx = pose.targetX + this.offset.x;
+    const cz = pose.targetZ + this.offset.z;
+    // Up close and level the camera could dip into a slope behind it: it rides over the ground instead.
+    const floorY = Math.max(heightAtM(cx, cz), heightAtM((cx + pose.targetX) / 2, (cz + pose.targetZ) / 2), roofsUnder(world, cx, cz)) + CAMERA.clearanceM;
+    cam.position.set(cx, Math.max(targetY + this.offset.y, floorY), cz);
     cam.lookAt(pose.targetX, targetY, pose.targetZ);
     cam.updateMatrixWorld();
     // The view reaches further along the ground the flatter the camera looks.
@@ -213,4 +218,22 @@ export class WorldView {
     out.dy = this.ndc.y;
     out.dz = this.ndc.z;
   }
+}
+
+/** Ridge heights the camera must clear, sloping off just outside a building, so it never ends up inside a house or the keep. */
+const ROOF_M = 11;
+const KEEP_ROOF_M = 24;
+function roofsUnder(world: World, x: number, z: number): number {
+  let top = -Infinity;
+  const lift = (bx: number, bz: number, radiusM: number, heightM: number): void => {
+    const d = Math.hypot(x - bx, z - bz);
+    if (d > radiusM + 6) return;
+    const t = Math.min(1, Math.max(0, (radiusM + 6 - d) / 6));
+    top = Math.max(top, heightAtM(bx, bz) + heightM * t * t * (3 - 2 * t));
+  };
+  for (const town of world.towns) {
+    if (!town.absent) lift(townX(town.side), townZ(town.side), TOWN.keepRadiusM, KEEP_ROOF_M);
+    for (const b of town.plots) if (b) lift(b.x, b.z, TOWN.buildingRadiusM, ROOF_M);
+  }
+  return top;
 }

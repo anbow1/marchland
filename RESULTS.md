@@ -5,6 +5,27 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-24 · Zbliżenia: kamera do 9 m, nad dachami; tonowanie barw; matowa stal (porównanie z mediveal-village)
+
+- **Porównanie** z `anbow1/mediveal-village` (osobna implementacja Marchlanda na tym samym zestawie): te same
+  techniki obrazu (TRAA, bloom, skany w tablicach tekstur, trawa R2). Ich zbliżenia wyglądają lepiej, bo kamera
+  zjeżdża do 8 m i poziomuje się (u nas było minimum 25 m), mają tonowanie barw i winietę, mocniejszy kontrast
+  słońca do nieba (45 000 : 11 000 lx, u nas 68 000 : 24 000), miękkie cienie kontaktowe pod budynkami.
+- **Kamera:** `minDistanceM` 25 → 9; poniżej 25 m pochylenie płynnie (smoothstep) z 0.68 do 0.36 rad. Test:
+  pochylenie rośnie z odległością bez skoku większego niż 0.02 rad na 0.5 m.
+- **Kamera nad dachami:** zrzut z 26 m przy zamku wychodził z wnętrza ściany donżonu, z 26 m w osadzie z wnętrza
+  stodoły. Teraz oko co najmniej 2.5 m nad ziemią (pod sobą i w pół drogi do celu), nad kalenicą domu (11 m)
+  i zamku (24 m), łagodnie 6 m poza obrysem. Po zmianie ujęcie z 12 m pokazuje chlewnię z boku, ze świniami i
+  płotem.
+- **Tonowanie barw:** cień chłodniej (0.97, 0.99, 1.08), światło cieplej (1.03, 1.00, 0.95), winieta 8%.
+  Pierwsza wersja (0.95/1.13 i 1.05/0.89) przesuwała trawę w oliwkę: odrzucona.
+- **Stal:** szorstkość metalu żołnierzy ≥ 0.52 (z wypieku 0.35 i chromowy połysk z bliska).
+- **Widać z bliska i zostaje do zrobienia:** pikinierzy i milicja to łyse postacie w jednolitej tunice bez hełmu
+  (powiązane z nowym składem jednostek); źdźbła trawy rzadkie na jaśniejszym tle; brzegi ubitej ziemi faliste.
+- **Do mediveal-village** (gałąź `claude/close-camera-from-marchland`): to samo unoszenie kamery nad dachami
+  (`obstacleTopAt`) i `__debug.orbit`; oko nad domem na 15.15 m zamiast ok. 1.3 m nad ziemią.
+- Testy: `npm test` wszystko zielone (130 + 5 + 4 + 8). Zrzuty: Playwright, SwiftShader WebGL2, High.
+
 ## 2026-11-20 · Wszystkie zasady gry w jednym dokumencie
 
 - Nowy `docs/RULES.md`, generowany z `src/config.ts` (`tools/rulesDoc.ts`, `npm run docs`; test dokumentów pilnuje,

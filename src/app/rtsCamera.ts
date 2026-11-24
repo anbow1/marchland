@@ -26,7 +26,13 @@ function clampTarget(v: number): number {
 
 /** Angle below the horizon for a distance. */
 export function pitchForDistance(distanceM: number): number {
-  const t = (clampDistance(distanceM) - CAMERA.minDistanceM) / (CAMERA.maxDistanceM - CAMERA.minDistanceM);
+  const d = clampDistance(distanceM);
+  if (d < CAMERA.closeFromM) {
+    // Up close the view levels out, smoothly (no kink where the curves meet), to look at men and houses from the side.
+    const u = (CAMERA.closeFromM - d) / (CAMERA.closeFromM - CAMERA.minDistanceM);
+    return CAMERA.pitchNearRad + (CAMERA.pitchCloseRad - CAMERA.pitchNearRad) * u * u * (3 - 2 * u);
+  }
+  const t = (d - CAMERA.closeFromM) / (CAMERA.maxDistanceM - CAMERA.closeFromM);
   // Ease in: most of the steepening happens in the far half of the zoom.
   return CAMERA.pitchNearRad + (CAMERA.pitchFarRad - CAMERA.pitchNearRad) * Math.sqrt(t);
 }

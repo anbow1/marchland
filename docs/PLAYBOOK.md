@@ -32,6 +32,18 @@ Przełączniki w adresie do pomiarów i zrzutów: `?autostart` (bez menu), `&q=h
   przez stałą pre-ekspozycję, więc bufory półprecyzji się nie przepełniają; ekspozycja stała dla presetu
   (kamera zawsze patrzy w dół na oświetlony teren). Późne popołudnie wczesnej jesieni: słońce 30° nad
   horyzontem, długie cienie.
+- **Korekcja kolorów** (`stage.ts`, `grade`): przed krzywą tonów nasycenie 1.35 i kontrast 1.14 wokół
+  średniej szarości, potem tonowanie dzielone jak w filmie: cień w stronę chłodnego nieba (0.97, 0.99,
+  1.08), światło w stronę ciepłego słońca (1.03, 1.00, 0.95), obie barwy o luminancji 1 (zmienia się
+  odcień, nie jasność), i winieta 8% w rogach. Silniejsze tony (1.05/0.89) zażółcały trawę w oliwkę: zostały słabe. Technika z mediveal-village (ich `stage.ts`) i z filmu
+  „Pirate Ship Sunset” (ciepłe światła, chłodne cienie).
+- **Kamera z bliska** (`rtsCamera.ts`, `worldView.ts`): zoom do 9 m (`CAMERA.minDistanceM`); poniżej 25 m
+  (`closeFromM`) widok poziomuje się płynnie (smoothstep) do 0.36 rad, żeby oglądać ludzi i domy z boku,
+  jak w mediveal-village (ich minimum 8 m). Oko nigdy nie schodzi niżej niż 2.5 m nad ziemią pod sobą i w
+  pół drogi do celu ani nad kalenicą domu (11 m) czy zamku (24 m), łagodnie opadając 6 m za obrysem: bez
+  tego kamera z bliska wchodziła w ściany. To samo przeniesione do mediveal-village (`obstacleTopAt`).
+- **Stal żołnierzy** (`armyView.ts`): szorstkość metalu nie niższa niż 0.52; przy 0.35 z wypieku płyty
+  odbijały niebo jak chrom, co z bliska wyglądało jak plastik.
 - **Warm-up shaderów** (`warmup.ts`): za ekranem ładowania jedna klatka, w której jeden obiekt z każdej
   odmiany shadera jest wymuszony jako widoczny, żeby żaden potok nie kompilował się w trakcie gry (na
   telefonie to widoczne przycięcie). `compileAsync()` nie wystarcza: pomija ukryte obiekty i kompiluje dla
@@ -278,7 +290,8 @@ Pełna lista z autorami i licencjami jest w `ASSETS.md`, a podpisy w `public/*/C
   ma pomiar na WebGPU (0 błędów) i liczbę potoków w `RESULTS.md`.
 - **Zrzuty**: Playwright z Chromium na SwiftShader (`--use-angle=swiftshader`), strona z `?autostart&debug`,
   scena ustawiona przez `__debug` (zatrzymana pętla, żołnierze ustawieni w szereg, kamera z `place()`).
-  Do zbliżeń tymczasowo `minDistanceM: 5` w `config.ts` (bez wypychania tej zmiany).
+  Do zbliżeń `place({ distance: 9 })` (najbliżej, jak gracz może) albo `camera.goal.tiltRad` dla
+  płaskiego ujęcia.
 - **Podgląd modeli w Blenderze bez okna**: renderer Cycles na CPU (Workbench potrzebuje EGL), z
   `clip_end` dopasowanym do skali pliku (modele w centymetrach znikały za płaszczyzną odcięcia).
 - **Dziennik**: każda zmiana ma wpis w `RESULTS.md`: co, dlaczego, liczby, co odrzucone.

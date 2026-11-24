@@ -2,7 +2,7 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { fxaa } from 'three/addons/tsl/display/FXAANode.js';
 import { sharpen } from 'three/addons/tsl/display/SharpenNode.js';
 import { traa } from 'three/addons/tsl/display/TRAANode.js';
-import { dot, max, mix, mrt, output, pass, pow, vec3, vec4, velocity } from 'three/tsl';
+import { dot, float, max, mix, mrt, output, pass, pow, screenUV, smoothstep, vec2, vec3, vec4, velocity } from 'three/tsl';
 import { HalfFloatType, NeutralToneMapping, type Node, PerspectiveCamera, RenderPipeline, Scene, SRGBColorSpace, WebGPURenderer } from 'three/webgpu';
 import { CAMERA } from '../config.ts';
 import { FrameGovernor, PassTimer } from './perf.ts';
@@ -45,13 +45,25 @@ const CAMERA_FAR_M = 6000;
 const GRADE_SATURATION = 1.35;
 const GRADE_CONTRAST = 1.14;
 const MIDDLE_GREY = 0.18;
+/**
+ * Split toning, as a film grade does it: shade leans cool (the blue sky fills it), sunlit faces lean warm
+ * (the low sun lights them). Each tint has a luminance of 1, so it moves hue, not brightness; the weight
+ * runs from shade to light round middle grey.
+ */
+const SHADE_TINT = [0.97, 0.99, 1.08] as const;
+const LIGHT_TINT = [1.03, 1.0, 0.95] as const;
 
 function grade(c: Node<'vec4'>): Node<'vec4'> {
   const rgb = max(c.rgb, vec3(0));
   const luma = dot(rgb, vec3(0.2126, 0.7152, 0.0722));
   const saturated = max(mix(vec3(luma), rgb, GRADE_SATURATION), vec3(0));
   const contrasted = pow(saturated.div(MIDDLE_GREY), vec3(GRADE_CONTRAST)).mul(MIDDLE_GREY);
-  return vec4(contrasted, c.a);
+  const toLight = luma.div(luma.add(MIDDLE_GREY));
+  const tint = mix(vec3(...SHADE_TINT), vec3(...LIGHT_TINT), toLight);
+  // A light lens vignette (about 8% at the corners) settles the eye on the middle of the view.
+  const fromCentre = screenUV.sub(vec2(0.5));
+  const vignette = float(1).sub(smoothstep(0.18, 0.56, dot(fromCentre, fromCentre)).mul(0.08));
+  return vec4(contrasted.mul(tint).mul(vignette), c.a);
 }
 
 export class Stage {
