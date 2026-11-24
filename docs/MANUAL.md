@@ -157,8 +157,14 @@ Bez zaznaczenia panel ma cztery zakładki.
 
 Grupy: **Osada** (chata, skład, targ, karczma, kaplica, studnia), **Żywność**, **Surowce**, **Broń i wojsko**,
 **Obrona i drogi** (wieża, droga, mur, brama). Każdy przycisk: nazwa i koszt (ikony towarów; brakujący na
-czerwono). Dymek: do czego służy i co z czego robi. **Siatka (T)**: budynki przyciągają się do siatki co 16 m
-równoległej do dróg, drzwiami w jednym z czterech kierunków.
+czerwono). Dymek: do czego służy i co z czego robi. **Siatka (T)**: miasto w szachownicę (jak w
+mediveal-village). Budynki przyciągają się do działek co 16 m, zebranych w kwartały 2×2; między kwartałami
+biegną ulice szerokie na 4 m (dwa pasy drogi), a wokół zamku jego plac (kwartał 3×3 działki). Każda działka leży
+w narożniku kwartału, więc ma ulicę z dwóch stron: drzwi patrzą na tę bliższą kierunkowi do zamku, R wybiera
+drugą. Z budynkiem kładzie się jego ulica do zamku: od drzwi wzdłuż ulic do placu zamkowego i przez plac pod
+mur, za kamień jak droga (część, która już leży, nic nie kosztuje). Podgląd pokazuje działki sąsiednie, pola
+ulicy i jej koszt („ulica N kamienia”); bez kamienia budynek stanie sam, a ulicę położysz później narzędziem
+Droga. Komputer i gotowe miasta misji 1–2 budują się w ten sam sposób.
 
 **Zagroda i winnica** zajmują od razu ziemię na wszystkie trzy poziomy (paski za budynkiem, aż do wody, lasu,
 skały albo innego budynku; co najmniej 4). Podgląd pokazuje paski w kolorach poziomów: zielone — uprawiane od

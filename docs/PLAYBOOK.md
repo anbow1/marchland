@@ -233,6 +233,16 @@ wysokości.
   w kolejce. Zamek ma 10 stanowisk dookoła; tragarz bierze to od strony drugiego końca swojej drogi, sąsiedzi
   (numer w kolejności przyjścia na świat) sąsiednie; bezczynni czekają rozproszeni po placu („złoty kąt”).
   Pomiar: czekających 2,0 → 0,4. Obwodnica i sieć dróg wypadły gorzej (wspólne drogi = taczki jedna za drugą).
+- **Miasto w szachownicę** (`streets.ts`, z mediveal-village, gdzie miasto ma ulicę główną i poprzeczne, a
+  każdy budynek drzwiami do ulicy): działki siatki 16 m w kwartałach 2×2 (`STREETS.blockSquares`), linie ulic w
+  połowie między działkami (±1.5, ±3.5… działki od zamku), plac zamku to kwartał 3×3. `streetBeside(i)` daje
+  ulicę przy działce, `streetYaw` obraca drzwi na nią, `streetWay` prowadzi od progu wzdłuż ulic do ulicy
+  wokół placu, nią do środka boku zamku i przez plac pod mur; `cmdBuildStreet` kładzie to dwoma pasami
+  (4 m, w szczelinie 5 m między budynkami). Gracz (z siatką), komputer i gotowe miasta misji. W przeciwieństwie
+  do obwodnicy z sieci „do najbliższej drogi” ulice są szerokie na dwa pasy, a do zamku dochodzą cztery wejścia
+  (środki boków placu), więc taczki się rozkładają. Pomiar (20 min, taczki, miasto komputera, 3 ziarna):
+  czekających 0,94 → 0,50, przy zamku 1,6 → 1,3, produkcja 2872 → 2893; gotowe miasto misji 1: 2,4 → 1,6 i
+  4,0 → 2,5; misji 2: 1,5 → 1,0 i 3,3 → 2,2, produkcja −3% / +4%.
 - **Dźwięk.** Nagrania CC0 (Kenney) dla walki, strzał, budowy i kliknięć, każde odtworzenie losuje nagranie
   z kilku i lekko zmienia wysokość. Czego nie ma w nagraniach (róg, fanfara, huk działa pod nagranym
   trzaskiem), robi WebAudio: róg to dwa piłowe głosy rozstrojone o kilka centów, filtr dolnoprzepustowy

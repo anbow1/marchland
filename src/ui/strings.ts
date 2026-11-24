@@ -256,6 +256,9 @@ interface Strings {
   hintRoadStart: string;
   hintRoadEnd: string;
   roadCost: string;
+  /** The street a building on the grid gets with it, and its note when stone is short. */
+  street: string;
+  streetLater: string;
   turnLeft: string;
   turnRight: string;
   work: Record<WorkState, string>;
@@ -674,12 +677,14 @@ const pl: Strings = {
   hintBuild: 'Lewy przycisk: postaw · R: obróć · T: siatka · prawy przycisk / Esc: anuluj · Shift: stawiaj kolejne',
   hintBuildTouch: 'Stuknij w mapę tam, gdzie ma stanąć · ten sam budynek w menu: anuluj',
   grid: 'Siatka',
-  gridTip: 'Budynki przyciągają się do siatki co 16 m, równoległej do dróg, drzwiami w jednym z czterech kierunków (R obraca o 90°): miasto w kwartałach. Pusta kratka między rzędami mieści ulicę.',
+  gridTip: 'Miasto w szachownicę: budynki co 16 m w kwartałach 2×2, między kwartałami ulice (4 m). Drzwi patrzą na ulicę (R wybiera drugą ulicę narożnika), a ulica do zamku kładzie się razem z budynkiem, za kamień.',
   gridOn: 'wł.',
   gridOff: 'wył.',
   hintRoadStart: 'Droga: wskaż początek odcinka. Prawy przycisk / Esc / „Droga” jeszcze raz: koniec budowy dróg.',
   hintRoadEnd: 'Droga: wskaż koniec odcinka (z Shift kolejny odcinek zacznie się tutaj). Prawy przycisk / Esc / „Droga” jeszcze raz: anuluj początek.',
   roadCost: 'kamienia',
+  street: 'ulica',
+  streetLater: 'brak kamienia: ulica później, narzędziem Droga',
   turnLeft: 'Obróć mapę w lewo (Q)',
   turnRight: 'Obróć mapę w prawo (E)',
   work: { working: 'Pracuje', building: 'Budowa', paused: 'Wstrzymany', noWorker: 'Brak pracownika', noInput: 'Czeka na surowiec', yardFull: 'Podwórze pełne — czeka na tragarzy', noTrees: 'Brak dorosłych drzew w zasięgu — czeka, aż sadzonki urosną', orderDone: 'Zamówienie wykonane — czeka na następne', waiting: 'Czeka' },
@@ -1097,12 +1102,14 @@ const en: Strings = {
   hintBuild: 'Left button: place · R: turn · T: grid · right button / Esc: cancel · Shift: place more',
   hintBuildTouch: 'Tap the map where it should stand · the same building in the menu: cancel',
   grid: 'Grid',
-  gridTip: 'Buildings snap to a 16 m grid square with the roads, doors facing one of four ways (R turns by 90°): a town in blocks. An empty cell between rows holds a street.',
+  gridTip: 'A town on a chessboard: buildings 16 m apart in blocks of 2×2, streets (4 m) between the blocks. Doors face a street (R picks the corner\'s other street), and the street to the keep is laid with the building, for stone.',
   gridOn: 'on',
   gridOff: 'off',
   hintRoadStart: 'Road: point at the start of a stretch. Right button / Esc / “Road” again: stop laying roads.',
   hintRoadEnd: 'Road: point at the end of the stretch (with Shift the next stretch starts there). Right button / Esc / “Road” again: drop the start.',
   roadCost: 'stone',
+  street: 'street',
+  streetLater: 'not enough stone: lay it later with the Road tool',
   turnLeft: 'Turn the map left (Q)',
   turnRight: 'Turn the map right (E)',
   work: { working: 'Working', building: 'Building', paused: 'Paused', noWorker: 'No worker', noInput: 'Waiting for input', yardFull: 'Yard full — waiting for carriers', noTrees: 'No grown trees in reach — waiting for the saplings', orderDone: 'Order filled — waiting for the next', waiting: 'Waiting' },

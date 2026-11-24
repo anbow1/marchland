@@ -5,6 +5,28 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-24 · Miasto w szachownicę (układ ulic z mediveal-village)
+
+- W mediveal-village miasto gracza jest zaplanowane na kracie ulic: ulica główna przez zamek, ulice
+  poprzeczne, każdy budynek w kwartale drzwiami do ulicy. U nas siatka 16 m już była, ale ulice zostawiała
+  graczowi, a drogi do zamku szły na ukos.
+- `src/sim/streets.ts`: kwartały 2×2 działki, ulice 4 m (dwa pasy) między nimi, plac zamku 3×3. Drzwi na ulicę,
+  droga do zamku wzdłuż ulic do placu i przez plac pod mur. Gracz z siatką (ulica kładzie się z budynkiem, za
+  kamień, podgląd pól ulicy i kosztu), komputer (`ai.ts`, `sitePlanner.ts`) i gotowe miasta misji 1–2.
+- Pomiar zatoru (tymczasowe testy, taczki od początku), przed → po:
+
+| Miasto | czekający w kolejce | ludzie < 13 m od zamku | wytworzone towary |
+|---|---|---|---|
+| komputer, 20 min, ziarna 1–3 | 0,94 → 0,50 | 1,6 → 1,3 | 2872 → 2893 |
+| gotowe miasto misji 1, 15 min, ziarna 1–2 | 2,41 → 1,62 | 4,0 → 2,5 | 1806 → 1752 |
+| gotowe miasto misji 2, 15 min, ziarna 1–2 | 1,47 → 1,04 | 3,3 → 2,2 | 1908 → 1987 |
+
+- Dawna obwodnica pogarszała kolejki (drogi jednopasmowe i jedno wejście); tu dwa pasy i cztery wejścia na plac.
+- Pierwsza wersja trasy dla działek w rzędzie zamku szła środkiem rzędu, przez inne działki; test
+  `streets.test.ts` (każdy odcinek między progiem a placem leży na linii ulicy) to złapał, trasa idzie teraz ulicą
+  wokół placu.
+- Testy: nowe `streets.test.ts` (linie, drzwi, trasa, miasto komputera); cała reszta zielona.
+
 ## 2026-11-24 · Zbliżenia: kamera do 9 m, nad dachami; tonowanie barw; matowa stal (porównanie z mediveal-village)
 
 - **Porównanie** z `anbow1/mediveal-village` (osobna implementacja Marchlanda na tym samym zestawie): te same

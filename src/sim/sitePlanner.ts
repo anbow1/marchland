@@ -1,4 +1,5 @@
 import { ROADS, TOWN } from '../config.ts';
+import { streetYaw } from './streets.ts';
 import { keepRules } from './economy.ts';
 import { checkSite, squareYawToKeep, yawToKeep } from './placement.ts';
 import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeRadiusAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
@@ -124,7 +125,7 @@ function planQuarter(world: World, side: Side, kind: BuildingKind): boolean {
     }
   }
   squares.sort((a, b) => a[0] - b[0]);
-  for (const [, x, z] of squares) if (tryAt(world, side, kind, x, z, squareYawToKeep(side, x, z))) return true;
+  for (const [, x, z] of squares) if (tryAt(world, side, kind, x, z, streetYaw(side, x, z, squareYawToKeep(side, x, z)))) return true;
   return false;
 }
 

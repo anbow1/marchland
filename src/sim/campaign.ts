@@ -1,7 +1,8 @@
 import { CAMPAIGN, GATE, REINFORCE, TOWN, WALLS } from '../config.ts';
+import { streetWay } from './streets.ts';
 import { hypot2 } from '../core/hypot.ts';
 import { adjustStances, fight } from './ai.ts';
-import { cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdMove, wallCellsFor } from './commands.ts';
+import { cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildStreet, cmdMove, wallCellsFor } from './commands.ts';
 import { isBuilt, startBuilding } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layWall, stampBuilding } from './nav.ts';
 import { fortressFrame, fortressPoint, INNER, insideRing, OUTER, ringCorners } from './fortress.ts';
@@ -136,7 +137,9 @@ function buildNow(world: World, kind: BuildingKind): void {
       b.constructionLeftS = 0;
       b.matDelivered = b.matTotal;
       b.matWaiting.wood = b.matWaiting.stone = b.matWaiting.planks = 0;
-      cmdBuildRoad(world, PLAYER, doorX(town, plot), doorZ(town, plot), doorX(town, KEEP), doorZ(town, KEEP));
+      const way = streetWay(PLAYER, b.x, b.z, b.yawRad);
+      if (way) cmdBuildStreet(world, PLAYER, way);
+      else cmdBuildRoad(world, PLAYER, doorX(town, plot), doorZ(town, plot), doorX(town, KEEP), doorZ(town, KEEP));
     }
   }
   Object.assign(town.stock, kept);

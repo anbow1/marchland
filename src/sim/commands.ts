@@ -1,4 +1,4 @@
-import { ARMY, CAMPAIGN, GATE, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
+import { ARMY, CAMPAIGN, GATE, PEOPLE, REARM, REINFORCE, ROADS, STREETS, TOWER, TOWN, UNITS, WALLS, MARKET } from '../config.ts';
 import { barracksLevel, canRecruit, demolish, isBuilt, peopleFor, startBuilding, startKeepUpgrade, startRebuild, startRecruit, startTransportUpgrade, startUpgrade, togglePaused } from './economy.ts';
 import { cellX, cellZ, gateCells, layGate, layRoad, layWall, roadCells, stampBuilding, wallCellAt, wallCells } from './nav.ts';
 import { checkSite, doorOfX, doorOfZ, mayLayRoadAt, moreStrips } from './placement.ts';
@@ -9,6 +9,7 @@ import { clampToMap, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type CommandResult, type Cost, PLAYER, type ResourceId, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { findRegiment, menAlive, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
+import { laneOffsets, type Leg } from './streets.ts';
 
 // Everything a player can do, human or computer. The HUD and the computer
 // player both call these and nothing else, so the two play by the same rules.
@@ -63,6 +64,44 @@ export function cmdBuildRoad(world: World, side: Side, x0: number, z0: number, x
   for (const [x, z] of [[x0, z0], [x1, z1]] as const) if (!mayLayRoadAt(side, x, z)) return 'tooFar';
   const cells = roadCells(world.nav, x0, z0, x1, z1, roadScratch);
   const cost = Math.ceil(cells * ROADS.stonePerCell);
+  if (town.stock.stone < cost) return 'cannotAfford';
+  town.stock.stone -= cost;
+  layRoad(world.nav, roadScratch);
+  return 'ok';
+}
+
+const streetScratch: number[] = [];
+const streetSet = new Set<number>();
+
+/** The road cells a street along `legs` would cover that are not road already, into `out`. */
+export function streetCells(world: World, legs: readonly Leg[], out: number[]): number {
+  streetSet.clear();
+  for (const [x0, z0, x1, z1] of legs) {
+    const alongX = Math.abs(x1 - x0) > Math.abs(z1 - z0);
+    for (const o of laneOffsets()) {
+      // Each lane runs the leg's length and reaches over the crossing by half the street's width.
+      const ext = (STREETS.widthCells * ROADS.cellM) / 2 - ROADS.cellM / 2;
+      const sx = alongX ? Math.sign(x1 - x0) * ext : 0;
+      const sz = alongX ? 0 : Math.sign(z1 - z0) * ext;
+      roadCells(world.nav, x0 - sx + (alongX ? 0 : o), z0 - sz + (alongX ? o : 0), x1 + sx + (alongX ? 0 : o), z1 + sz + (alongX ? o : 0), streetScratch);
+      for (const c of streetScratch) streetSet.add(c);
+    }
+  }
+  out.length = 0;
+  for (const c of streetSet) out.push(c);
+  return out.length;
+}
+
+export function streetCost(world: World, legs: readonly Leg[]): number {
+  return Math.ceil(streetCells(world, legs, roadScratch) * ROADS.stonePerCell);
+}
+
+/** Lays a street of STREETS.widthCells lanes along `legs` (streetWay), paid in stone like a road. */
+export function cmdBuildStreet(world: World, side: Side, legs: readonly Leg[]): CommandResult {
+  if (world.winner !== -1) return 'gameOver';
+  const town = world.towns[side];
+  for (const [x0, z0, x1, z1] of legs) if (!mayLayRoadAt(side, x0, z0) || !mayLayRoadAt(side, x1, z1)) return 'tooFar';
+  const cost = Math.ceil(streetCells(world, legs, roadScratch) * ROADS.stonePerCell);
   if (town.stock.stone < cost) return 'cannotAfford';
   town.stock.stone -= cost;
   layRoad(world.nav, roadScratch);

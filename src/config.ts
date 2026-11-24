@@ -177,6 +177,13 @@ export const PEOPLE = {
   maxPerSide: 170,
 } as const;
 
+/**
+ * The town on a chessboard (src/sim/streets.ts): building squares (TOWN.gridM) in blocks of `blockSquares` ×
+ * `blockSquares`, a street `widthCells` road cells wide between blocks; the keep's block reaches `keepBlockHalf`
+ * squares out from it (its yard). A building on the grid faces a street, and its road to the keep runs along them.
+ */
+export const STREETS = { blockSquares: 2, keepBlockHalf: 1, widthCells: 2 };
+
 export const ROADS = {
   /** The grid roads and paths are laid on: one cell is this many metres square. */
   cellM: 2,

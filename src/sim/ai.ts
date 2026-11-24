@@ -1,5 +1,6 @@
 import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, TOWN, UNITS } from '../config.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdTrade, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
+import { streetWay } from './streets.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildStreet, streetCost, cmdTrade, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
@@ -134,6 +135,12 @@ function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 
   if (cmdBuild(world, ai.side, kind, site.x, site.z, site.yawRad) !== 'ok') return 'notYet';
   const town = world.towns[ai.side];
   // The road is a convenience: it is laid only with stone to spare, or the next building would wait for it.
+  // On the grid it is a street of the chessboard plan, along the other streets to the keep.
+  const way = streetWay(ai.side, site.x, site.z, site.yawRad);
+  if (way) {
+    if (town.stock.stone - streetCost(world, way) >= AI.roadStoneReserve) cmdBuildStreet(world, ai.side, way);
+    return 'built';
+  }
   const fromX = site.x + Math.sin(site.yawRad) * (TOWN.buildingRadiusM + 1);
   const fromZ = site.z + Math.cos(site.yawRad) * (TOWN.buildingRadiusM + 1);
   if (town.stock.stone - roadCost(world, fromX, fromZ, doorX(town, KEEP), doorZ(town, KEEP)) < AI.roadStoneReserve) return 'built';

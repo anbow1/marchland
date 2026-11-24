@@ -1,6 +1,7 @@
 import { AI, type AiCharacter, CAMERA, CAMPAIGN, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
+import { streetWay, streetYaw } from '../sim/streets.ts';
 import { FixedLoop } from '../core/loop.ts';
-import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdDemolish, cmdRebuild, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
+import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildStreet, streetCells, streetCost, cmdBuildWall, cmdDemolish, cmdRebuild, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCellAt } from '../sim/nav.ts';
@@ -667,7 +668,9 @@ export class Game implements ControlTarget {
     // square to each other and to the roads, not turned round the keep like spokes. R turns by an eighth
     // (by a quarter on the grid).
     const quarter = Math.round(yawToKeep(PLAYER, x, z) / (Math.PI / 2));
-    return quarter * (Math.PI / 2) + (this.gridOn ? Math.floor(tool.turns / 2) * (Math.PI / 2) : (tool.turns * Math.PI) / 4);
+    const yaw = quarter * (Math.PI / 2) + (this.gridOn ? Math.floor(tool.turns / 2) * (Math.PI / 2) : (tool.turns * Math.PI) / 4);
+    // On the grid the door looks onto a street of the chessboard plan (R picks the other street of the corner).
+    return this.gridOn ? streetYaw(PLAYER, x, z, yaw) : yaw;
   }
 
   /** Buildings on the grid: TOWN.gridM squares, lined up with the road cells, one corner at the keep. */
@@ -705,8 +708,12 @@ export class Game implements ControlTarget {
     if (tool.kind === 'build') {
       const bx = this.placeX(x);
       const bz = this.placeZ(z);
-      const result = cmdBuild(this.world, PLAYER, tool.building, bx, bz, this.yawOf(tool, bx, bz));
+      const yaw = this.yawOf(tool, bx, bz);
+      const result = cmdBuild(this.world, PLAYER, tool.building, bx, bz, yaw);
       this.report(result);
+      // On the grid its street to the keep is laid with it, where there is stone for it (else the building alone).
+      const way = result === 'ok' && this.gridOn ? streetWay(PLAYER, bx, bz, yaw) : null;
+      if (way) cmdBuildStreet(this.world, PLAYER, way);
       if (result === 'ok' && !keep) this.dropTool();
       return;
     }
@@ -769,14 +776,26 @@ export class Game implements ControlTarget {
       });
       this.tiles.levels = levels;
       this.tiles.count = check.site.strips.length;
+      let streetNote = '';
       if (this.gridOn) {
-        // The neighbouring grid cells, faintly: where the next buildings of the block would go.
+        // The neighbouring grid squares, faintly: where the next buildings of the block would go.
         for (let i = -2; i <= 2; i++) {
           for (let k = -2; k <= 2; k++) {
             if (i === 0 && k === 0) continue;
             this.tiles.values.push(gx + i * TOWN.gridM, gz + k * TOWN.gridM, 1.2, 1.2, 0);
             this.tiles.count++;
           }
+        }
+        // The street it would get, cell by cell, and what it costs.
+        const way = streetWay(PLAYER, gx, gz, yaw);
+        if (way) {
+          const cells = streetCells(this.world, way, this.roadScratch);
+          for (let c = 0; c < cells; c++) {
+            this.tiles.values.push(cellX(this.roadScratch[c] as number), cellZ(this.roadScratch[c] as number), ROADS.cellM, ROADS.cellM, 0);
+            this.tiles.count++;
+          }
+          const cost = streetCost(this.world, way);
+          if (cost > 0) streetNote = ` · ${T.street} ${cost} ${T.roadCost}${this.world.towns[PLAYER].stock.stone < cost ? ` (${T.streetLater})` : ''}`;
         }
       }
       this.tiles.allowed = this.ghost.allowed;
@@ -787,7 +806,7 @@ export class Game implements ControlTarget {
         const fromBuilding = nearestOwnBuildingM(this.world, PLAYER, gx, gz);
         why += ` (${T.fromKeep} ${fromKeep} / ${Math.round(reachOf(tool.building, this.world.towns[PLAYER].keepLevel))} m${Number.isFinite(fromBuilding) ? ` · ${T.fromBuilding} ${Math.round(fromBuilding)} / ${TOWN.buildingReachM} m` : ''})`;
       }
-      this.setHint(`${T.buildings[tool.building].name}: ${why}`);
+      this.setHint(`${T.buildings[tool.building].name}: ${why}${streetNote}`);
       return 'ghost';
     }
     if (tool.kind === 'gate') {
