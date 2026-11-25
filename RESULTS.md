@@ -5,6 +5,37 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-25 · Tekstury KTX2: pamięć karty 307 → 67 MB (krok 1 epok)
+
+- Pierwszy krok rozbudowy o epoki: nowe materiały (cegła, tynk, łupek, żelazo) nie zmieściłyby się w budżecie
+  300 MB, a same skany zajmowały 288 MB. Sposób wzięty z mediveal-village: skany jako KTX2 (Basis Universal)
+  w `public/surfaces/`, transkodowane przez `KTX2Loader` na format karty, warstwy składane w
+  `CompressedArrayTexture`.
+- `tools/encode_surfaces.mjs` (koder `ktx2-encoder` + `sharp`, instalowane poza grą): wybór trybów na
+  powierzchni „strzecha”:
+
+| Tryb | kolor | normalne | ORM | razem |
+|---|---|---|---|---|
+| UASTC (RDO 1) | 1209 KB, 40,2 dB | 1288 KB, 34,4 dB | 942 KB, 38,3 dB | 3,4 MB |
+| UASTC (RDO 3 / 6) | 34,8 / 32,5 dB | 31,6 / 28,9 dB | | 2,9 / 2,6 MB |
+| ETC1S q230 | 238 KB, 34,3 dB | 286 KB, **26,3 dB** | 235 KB, 30,6 dB | 0,7 MB |
+| **wybrane:** kolor i ORM ETC1S, normalne UASTC | 250 KB, 34,5 dB | 1288 KB, 34,4 dB | 245 KB, 30,6 dB | 1,7 MB |
+
+- Wszystkie 18 powierzchni: kolor 26–39 dB (najsłabsze ziemia 26,4 i skała 27,4; na zrzutach różnicy nie
+  widać), normalne 31–43 dB, ORM 28–43 dB. Pobranie: JPG 15,8 MB → KTX2 30,0 MB (`dist` 59 → 74 MB).
+- Pomiar `tools/measure/load.mjs` (WebGPU, SwiftShader, scena domyślna):
+
+| | JPG (przed) | KTX2 (po) |
+|---|---|---|
+| Pamięć tekstur wgranych | 306,6 MB (skany 3 × 1024²×18 RGBA8: 288 MB) | **66,6 MB** (skany ASTC + 2 × ETC2: 48 MB) |
+| Kopie tekstur w pamięci JS po wgraniu | 226 MB | 50 MB |
+| Potoki / moduły shaderów | 159 / 196 | 158 / 196 |
+| Wczytanie (suma etapów) / gotowe | 23,5 s / 44,4 s | 17,8 s / 38,6 s |
+| Low: pamięć tekstur | ok. 24 MB skanów | 3 MB skanów (512² z poziomów mip), 21,6 MB wszystkich |
+
+- Błędów WebGPU 0; zrzuty przed i po (WebGPU) oraz po (WebGL2) praktycznie takie same. Na Androidzie przez
+  WebGL2 ASTC wyłączone (ETC2), jak w mediveal-village (magenta na Mali-T760).
+
 ## 2026-11-24 · Miasto w szachownicę (układ ulic z mediveal-village)
 
 - W mediveal-village miasto gracza jest zaplanowane na kracie ulic: ulica główna przez zamek, ulice

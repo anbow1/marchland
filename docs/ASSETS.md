@@ -103,7 +103,8 @@ ViktorKom), jazda bez klipu jazdy (jeździec kołysze się w takt konia).
 ## Spis plików w grze (`public/`)
 
 Stan z 18.11, ze wszystkimi klipami. Źródło każdego pliku: tabela wyżej i `public/*/CREDITS.md`; tekstury
-powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0).
+powierzchni: `src/assets/photo/LICENSE.md` (18 skanów Poly Haven, CC0; w grze jako KTX2 w `public/surfaces/`,
+robione z nich przez `tools/encode_surfaces.mjs`).
 
 | Plik | Rodzaj | Trójkąty | Kości | Klipy (klatki) |
 |---|---|---|---|---|

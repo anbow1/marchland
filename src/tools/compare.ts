@@ -102,7 +102,7 @@ const canvas = document.getElementById('view') as HTMLCanvasElement;
 const stage = new Stage(canvas, { quality: 'high', maxPixelRatio: 1 });
 await stage.init();
 const lighting = new Lighting(stage.renderer, stage.scene, AFTERNOON, 'high');
-const surfaces = await loadSurfaces('high', () => {});
+const surfaces = await loadSurfaces(stage.renderer, 'high', () => {});
 // The game's own ground as it looks once people have built: a road between the rows, worn yards under the
 // buildings, and the land's rocks, bushes and trees, cleared where a building stands.
 const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });

@@ -90,7 +90,7 @@ export class WorldView {
     const scene = this.stage.scene;
     const quality = this.stage.settings.quality;
     this.lighting = new Lighting(this.stage.renderer, scene, AFTERNOON, quality);
-    const surfaces = await loadSurfaces(quality, (share) => onProgress(0.15 + share * 0.25));
+    const surfaces = await loadSurfaces(this.stage.renderer, quality, (share) => onProgress(0.15 + share * 0.25));
     t = logStage('textures', t);
     const terrain = buildTerrain(surfaces, this.works.texture, quality === 'minimal');
     scene.add(terrain);

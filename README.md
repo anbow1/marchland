@@ -99,7 +99,7 @@ house ─ tax in gold        keep ─ a small income
 - `src/sim/` — the game's rules, no three.js, fixed 60 Hz step, seeded: tested in Node.
 - `src/render/` — scene, light, terrain, towns, armies; `src/app/` — camera, controls, the game loop; `src/ui/` — HUD, menus, sound, strings (Polish and English: `?lang=en`).
 - `src/config.ts` — every tunable, with units.
-- `src/assets/photo/` — the scanned surfaces and their licence; `tools/fetch_textures.py` downloads them again.
+- `src/assets/photo/` — the scanned surfaces and their licence; `tools/fetch_textures.py` downloads them again, `tools/encode_surfaces.mjs` compresses them to `public/surfaces/*.ktx2` (what the game loads).
 
 ## Measuring
 

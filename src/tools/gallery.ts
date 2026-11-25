@@ -49,7 +49,7 @@ const canvas = document.getElementById('view') as HTMLCanvasElement;
 const stage = new Stage(canvas, { quality: 'high', maxPixelRatio: 1 });
 await stage.init();
 const lighting = new Lighting(stage.renderer, stage.scene, AFTERNOON, 'high');
-const surfaces = await loadSurfaces('high', () => {});
+const surfaces = await loadSurfaces(stage.renderer, 'high', () => {});
 
 const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
 world.towns[0].stock.stone = 1000;

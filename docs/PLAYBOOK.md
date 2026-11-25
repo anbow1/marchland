@@ -66,6 +66,14 @@ Przełączniki w adresie do pomiarów i zrzutów: `?autostart` (bez menu), `&q=h
   ile by powierzchni nie było (na telefonach shader z ponad 16 teksturami się nie kompiluje). Wierzchołek
   niesie `aLayer` (warstwa, powtórzenia na metr) i odcień. Każda ściana, dach i grunt w grze to jedna z
   tych powierzchni. Pobieranie i skalowanie: `tools/fetch_textures.py`.
+- **Kompresja KTX2** (`tools/encode_surfaces.mjs`, `public/surfaces/`, z mediveal-village): skany idą do gry
+  jako KTX2 (Basis Universal) z gotowymi poziomami mip; kolor i ORM w ETC1S (ok. 250 KB, ~34 dB), normalne w
+  UASTC (ok. 1,3 MB, ~34 dB; ETC1S wyginał je do 26 dB, a cały UASTC ważył 3,4 MB na powierzchnię).
+  `KTX2Loader` transkoduje w workerze na format karty: BC7/BC1 na komputerze, ASTC/ETC2 na telefonie, RGBA
+  gdy karta nie ma żadnego. Warstwy jednej mapy składane w `CompressedArrayTexture` (te same rozmiary mip
+  w każdej warstwie, inaczej błąd z prośbą o ponowne kodowanie). Low pomija największy poziom (512 px).
+  Na Androidzie przez WebGL2 ASTC wyłączone (sterowniki Mali dawały magentę, wg mediveal-village). JPG
+  zostają w `src/assets/photo/` jako źródło, do gry już nie trafiają.
 - **Teren** (`terrainView.ts`): jeden mesh z funkcji wysokości symulacji, sięgający poza pole gry (horyzont
   to ląd). Sześć powierzchni rozkładają dwie mapy: **mapa pokrycia** (las, wysoko i sucho, skała, brzegi
   jezior, rysowana raz) i **mapa robót** (`groundWorks.ts`: R ubita ziemia, G zaorane, B zboże, A bruk),
