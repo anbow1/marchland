@@ -59,6 +59,8 @@ export interface HudActions {
   merge(kind: UnitKind): void;
   selectAll(): void;
   selectRegiment(id: number, additive: boolean): void;
+  /** The roster's double click: that regiment alone chosen, the camera over it. */
+  findRegiment(id: number): void;
   /** Out of the selection: one regiment, or all of them. */
   unselectRegiment(id: number): void;
   unselectAll(): void;
@@ -102,6 +104,22 @@ const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', a
 
 const MAX_CARDS = 48;
 const PANEL_REFRESH_S = 0.25;
+/** Cards on the roster bar at most (a full army of a hundred men is about ten regiments; the campaign's two hundred, twenty). */
+const MAX_ROSTER = 32;
+
+/** The cut of a side's banner, on its cards and its colours on the field: shape as well as colour tells the sides apart. */
+export const BANNER_CUT = ['square', 'swallowtail', 'pennant'] as const;
+
+/** A stance as a mark on the roster card. */
+const STANCE_MARK: Record<string, string> = { shields: '⛨', pikeWall: '⋔' };
+
+/** A regiment's trouble as a mark: running, without its captain, its pay owed, or nothing. */
+function troubleMark(world: World, r: Regiment): string {
+  if (r.state === 'routing') return `<b class="mark flee" title="${T.state.routing}">⚑</b>`;
+  if (!hasCaptain(r)) return `<b class="mark" title="${T.noCaptain}">✕</b>`;
+  if (world.towns[r.side].unpaid) return `<b class="mark" title="${T.payTip}">¤</b>`;
+  return '';
+}
 const TOAST_SECONDS = 5;
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, className: string, parent?: HTMLElement): HTMLElementTagNameMap[K] {
@@ -163,6 +181,12 @@ export class Hud {
   /** The banner the player closed: not shown again until it changes. */
   private bannerClosed = '';
   private readonly cards: HTMLElement[] = [];
+  /** The roster bar: a card for each of the player's regiments, always there (click selects, double click finds it). */
+  private readonly roster: HTMLElement;
+  /** The roster's cards, kept and rewritten one by one (a card under the pointer is not swapped for a copy). */
+  private readonly rosterCards: HTMLElement[] = [];
+  private readonly rosterKeys: string[] = [];
+  private readonly bottomBox: HTMLElement;
   private readonly cardKeys: string[] = [];
   private readonly debug: HTMLElement;
   private readonly box: HTMLElement;
@@ -291,7 +315,18 @@ export class Hud {
     });
     root.addEventListener('contextmenu', (e) => e.preventDefault());
 
+    // The roster bar, over the bottom panel.
+    this.roster = el('div', 'roster', root);
+    this.roster.addEventListener('pointerdown', (e) => {
+      const card = (e.target as HTMLElement).closest('.rcard') as HTMLElement | null;
+      if (!card) return;
+      e.stopPropagation();
+      const id = Number(card.dataset['id']);
+      if (e.detail >= 2) actions.findRegiment(id);
+      else actions.selectRegiment(id, e.shiftKey);
+    });
     const bottom = el('div', 'bottom', root);
+    this.bottomBox = bottom;
     this.minimap = new Minimap((x, z) => actions.jump(x, z));
     bottom.appendChild(this.minimap.canvas);
     const panelBox = el('div', 'panelBox', bottom);
@@ -921,14 +956,14 @@ export class Hud {
       const rank = veteranRank(r);
       // A chosen regiment of the player's on the move (or at an enemy) carries a stop button under its card.
       const stoppable = r.side === PLAYER && selected.has(r.id) && r.order !== 'hold';
-      const key = `${r.id}|${r.kind}|${r.side}|${strength}|${morale}|${rank}|${selected.has(r.id) ? 1 : 0}|${stoppable ? 1 : 0}`;
+      const key = `${r.id}|${r.kind}|${r.side}|${strength}|${morale}|${rank}|${selected.has(r.id) ? 1 : 0}|${stoppable ? 1 : 0}|${troubleMark(world, r)}`;
       if (this.cardKeys[used] !== key) {
         this.cardKeys[used] = key;
         card.dataset['id'] = String(r.id);
         card.dataset['own'] = r.side === PLAYER ? '1' : '0';
         card.className = `card ${morale}${selected.has(r.id) ? ' selected' : ''}`;
         card.style.borderColor = TEAM_CSS[r.side];
-        card.innerHTML = `<span class="glyph" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span>${rank > 0 ? `<span class="stars">${'★'.repeat(rank)}</span>` : ''}<span class="bar"><i style="width:${strength}%"></i></span>${stoppable ? `<button class="stop" title="${T.halt}">■</button>` : ''}`;
+        card.innerHTML = `<span class="glyph cut-${BANNER_CUT[r.side]}" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span>${rank > 0 ? `<span class="stars">${'★'.repeat(rank)}</span>` : ''}<span class="bar"><i style="width:${strength}%"></i></span>${troubleMark(world, r)}${stoppable ? `<button class="stop" title="${T.halt}">■</button>` : ''}`;
       }
       card.style.display = 'flex';
       card.style.transform = `translate(${Math.round(this.screen.x)}px, ${Math.round(this.screen.y)}px) translate(-50%, -100%)`;
@@ -939,6 +974,41 @@ export class Hud {
       if (card.style.display !== 'none') card.style.display = 'none';
       this.cardKeys[i] = '';
     }
+  }
+
+  /**
+   * The roster bar: each of the player's regiments as a card (kind, stars, strength, morale, stance and trouble),
+   * the chosen ones lit, sitting just over the bottom panel whatever its height.
+   */
+  private updateRoster(world: World, selected: ReadonlySet<number>): void {
+    let n = 0;
+    for (const r of world.regiments) {
+      if (r.side !== PLAYER || r.aliveMen === 0 || n >= MAX_ROSTER) continue;
+      const strength = Math.round((r.aliveMen / Math.max(r.initialMen, r.maxMen)) * 100);
+      const morale = Math.min(100, Math.max(0, Math.round((r.morale / r.def.morale) * 100)));
+      const rank = veteranRank(r);
+      const stance = r.stance === 'normal' ? '' : `<i class="stance" title="${T.stances[r.stance]}">${STANCE_MARK[r.stance] ?? ''}</i>`;
+      if (n >= this.rosterCards.length) {
+        this.rosterCards.push(el('div', 'rcard', this.roster));
+        this.rosterKeys.push('');
+      }
+      const card = this.rosterCards[n] as HTMLElement;
+      const inner = `<span class="glyph cut-${BANNER_CUT[r.side]}" style="background:${TEAM_CSS[r.side]}">${UNIT_GLYPH[r.kind]}</span><span class="stars">${'★'.repeat(rank)}</span>${stance}${troubleMark(world, r)}<span class="bar"><i style="width:${strength}%"></i></span><span class="bar"><i class="${morale > 55 ? 'ok' : morale > 25 ? 'warn' : 'bad'}" style="width:${morale}%"></i></span>`;
+      const cls = `rcard${selected.has(r.id) ? ' selected' : ''}${r.state === 'routing' ? ' flee' : ''}`;
+      const key = `${r.id}|${cls}|${inner}`;
+      if (this.rosterKeys[n] !== key) {
+        this.rosterKeys[n] = key;
+        card.className = cls;
+        card.dataset['id'] = String(r.id);
+        card.innerHTML = inner;
+      }
+      card.title = `${T.units[r.kind].name} · ${r.aliveMen} ${T.men} · ${this.stateText(world, r)}`;
+      card.style.display = '';
+      n++;
+    }
+    for (let i = n; i < this.rosterCards.length; i++) (this.rosterCards[i] as HTMLElement).style.display = 'none';
+    this.roster.style.display = n > 0 ? 'flex' : 'none';
+    this.roster.style.bottom = `${this.bottomBox.offsetHeight + 14}px`;
   }
 
   /** Once per rendered frame. `corners` is the camera's footprint for the minimap. */
@@ -956,6 +1026,7 @@ export class Hud {
     this.panelAge += frameSeconds;
     if (this.panelAge >= PANEL_REFRESH_S) {
       this.panelAge = 0;
+      this.updateRoster(world, selection.regiments);
       const men = menAlive(world, PLAYER);
       let people = 0;
       for (const person of world.people) if (person.alive && person.side === PLAYER) people++;

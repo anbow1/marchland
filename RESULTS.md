@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Pasek oddziałów, krój chorągwi, ulice gracza na później
+
+- **Pasek oddziałów** nad dolnym panelem: karta każdego oddziału gracza (znak, gwiazdki, postawa, znak kłopotu,
+  siła, morale), zaznaczone podświetlone; klik zaznacza, Shift dodaje, dwuklik zaznacza i przenosi kamerę.
+  Karty są trzymane i przepisywane pojedynczo (karta pod kursorem nie jest podmieniana co 0,25 s).
+- **Krój chorągwi**: strona 1 prostokąt, strona 2 jaskółczy ogon, strona 3 proporzec — trzy siatki chorągwi na
+  polu (jedna na stronę, ten sam materiał) i obcięcie znaku na kartach. Przy trzech barwach na mapie Trzech panów
+  i dla daltonistów strony odróżnia kształt.
+- **Znak kłopotu** na kartach: ⚑ ucieka, ✕ bez kapitana, ¤ żołd zaległy.
+- **Ulice gracza na później**: budynek postawiony z siatką bez kamienia na ulicę dostaje ją sam, gdy w zamku
+  jest kamień ponad 30 (co 5 s, jedna naraz; `layWantedStreets`). Test w `streets.test.ts`.
+- Przeglądarka (scena bitwy): 16 kart, zaznaczanie klikiem i Shift, bez błędów.
+
 ## 2026-11-27 · Pojedynki epok, strojenie broni palnej, epoka na start
 
 - **Tabela pojedynków** (regiment na regiment, start 100 m, obaj atakują, 4 ziarna; `+` wygrywa wiersz,

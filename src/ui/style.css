@@ -35,6 +35,26 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .card .stop:hover { background: #8e3a2f; }
 .card.warn .bar i { background: #e2c14a; }
 .card.bad .bar i { background: #e0624a; }
+/* Trouble on a regiment's card: running, without its captain, unpaid. */
+.card .mark, .rcard .mark { position: absolute; top: -7px; right: -7px; min-width: 13px; height: 13px; border-radius: 7px; background: #6b2a22; color: #fff; font-size: 9px; line-height: 13px; text-align: center; font-weight: 700; }
+.card .mark.flee, .rcard .mark.flee { background: #c0392b; }
+/* The cut of a side's banner: square, swallowtail, pennant. */
+.glyph.cut-swallowtail { clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 74%, 0 100%); }
+.glyph.cut-pennant { clip-path: polygon(0 0, 100% 0, 100% 62%, 50% 100%, 0 62%); }
+/* The roster bar: every regiment of the player's, over the bottom panel. */
+.roster { position: absolute; left: 8px; right: 8px; bottom: 160px; display: flex; gap: 5px; overflow-x: auto; pointer-events: auto; padding: 8px 2px 2px; scrollbar-width: thin; }
+.rcard { position: relative; flex: 0 0 auto; display: flex; flex-direction: column; width: 30px; padding: 2px; border: 1px solid #6d6650; border-radius: 4px; background: #14150fd8; cursor: pointer; }
+.rcard.selected { border-color: #f2c94c; box-shadow: 0 0 0 1px #f2c94c; }
+.rcard.flee { opacity: 0.7; }
+.rcard .glyph { text-align: center; font-size: 15px; line-height: 18px; color: #fff; }
+.rcard .stars { text-align: center; font-size: 8px; line-height: 9px; height: 9px; color: #f2c94c; letter-spacing: -1px; }
+.rcard .stance { position: absolute; top: -7px; left: -5px; font-style: normal; font-size: 11px; color: #d9cfa8; }
+.rcard .bar { height: 3px; margin-top: 2px; background: #000a; }
+.rcard .bar i { display: block; height: 100%; background: #9fd070; }
+.rcard .bar i.warn { background: #e2c14a; }
+.rcard .bar i.bad { background: #e0624a; }
+.rcard .bar i.ok { background: #6fb0e0; }
+
 .card.flee { opacity: 0.75; }
 .card.flee .bar i { background: #ddd; }
 .card.selected { box-shadow: 0 0 0 2px #fff6b8; }

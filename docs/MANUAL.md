@@ -141,9 +141,17 @@ Nad chorągwią każdego oddziału (swojego i wroga) wisi karta:
 - **pasek siły** (żywi / skład początkowy) w kolorze morale: zielony — dobrze, żółty — słabnie, czerwony —
   bliski ucieczki; karta oddziału, który ucieka, jest przygaszona, a pasek szary;
 - **zaznaczenie**: jasna poświata; zaznaczona karta leży nad innymi;
-- **■** pod kartą zaznaczonego oddziału w ruchu: zatrzymuje go w miejscu.
+- **■** pod kartą zaznaczonego oddziału w ruchu: zatrzymuje go w miejscu;
+- **znak kłopotu** w rogu: ⚑ ucieka, ✕ bez kapitana, ¤ żołd zaległy;
+- **krój chorągwi** (na karcie i na polu): Twoja prostokątna, druga strona z jaskółczym ogonem, trzecia (mapa
+  Trzech panów) trójkątna — strony odróżnia kształt, nie tylko barwa.
 
 Lewy klik w kartę zaznacza oddział (z Shift dodaje), prawy klik w kartę wroga — atak na niego.
+
+**Pasek oddziałów** (nad dolnym panelem): karta każdego Twojego oddziału, zawsze widoczna — znak rodzaju,
+gwiazdki, postawa (⛨ tarcze, ⋔ ściana pik), znak kłopotu, pasek siły i pasek morale (niebieski — dobrze, żółty,
+czerwony); zaznaczone podświetlone. Klik zaznacza (Shift dodaje), dwuklik zaznacza i przenosi kamerę do oddziału;
+dymek mówi, co oddział robi. Przy wielu oddziałach pasek się przewija.
 
 ### 3.4 Minimapa
 
@@ -175,7 +183,7 @@ który patrzą drzwi, i dalej najkrótszą drogą przez ulice, które już leż�
 mur. Część, która już leży, nic nie kosztuje, więc nowa ulica przedłuża stare: miasto rośnie długimi prostymi
 ulicami, które przecinają się na skrzyżowaniach, bez urwanych kawałków w środku kwartału. Płaci się kamieniem
 jak za drogę. Podgląd pokazuje działki sąsiednie, pola ulicy i jej koszt („ulica N kamienia”); bez kamienia
-budynek stanie sam, a ulicę położysz później narzędziem Droga. Komputer i gotowe miasta misji 1–2 budują się
+budynek stanie sam, a ulica położy się sama, gdy w zamku będzie kamień (ponad zapas 30). Komputer i gotowe miasta misji 1–2 budują się
 w ten sam sposób. Do budynków poza siatką (zagroda w polu, drwal, kamieniołom, rybak) komputer i gotowe miasta
 wydeptują **polną drogę**: prosto od drzwi do najbliższej ulicy, węższą i bez bruku, za darmo (idzie się nią
 1,2× szybciej, ulicą 1,4×). Gdy coś stanie na polnej drodze, jej odcięty kawałek zarasta i powstaje nowa.

@@ -1,6 +1,6 @@
 import { SIDE_COUNT } from './layout.ts';
 import { doorOfX, doorOfZ } from './placement.ts';
-import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, CAMPAIGN, ERAS, MAP, PAY, PEOPLE, START_AGE, TOWER, TOWN, UNITS } from '../config.ts';
+import { AI, type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, CAMPAIGN, ERAS, MAP, PAY, PEOPLE, SIM, START_AGE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, createDefence, type DefenceState, stepAi, stepDefence } from './ai.ts';
 import { campaignRegiment, type CampaignSetup, type CampaignState, setupCampaign, stepCampaign } from './campaign.ts';
@@ -13,6 +13,7 @@ import { doorX, doorZ, KEEP, type Person, returnHome, spawnPerson, stepPeople } 
 import { assignSlots, createRegiment, forwardX, forwardZ, newSoldier, type Regiment } from './regiment.ts';
 import { cmdBuild, cmdMove, inHomeLand, stepQueues } from './commands.ts';
 import { planSite } from './sitePlanner.ts';
+import { layWantedStreets, WANTED_EVERY_S } from './streetNet.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { createStand, type Stand, stepStand } from './trees.ts';
 import { createPoints, type Point, stepPoints } from './points.ts';
@@ -362,6 +363,8 @@ export function stepWorld(world: World, dtSeconds: number): void {
     stepPoints(world, 1);
     payArmy(world);
   }
+  // The player's streets that wait for stone (the computer lays its own in ai.ts).
+  if (world.stepCount % Math.round(WANTED_EVERY_S / SIM.stepSeconds) === 0) layWantedStreets(world, PLAYER, AI.roadStoneReserve);
   stepQueues(world);
   stepAnchors(world, dtSeconds);
   stepSoldiers(world, dtSeconds);

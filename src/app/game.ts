@@ -184,6 +184,12 @@ export class Game implements ControlTarget {
       merge: (kind) => this.mergeSelected(kind),
       selectAll: () => this.selectAll(),
       selectRegiment: (id, additive) => this.selectRegiment(id, additive),
+      findRegiment: (id) => {
+        const r = findRegiment(this.world, id);
+        if (!r) return;
+        this.selectRegiment(id, false);
+        this.camera.jumpTo(r.centreX, r.centreZ);
+      },
       unselectRegiment: (id) => this.unselectRegiment(id),
       unselectAll: () => this.unselectAll(),
       orderRegiment: (id) => this.attackRegiment(id),
@@ -724,7 +730,11 @@ export class Game implements ControlTarget {
       this.report(result);
       // On the grid its street to the keep is laid with it, where there is stone for it (else the building alone).
       const way = result === 'ok' && this.gridOn ? streetPlan(this.world, PLAYER, bx, bz, yaw) : null;
-      if (way) cmdBuildStreet(this.world, PLAYER, way);
+      // Without the stone for it now, the street is laid by itself once the stone comes (layWantedStreets).
+      if (way && cmdBuildStreet(this.world, PLAYER, way) !== 'ok') {
+        const b = this.world.towns[PLAYER].plots.find((p) => p !== null && p.x === bx && p.z === bz);
+        if (b) b.streetWanted = true;
+      }
       if (result === 'ok' && !keep) this.dropTool();
       return;
     }

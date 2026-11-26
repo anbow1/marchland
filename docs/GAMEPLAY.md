@@ -273,12 +273,10 @@ koszary) z plakietką u góry, każdy zaliczany sam, gdy miasto go pokazuje.
 **Zapis gry** (menu pauzy) i **wczytanie** (menu startowe), **ustawienia** (głośność, krawędź
 ekranu) — zrobione.
 
-Do zrobienia:
-
-- Dolny pasek kart oddziałów (jak dziś nad wojskiem, ale stały): siła, morale,
-  stopień, postawa; klik zaznacza, dwuklik centruje kamerę.
-- Kształt, nie tylko kolor: chorągwie stron różnią się krojem, stan oddziału
-  ikoną.
+Zrobione (27.11): **pasek oddziałów** nad dolnym panelem (siła, morale, stopień, postawa, kłopot; klik
+zaznacza, dwuklik centruje kamerę); **krój chorągwi** stron (prostokąt, jaskółczy ogon, proporzec) na polu
+i na kartach; **znak kłopotu** (ucieka, bez kapitana, nieopłacony); ulica gracza bez kamienia kładzie się
+sama, gdy kamień przyjdzie.
 
 ## 10. Kamienie milowe
 

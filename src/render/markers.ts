@@ -44,7 +44,8 @@ export interface GroundTiles {
 }
 
 export class Markers {
-  private readonly banners: InstancedMesh;
+  /** One per side: the flag's cut tells the sides apart as well as its colour (square, swallowtail, pennant). */
+  private readonly banners: [InstancedMesh, InstancedMesh, InstancedMesh];
   private readonly rings: InstancedMesh;
   private readonly plots: InstancedMesh;
   private readonly tiles: InstancedMesh;
@@ -58,14 +59,29 @@ export class Markers {
   private readonly dim = new Color();
 
   constructor(scene: Scene) {
-    // A banner: a pole and a flag; the instance colour tints the (white) flag.
-    const b = new MeshBuilder();
-    b.box(0, 0, 0, 0.09, 4.6, 0.09, 0x6a5038);
-    b.quad([0.05, 4.5, 0], [0.05, 3.3, 0], [1.9, 3.3, 0], [1.9, 4.5, 0], 0xffffff);
-    b.quad([1.9, 4.5, 0], [1.9, 3.3, 0], [0.05, 3.3, 0], [0.05, 4.5, 0], 0xffffff);
-    this.banners = new InstancedMesh(b.build(), new MeshStandardNodeMaterial({ name: 'banner', vertexColors: true, roughness: 0.8 }), MAX_BANNERS);
-    this.banners.name = 'banners';
-    this.banners.castShadow = true;
+    // A banner: a pole and a flag; the instance colour tints the (white) flag. Each side's flag has its own cut.
+    const bannerMaterial = new MeshStandardNodeMaterial({ name: 'banner', vertexColors: true, roughness: 0.8 });
+    const flag = (outline: readonly (readonly [number, number])[]): InstancedMesh => {
+      const b = new MeshBuilder();
+      b.box(0, 0, 0, 0.09, 4.6, 0.09, 0x6a5038);
+      // A fan of triangles from the first corner, both faces.
+      for (let i = 1; i + 1 < outline.length; i++) {
+        const [a, c, d] = [outline[0], outline[i], outline[i + 1]] as [readonly [number, number], readonly [number, number], readonly [number, number]];
+        b.tri([a[0], a[1], 0], [c[0], c[1], 0], [d[0], d[1], 0], 0xffffff);
+        b.tri([a[0], a[1], 0], [d[0], d[1], 0], [c[0], c[1], 0], 0xffffff);
+      }
+      const mesh = new InstancedMesh(b.build(), bannerMaterial, MAX_BANNERS);
+      mesh.name = 'banners';
+      mesh.castShadow = true;
+      return mesh;
+    };
+    this.banners = [
+      flag([[0.05, 4.5], [0.05, 3.3], [1.9, 3.3], [1.9, 4.5]]),
+      // A swallowtail: the fly cut in to the middle.
+      flag([[0.05, 4.5], [0.05, 3.3], [1.9, 3.3], [1.25, 3.9], [1.9, 4.5]]),
+      // A pennant: a long triangle.
+      flag([[0.05, 4.5], [0.05, 3.3], [2.3, 3.9]]),
+    ];
 
     const flat = new MeshBasicNodeMaterial({ name: 'marker', transparent: true, opacity: 0.85, depthWrite: false, side: DoubleSide, fog: false });
     this.rings = new InstancedMesh(new RingGeometry(0.42, 0.56, 14).rotateX(-Math.PI / 2), flat, MAX_RINGS);
@@ -76,7 +92,7 @@ export class Markers {
     this.tiles.name = 'ground tiles';
     this.reach = new InstancedMesh(new PlaneGeometry(5.5, 1.1).rotateX(-Math.PI / 2), flat, MAX_DASHES);
     this.reach.name = 'build reach';
-    for (const mesh of [this.banners, this.rings, this.plots, this.tiles, this.reach]) {
+    for (const mesh of [...this.banners, this.rings, this.plots, this.tiles, this.reach]) {
       mesh.instanceMatrix.setUsage(DynamicDrawUsage);
       mesh.count = 0;
       mesh.frustumCulled = false;
@@ -144,19 +160,21 @@ export class Markers {
 
   /** `cameraYawRad` turns the flags to face the camera; `selected` holds regiment ids; `selectedPlot` is -1 for the keep, -2 for none. */
   update(world: World, selected: ReadonlySet<number>, selectedPlot: number, cameraYawRad: number, tiles: GroundTiles | null): void {
-    let banners = 0;
+    const banners = [0, 0, 0];
     let rings = 0;
     for (const r of world.regiments) {
       if (r.aliveMen === 0) continue;
-      if (banners < MAX_BANNERS) {
+      const mesh = this.banners[r.side];
+      const n = banners[r.side] as number;
+      if (n < MAX_BANNERS) {
         this.p.set(r.centreX, heightAtM(r.centreX, r.centreZ), r.centreZ);
         this.q.setFromAxisAngle(this.up, -cameraYawRad);
         this.s.set(1, 1, 1);
-        this.banners.setMatrixAt(banners, this.m.compose(this.p, this.q, this.s));
+        mesh.setMatrixAt(n, this.m.compose(this.p, this.q, this.s));
         // A routing regiment's banner is drained of colour.
         const colour = r.state === 'routing' ? this.dim.copy(this.teamColours[r.side]).lerp(SELECT_COLOUR, 0.75) : this.teamColours[r.side];
-        this.banners.setColorAt(banners, colour);
-        banners++;
+        mesh.setColorAt(n, colour);
+        banners[r.side] = n + 1;
       }
       if (!selected.has(r.id)) continue;
       const scale = r.def.cavalry ? 2 : 1;
@@ -166,11 +184,13 @@ export class Markers {
       }
       rings = this.ghosts(r, rings, scale);
     }
-    this.banners.count = banners;
+    this.banners.forEach((mesh, side) => {
+      mesh.count = banners[side] as number;
+      mesh.instanceMatrix.needsUpdate = true;
+      if (mesh.instanceColor) mesh.instanceColor.needsUpdate = true;
+    });
     this.rings.count = rings;
-    this.banners.instanceMatrix.needsUpdate = true;
     this.rings.instanceMatrix.needsUpdate = true;
-    if (this.banners.instanceColor) this.banners.instanceColor.needsUpdate = true;
     if (this.rings.instanceColor) this.rings.instanceColor.needsUpdate = true;
 
     // A ring round the selected building (or the keep).

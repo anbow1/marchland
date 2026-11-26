@@ -1,5 +1,5 @@
 import { ROADS, STREETS, TOWN } from '../config.ts';
-import { streetCells } from './commands.ts';
+import { cmdBuildStreet, streetCells, streetCost } from './commands.ts';
 import { cellX, cellZ, isBuiltOn, isRoad, layRoad, NAV_CELLS_PER_SIDE, ROAD_NONE, ROAD_PAVED, ROAD_TRACK, roadCells } from './nav.ts';
 import { doorOfX, doorOfZ, mayLayRoadAt } from './placement.ts';
 import { type Leg, originX, originZ, squareAt, streetBeside } from './streets.ts';
@@ -354,5 +354,31 @@ export function pruneTracks(world: World): void {
       }
     }
     if (cut > 0) nav.version += 1;
+  }
+}
+
+/** Seconds between two looks at the player's streets that wait for stone. */
+export const WANTED_EVERY_S = 5;
+
+/**
+ * The streets the player's buildings on the grid wait for (placed without the stone for them): the first whose
+ * street is not laid gets it once the town has its stone and `reserveStone` over. One a call; a building whose
+ * street is in (or cannot be laid at all) waits no more.
+ */
+export function layWantedStreets(world: World, side: Side, reserveStone: number): void {
+  const town = world.towns[side];
+  for (const b of town.plots) {
+    if (!b || !b.streetWanted) continue;
+    if (streetLaid(world, side, b.x, b.z, b.yawRad)) {
+      b.streetWanted = false;
+      continue;
+    }
+    const legs = streetPlan(world, side, b.x, b.z, b.yawRad);
+    if (!legs) {
+      b.streetWanted = false;
+      continue;
+    }
+    if (streetCost(world, legs) + reserveStone <= town.stock.stone) cmdBuildStreet(world, side, legs);
+    return;
   }
 }

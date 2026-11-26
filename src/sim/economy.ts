@@ -49,6 +49,8 @@ export interface Building {
   matWaiting: { wood: number; stone: number; planks: number };
   /** Burnt out (the campaign's ruined settlement): makes nothing, houses nobody, until rebuilt for half its price (cmdRebuild). Absent in old saves. */
   ruin?: boolean;
+  /** Placed on the grid by the player: its street is laid as soon as there is the stone (layWantedStreets). */
+  streetWanted?: boolean;
   matDelivered: number;
   matTotal: number;
   /** Goods waiting to be used, goods made and not yet carried off, and goods a carrier is bringing. */

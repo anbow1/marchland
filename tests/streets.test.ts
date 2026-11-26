@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { STREETS, TOWN } from '../src/config.ts';
 import { isStreetLine, originX, originZ, streetBeside, streetYaw } from '../src/sim/streets.ts';
-import { streetPlan } from '../src/sim/streetNet.ts';
-import { cmdBuildStreet, streetCost } from '../src/sim/commands.ts';
+import { streetLaid, streetPlan } from '../src/sim/streetNet.ts';
+import { cmdBuild, cmdBuildStreet, streetCost } from '../src/sim/commands.ts';
 import { cellX, cellZ, NAV_CELLS_PER_SIDE, ROAD_PAVED, ROAD_TRACK } from '../src/sim/nav.ts';
 import { PLAYER } from '../src/sim/types.ts';
 import { createWorld, stepWorld } from '../src/sim/world.ts';
@@ -139,5 +139,26 @@ describe('the chessboard street plan', () => {
     expect(total).toBeGreaterThan(150);
     expect(tracks).toBeGreaterThan(5);
     expect(joined / total).toBeGreaterThan(0.95);
+  });
+
+  it('a street the player could not pay for is laid by itself once the stone comes', () => {
+    const world = createWorld({ seed: 1, difficulty: 'normal', computerPlays: false });
+    const town = world.towns[PLAYER];
+    const x = originX(PLAYER) + 2 * G;
+    const z = originZ(PLAYER) + 3 * G;
+    const yaw = streetYaw(PLAYER, x, z, Math.atan2(originX(PLAYER) - x, originZ(PLAYER) - z));
+    town.stock.gold = 500;
+    town.stock.wood = 500;
+    expect(cmdBuild(world, PLAYER, 'house', x, z, yaw)).toBe('ok');
+    const b = town.plots.find((p) => p !== null && p.x === x && p.z === z);
+    if (!b) throw new Error('no house');
+    town.stock.stone = 0;
+    b.streetWanted = true;
+    for (let t = 0; t < 12 / SIM.stepSeconds; t++) stepWorld(world, SIM.stepSeconds);
+    expect(streetLaid(world, PLAYER, x, z, yaw)).toBe(false);
+    town.stock.stone = 500;
+    for (let t = 0; t < 12 / SIM.stepSeconds; t++) stepWorld(world, SIM.stepSeconds);
+    expect(streetLaid(world, PLAYER, x, z, yaw)).toBe(true);
+    expect(b.streetWanted).toBe(false);
   });
 });
