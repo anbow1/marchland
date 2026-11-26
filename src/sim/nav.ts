@@ -83,7 +83,7 @@ function centreOf(c: number): number {
 
 export function isRoad(nav: Nav, x: number, z: number): boolean {
   if (Math.abs(x) >= MAP.halfM || Math.abs(z) >= MAP.halfM) return false;
-  return nav.road[cellOf(z) * N + cellOf(x)] === 1;
+  return nav.road[cellOf(z) * N + cellOf(x)] !== 0;
 }
 
 /** True where a building or a keep stands. */
@@ -111,7 +111,8 @@ export function nearBuilt(nav: Nav, x: number, z: number): boolean {
 /** Walking speed at a point, as a share of the pace on open ground. */
 export function speedFactorAt(nav: Nav, x: number, z: number): number {
   const i = cellOf(z) * N + cellOf(x);
-  if (nav.road[i] === 1) return ROADS.roadSpeedFactor;
+  if (nav.road[i] === ROAD_PAVED) return ROADS.roadSpeedFactor;
+  if (nav.road[i] === ROAD_TRACK) return ROADS.trackSpeedFactor;
   return FOREST[i] === 1 ? ROADS.forestSpeedFactor : ROADS.openSpeedFactor;
 }
 
@@ -130,8 +131,16 @@ export function stampBuilding(nav: Nav, x: number, z: number, radiusM: number, b
   nav.version += 1;
 }
 
-/** Cells a straight road from one point to another would cover that are not road yet and can be: not water, not built on. */
-export function roadCells(nav: Nav, x0: number, z0: number, x1: number, z1: number, out: number[]): number {
+/** What a road cell is: none, a paved road or street (stone), or a track of trodden earth out to a farm (free). */
+export const ROAD_NONE = 0;
+export const ROAD_PAVED = 1;
+export const ROAD_TRACK = 2;
+
+/**
+ * Cells a straight road from one point to another would cover that are not road yet and can be: not water, not
+ * built on. A paved road paves over a track; a track (`kind` ROAD_TRACK) goes only where there is no road.
+ */
+export function roadCells(nav: Nav, x0: number, z0: number, x1: number, z1: number, out: number[], kind = ROAD_PAVED): number {
   out.length = 0;
   const steps = Math.max(1, Math.ceil(hypot2(x1 - x0, z1 - z0) / (ROADS.cellM * 0.5)));
   let last = -1;
@@ -140,14 +149,15 @@ export function roadCells(nav: Nav, x0: number, z0: number, x1: number, z1: numb
     const i = cellOf(z0 + (z1 - z0) * t) * N + cellOf(x0 + (x1 - x0) * t);
     if (i === last) continue;
     last = i;
-    if (nav.road[i] === 1 || nav.built[i] === 1 || WATER[i] === 1 || out.includes(i)) continue;
+    const road = nav.road[i] as number;
+    if (road === ROAD_PAVED || (road !== ROAD_NONE && kind === ROAD_TRACK) || nav.built[i] === 1 || WATER[i] === 1 || out.includes(i)) continue;
     out.push(i);
   }
   return out.length;
 }
 
-export function layRoad(nav: Nav, cells: readonly number[]): void {
-  for (const i of cells) nav.road[i] = 1;
+export function layRoad(nav: Nav, cells: readonly number[], kind = ROAD_PAVED): void {
+  for (const i of cells) nav.road[i] = kind;
   if (cells.length > 0) nav.version += 1;
 }
 
@@ -377,7 +387,7 @@ export function freeCellBeside(nav: Nav, cell: number, nearX: number, nearZ: num
 const EDGE_COST = [0, 4, 1.5];
 
 function costOf(nav: Nav, i: number): number {
-  const ground = nav.road[i] === 1 ? COST_ROAD : FOREST[i] === 1 ? COST_FOREST : COST_OPEN;
+  const ground = nav.road[i] !== 0 ? COST_ROAD : FOREST[i] === 1 ? COST_FOREST : COST_OPEN;
   if (passSide < 0) return ground;
   let near = SHORE[i] as number;
   if (near > SHORE_CELLS) near = SHORE_CELLS + 1;

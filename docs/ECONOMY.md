@@ -95,7 +95,9 @@ i drogi są decyzją gracza, a nie ozdobą.
   Ludzie sami wybierają najszybszą trasę (drogą idą 1.4× szybciej) i omijają budynki oraz wodę.
 - Komputer stawia według tych samych reguł: rzemiosło i chaty w pierścieniach wokół zamku, zagrody
   w wiosce z polami za plecami, drwala przy najbliższej ścianie lasu, rybaka nad jeziorem,
-  kamieniołom i kopalnię przy skale; od każdych drzwi kładzie drogę do bramy zamku.
+  kamieniołom i kopalnię przy skale. Budynki na siatce dostają ulicę od skrzyżowania do skrzyżowania, połączoną
+  z resztą ulic aż do zamku (kładzie ją po kolei, gdy ma kamień ponad 30); budynki spoza siatki — polną
+  drogę do najbliższej ulicy (za darmo, bez bruku, ludzie idą nią 1.2× szybciej).
 
 ## 8. Poziomy budynków
 

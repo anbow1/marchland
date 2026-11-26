@@ -1,5 +1,6 @@
 import { AI, type AiCharacter, CAMERA, CAMPAIGN, DEFENCE, FIELDS, GATE, MAP, POINTS, ROADS, TOWN } from '../config.ts';
-import { streetWay, streetYaw } from '../sim/streets.ts';
+import { streetYaw } from '../sim/streets.ts';
+import { streetPlan } from '../sim/streetNet.ts';
 import { FixedLoop } from '../core/loop.ts';
 import { wallCellsFor, cmdAttackBuilding, cmdBombard, cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildStreet, streetCells, streetCost, cmdBuildWall, cmdDemolish, cmdRebuild, cmdTrade, cmdTurnSite, cmdGarrison, cmdHalt, cmdMerge, cmdPace, cmdClearQueue, cmdMoveFormation, cmdMoveGroup, cmdQueue, captureFormation, type FormationPlace, formationSpots, groupLineSpots, dragFacing, cmdKindPriority, cmdOrder, cmdOrderRegiments, orderedGoodsFor, cmdPriority, cmdRearm, cmdRecruit, cmdReinforce, cmdTogglePaused, cmdUpgradeTransport, cmdFireAtWill, cmdFormation, cmdRanks, cmdStance, cmdUngarrison, cmdUpgrade, cmdUpgradeKeep, roadCost, wallCost } from '../sim/commands.ts';
 import type { GameEvent } from '../sim/events.ts';
@@ -720,7 +721,7 @@ export class Game implements ControlTarget {
       const result = cmdBuild(this.world, PLAYER, tool.building, bx, bz, yaw);
       this.report(result);
       // On the grid its street to the keep is laid with it, where there is stone for it (else the building alone).
-      const way = result === 'ok' && this.gridOn ? streetWay(PLAYER, bx, bz, yaw) : null;
+      const way = result === 'ok' && this.gridOn ? streetPlan(this.world, PLAYER, bx, bz, yaw) : null;
       if (way) cmdBuildStreet(this.world, PLAYER, way);
       if (result === 'ok' && !keep) this.dropTool();
       return;
@@ -795,7 +796,7 @@ export class Game implements ControlTarget {
           }
         }
         // The street it would get, cell by cell, and what it costs.
-        const way = streetWay(PLAYER, gx, gz, yaw);
+        const way = streetPlan(this.world, PLAYER, gx, gz, yaw);
         if (way) {
           const cells = streetCells(this.world, way, this.roadScratch);
           for (let c = 0; c < cells; c++) {

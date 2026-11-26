@@ -169,10 +169,15 @@ czerwono). Dymek: do czego służy i co z czego robi. **Siatka (T)**: miasto w s
 mediveal-village). Budynki przyciągają się do działek co 16 m, zebranych w kwartały 2×2; między kwartałami
 biegną ulice szerokie na 4 m (dwa pasy drogi), a wokół zamku jego plac (kwartał 3×3 działki). Każda działka leży
 w narożniku kwartału, więc ma ulicę z dwóch stron: drzwi patrzą na tę bliższą kierunkowi do zamku, R wybiera
-drugą. Z budynkiem kładzie się jego ulica do zamku: od drzwi wzdłuż ulic do placu zamkowego i przez plac pod
-mur, za kamień jak droga (część, która już leży, nic nie kosztuje). Podgląd pokazuje działki sąsiednie, pola
-ulicy i jej koszt („ulica N kamienia”); bez kamienia budynek stanie sam, a ulicę położysz później narzędziem
-Droga. Komputer i gotowe miasta misji 1–2 budują się w ten sam sposób.
+drugą. Z budynkiem kładzie się jego ulica, zawsze **od skrzyżowania do skrzyżowania**: cały bok kwartału, na
+który patrzą drzwi, i dalej najkrótszą drogą przez ulice, które już leżą, do placu zamkowego i przez plac pod
+mur. Część, która już leży, nic nie kosztuje, więc nowa ulica przedłuża stare: miasto rośnie długimi prostymi
+ulicami, które przecinają się na skrzyżowaniach, bez urwanych kawałków w środku kwartału. Płaci się kamieniem
+jak za drogę. Podgląd pokazuje działki sąsiednie, pola ulicy i jej koszt („ulica N kamienia”); bez kamienia
+budynek stanie sam, a ulicę położysz później narzędziem Droga. Komputer i gotowe miasta misji 1–2 budują się
+w ten sam sposób. Do budynków poza siatką (zagroda w polu, drwal, kamieniołom, rybak) komputer i gotowe miasta
+wydeptują **polną drogę**: prosto od drzwi do najbliższej ulicy, węższą i bez bruku, za darmo (idzie się nią
+1,2× szybciej, ulicą 1,4×). Gdy coś stanie na polnej drodze, jej odcięty kawałek zarasta i powstaje nowa.
 
 **Zagroda i winnica** zajmują od razu ziemię na wszystkie trzy poziomy (paski za budynkiem, aż do wody, lasu,
 skały albo innego budynku; co najmniej 4). Podgląd pokazuje paski w kolorach poziomów: zielone — uprawiane od
@@ -498,7 +503,7 @@ dłużej (3 i 4 minuty) i kosztuje dużo: zamek 4 — 1200 zł, 200 desek, 400 k
 - **Przezbrajanie**: muszkieterowie → piechota liniowa albo strzelcy (przy koszarach 5).
 - **Komputer** wchodzi w kolejne epoki po 50. minucie, gdy ma zbudowany plan średniowieczny i złoto w zapasie;
   wtedy stawia katedrę, rusznikarnię, prochownię, ratusz i manufakturę, podnosi koszary i werbuje nowe wojska.
-- **Modele zastępcze**: nowe jednostki chodzą na modelach średniowiecznych (piechota z bronią palną na kuszniku,
+- **Modele zastępcze** (stan i lista potrzebnych modeli: [AGES.md](AGES.md)): nowe jednostki chodzą na modelach średniowiecznych (piechota z bronią palną na kuszniku,
   który celuje jak z karabinu; kirasjerzy jak rycerze; dragoni i huzarzy jak lekka jazda), a rusznikarnia,
   prochownia i wielkie budowle mają bryły z kodu — do czasu własnych modeli.
 
@@ -550,8 +555,9 @@ zależne od odległości od kamery.
 
 ## 9. Komputer
 
-W potyczce komputer buduje miasto według tego samego planisty co gracz (kwartały na siatce 16 m, drogi do
-zamku), werbuje, przezbraja milicję, obsadza wieże, handluje na targu, gdy brakuje złota, i atakuje falami
+W potyczce komputer buduje miasto według tego samego planisty co gracz (kwartały na siatce 16 m, ulice od
+skrzyżowania do skrzyżowania, kładzione po kolei, gdy ma kamień ponad zapas; budynki spoza siatki trzyma z dala
+od ulic i łączy z nimi polnymi drogami), werbuje, przezbraja milicję, obsadza wieże, handluje na targu, gdy brakuje złota, i atakuje falami
 (wielkość i czas zależą od poziomu i charakteru). W walce dobiera cele (kontry), stawia ścianę pik na jazdę
 i tarcze pod ostrzałem.
 
@@ -592,6 +598,7 @@ tablecie wybierz grafikę „Bardzo niska”. Gdy coś pójdzie źle, przy nast�
 | kampania: scenariusze, osada, ruiny, twierdza, stanowiska przy zamku, dźwięk | §4.7 |
 | budynki z Blendera, etapy budowy, mury pod dowolnym kątem | §5 |
 | skąd assety i na jakich licencjach | §6 i [ASSETS.md](ASSETS.md) |
+| epoki: stan, wygląd zastępczy, czego szukamy | [AGES.md](AGES.md) |
 | pomiary, testy, zrzuty | §7 |
 | wydanie: przeglądarka, iPad, Windows, offline | §8 |
 | pułapki, na które wpadliśmy | §9 |

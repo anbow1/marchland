@@ -80,6 +80,11 @@ i kobieta), koń z chodem i galopem, jeździec, budynki, wozy, działa. Zostały
 3. ~~Pchnięcie oburącz z biodra dla pikinierów~~ — jest (Bayonet Stab).
 4. Towary do obejść w stylu KayKit: ryby w koszu, winogrona w koszu, sztabki żelaza, ruda, snopki zboża.
 
+5. **Epoki 2 i 3** (zasady już w grze, wygląd zastępczy): muszkieter, kirasjer, dragon, piechota liniowa,
+   strzelec, huzar z animacjami; broń i tarcze (mała tarcza pikiniera, długa pika i duża tarcza halabardnika,
+   kopia, muszkiet, szabla); budynki: rusznikarnia, prochownia, katedra, ratusz, manufaktura i domy w wyglądzie
+   epok; kłus konia. Pełna lista z wymaganiami: [AGES.md §4](AGES.md).
+
 Animacje z Mixamo: FBX, **Without Skin** (albo ze skórą, jeśli chodzi też o postać), 30 kl./s, przy ruchu
 zaznaczone **In Place**.
 

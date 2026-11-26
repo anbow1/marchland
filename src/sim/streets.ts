@@ -74,64 +74,31 @@ export function streetYaw(side: Side, x: number, z: number, preferYaw: number): 
 /** A straight leg of a street, centre line from (x0, z0) to (x1, z1): along one axis only. */
 export type Leg = readonly [number, number, number, number];
 
-/**
- * The way from a building's door to the keep along the streets: out of the door onto its street, along it to
- * the keep block's edge, along that edge to the middle of the keep's side, then straight in across the yard.
- * Null off the grid (the caller lays its straight road as before).
- */
-export function streetWay(side: Side, x: number, z: number, yawRad: number): Leg[] | null {
-  const sq = squareAt(side, x, z);
-  if (!sq) return null;
-  const ox = originX(side);
-  const oz = originZ(side);
-  const [i, j] = sq;
-  const alongX = Math.abs(Math.sin(yawRad)) > 0.5;
-  const legs: Leg[] = [];
-  // The door's street line, in metres, and the point of it in front of the door.
-  const line = alongX ? streetBeside(i) : streetBeside(j);
-  if (line === null) return null;
-  const doorX = alongX ? ox + line * G : x;
-  const doorZ = alongX ? z : oz + line * G;
-  const edge = FIRST * G;
-  // From the door to the line round the keep block, along the door's street: the cross street nearest the keep.
-  let px = doorX;
-  let pz = doorZ;
-  const push = (nx: number, nz: number): void => {
-    if (Math.abs(nx - px) > 0.01 || Math.abs(nz - pz) > 0.01) legs.push([px, pz, nx, nz]);
-    px = nx;
-    pz = nz;
-  };
-  // The doorstep, just outside the footprint.
-  px = x + Math.sin(yawRad) * (TOWN.buildingRadiusM + 0.5);
-  pz = z + Math.cos(yawRad) * (TOWN.buildingRadiusM + 0.5);
-  push(doorX, doorZ);
-  // Along the door's street to the street round the keep block (the nearer side of it, even for a square in
-  // the keep's own row, whose middle is building ground); along that to the middle of the keep's side.
-  const side1 = (d: number): number => (Math.abs(d) > 0.01 ? Math.sign(d) : 1);
-  if (alongX) {
-    if (Math.abs(px - ox) > edge + 0.01) {
-      const ringZ = oz + side1(pz - oz) * edge;
-      push(px, ringZ);
-      push(ox + Math.sign(px - ox) * edge, ringZ);
-    }
-    push(px, oz);
-  } else {
-    if (Math.abs(pz - oz) > edge + 0.01) {
-      const ringX = ox + side1(px - ox) * edge;
-      push(ringX, pz);
-      push(ringX, oz + Math.sign(pz - oz) * edge);
-    }
-    push(ox, pz);
-  }
-  // Across the yard to the keep's wall.
-  const inX = Math.abs(px - ox) > Math.abs(pz - oz);
-  const wall = TOWN.keepRadiusM + 1;
-  push(inX ? ox + Math.sign(px - ox) * wall : px, inX ? pz : oz + Math.sign(pz - oz) * wall);
-  return legs;
-}
-
 /** Road cells' centres across a street of STREETS.widthCells cells on a centre line: the offsets to lay. */
 export function laneOffsets(): number[] {
   const n = STREETS.widthCells;
   return Array.from({ length: n }, (_, k) => (k - (n - 1) / 2) * ROADS.cellM);
+}
+
+/** How far out (in squares from the keep) the planned streets are kept clear of buildings off the grid. */
+const CLEAR_SQUARES = FIRST + 3 * STREETS.blockSquares;
+
+/**
+ * True when a circle of `radiusM` at (x, z) would stand on one of the planned streets of the side's town (its
+ * inner blocks, CLEAR_SQUARES out): the computer puts nothing off the grid there, so its streets run through.
+ */
+export function onPlannedStreet(side: Side, x: number, z: number, radiusM: number): boolean {
+  const u = (x - originX(side)) / G;
+  const v = (z - originZ(side)) / G;
+  if (Math.abs(u) > CLEAR_SQUARES + 1 || Math.abs(v) > CLEAR_SQUARES + 1) return false;
+  const clear = radiusM + (STREETS.widthCells * ROADS.cellM) / 2 + 1;
+  const near = (w: number, other: number): boolean => {
+    if (Math.abs(other) > CLEAR_SQUARES + clear / G) return false;
+    const a = Math.abs(w);
+    // Nearest street line to w (|w| below FIRST: the ring's line itself).
+    const n = Math.max(0, Math.round((a - FIRST) / STREETS.blockSquares));
+    const line = Math.min(FIRST + n * STREETS.blockSquares, CLEAR_SQUARES);
+    return Math.abs(a - line) * G < clear;
+  };
+  return near(u, v) || near(v, u);
 }

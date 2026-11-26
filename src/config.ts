@@ -194,6 +194,8 @@ export const ROADS = {
   stonePerCell: 0.34,
   /** How fast people walk on a road, on open ground and among trees, as a share of their walking pace. */
   roadSpeedFactor: 1.4,
+  /** On a track of trodden earth (the way out to a farm off the town's streets; it costs nothing to lay). */
+  trackSpeedFactor: 1.2,
   openSpeedFactor: 1,
   forestSpeedFactor: 0.7,
   /**

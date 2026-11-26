@@ -5,6 +5,24 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Ulice od skrzyżowania do skrzyżowania, polne drogi; dokument o epokach
+
+- **Problem** (uwaga właściciela: „drogi wyglądają mało naturalnie”): każdy budynek dostawał własną drogę w kształcie
+  L od drzwi do zamku, a komputer kładł ją tylko z kamieniem „na zbyciu”. Z góry: urwane kawałki w środku
+  kwartałów, schodki, luki; budynki spoza siatki ciągnęły ukośne drogi przez całe miasto do bramy zamku.
+- **Zmiana** (`src/sim/streetNet.ts`): ulice to graf skrzyżowań szachownicy. Budynek dostaje cały bok kwartału, na
+  który patrzą drzwi, i najtańszą drogę przez położone już ulice do zamku (Dijkstra; położone 0,08, nowe 1,08 za
+  komórkę). Komputer kładzie po kolei ulicę pierwszego budynku bez ulicy, czeka na kamień zamiast przeskakiwać;
+  planista nie stawia budynków spoza siatki na liniach ulic w trzech pierwszych kwartałach. Budynki spoza siatki
+  dostają **polną drogę** (nowy rodzaj komórki: bez bruku, węższa, za darmo, 1,2× szybciej) do najbliższej ulicy;
+  odcięte budynkiem kawałki zarastają (`pruneTracks`). Gracz z siatką dostaje te same ulice (podgląd z kosztem).
+- **Wynik** (ziarno 4, 45 min, miasto komputera): z 12 urwanych kawałków i ok. 240 komórek dróg — siatka długich
+  ulic z przecięciami, 850 komórek; po 30 min ≥ 95% komórek dróg połączonych z zamkiem (test). Koszt ok. 3%
+  czasu symulacji (profil). Zapis i wczytanie partii dalej dają tę samą grę (decyzje tylko z zegara gry i mapy).
+- **Dokumentacja**: nowy `docs/AGES.md` (epoki: decyzje, stan, wygląd zastępczy, lista modeli i animacji do
+  znalezienia); MANUAL §4.1 i §9, PLAYBOOK (sieć ulic), GAMEPLAY (drogi, kamień M7 Epoki), ASSETS (lista życzeń),
+  ECONOMY (generowany).
+
 ## 2026-11-27 · Epoki 2 i 3: zamek 4–5, broń palna, wielkie budowle (bez nowych modeli)
 
 - **Zasada** (wybrana): dotychczasowa gra to epoka 1; zamek 4 = wczesna nowożytność, zamek 5 = XIX wiek, wejście

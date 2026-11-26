@@ -244,13 +244,28 @@ wysokości.
 - **Miasto w szachownicę** (`streets.ts`, z mediveal-village, gdzie miasto ma ulicę główną i poprzeczne, a
   każdy budynek drzwiami do ulicy): działki siatki 16 m w kwartałach 2×2 (`STREETS.blockSquares`), linie ulic w
   połowie między działkami (±1.5, ±3.5… działki od zamku), plac zamku to kwartał 3×3. `streetBeside(i)` daje
-  ulicę przy działce, `streetYaw` obraca drzwi na nią, `streetWay` prowadzi od progu wzdłuż ulic do ulicy
-  wokół placu, nią do środka boku zamku i przez plac pod mur; `cmdBuildStreet` kładzie to dwoma pasami
-  (4 m, w szczelinie 5 m między budynkami). Gracz (z siatką), komputer i gotowe miasta misji. W przeciwieństwie
+  ulicę przy działce, `streetYaw` obraca drzwi na nią; `cmdBuildStreet` kładzie ulicę dwoma pasami
+  (4 m, w szczelinie 5 m między budynkami). Trasa ulicy — niżej, „Sieć ulic”. Gracz (z siatką), komputer i gotowe miasta misji. W przeciwieństwie
   do obwodnicy z sieci „do najbliższej drogi” ulice są szerokie na dwa pasy, a do zamku dochodzą cztery wejścia
   (środki boków placu), więc taczki się rozkładają. Pomiar (20 min, taczki, miasto komputera, 3 ziarna):
   czekających 0,94 → 0,50, przy zamku 1,6 → 1,3, produkcja 2872 → 2893; gotowe miasto misji 1: 2,4 → 1,6 i
   4,0 → 2,5; misji 2: 1,5 → 1,0 i 3,3 → 2,2, produkcja −3% / +4%.
+- **Sieć ulic: od skrzyżowania do skrzyżowania** (`streetNet.ts`). Pierwsza wersja kładła każdemu budynkowi
+  własną drogę w kształcie L od drzwi do zamku i tylko z kamieniem „na zbyciu”: z góry widać było urwane
+  kawałki w środku kwartałów, schodki i luki. Teraz ulice to graf: węzły to skrzyżowania linii szachownicy
+  (plus środki boków placu zamkowego), krawędzie to całe boki kwartałów. Budynek dostaje: próg → **cały odcinek**,
+  na który patrzą drzwi (od skrzyżowania do skrzyżowania) → Dijkstra przez graf do zamku, gdzie odcinek
+  położony kosztuje 0,08 za komórkę, a nowy 1 + 0,08 (budynek, woda, skała = brak krawędzi). Ulice same się
+  przedłużają i łączą w długie proste linie. Komputer kładzie co sekundę ulicę pierwszego budynku bez ulicy
+  (tani test `streetLaid`: próg i odcinek), czekając na kamień, zamiast przeskakiwać dalej — sieć rośnie
+  od środka bez dziur. Planista nie stawia budynków spoza siatki (poza drwalem, rybakiem, kamieniołomem,
+  kopalnią) na liniach ulic w trzech pierwszych kwartałach (`onPlannedStreet`). **Polne drogi**
+  (`ROAD_TRACK` w `nav.road`, obok `ROAD_PAVED`): prosto od drzwi budynku spoza siatki do najbliższej
+  komórki ulicy (do 60 m, jedna z 24 najbliższych, do której prosta nie przecina budynku, wody ani skały);
+  darmowe, 1,2× szybciej, na ziemi tylko wydeptanie bez bruku i węższe. Ulica brukuje polną drogę, polna nie
+  wchodzi na ulicę. Budynek postawiony na polnej drodze ucina ją: `pruneTracks` (co 15 s, gdy zmieniły się
+  drogi) zalewa sieć od bruku i zdejmuje odcięte kawałki, a budynek dostaje nową drogę. Koszt: ok. 3%
+  czasu symulacji (profil 45 min). Test: po 30 min ≥ 95% komórek dróg miasta komputera połączonych z zamkiem.
 - **Dźwięk.** Nagrania CC0 (Kenney) dla walki, strzał, budowy i kliknięć, każde odtworzenie losuje nagranie
   z kilku i lekko zmienia wysokość. Czego nie ma w nagraniach (róg, fanfara, huk działa pod nagranym
   trzaskiem), robi WebAudio: róg to dwa piłowe głosy rozstrojone o kilka centów, filtr dolnoprzepustowy

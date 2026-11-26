@@ -96,7 +96,7 @@ export function streetCost(world: World, legs: readonly Leg[]): number {
   return Math.ceil(streetCells(world, legs, roadScratch) * ROADS.stonePerCell);
 }
 
-/** Lays a street of STREETS.widthCells lanes along `legs` (streetWay), paid in stone like a road. */
+/** Lays a street of STREETS.widthCells lanes along `legs` (streetPlan in streetNet.ts), paid in stone like a road. */
 export function cmdBuildStreet(world: World, side: Side, legs: readonly Leg[]): CommandResult {
   if (world.winner !== -1) return 'gameOver';
   const town = world.towns[side];

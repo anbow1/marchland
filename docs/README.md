@@ -15,6 +15,7 @@ o krok starszy.
 | [ECONOMY.md](ECONOMY.md) | ludność, logistyka, jedzenie, pola, stawianie budynków, drogi | generowany z `src/config.ts` |
 | [BUILDINGS.md](BUILDINGS.md) | lista budynków (po angielsku): koszt, wymagany teren, produkcja; łańcuchy; budynki do dodania | generowany z `src/config.ts` |
 | [UNITS.md](UNITS.md) | jednostki: cena, ekwipunek, statystyki, zastosowanie, kto kogo bije | generowany z `src/config.ts` |
+| [AGES.md](AGES.md) | epoki: decyzje, trzy epoki, wygląd zastępczy, **lista modeli i animacji do znalezienia** | pisany ręcznie |
 | [BLENDER.md](BLENDER.md) | kontrakt na modele z Blendera: skala, materiały, animacje, budżety | pisany ręcznie |
 | [ROUTINE.md](ROUTINE.md) | prostsze zadania do zrobienia przez słabszy model | pisany ręcznie |
 

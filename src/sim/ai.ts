@@ -1,8 +1,9 @@
-import { AI, AI_CHARACTERS, BUILDINGS, MARKET, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, TOWN, UNITS } from '../config.ts';
-import { streetWay } from './streets.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildStreet, streetCost, cmdTrade, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, lotPrice, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
+import { AI, AI_CHARACTERS, BUILDINGS, MARKET, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, UNITS } from '../config.ts';
+import { squareAt } from './streets.ts';
+import { layTrack, pruneTracks, streetLaid, streetPlan, trackCells, trackFor } from './streetNet.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildStreet, streetCost, cmdTrade, cmdBuildGate, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, lotPrice, missingMen, rearmCost, reinforceCost } from './commands.ts';
 import { barracksLevel, canAffordBuilding, peopleFor, type Town } from './economy.ts';
-import { doorX, doorZ, freePeople, KEEP } from './people.ts';
+import { freePeople } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, isEngaged, type Regiment } from './regiment.ts';
 import { facingToEnemy, frameX, frameZ, rallyX, rallyZ, SIDE_X, SIDE_Z, nearestFoeKeep, townX, townZ } from './terrain.ts';
@@ -136,24 +137,47 @@ const STAGE_DISTANCE_M = 115;
 /** Index in BUILD_ORDER after which the barracks is worth its second level (the weapon chain stands). */
 const BARRACKS_UPGRADE_AFTER = BUILD_ORDER.indexOf('smithy') + 1;
 
-/** Builds on the ground the planner picks and lays a road from its door to the keep; true when it was built. */
+/** Builds on the ground the planner picks (its street follows: extendStreets); true when it was built. */
 function buildPlanned(world: World, ai: AiState, kind: BuildingKind): 'built' | 'noGround' | 'notYet' {
   const site = planSite(world, ai.side, kind);
   if (!site) return 'noGround';
   if (cmdBuild(world, ai.side, kind, site.x, site.z, site.yawRad) !== 'ok') return 'notYet';
-  const town = world.towns[ai.side];
-  // The road is a convenience: it is laid only with stone to spare, or the next building would wait for it.
-  // On the grid it is a street of the chessboard plan, along the other streets to the keep.
-  const way = streetWay(ai.side, site.x, site.z, site.yawRad);
-  if (way) {
-    if (town.stock.stone - streetCost(world, way) >= AI.roadStoneReserve) cmdBuildStreet(world, ai.side, way);
-    return 'built';
-  }
-  const fromX = site.x + Math.sin(site.yawRad) * (TOWN.buildingRadiusM + 1);
-  const fromZ = site.z + Math.cos(site.yawRad) * (TOWN.buildingRadiusM + 1);
-  if (town.stock.stone - roadCost(world, fromX, fromZ, doorX(town, KEEP), doorZ(town, KEEP)) < AI.roadStoneReserve) return 'built';
-  cmdBuildRoad(world, ai.side, site.x + Math.sin(site.yawRad) * (TOWN.buildingRadiusM + 1), site.z + Math.cos(site.yawRad) * (TOWN.buildingRadiusM + 1), doorX(town, KEEP), doorZ(town, KEEP));
   return 'built';
+}
+
+/**
+ * The town's streets, a stretch at a time with the stone to spare (AI.roadStoneReserve kept for buildings):
+ * the first building on the grid whose street is not laid gets it, from crossing to crossing and joined to the
+ * keep through the network (streetNet.ts); the buildings off the grid get a track of trodden earth to the
+ * nearest road. Called every think: it waits for nothing and holds nothing up.
+ */
+/** Seconds between two looks for tracks to tread (on the game clock, so a loaded game does the same). */
+const TRACK_EVERY_S = 20;
+
+function extendStreets(world: World, ai: AiState): void {
+  const town = world.towns[ai.side];
+  const spare = town.stock.stone - AI.roadStoneReserve;
+  for (const b of town.plots) {
+    if (!b || spare <= 0) break;
+    if (streetLaid(world, ai.side, b.x, b.z, b.yawRad)) continue;
+    // The nearest street first, even if it waits for stone: the network grows outwards without gaps. (While it
+    // waits, the plan comes from streetPlan's memo until the roads or buildings change.)
+    const legs = streetPlan(world, ai.side, b.x, b.z, b.yawRad);
+    if (!legs) continue;
+    const cost = streetCost(world, legs);
+    if (cost === 0) continue;
+    if (cost <= spare) cmdBuildStreet(world, ai.side, legs);
+    break;
+  }
+  // Every TRACK_EVERY_S of the game: the tracks a building was put across are taken up, and every building off
+  // the grid without one gets a track (free: trodden earth) to the nearest street.
+  if (Math.floor(world.timeS / TRACK_EVERY_S) === Math.floor((world.timeS - AI.thinkIntervalS) / TRACK_EVERY_S)) return;
+  pruneTracks(world);
+  for (const b of town.plots) {
+    if (!b || squareAt(ai.side, b.x, b.z)) continue;
+    const track = trackFor(world, b);
+    if (track && trackCells(world, track) > 0) layTrack(world, ai.side, track);
+  }
 }
 
 /**
@@ -204,6 +228,7 @@ function runTown(world: World, ai: AiState): void {
   const town = world.towns[ai.side];
   if (sellSurplus(world, ai)) return;
   if (buyForKeep(world, ai)) return;
+  extendStreets(world, ai);
   // The wall across the approach, once the keep stands at its second level and the stone is in: it costs no
   // gold and waits for nothing else.
   if (!ai.walled && town.keepLevel >= 2 && town.stock.stone >= AI.wallStone) {

@@ -110,7 +110,7 @@ export class Minimap {
       rctx.fillStyle = 'rgba(196, 170, 124, 0.95)';
       const cellPx = Math.max(1, (ROADS.cellM / MAP.sizeM) * this.px);
       const road = world.nav.road;
-      for (let i = 0; i < road.length; i++) if (road[i] === 1) rctx.fillRect(this.toPx(cellX(i)) - cellPx / 2, this.toPx(cellZ(i)) - cellPx / 2, cellPx, cellPx);
+      for (let i = 0; i < road.length; i++) if (road[i] !== 0) rctx.fillRect(this.toPx(cellX(i)) - cellPx / 2, this.toPx(cellZ(i)) - cellPx / 2, cellPx, cellPx);
     }
     ctx.drawImage(this.roads, 0, 0);
     for (const town of world.towns) {

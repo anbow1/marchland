@@ -149,7 +149,9 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
   poziomem, więc rolnictwo zajmuje teren i naturalnie tworzy wieś obok miasta.
   Rzemiosło i chaty stawia się przy zamku.
 - **Drogi** (zrobione): rysowane od punktu do punktu (klawisz G albo przycisk
-  w menu budowy), kosztują kamień. Ludzie sami wybierają najszybszą trasę:
+  w menu budowy), kosztują kamień. Z siatką budynek dostaje ulicę od skrzyżowania do skrzyżowania, połączoną
+  z resztą sieci (miasto rośnie długimi prostymi ulicami); budynki spoza siatki komputer łączy polnymi
+  drogami (za darmo, bez bruku, 1,2× szybciej). Ludzie sami wybierają najszybszą trasę:
   drogą idą 1,4× szybciej, w lesie wolniej, budynki i wodę omijają. Gdzie drogi
   nie ma, wydeptują ścieżki (na razie tylko pod budynkami i przy drzwiach).
 - **Zamek ma trzy poziomy** (zrobione): kliknij zamek, w panelu „Rozbuduj zamek”.
@@ -293,6 +295,7 @@ w `BLENDER.md`.
 | M3 | **Mapa ma znaczenie** | rodzaje działek, działki za miastem, punkty do zajęcia, poziomy zamku, trzy układy mapy, rzeka i brody | silny model (generator, zasady), rutyna (panele) | komputer–komputer kończy partię w 25–40 min na każdym układzie; zagon na pole zatrzymuje jego produkcję |
 | M4 | **Obraz** | żołnierze i robotnicy z modeli (animacja wypalona do tekstur), konie, las z impostorów, trawa przy kamerze, okluzja, pył i dym, budynki z modeli, etapy budowy | silny model (technika), Blender (modele) | zrzuty z ustalonych widoków obok wzorców; budżety z `BRIEF.md` §8 dotrzymane |
 | M5 | **Przeciwnik v2 i tryby** | charaktery, kontry, taktyka linii i flanki, tryb Obrona, samouczek | silny model (taktyka), rutyna (tryby, samouczek) | każdy charakter wygrywa z dzisiejszym komputerem w ≥ 60 % z 20 ziaren |
+| M7 | **Epoki** | zamek 4–5 = wczesna nowożytność i XIX wiek, budynki 4–5, sześć jednostek, broń palna, wielkie budowle, mapa Trzech panów; wygląd epok z modeli | silny model (zasady ✔), Blender / zasoby (wygląd — [AGES.md](AGES.md)) | komputer wchodzi w epokę 2 w długiej partii; testy `tests/ages.test.ts`, `tests/triangle.test.ts` |
 | M6 | **Telefon i wydanie** | KTX2, przycisk Benchmark, ustawienia, zapis gry, wariant Android | rutyna | pomiar na telefonie w `RESULTS.md`; APK w wydaniu |
 
 M1 i M2 nie zależą od modeli z Blendera i idą pierwsze. M4 startuje, gdy

@@ -1,6 +1,6 @@
 import { ClampToEdgeWrapping, DataTexture, LinearFilter, NoColorSpace, RGBAFormat, UnsignedByteType } from 'three/webgpu';
 import { FIELDS, MAP, ROADS, TOWN } from '../config.ts';
-import { cellX, cellZ } from '../sim/nav.ts';
+import { cellX, cellZ, ROAD_NONE, ROAD_TRACK } from '../sim/nav.ts';
 import { townX, townZ } from '../sim/terrain.ts';
 import type { World } from '../sim/world.ts';
 
@@ -125,7 +125,12 @@ export class GroundWorks {
     // Roads.
     const road = world.nav.road;
     for (let cell = 0; cell < road.length; cell++) {
-      if (road[cell] === 0) continue;
+      if (road[cell] === ROAD_NONE) continue;
+      // A track is trodden earth, narrower and unpaved; a road or a street is paved.
+      if (road[cell] === ROAD_TRACK) {
+        this.disc(cellX(cell), cellZ(cell), ROADS.cellM * 0.75, 0.9, 0, 0.85);
+        continue;
+      }
       this.disc(cellX(cell), cellZ(cell), ROADS.cellM * 0.95, 0.9, 0, 1);
       this.disc(cellX(cell), cellZ(cell), ROADS.cellM * 0.85, 0.7, 3, 1);
     }

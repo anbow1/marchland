@@ -1,5 +1,5 @@
 import { CAMPAIGN, GATE, REINFORCE, TOWN, WALLS } from '../config.ts';
-import { streetWay } from './streets.ts';
+import { layTrack, streetPlan, trackFor } from './streetNet.ts';
 import { hypot2 } from '../core/hypot.ts';
 import { adjustStances, fight } from './ai.ts';
 import { cmdAttackRegiment, cmdBuild, cmdBuildRoad, cmdBuildStreet, cmdMove, wallCellsFor } from './commands.ts';
@@ -124,7 +124,7 @@ export function campaignRegiment(r: Regiment): void {
   if (!r.def.engine) r.maxMen = CAMPAIGN.regimentMaxMen;
 }
 
-/** A building put up at once where the town's planner would put it, with a road to the keep, at no cost. */
+/** A building put up at once where the town's planner would put it, with its street (or a track to the nearest road), at no cost. */
 function buildNow(world: World, kind: BuildingKind): void {
   const town = world.towns[PLAYER];
   const kept = { ...town.stock };
@@ -137,8 +137,10 @@ function buildNow(world: World, kind: BuildingKind): void {
       b.constructionLeftS = 0;
       b.matDelivered = b.matTotal;
       b.matWaiting.wood = b.matWaiting.stone = b.matWaiting.planks = 0;
-      const way = streetWay(PLAYER, b.x, b.z, b.yawRad);
+      const way = streetPlan(world, PLAYER, b.x, b.z, b.yawRad);
+      const track = way ? null : trackFor(world, b);
       if (way) cmdBuildStreet(world, PLAYER, way);
+      else if (track) layTrack(world, PLAYER, track);
       else cmdBuildRoad(world, PLAYER, doorX(town, plot), doorZ(town, plot), doorX(town, KEEP), doorZ(town, KEEP));
     }
   }

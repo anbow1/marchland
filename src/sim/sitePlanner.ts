@@ -1,5 +1,5 @@
 import { ROADS, TOWN } from '../config.ts';
-import { streetYaw } from './streets.ts';
+import { onPlannedStreet, squareAt, streetYaw } from './streets.ts';
 import { keepRules } from './economy.ts';
 import { checkSite, squareYawToKeep, yawToKeep } from './placement.ts';
 import { DEPOSITS, forestCoverAt, frameX, frameZ, lakeRadiusAt, lakeX, lakeZ, townX, townZ } from './terrain.ts';
@@ -25,7 +25,13 @@ const plan: Plan = { x: 0, z: 0, yawRad: 0 };
 
 /** Tries one place; true (with `plan` filled) when a building of this kind may stand there, money aside. */
 function tryAt(world: World, side: Side, kind: BuildingKind, x: number, z: number, yawRad: number): boolean {
-  const result = checkSite(world, side, kind, x, z, yawRad).result;
+  // Off the grid, the town's buildings (not the trades that go where the wood, water and rock are) keep off its
+  // planned streets: the streets run through from crossing to crossing.
+  const need = SITE_NEED[kind];
+  const trade = need === 'forest' || need === 'water' || need === 'stone' || need === 'ore';
+  if (!trade && !squareAt(side, x, z) && onPlannedStreet(side, x, z, TOWN.buildingRadiusM)) return false;
+  const check = checkSite(world, side, kind, x, z, yawRad);
+  const result = check.result;
   // Not being able to pay yet does not make the ground wrong.
   if (result !== 'ok' && result !== 'cannotAfford') return false;
   plan.x = x;
