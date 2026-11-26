@@ -47,7 +47,8 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 
 | Co | Teraz | Docelowo |
 |---|---|---|
-| Muszkieterowie, piechota liniowa, strzelcy | model kusznika (celuje „jak z karabinu”), dym i huk przy strzale | własne postacie z muszkietem, ładowanie i salwa |
+| Piechota liniowa, strzelcy | **z modelu** (27.11): piechur napoleoński Andy'ego Woodheada (szkielet Unreala), muszkiet gry (piechota z bagnetem), płaszcz albo spodnie w barwie strony | ładowanie i salwa (klip Mixamo) |
+| Muszkieterowie | model kusznika (celuje „jak z karabinu”), dym i huk przy strzale | postać z XVII w. ze szkieletem: przysłany muszkieter elżbietański jest w pozie celowania, bez szkieletu |
 | Kirasjerzy | jak rycerze | kirasjer w napierśniku na koniu |
 | Dragoni, huzarzy | jak lekka jazda | dragon (pieszo i konno), huzar z szablą |
 | Budynki na poziomie 4 i 5 | ten sam budynek w materiałach epoki: 4 — dachówka i bielony tynk, 5 — kamień, łupek, malowane belki (`ERA_LOOK` w `surfaceModel.ts`) | spójne modele epoki: szachulec i cegła, potem cegła i tynk |

@@ -1,6 +1,7 @@
 """Bakes a Mixamo-rigged character and Mixamo animations into the game's skinned soldier.
 
-    bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow]
+    bl/bin/python -I tools/blender/rigged.py -- <character.gltf> <out.json> [--arms sword|halberd|pike|bow|crossbow|musket|bayonet]
+        [--drop <material name part,...>]
         [--height 1.8] [--source "credit"] [--team <image name part>] [--team-share 0.6] [--tris 3400] [--step 1]
         [--tool-clips name,name] [--tool2-clips name,name] [--team-below 0.12] [--two-hand-clips name,name]
         <clip.fbx>...
@@ -11,6 +12,8 @@
 to the lance and the reins), written as the game's rider body (limbs and pivots, soldierGeometry.ts BodyModel). --gain: its colours brightened
 (a blackened plate that would read as a silhouette from the camera).
 
+--arms musket / bayonet: a musket (with a bayonet on the muzzle) laid along the aiming clip's hands, as the crossbow.
+--drop: meshes whose material's name holds one of these words are left out (the character's own gun).
 --arms: what the man carries (the game's own simple shapes; "none" for nothing): sword and shield (the default), a halberd or
 a pike in the sword hand (a shaft along the sword's line, more of it ahead of the hand than behind), or a
 longbow upright in the left fist. --height: the character is scaled to stand this tall (metres), whatever
@@ -126,6 +129,9 @@ ON_HEAD = ("helmet", "hat", "hood", "hair", "cap")
 # Meshes left out: bound so that at rest they lie far outside the skeleton (a beard exported with a bind of
 # its own), by name; set by load_character.
 STRAY = set()
+# Meshes left out by their material's name (--drop): a character's own gun, held at rest in a T pose that no
+# clip's grip matches; the game's own weapon goes in its place.
+DROP = set()
 
 
 def body_meshes():
@@ -133,6 +139,8 @@ def body_meshes():
     out = []
     for o in bpy.context.scene.objects:
         if o.type != "MESH" or o.name == "Icosphere" or o.name in STRAY:
+            continue
+        if DROP and any(m and any(d in m.name.lower() for d in DROP) for m in o.data.materials):
             continue
         groups = [plain(g.name) for g in o.vertex_groups]
         if groups and all(g.endswith("_joint") for g in groups):
@@ -271,7 +279,8 @@ def bake_mesh(rig, G, team_garment=None):
             for n in mat.node_tree.nodes:
                 if n.type == "BSDF_PRINCIPLED" and not n.inputs["Base Color"].links:
                     plain_colour = list(n.inputs["Base Color"].default_value)[:3]
-        team = TEAM_SHARE if team_garment and base_img and team_garment in base_img.name else 0.0
+        # The garment in the side's colour: by its texture's name, or (unnamed textures) its material's.
+        team = TEAM_SHARE if team_garment and base_img and (team_garment in base_img.name or (mat is not None and team_garment in mat.name)) else 0.0
         # Per vertex: the mean of its loops' texture colours.
         acc = {}
         for loop in me.loops:
@@ -439,6 +448,31 @@ def add_crossbow(char_rest, aim_mats, *mesh):
     add_oriented_box(fist + along * 0.58 + up * 0.03, axes, (0.05, 0.74, 0.05), (0.55, 0.56, 0.58), 1.0, 0.35, 0.0, "RightHand", *mesh)  # bow
     add_oriented_box(fist + along * 0.42 + up * 0.05, axes, (0.01, 0.62, 0.01), (0.85, 0.82, 0.72), 0.0, 0.9, 0.0, "RightHand", *mesh)  # string
     add_oriented_box(fist - along * 0.16, axes, (0.12, 0.08, 0.1), (1, 1, 1), 0.0, 0.7, 1.0, "RightHand", *mesh)  # butt wrap
+
+
+def add_musket(char_rest, aim_mats, *mesh, bayonet=False):
+    """A musket held as the aiming clip holds a gun (as add_crossbow): the stock from the right fist back to the
+    shoulder, the barrel forward past the left hand, a bayonet on the muzzle for the line."""
+    r_rest = head_of(char_rest["RightHand"])
+    l_rest = head_of(char_rest["LeftHand"])
+    m_r = aim_mats[ORDER.index("RightHand")]
+    m_l = aim_mats[ORDER.index("LeftHand")]
+    inv = m_r.to_3x3().inverted()
+    along = (inv @ ((m_l @ l_rest.to_4d()).xyz - (m_r @ r_rest.to_4d()).xyz)).normalized()
+    up = (inv @ Vector((0, 0, 1))).normalized()
+    side = along.cross(up).normalized()
+    up = side.cross(along).normalized()
+    fist = r_rest + (head_of(char_rest["RightHandMiddle1"]) - r_rest) * 0.8
+    axes = (along, side, up)
+    wood = (0.36, 0.22, 0.11)
+    iron = (0.32, 0.33, 0.35)
+    # Twice a real musket's thickness, so it reads from a strategy camera.
+    add_oriented_box(fist - along * 0.14, axes, (0.42, 0.06, 0.1), wood, 0.0, 0.8, 0.0, "RightHand", *mesh)  # butt and wrist
+    add_oriented_box(fist + along * 0.42, axes, (0.72, 0.05, 0.06), wood, 0.0, 0.8, 0.0, "RightHand", *mesh)  # fore-stock
+    add_oriented_box(fist + along * 0.62 + up * 0.035, axes, (1.12, 0.035, 0.035), iron, 1.0, 0.4, 0.0, "RightHand", *mesh)  # barrel
+    add_oriented_box(fist - along * 0.33, axes, (0.05, 0.065, 0.11), (1, 1, 1), 0.0, 0.7, 1.0, "RightHand", *mesh)  # butt plate in the side's colour
+    if bayonet:
+        add_oriented_box(fist + along * 1.38 + up * 0.035, axes, (0.42, 0.012, 0.025), (0.62, 0.63, 0.65), 1.0, 0.3, 0.0, "RightHand", *mesh)  # bayonet
 
 
 def add_bow(hand, *mesh):
@@ -739,7 +773,8 @@ def main() -> None:
     two_hand_clips = set(filter(None, option("--two-hand-clips", "").split(",")))
     if arms == "tools":
         WEAPONS["Shield_joint"] = "RightHand"
-    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain", "--two-hand-clips", "--shield") if n in args}
+    DROP.update(filter(None, option("--drop", "").lower().split(",")))
+    valued = {args.index(n) + 1 for n in ("--arms", "--height", "--source", "--team", "--team-share", "--tris", "--step", "--tool-clips", "--tool2-clips", "--team-below", "--gain", "--two-hand-clips", "--shield", "--drop") if n in args}
     clips = [a for i, a in enumerate(args) if i >= 2 and not a.startswith("--") and i not in valued]
     rig, G, char_rest = load_character(char_path, height_m)
     pos, nor, col, surf, skin, wts, tris = bake_mesh(rig, G, team_garment)
@@ -808,6 +843,9 @@ def main() -> None:
         # Aimed as at the end of the raise (the clip named 'draw'), the last frame.
         draw = next(c for c in clip_meta if c["name"] == "draw")
         add_crossbow(char_rest, all_frames[draw["start"] + draw["frames"] - 1], *mesh)
+    elif arms in ("musket", "bayonet"):
+        draw = next(c for c in clip_meta if c["name"] == "draw")
+        add_musket(char_rest, all_frames[draw["start"] + draw["frames"] - 1], *mesh, bayonet=arms == "bayonet")
     else:
         add_weapons(anim_hand, char_hand, *mesh, {"sword": None, "halberd": HALBERD, "pike": PIKE, "spear": SPEAR, "axe": AXE, "tools": AXE + MALLET, "crossbow": CROSSBOW}[arms], option("--shield", None))
     # Feet on the ground.

@@ -47,3 +47,9 @@
   **Leonardo Carvalho** (Sketchfab), licensed **CC BY 4.0**; the crossbow is the game's own. Motion from
   Mixamo ("Firing Rifle" for the shot, "Rifle Down To Aim" to raise it, "Rifle Walk" and the sword-and-shield
   set).
+- `lineman.json` — the line infantry, and `rifleman.json` — the riflemen, made by `rigged.py --arms bayonet` and
+  `--arms musket` (its own musket left out with `--drop musket`) from **"Infantry - rigged for UE4/5 - free
+  download"** by **Andy woodhead** (https://sketchfab.com/3d-models/infantry-rigged-for-ue45-free-download-771050587ce248498178aee2c2f88f36),
+  licensed **CC BY 4.0**: thinned to about 3 450 triangles, colours from its textures, the coat (line) or the
+  trousers (riflemen) in the side's colour; the musket and bayonet are the game's own. Motion from Mixamo
+  ("Firing Rifle", "Rifle Down To Aim", "Rifle Walk" and the sword-and-shield set).

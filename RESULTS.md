@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Piechota liniowa i strzelcy z modelu; przegląd przysłanych modeli epok
+
+- **Przysłane modele** (8; licencje CC0 i CC BY 4.0, autorzy w `ASSETS.md`): w grze może iść od razu tylko
+  „Infantry - rigged for UE4/5” (Andy woodhead) — jedyny ze szkieletem (Unreal, poza T). Pozostałe są statyczne:
+  muszkieter elżbietański w pozie celowania, żołnierz Unii jako figura na skale, dwaj kirasjerzy zrośnięci z
+  koniem, husarz na koniu jako figura z cokołem, zbroja husarska (sam skan zbroi), piechur spod Waterloo (ten
+  sam co wersja ze szkieletem).
+- **Piechota liniowa** (`lineman.json`) i **strzelcy** (`rifleman.json`): `rigged.py` z klipami kusznika
+  (Firing Rifle, Rifle Down To Aim, Rifle Walk, zestaw miecza i tarczy), 3 450 trójkątów, 24 kości. Własny
+  muszkiet postaci (przywiązany do dłoni w pozie T, w celowaniu sterczał w bok) odcięty nowym `--drop musket`;
+  w jego miejsce muszkiet gry ułożony jak kusza z ostatniej klatki celowania (`--arms musket`), u piechoty
+  liniowej z bagnetem (`--arms bayonet`). Barwa strony: płaszcz (piechota liniowa) albo spodnie (strzelcy);
+  tekstury w pliku nie mają nazw, więc `--team` dopasowuje teraz także nazwę materiału. Udział barwy 0,95
+  (0,7 dawało fiolet z czerwieni i niebieskiego).
+- Przeglądarka: bitwa z oboma rodzajami z bliska, bez błędów.
+
 ## 2026-11-27 · Pasek oddziałów, krój chorągwi, ulice gracza na później
 
 - **Pasek oddziałów** nad dolnym panelem: karta każdego oddziału gracza (znak, gwiazdki, postawa, znak kłopotu,

@@ -22,6 +22,12 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | Paladin J Nordstrom (postać ze skórą, przy klipie „Stabbing”) | Mixamo | Mixamo | **w grze**: jeździec jazdy w siodle (`rider.json`, `rigged.py --seated`) |
 | Jeździec i koń w zbroi (posąg, 120 tys. tr.) | „1964.88 Armor for Man and Horse”, Cleveland Museum of Art | CC0 | ciężka jazda po uproszczeniu |
 | Zbroje Svend / Revna (szkielet Unreal) | ChamberSu1996, Sketchfab | CC BY 4.0 | sprawdzone; w grze ich tuniki (niżej) |
+| Piechur napoleoński, szkielet Unreala, ~134 tys. tr. | „Infantry - rigged for UE4/5 - free download”, Andy woodhead, Sketchfab | CC BY 4.0 | **w grze**: piechota liniowa (`lineman.json`, płaszcz w barwie strony, muszkiet z bagnetem) i strzelcy (`rifleman.json`, spodnie w barwie strony, muszkiet) |
+| Kirasjer szeregowy / sierżant (jeździec na koniu, bez szkieletu, ~130 tys. tr.) | „Private of the Order Cuirassier Regiment”, „Sergeant Cuirassier of the Grand Army”, 1812panorama, Sketchfab | CC0 | sprawdzone 27.11: statyczne, jeździec zrośnięty z koniem — do jeźdźca kirasjerów po wycięciu i ułożeniu w siodle |
+| Piechur brytyjski spod Waterloo (bez szkieletu, poza A) | „Waterloo British Infantry - for animation”, Andy woodhead | CC BY 4.0 | sprawdzone: ten sam żołnierz co wersja ze szkieletem — niepotrzebny |
+| Muszkieter elżbietański (bez szkieletu, w pozie celowania) | „Elizabethan Musketeer”, Binkley-Spacetrucker | CC BY 4.0 | sprawdzone: poza celowania, bez szkieletu — do muszkieterów po osadzeniu na szkielecie (Mixamo Auto-Rigger nie przyjmie pozy innej niż T/A) |
+| Żołnierz Unii (figura na skale, 386 tys. tr.) | „American Union Army - Infantry - free”, Andy woodhead | CC BY 4.0 | sprawdzone: figura w ruchu z podstawą — nie do animacji |
+| Zbroja husarska (skan muzealny), husarz na koniu (figura) | Wirtualne Muzea Małopolski | CC0 / CC BY 4.0 | sprawdzone: sama zbroja i figura z cokołem — wzór do huzarów, nie postać |
 | Animacje miecz i tarcza: cięcie, blok, postawa, marsz, bieg, trafienie, śmierć ×2 | Mixamo | Mixamo | w grze (miecznicy, halabardnicy) |
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
 | Bayonet Stab | Mixamo | Mixamo | w grze: cios pikinierów (oburącz z biodra) |
@@ -136,6 +142,8 @@ robione z nich przez `tools/encode_surfaces.mjs`).
 | `props/wagon.json` | bryła (prop) | 1200 | — | — |
 | `soldiers/archer.json` | szkielet | 3477 | 24 | recoil (22), draw (31), block_1 (18), idle (154), walk (32), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/crossbowman.json` | szkielet | 3443 | 24 | recoil (36), draw (27), block_1 (18), idle (154), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/lineman.json` | szkielet | 3453 | 24 | recoil (36), draw (27), block_1 (18), idle (227), walk (40), run (22), impact (22), death (118), death_1 (70) |
+| `soldiers/rifleman.json` | szkielet | 3441 | 24 | jak wyżej |
 | `soldiers/halberdier.json` | szkielet | 3449 | 24 | upward_thrust (71), chop (37), greatslash (56), block_1 (18), idle (227), walk (34), run (22), impact (22), death (118), death_1 (70) |
 | `soldiers/horse.json` | koń bez szkieletu (części) | 3591 | — | — |
 | `soldiers/knight.json` | ciało z częściami (limbs) | 3189 | — | jedna poza |
