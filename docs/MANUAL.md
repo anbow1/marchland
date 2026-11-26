@@ -21,6 +21,7 @@ urządzeniu (grafika) albo przez adres strony (mapa, zamek).
 | **Grafika** | Wysoka · Niska · Bardzo niska | patrz niżej; wybór z menu wygrywa z `q=` w adresie i jest zapamiętany |
 | **Tryb** | Potyczka · Obrona · Samouczek · Kampania | rodzaj gry (§1.1) |
 | **Przeciwnik gra** | z umiarem · jak budowniczy · jak najeźdźca | charakter komputera: budowniczy atakuje później większymi falami (×1,5 ludzi, ×1,35 czasu), najeźdźca wcześniej mniejszymi i co 150 s wysyła oddział palić budynki na skraju miasta |
+| **Epoka na start** | Średniowiecze · Wczesna nowożytność · XIX wiek | potyczka od razu w późniejszej epoce: zamek 4 albo 5, gotowe koszary epoki i zapas na rusznikarnię, muszkiety i proch (§7.6); komputer też |
 | **Mapa** | Otwarte pole · Przeprawa · Bór · Dolina · Trzech panów | układ mapy (§1.2); *Twierdza* jest tylko w kampanii |
 | **Zamek** | 1. Róg · 2. Zachód · 3. Południe | miejsce zamku gracza; zamek komputera stoi zawsze naprzeciw (ten sam układ obrócony o pół koła); obok mała mapka z oboma zamkami, górami i skałami |
 

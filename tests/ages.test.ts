@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { BUILDINGS, GREAT, KEEP_UPGRADE_SECONDS_BY_LEVEL, REARM, SIM, UNITS } from '../src/config.ts';
-import { canRearm, cmdBuild, cmdRearm, cmdUpgrade, cmdUpgradeKeep } from '../src/sim/commands.ts';
+import { canRearm, cmdAttackRegiment, cmdBuild, cmdRearm, cmdUpgrade, cmdUpgradeKeep } from '../src/sim/commands.ts';
 import { topMorale } from '../src/sim/combat.ts';
 import { eraOf, greatFactor, startBuilding } from '../src/sim/economy.ts';
 import { checkSite } from '../src/sim/placement.ts';
 import { townX, townZ } from '../src/sim/terrain.ts';
-import { COMPUTER, PLAYER, RESOURCE_IDS } from '../src/sim/types.ts';
+import { COMPUTER, PLAYER, RESOURCE_IDS, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, stepWorld, type World } from '../src/sim/world.ts';
 import { fillRegiment } from '../src/sim/campaign.ts';
 import { run } from './helpers.ts';
@@ -149,5 +149,52 @@ describe('the later ages', () => {
       expect(REARM.paths[kind].some((to) => UNITS[to].barracksLevel >= 4)).toBe(true);
       for (const to of REARM.paths[kind]) expect(UNITS[to].cavalry).toBe(UNITS[kind].cavalry);
     }
+  });
+
+  it('the ages\' arms have their counters: no new kind beats every other', { timeout: 120_000 }, () => {
+    /** Share of a's men standing when the fight ends, less b's (over three seeds, both attacking from 100 m). */
+    const edge = (a: UnitKind, b: UnitKind): number => {
+      let sum = 0;
+      for (let seed = 1; seed <= 3; seed++) {
+        const world = createWorld({ seed, difficulty: 'normal', computerPlays: false });
+        const ra = spawnRegiment(world, PLAYER, a, 0, 50, Math.PI);
+        const rb = spawnRegiment(world, COMPUTER, b, 0, -50, 0);
+        cmdAttackRegiment(world, ra.id, rb.id);
+        cmdAttackRegiment(world, rb.id, ra.id);
+        for (let t = 0; t < 300 / SIM.stepSeconds; t++) {
+          stepWorld(world, SIM.stepSeconds);
+          if (ra.aliveMen === 0 || rb.aliveMen === 0 || ra.state === 'routing' || rb.state === 'routing') break;
+        }
+        const left = (r: typeof ra): number => (r.state === 'routing' ? 0 : r.aliveMen / r.initialMen);
+        sum += left(ra) - left(rb);
+      }
+      return sum / 3;
+    };
+    // Muskets beat the pike and the bow; the line beats the musket; the rifle the line; the cuirassier the
+    // musket and the halberd the cuirassier; the hussar rides down the archers.
+    expect(edge('musketeers', 'pikemen')).toBeGreaterThan(0);
+    expect(edge('musketeers', 'archers')).toBeGreaterThan(0);
+    expect(edge('lineInfantry', 'musketeers')).toBeGreaterThan(0);
+    expect(edge('riflemen', 'lineInfantry')).toBeGreaterThan(0);
+    expect(edge('cuirassiers', 'musketeers')).toBeGreaterThan(0);
+    expect(edge('halberdiers', 'cuirassiers')).toBeGreaterThan(0);
+    expect(edge('hussars', 'archers')).toBeGreaterThan(0);
+  });
+
+  it('a skirmish begun in a later age: every keep at the age, barracks of the age standing, the age\'s arms in store', () => {
+    const world = createWorld({ seed: 2, difficulty: 'normal', computerPlays: true, startAge: 2 });
+    expect(world.startAge).toBe(2);
+    for (const town of world.towns) {
+      expect(town.keepLevel).toBe(4);
+      expect(eraOf(town)).toBe(2);
+      const barracks = town.plots.find((b) => b !== null && b.kind === 'barracks');
+      expect(barracks?.level).toBe(4);
+      expect(barracks?.constructionLeftS).toBe(0);
+      expect(town.stock.musket).toBeGreaterThan(0);
+    }
+    // The middle ages start as ever.
+    const plain = createWorld({ seed: 2, difficulty: 'normal', computerPlays: true });
+    expect(plain.towns[PLAYER].keepLevel).toBe(1);
+    expect(plain.towns[PLAYER].plots.some((b) => b !== null)).toBe(false);
   });
 });

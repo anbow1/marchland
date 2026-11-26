@@ -1,4 +1,4 @@
-import type { BuildingKind, Cost, Difficulty, UnitKind } from './sim/types.ts';
+import type { BuildingKind, Cost, Difficulty, ResourceId, UnitKind } from './sim/types.ts';
 import { THREE_TOWNS } from './sim/setting.ts';
 
 // Every tunable of the game in one place, with units (rules §10). Values marked
@@ -355,6 +355,17 @@ export const ERAS = [
   { keepLevel: 4, name: 'earlyModern' },
   { keepLevel: 5, name: 'industrial' },
 ] as const;
+/**
+ * A skirmish begun in a later age (the menu's "Age"): every keep starts at the age's level (ERAS) with its
+ * walls whole, and this much more in store to build the age's town and arms from. The middle ages start as ever.
+ */
+export const START_AGE = {
+  stock: [
+    {},
+    { gold: 1500, wood: 300, planks: 200, stone: 400, iron: 60, grain: 60, bread: 40, musket: 24, powder: 48 },
+    { gold: 2200, wood: 400, planks: 300, stone: 600, iron: 120, grain: 80, bread: 60, musket: 36, powder: 72 },
+  ] as readonly Partial<Record<ResourceId, number>>[],
+} as const;
 export const UPGRADE_SECONDS = 15;
 /** Share of the price returned when a building is pulled down. */
 export const DEMOLISH_REFUND = 0.5;
@@ -607,18 +618,18 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   // ---- The second age (keep 4, barracks 4): muskets beside the last pikes, armoured horse with pistols. ----
   // In leather and a felt hat: a musket that kills through any armour to 75 m but loads slowly and throws
   // wide; in melee they club with the butt.
-  musketeers: { ...FOOT, armourClass: 'leather', firearm: true, barracksLevel: 4, goldCost: 110, equipment: { musket: 1, powder: 1, leatherArmor: 1 }, hp: 28, attack: 4, defence: 4, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 75, missileDamage: 34, missilePierce: 0.75, missileSpeedMs: 150, missileSiegeDamage: 2, missileSpreadFactor: 1.6, reloadS: 18, morale: 55, runSpeedMs: 3.0, bounty: 3 },
+  musketeers: { ...FOOT, armourClass: 'leather', firearm: true, barracksLevel: 4, goldCost: 110, equipment: { musket: 1, powder: 1, leatherArmor: 1 }, hp: 28, attack: 5, defence: 5, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 38, missilePierce: 0.75, missileSpeedMs: 150, missileSiegeDamage: 2, missileSpreadFactor: 1.3, reloadS: 12, morale: 60, runSpeedMs: 3.0, bounty: 3 },
   // Heavy: cuirassiers, the knights' heirs in breastplate and helmet; sword and pistols, the charge still.
   cuirassiers: { ...HORSE, armourClass: 'heavy', barracksLevel: 4, goldCost: 190, equipment: { horse: 1, weapon: 1, mailArmor: 1, powder: 1 }, hp: 54, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.0, chargeBonus: 12, chargeShock: 14, missileBlock: 0.25, morale: 85, runSpeedMs: 7.6, bounty: 6 },
   // In leather: dragoons, musketeers on horseback: they ride to a place and shoot from the saddle.
-  dragoons: { ...HORSE, armourClass: 'leather', firearm: true, barracksLevel: 4, goldCost: 160, equipment: { horse: 1, musket: 1, powder: 1, leatherArmor: 1 }, hp: 40, attack: 6, defence: 5, armour: 0.2, damage: 5, reachM: 1.9, chargeBonus: 5, chargeShock: 6, missileRangeM: 60, missileDamage: 30, missilePierce: 0.7, missileSpeedMs: 150, missileSiegeDamage: 1, missileSpreadFactor: 1.8, reloadS: 20, morale: 65, runSpeedMs: 8.0, bounty: 5 },
+  dragoons: { ...HORSE, files: 5, men: 10, armourClass: 'leather', firearm: true, barracksLevel: 4, goldCost: 130, equipment: { horse: 1, musket: 1, powder: 1, leatherArmor: 1 }, hp: 44, attack: 7, defence: 6, armour: 0.2, damage: 5, reachM: 1.9, chargeBonus: 7, chargeShock: 6, missileRangeM: 75, missileDamage: 36, missilePierce: 0.7, missileSpeedMs: 150, missileSiegeDamage: 1, missileSpreadFactor: 1.4, reloadS: 11, morale: 70, runSpeedMs: 8.0, bounty: 5 },
   // ---- The third age (keep 5, barracks 5): uniform and no armour; flintlocks and rifles. ----
   // Line infantry: a flintlock with a bayonet, loaded in 14 s, fired by the rank; the bayonet holds horse off.
-  lineInfantry: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 120, equipment: { musket: 1, powder: 1 }, hp: 30, attack: 7, defence: 6, armour: 0.05, damage: 6, reachM: 1.9, bonusVsCavalry: 3, chargeBonus: 2, chargeShock: 3, missileRangeM: 90, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 170, missileSiegeDamage: 2, missileSpreadFactor: 1.2, reloadS: 14, morale: 65, runSpeedMs: 3.0, bounty: 3 },
+  lineInfantry: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 120, equipment: { musket: 1, powder: 1 }, hp: 32, attack: 8, defence: 7, armour: 0.05, damage: 6, reachM: 1.9, bonusVsCavalry: 6, chargeBonus: 2, chargeShock: 3, missileRangeM: 90, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 170, missileSiegeDamage: 2, missileSpreadFactor: 1.2, reloadS: 10, morale: 72, runSpeedMs: 3.0, bounty: 3 },
   // Riflemen: a rifled barrel, slow to load but true to 130 m; few, in green, for picking off.
-  riflemen: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 150, equipment: { musket: 1, powder: 1, iron: 1 }, hp: 26, attack: 4, defence: 4, armour: 0.05, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 130, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 200, missileSiegeDamage: 1, missileSpreadFactor: 0.6, reloadS: 16, morale: 60, runSpeedMs: 3.2, bounty: 3 },
+  riflemen: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 150, equipment: { musket: 1, powder: 1, iron: 1 }, hp: 26, attack: 3, defence: 3, armour: 0.05, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 130, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 200, missileSiegeDamage: 1, missileSpreadFactor: 0.6, reloadS: 20, morale: 50, runSpeedMs: 3.2, bounty: 3 },
   // Hussars: the fastest horse of all, sabre in hand, for raids and pursuit.
-  hussars: { ...HORSE, armourClass: 'uniform', barracksLevel: 5, goldCost: 150, equipment: { horse: 1, weapon: 1 }, hp: 44, attack: 9, defence: 6, armour: 0.1, damage: 7, reachM: 1.9, chargeBonus: 10, chargeShock: 10, morale: 75, runSpeedMs: 9.2, bounty: 4 },
+  hussars: { ...HORSE, armourClass: 'uniform', barracksLevel: 5, goldCost: 150, equipment: { horse: 1, weapon: 1 }, hp: 46, attack: 10, defence: 7, armour: 0.1, damage: 7, reachM: 1.9, chargeBonus: 12, chargeShock: 12, morale: 90, runSpeedMs: 9.2, bounty: 4 },
   mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 3.5, missileSpreadFactor: 3, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
 };
 

@@ -38,6 +38,9 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 - Budynek stoi w zasięgu zamku (280 m na poziomie 1, dalej na wyższych), na suchym, równym
   terenie, nie bliżej niż 90 m od zamku wroga. Drwal przy lesie, kamieniołom i kopalnia przy
   złożu, rybak nad wodą, zagroda i winnica z ziemią za sobą (rezerwowaną od razu pod wszystkie poziomy).
+- **Epoka na start** (potyczka): 1 — zamek 1, 2 — zamek 4, 3 — zamek 5. W epoce 2 i 3 każde miasto
+  zaczyna z zamkiem tej epoki, gotowymi koszarami tego poziomu i zapasem: epoka 2 — 1500 złoto, 300 drewno, 200 deski, 400 kamień, 60 żelazo, 60 zboże, 40 chleb, 24 muszkiety, 48 proch; epoka 3 — 2200 złoto, 400 drewno, 300 deski, 600 kamień, 120 żelazo, 80 zboże, 60 chleb, 36 muszkiety, 72 proch.
+  Komputer od razu stawia rusznikarnię i prochownię i werbuje wojska epoki.
 - Zamek: poziomy 1–3 (60 s rozbudowy): zasięg budowy 280 / 330 / 380 / 420 / 460 m, wytrzymałość
   1800 / 2600 / 3600 / 4800 / 6000, koszary do poziomu 1 / 2 / 3 / 4 / 5.
 - Głód (brak racji): produkcja zwalnia, podatki ustają, a górna granica morale wojska spada o

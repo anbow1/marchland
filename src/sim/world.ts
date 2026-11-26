@@ -1,22 +1,23 @@
 import { SIDE_COUNT } from './layout.ts';
 import { doorOfX, doorOfZ } from './placement.ts';
-import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, CAMPAIGN, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
+import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, CAMPAIGN, ERAS, MAP, PAY, PEOPLE, START_AGE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
 import { type AiState, createAiState, createDefence, type DefenceState, stepAi, stepDefence } from './ai.ts';
 import { campaignRegiment, type CampaignSetup, type CampaignState, setupCampaign, stepCampaign } from './campaign.ts';
 import { stepMelee, stepMorale } from './combat.ts';
-import { createTown, stepEconomy, type Town } from './economy.ts';
+import { createTown, keepRules, stepEconomy, type Town } from './economy.ts';
 import { EventQueue } from './events.ts';
 import { type Arrow, createArrowPool, stepMissiles } from './missiles.ts';
 import { SpatialGrid, stepAnchors, stepSoldiers } from './movement.ts';
 import { doorX, doorZ, KEEP, type Person, returnHome, spawnPerson, stepPeople } from './people.ts';
 import { assignSlots, createRegiment, forwardX, forwardZ, newSoldier, type Regiment } from './regiment.ts';
-import { cmdMove, inHomeLand, stepQueues } from './commands.ts';
+import { cmdBuild, cmdMove, inHomeLand, stepQueues } from './commands.ts';
+import { planSite } from './sitePlanner.ts';
 import { createNav, type Nav, stampBuilding } from './nav.ts';
 import { createStand, type Stand, stepStand } from './trees.ts';
 import { createPoints, type Point, stepPoints } from './points.ts';
 import { facingToEnemy, rallyX, rallyZ, townX, townZ } from './terrain.ts';
-import { COMPUTER, type Difficulty, PLAYER, type Side, type UnitKind } from './types.ts';
+import { COMPUTER, type Difficulty, PLAYER, RESOURCE_IDS, type Side, type UnitKind } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
 
 // The whole game state and its one fixed update order (rules §10):
@@ -62,6 +63,8 @@ export interface World {
   /** Men each side has brought down, for the end screen. */
   kills: [number, number, number];
   stepCount: number;
+  /** The age the game began in (START_AGE); 1 (or absent, an older save) the middle ages. */
+  startAge?: number;
   /** Which trees are felled, planted or growing back (trees.ts). */
   stand: Stand;
   /** Gates set into walls, for the view (the rules read nav.wallGate). */
@@ -94,6 +97,8 @@ export interface WorldOptions {
   mode?: GameMode;
   /** The campaign's mission and what it starts from (mode 'campaign'). */
   campaign?: CampaignSetup;
+  /** The age a skirmish begins in: 1 the middle ages (the default), 2 or 3 a later one (START_AGE). */
+  startAge?: number;
 }
 
 export type GameMode = 'skirmish' | 'defence' | 'tutorial' | 'campaign';
@@ -125,7 +130,30 @@ export function createWorld(options: WorldOptions): World {
     difficulty: options.difficulty,
     kills: [0, 0, 0],
     stepCount: 0,
+    startAge: 1,
   };
+  // Begun in a later age: every keep at the age's level, its walls whole, and more in store (START_AGE).
+  const age = Math.min(ERAS.length, Math.max(1, Math.round(options.startAge ?? 1)));
+  if (age > 1 && world.mode !== 'campaign') {
+    world.startAge = age;
+    for (const town of world.towns) {
+      town.keepLevel = (ERAS[age - 1] as (typeof ERAS)[number]).keepLevel;
+      town.keepHp = keepRules(town).hp;
+      const extra = START_AGE.stock[age - 1] ?? {};
+      for (const id of RESOURCE_IDS) town.stock[id] += extra[id] ?? 0;
+      // And barracks of the age, standing where the town's planner puts them: the age's arms from the start.
+      const site = planSite(world, town.side, 'barracks');
+      if (site && cmdBuild(world, town.side, 'barracks', site.x, site.z, site.yawRad) === 'ok') {
+        const b = town.plots.find((p) => p !== null && p.kind === 'barracks');
+        if (b) {
+          b.level = town.keepLevel;
+          b.constructionLeftS = 0;
+          b.matDelivered = b.matTotal;
+          b.matWaiting.wood = b.matWaiting.stone = b.matWaiting.planks = 0;
+        }
+      }
+    }
+  }
   // The player's arms workshops wait for an order; the computer's work as long as there is room.
   for (const good of ARMS_GOODS) world.towns[PLAYER].orders[good] = 0;
   for (const town of world.towns) stampBuilding(world.nav, townX(town.side), townZ(town.side), TOWN.keepRadiusM, true);

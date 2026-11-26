@@ -1,6 +1,6 @@
 // docs/RULES.md: every rule of the game in one place (Polish), the numbers read from src/config.ts so the
 // document cannot drift from the game. Written by tools/docs.ts (npm run docs).
-import { AI, AI_CHARACTERS, MAP, AI_TUNING, ARMY, CAMPAIGN, CAPTAIN, CARTS, CHAPEL, COMBAT, DEFENCE, ELEVATION, FATIGUE, FOOD, FORMATION, GATE, KEEP_BAYS, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MISSILE, MORALE, PAY, POINTS, REARM, REINFORCE, TOWER, TOWN, UNITS, VETERANS, WALLS } from '../src/config.ts';
+import { AI, AI_CHARACTERS, ERAS, START_AGE, MAP, AI_TUNING, ARMY, CAMPAIGN, CAPTAIN, CARTS, CHAPEL, COMBAT, DEFENCE, ELEVATION, FATIGUE, FOOD, FORMATION, GATE, KEEP_BAYS, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MISSILE, MORALE, PAY, POINTS, REARM, REINFORCE, TOWER, TOWN, UNITS, VETERANS, WALLS } from '../src/config.ts';
 import { type ResourceId, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 import { GOOD_PL, UNIT_PL } from './docs.ts';
 
@@ -57,6 +57,9 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 - Budynek stoi w zasięgu zamku (${TOWN.territoryRadiusM} m na poziomie 1, dalej na wyższych), na suchym, równym
   terenie, nie bliżej niż ${TOWN.enemyKeepClearM} m od zamku wroga. Drwal przy lesie, kamieniołom i kopalnia przy
   złożu, rybak nad wodą, zagroda i winnica z ziemią za sobą (rezerwowaną od razu pod wszystkie poziomy).
+- **Epoka na start** (potyczka): ${ERAS.map((e, i) => `${i + 1} — zamek ${e.keepLevel}`).join(', ')}. W epoce 2 i 3 każde miasto
+  zaczyna z zamkiem tej epoki, gotowymi koszarami tego poziomu i zapasem: ${START_AGE.stock.slice(1).map((s, i) => `epoka ${i + 2} — ${goods(s)}`).join('; ')}.
+  Komputer od razu stawia rusznikarnię i prochownię i werbuje wojska epoki.
 - Zamek: poziomy 1–3 (${KEEP_UPGRADE_SECONDS} s rozbudowy): zasięg budowy ${KEEP_LEVELS.map((l) => l.territoryM).join(' / ')} m, wytrzymałość
   ${KEEP_LEVELS.map((l) => l.hp).join(' / ')}, koszary do poziomu ${KEEP_LEVELS.map((l) => l.barracks).join(' / ')}.
 - Głód (brak racji): produkcja zwalnia, podatki ustają, a górna granica morale wojska spada o

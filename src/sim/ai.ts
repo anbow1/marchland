@@ -125,6 +125,16 @@ const BUILD_ORDER: readonly BuildingKind[] = [
 // rota runs as it always did.
 const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'cannon', 'heavyCavalry', 'archers', 'mortar', 'swordsmen', 'musketeers', 'cuirassiers', 'musketeers', 'dragoons', 'lineInfantry', 'riflemen', 'lineInfantry', 'hussars'];
 
+/**
+ * What the computer raises in a later age, first: the age's own arms, the musket (or rifle) and the new horse,
+ * with pikes and guns beside them. When none of these can be raised (no muskets yet), the whole rota above.
+ */
+const AGE_ROTA: readonly (readonly UnitKind[])[] = [
+  [],
+  ['musketeers', 'pikemen', 'cuirassiers', 'musketeers', 'dragoons', 'halberdiers', 'cannon'],
+  ['lineInfantry', 'riflemen', 'lineInfantry', 'hussars', 'cuirassiers', 'cannon'],
+];
+
 /** What the computer builds as it enters the later ages (each when its keep allows): the firearms' workshops and the great buildings. */
 const AGES_ORDER: readonly BuildingKind[] = ['cathedral', 'gunsmith', 'powderMill', 'townHall', 'manufactory'];
 
@@ -192,6 +202,11 @@ function sellSurplus(world: World, ai: AiState): boolean {
   return best !== null && cmdTrade(world, ai.side, best, false) === 'ok';
 }
 
+/** The later ages are open to the computer: a long game (AI.agesAfterS), or one begun in a later age. */
+function agesOpen(world: World): boolean {
+  return world.timeS >= AI.agesAfterS || (world.startAge ?? 1) > 1;
+}
+
 /**
  * A long game, the chest full: what the keep's next level needs and the workshops never leave in store
  * (planks, iron, timber eaten as fast as they come) is bought at the market, a lot a think.
@@ -199,7 +214,7 @@ function sellSurplus(world: World, ai: AiState): boolean {
 function buyForKeep(world: World, ai: AiState): boolean {
   const town = world.towns[ai.side];
   const next = KEEP_LEVELS[town.keepLevel];
-  if (!next || world.timeS < AI.agesAfterS || town.keepUpgradeLeftS > 0) return false;
+  if (!next || !agesOpen(world) || town.keepUpgradeLeftS > 0) return false;
   const cost = next.cost as Partial<Record<ResourceId, number>>;
   for (const good of RESOURCE_IDS) {
     if (good === 'gold' || town.stock[good] >= (cost[good] ?? 0)) continue;
@@ -246,8 +261,24 @@ function runTown(world: World, ai: AiState): void {
     const plot = town.plots.findIndex((b) => b !== null && b.kind === 'barracks' && b.level === 1 && b.constructionLeftS <= 0);
     if (plot >= 0 && cmdUpgrade(world, ai.side, plot) === 'ok') return;
   }
+  // In a later age, once the barracks stands: the musket's workshops, and the barracks up to the keep's level, before
+  // the rest of the town (a game begun in a later age is fought with the age's arms).
+  if (eraOf(town) >= 2 && town.plots.some((b) => b !== null && b.kind === 'barracks' && b.constructionLeftS <= 0)) {
+    for (const kind of ['gunsmith', 'powderMill'] as const) {
+      if (!town.plots.some((b) => b !== null && b.kind === kind) && buildPlanned(world, ai, kind) === 'built') return;
+    }
+    const barracks = town.plots.findIndex((b) => b !== null && b.kind === 'barracks' && b.level < town.keepLevel && b.constructionLeftS <= 0);
+    if (barracks >= 0 && cmdUpgrade(world, ai.side, barracks) === 'ok') return;
+  }
   const next = BUILD_ORDER[ai.buildIndex];
   if (next !== undefined) {
+    // Already standing (a game begun in a later age starts with its barracks): on to the next.
+    let wanted = 0;
+    for (let k = 0; k <= ai.buildIndex; k++) if (BUILD_ORDER[k] === next) wanted++;
+    if (town.plots.filter((b) => b !== null && b.kind === next).length >= wanted) {
+      ai.buildIndex += 1;
+      return;
+    }
     // Built, or no ground left for it: on to the next. Not affordable yet: wait.
     if (buildPlanned(world, ai, next) !== 'notYet') ai.buildIndex += 1;
     return;
@@ -263,7 +294,7 @@ function runTown(world: World, ai: AiState): void {
   if (town.stock.gold < AI.upgradeReserveGold) return;
   if (town.keepLevel < 3 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
   // A long game: into the next ages, their workshops and great buildings, the barracks as high as the keep.
-  if (world.timeS >= AI.agesAfterS) {
+  if (agesOpen(world)) {
     if (town.keepLevel >= 3 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
     for (const kind of AGES_ORDER) {
       const needs = BUILDINGS[kind].keepLevel ?? 1;
@@ -321,7 +352,7 @@ function recruit(world: World, ai: AiState): void {
   let regiments = 0;
   for (const r of world.regiments) if (r.side === ai.side && r.aliveMen > 0 && !r.def.defenceOnly) regiments++;
   // The same before a new age (keep 4 and 5): no new regiments while its price is not in the chest.
-  const forAge = world.timeS >= AI.agesAfterS && town.keepLevel >= 3;
+  const forAge = agesOpen(world) && town.keepLevel >= 3;
   if ((ai.buildIndex >= BARRACKS_UPGRADE_AFTER && town.keepLevel < 2) || forAge) {
     if (next && town.keepUpgradeLeftS === 0 && !ai.homeDefending && regiments >= AI.keepSavingAfterRegiments) {
       // Before a new age, the whole price: what is short of planks, iron and stone is bought with gold.
@@ -333,6 +364,17 @@ function recruit(world: World, ai: AiState): void {
   let buildings = 0;
   for (const b of world.towns[ai.side].plots) if (b) buildings++;
   const handsToKeep = buildings * AI.freeHandsPerBuilding;
+  // In a later age, its own arms first (where the barracks and the stores allow).
+  const ageRota = AGE_ROTA[eraOf(world.towns[ai.side]) - 1] ?? [];
+  for (let k = 0; k < ageRota.length; k++) {
+    const kind = ageRota[(ai.recruitIndex + k) % ageRota.length] as UnitKind;
+    if (freePeople(world, ai.side) - peopleFor(kind) < handsToKeep) continue;
+    if (cmdRecruit(world, ai.side, kind) === 'ok') {
+      ai.recruitIndex = (ai.recruitIndex + k + 1) % RECRUIT_ROTA.length;
+      ai.sinceRecruitS = 0;
+      return;
+    }
+  }
   for (let k = 0; k < RECRUIT_ROTA.length; k++) {
     const kind = RECRUIT_ROTA[(ai.recruitIndex + k) % RECRUIT_ROTA.length] as UnitKind;
     if (freePeople(world, ai.side) - peopleFor(kind) < handsToKeep) continue;

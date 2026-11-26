@@ -31,6 +31,10 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 - **Broń palna**: muszkiet i proch to nowe towary (rusznikarnia: drewno + żelazo → muszkiet; prochownia:
   2 drewna + kamień → 2 prochu; oba także na targu). Kula przebija zbroję **i tarczę** (część równa przebiciu),
   leci płasko i szybko, ładowanie trwa 14–20 s. Strzał: błysk, huk i dym nad szeregiem.
+- **Epoka na start** (menu potyczki, adres `?age=2|3`): wszystkie zamki od razu w epoce, gotowe koszary jej
+  poziomu, zapas (`START_AGE`) z muszkietami i prochem; komputer najpierw stawia rusznikarnię i prochownię
+  i werbuje wojska epoki (`AGE_ROTA`). W zwykłej partii komputery kończą wojnę w 37.–46. minucie, zanim
+  podniosą zamek na poziom 2, więc bez tej opcji epok nie widać.
 - **Przezbrajanie przez epoki**: oddział zachowuje ludzi, doświadczenie i kapitana; piechota od milicji przez
   muszkieterów do piechoty liniowej (albo strzelców), jazda od lekkiej do dragonów i huzarów, rycerze do
   kirasjerów (`REARM.paths`; kiedy — decyduje poziom koszar). Komputer przezbraja stare oddziały w nowej epoce

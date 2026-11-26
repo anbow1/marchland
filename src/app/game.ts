@@ -35,6 +35,8 @@ export interface GameOptions {
   character?: AiCharacter;
   /** The campaign's mission and what it starts from (mode 'campaign'). */
   campaign?: CampaignSetup;
+  /** The age a skirmish begins in (1–3). */
+  startAge?: number;
   /** Lets the frame governor trade resolution for frame rate. Off for measurements. */
   governor: boolean;
   edgeScroll: boolean;
@@ -92,7 +94,7 @@ export class Game implements ControlTarget {
     private readonly sound: Sound,
     options: GameOptions,
   ) {
-    this.world = createWorld({ seed: options.seed, difficulty: options.difficulty, computerPlays: true, mode: options.mode ?? 'skirmish', character: options.character ?? 'balanced', campaign: options.campaign });
+    this.world = createWorld({ seed: options.seed, difficulty: options.difficulty, computerPlays: true, mode: options.mode ?? 'skirmish', character: options.character ?? 'balanced', campaign: options.campaign, startAge: options.startAge });
     if (this.world.mode === 'tutorial') {
       // Enough in the keep to follow every step without waiting on the economy.
       const stock = this.world.towns[PLAYER].stock;

@@ -48,6 +48,8 @@ interface Strings {
   qualityLow: string;
   qualityMinimal: string;
   difficultyLabel: string;
+  /** The start menu's choice of the age a skirmish begins in. */
+  ageLabel: string;
   /** The choice of where the keeps stand, and the names of the three places. */
   startLabel: string;
   modeLabel: string;
@@ -427,6 +429,7 @@ const pl: Strings = {
   qualityLow: 'Niska',
   qualityMinimal: 'Bardzo niska',
   difficultyLabel: 'Przeciwnik',
+  ageLabel: 'Epoka na start',
   startLabel: 'Zamek',
   modeLabel: 'Tryb',
   modes: { skirmish: 'Potyczka', defence: 'Obrona', tutorial: 'Samouczek', campaign: 'Kampania' },
@@ -873,6 +876,7 @@ const en: Strings = {
   qualityLow: 'Low',
   qualityMinimal: 'Minimal',
   difficultyLabel: 'Opponent',
+  ageLabel: 'Starting age',
   startLabel: 'Keep',
   modeLabel: 'Mode',
   modes: { skirmish: 'Skirmish', defence: 'Defence', tutorial: 'Tutorial', campaign: 'Campaign' },

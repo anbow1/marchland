@@ -5,6 +5,29 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Pojedynki epok, strojenie broni palnej, epoka na start
+
+- **Tabela pojedynków** (regiment na regiment, start 100 m, obaj atakują, 4 ziarna; `+` wygrywa wiersz,
+  liczba = część ludzi zwycięzcy, która przetrwała). Przed strojeniem muszkieterowie (1320 zł) przegrywali z
+  pikinierami (600) i łucznikami (600), dragoni ze wszystkimi, strzelcy wygrywali z huzarami, piechota liniowa
+  przegrywała z łucznikami.
+- **Strojenie** (`UNITS`): muszkieterowie ładowanie 18 → 12 s, kula 34 → 38, rozrzut 1,6 → 1,3, zasięg 75 → 80,
+  atak/obrona 4/4 → 5/5, morale 55 → 60; dragoni 10 ludzi (było 8), 130 zł (160), ładowanie 20 → 11 s, zasięg 60 → 75,
+  atak/obrona 7/6, szarża 7, życie 44; piechota liniowa ładowanie 14 → 10 s, atak/obrona 8/7, bagnet na jazdę 6,
+  morale 72; strzelcy ładowanie 16 → 20 s, atak/obrona 3/3, morale 50; huzarzy atak/obrona 10/7, szarża 12,
+  morale 90.
+- **Po strojeniu**: muszkieterowie biją pikinierów, łuczników, kuszników, halabardników i lekką jazdę, przegrywają z
+  miecznikami, rycerzami, kirasjerami i piechotą epoki 3; kirasjerów biją halabardnicy, miecznicy i piechota liniowa;
+  piechotę liniową — strzelcy; strzelców — kirasjerzy i rycerze (z huzarami na remis); huzarzy biją łuczników,
+  kuszników, dragonów i lekką jazdę. Test `ages.test.ts` pilnuje siedmiu kontr.
+- **Pomiar epok komputera**: w zwykłej partii (2 komputery, ziarno 11) wojna kończy się w 46. minucie, na mapie
+  Trzech panów w 37., a zamek nie wychodzi poza poziom 1 — „wcześniejsze epoki” niczego by nie zmieniły.
+  Zamiast tego **epoka na start** (menu potyczki, `?age=2|3`): zamki 4 albo 5, gotowe koszary epoki, zapas
+  (`START_AGE`) z muszkietami i prochem; komputer najpierw stawia rusznikarnię i prochownię, podnosi koszary,
+  werbuje wojska epoki (`AGE_ROTA`), w kolejności budowy pomija to, co już stoi. Partia w epoce 2: komputer ma
+  muszkieterów od ok. 25. minuty; armie są małe (żelaza na muszkiety brak) — do dalszego strojenia.
+- Przeglądarka: menu z wyborem „Epoka na start”, gra z `age=2` startuje bez błędów (zamki 4, koszary 4).
+
 ## 2026-11-27 · Przezbrajanie przez epoki: od milicji do piechoty liniowej
 
 - **Prośba**: jednostki można ulepszać między epokami, od milicji do piechura. `REARM.paths`: każda piechota

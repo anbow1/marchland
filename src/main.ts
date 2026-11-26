@@ -176,12 +176,14 @@ async function run(): Promise<void> {
   let mission = Math.min(MISSIONS.length, Math.max(1, Number(params.get('mission') ?? 1) || 1));
   const askedCharacter = params.get('ai');
   let character: AiCharacter = askedCharacter === 'builder' || askedCharacter === 'raider' ? askedCharacter : 'balanced';
+  // The age a skirmish begins in (1–3), kept in the address across a reload.
+  let age = Math.min(3, Math.max(1, Number(params.get('age') ?? 1) || 1));
   const settings = loadSettings();
   sound.setVolume(settings.volume);
   const savedText = readSave();
   const saved = savedText ? saveHeader(savedText) : null;
   if (!autostart && !chosenAlready && !loadSave) {
-    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT, mode, character, mission }, saved, loadProgress());
+    const choice = await menu.start({ difficulty, quality, start: START, map: LAYOUT, mode, character, age, mission }, saved, loadProgress());
     difficulty = choice.difficulty;
     // The menu's choice wins over a `q` left in the address by an earlier start (it was ignored before, so
     // Minimal chosen on a tablet still loaded Low or High), and is kept for the next start.
@@ -192,6 +194,10 @@ async function run(): Promise<void> {
     storeSettings(settings);
     mode = choice.mode;
     character = choice.character;
+    age = choice.age;
+    if (age > 1) params.set('age', String(age));
+    else params.delete('age');
+    history.replaceState(null, '', `${location.pathname}?${params.toString()}`);
     sound.unlock();
     if (choice.mode === 'campaign' && !choice.load) {
       // A mission: its own map and keeps, laid out on a reload.
@@ -244,6 +250,7 @@ async function run(): Promise<void> {
     difficulty,
     mode,
     character,
+    startAge: mode === 'skirmish' ? age : 1,
     // A mission starts from what the one before it carried out (none when it is played anew from the list).
     campaign: mode === 'campaign' ? { mission, carried: loadProgress().carryInto[mission]?.carried ?? [], gold: loadProgress().carryInto[mission]?.gold ?? 0 } : undefined,
     // Measurements want the full picture at a fixed scale, and no map sliding under a parked cursor.

@@ -39,7 +39,10 @@ surowe pliki Mixamo nie trafiają do repozytorium.
 
 ## 3. Do zrobienia bez zasobów (mogę zaczynać od razu)
 
-Zrobione z tej listy: przezbrajanie przez epoki (od milicji do piechoty liniowej, jazda do huzarów), 27.11.
+Zrobione z tej listy (27.11): przezbrajanie przez epoki (od milicji do piechoty liniowej, jazda do huzarów); tabela
+pojedynków epok i strojenie (§3.2 pkt 1); **epoka na start** potyczki (§3.2 pkt 4, część). Pomiar: w zwykłej partii
+komputery kończą wojnę w 37.–46. minucie bez podnoszenia zamku, więc „wcześniejsze epoki komputera” (§3.2 pkt 3)
+zastąpiła epoka na start; zostaje zaopatrzenie komputera w żelazo na muszkiety (armie epoki 2 są małe).
 
 ### 3.1 Interfejs ([GAMEPLAY.md §9](GAMEPLAY.md) „Do zrobienia”)
 

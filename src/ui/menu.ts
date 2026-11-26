@@ -25,6 +25,8 @@ export interface StartChoice {
   map: Layout;
   mode: GameMode;
   character: AiCharacter;
+  /** The age a skirmish begins in: 1 the middle ages, 2 and 3 the later ones. */
+  age: number;
   /** True when the player chose to load the saved game instead. */
   load?: boolean;
   /** The campaign's mission chosen (mode 'campaign'). */
@@ -143,6 +145,7 @@ export class Menu {
         choiceRow(T.modeLabel, 'mode', (['skirmish', 'defence', 'tutorial', 'campaign'] as const).map((m) => [m, T.modes[m]] as const), choice.mode) +
         `<div class="skirmishOnly"${campaign ? ' style="display:none"' : ''}>` +
         choiceRow(T.characterLabel, 'character', (['balanced', 'builder', 'raider'] as const).map((c) => [c, T.characters[c]] as const), choice.character) +
+        choiceRow(T.ageLabel, 'age', T.eras.map((name, i) => [String(i + 1), name] as const), String(choice.age)) +
         choiceRow(T.mapLabel, 'map', SKIRMISH_LAYOUTS.map((l) => [l, T.layouts[l]] as const), choice.map) +
         choiceRow(T.startLabel, 'start', T.startSites.map((name, i) => [String(i), `${i + 1}. ${name}`] as const), String(choice.start)) +
         `<div class="siteMapBox">${siteMap(choice.start, choice.map)}</div></div>` +
@@ -161,6 +164,7 @@ export class Menu {
         if (name === 'map') choice.map = target.dataset['value'] as Layout;
         if (name === 'mode') choice.mode = target.dataset['value'] as GameMode;
         if (name === 'character') choice.character = target.dataset['value'] as AiCharacter;
+        if (name === 'age') choice.age = Number(target.dataset['value']);
         if (name === 'mode') {
           const on = choice.mode === 'campaign';
           (sheet.querySelector('.skirmishOnly') as HTMLElement).style.display = on ? 'none' : '';
