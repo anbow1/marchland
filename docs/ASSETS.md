@@ -28,6 +28,10 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | Muszkieter elżbietański (bez szkieletu, w pozie celowania) | „Elizabethan Musketeer”, Binkley-Spacetrucker | CC BY 4.0 | sprawdzone: poza celowania, bez szkieletu — do muszkieterów po osadzeniu na szkielecie (Mixamo Auto-Rigger nie przyjmie pozy innej niż T/A) |
 | Żołnierz Unii (figura na skale, 386 tys. tr.) | „American Union Army - Infantry - free”, Andy woodhead | CC BY 4.0 | sprawdzone: figura w ruchu z podstawą — nie do animacji |
 | Zbroja husarska (skan muzealny), husarz na koniu (figura) | Wirtualne Muzea Małopolski | CC0 / CC BY 4.0 | sprawdzone: sama zbroja i figura z cokołem — wzór do huzarów, nie postać |
+| Huzar napoleoński, szkielet Unreala, ~61 tys. tr. | „Hussar - rigged for UE4/5”, Andy woodhead, Sketchfab | CC BY 4.0 | **w grze**: jeździec huzarów (`hussar_rider.json`, `rigged.py --seated`, dolman w barwie strony) |
+| Joannita (szkielet Unreala, klip rozmowy) | „Hospitaler Talking”, putns, Sketchfab | CC BY 4.0 | sprawdzony 27.11: do rycerzy / ciężkiej jazdy (krzyż zakonu zakryty barwą strony) |
+| „Armor Set” | gimora | **CC BY-NC-SA** | odrzucony: licencja niekomercyjna |
+| „Hafsid Horse General (Machiavello Mod)” | mylae | CC BY 4.0 | odrzucony: model z moda do gry |
 | Animacje miecz i tarcza: cięcie, blok, postawa, marsz, bieg, trafienie, śmierć ×2 | Mixamo | Mixamo | w grze (miecznicy, halabardnicy) |
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
 | Bayonet Stab | Mixamo | Mixamo | w grze: cios pikinierów (oburącz z biodra) |

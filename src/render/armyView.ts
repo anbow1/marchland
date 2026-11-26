@@ -405,6 +405,8 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
 /** The kinds on horseback, and those of them in armour on a caparisoned horse. */
 const MOUNTED: readonly UnitKind[] = ['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars'];
 const BARDED: ReadonlySet<UnitKind> = new Set<UnitKind>(['heavyCavalry', 'cuirassiers']);
+/** Kinds with a rider of their own (rigged.py --seated); the others ride as soldiers/rider.json. */
+const RIDER_FILES: Partial<Record<UnitKind, string>> = { hussars: 'soldiers/hussar_rider.json' };
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
@@ -497,7 +499,17 @@ export class ArmyView {
         if (!response.ok) throw new Error(`${file} ${response.status}`);
         return response.json();
       }));
-      for (const kind of MOUNTED) if (this.useMounted(kind, horse as RiggedModel & { saddle: { bone: number; y: number; z: number } }, rider as BodyModel)) changed++;
+      // A kind's own rider where it has one (a missing file: the common rider).
+      const own = new Map<UnitKind, BodyModel>();
+      await Promise.all(Object.entries(RIDER_FILES).map(async ([kind, file]) => {
+        try {
+          const response = await fetch(freshUrl(base, file as string));
+          if (response.ok) own.set(kind as UnitKind, (await response.json()) as BodyModel);
+        } catch {
+          // Keeps the common rider.
+        }
+      }));
+      for (const kind of MOUNTED) if (this.useMounted(kind, horse as RiggedModel & { saddle: { bone: number; y: number; z: number } }, own.get(kind) ?? (rider as BodyModel))) changed++;
     } catch (error) {
       console.warn(`[soldiers] no skinned horse (${String(error)}): horsemen ride the armoured horse`);
     }
