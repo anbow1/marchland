@@ -487,7 +487,9 @@ export function forestCoverAt(x: number, z: number): number {
   const offHeap = smoothstep(0.85, 1.15, heapShare(x, z));
   // A glade round each place in the middle, where the regiment that takes it stands.
   let offPlace = 1;
-  for (const p of POINTS.list) offPlace = Math.min(offPlace, smoothstep(POINTS.radiusM + 14, POINTS.radiusM + 34, hypot2(x - SIDE_X * p.sideM, z - SIDE_Z * p.sideM)));
+  POINTS.list.forEach((p, i) => {
+    offPlace = Math.min(offPlace, smoothstep(POINTS.radiusM + 14, POINTS.radiusM + 34, hypot2(x - pointX(i, p.sideM), z - pointZ(i, p.sideM))));
+  });
   const woods = forest ? smoothstep(-0.5, -0.3, patches) : smoothstep(0.02, 0.22, patches);
   const offFort = FORTRESS ? smoothstep(MAP.fortressClearM, MAP.fortressClearM + 25, fortressDistanceM(x, z)) : 1;
   return woods * nearTown * offField * offLake * offRock * offHeap * offPlace * offFort;
@@ -516,3 +518,33 @@ export function facingToEnemy(side: Side): number {
   if (THREE) return Math.atan2(-townX(side), -townZ(side));
   return Math.atan2(townX(side === 0 ? 1 : 0) - townX(side), townZ(side === 0 ? 1 : 0) - townZ(side));
 }
+
+/** The other side whose keep is nearest a point: with two towns simply the enemy. */
+export function nearestFoeKeep(side: Side, x: number, z: number): Side {
+  let best: Side = side === 0 ? 1 : 0;
+  let bestD = hypot2(x - townX(best), z - townZ(best));
+  for (const other of SIDES) {
+    if (other === side || other === best) continue;
+    const d = hypot2(x - townX(other), z - townZ(other));
+    if (d < bestD) {
+      best = other;
+      bestD = d;
+    }
+  }
+  return best;
+}
+
+/**
+ * Where the i-th place in the middle stands (POINTS.list): along the line across the field with two towns;
+ * with three, out between two towns, the same way from both (the i-th faces town i across the middle).
+ */
+export function pointX(i: number, sideM: number): number {
+  return THREE ? -POINT_SHARE * townX((i % 3) as Side) : SIDE_X * sideM;
+}
+
+export function pointZ(i: number, sideM: number): number {
+  return THREE ? -POINT_SHARE * townZ((i % 3) as Side) : SIDE_Z * sideM;
+}
+
+/** Three towns: the places stand this share of a keep's distance out from the middle, opposite it. */
+const POINT_SHARE = 0.42;

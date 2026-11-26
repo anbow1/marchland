@@ -209,6 +209,10 @@ function upgrade(world: World): World {
     a.rollM ??= 0;
   }
   world.campaign ??= null;
-  if (world.ai) world.ai.walled ??= false;
+  // One computer was `ai` before a game could have two.
+  const old = world as World & { ai?: World['ais'][number] | null };
+  if (!world.ais) world.ais = old.ai ? [old.ai] : [];
+  delete old.ai;
+  for (const ai of world.ais) ai.walled ??= false;
   return world;
 }

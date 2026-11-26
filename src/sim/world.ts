@@ -54,7 +54,8 @@ export interface World {
   winner: Side | -1;
   nextRegimentId: number;
   /** Null switches the computer player off (tests, sandbox). */
-  ai: AiState | null;
+  /** The computers playing a skirmish: one per side but the player's (none in the campaign or the defence). */
+  ais: AiState[];
   grid: SpatialGrid;
   keepShotCooldownS: [number, number, number];
   difficulty: Difficulty;
@@ -115,7 +116,7 @@ export function createWorld(options: WorldOptions): World {
     winner: -1,
     nextRegimentId: 1,
     mode: options.mode ?? 'skirmish',
-    ai: options.computerPlays && (options.mode ?? 'skirmish') === 'skirmish' ? createAiState(COMPUTER, options.character ?? 'balanced') : null,
+    ais: options.computerPlays && (options.mode ?? 'skirmish') === 'skirmish' ? (SIDE_COUNT === 3 ? [createAiState(COMPUTER, options.character ?? 'balanced'), createAiState(2, options.character ?? 'balanced')] : [createAiState(COMPUTER, options.character ?? 'balanced')]) : [],
     defence: options.mode === 'defence' ? createDefence() : null,
     campaign: null,
     // Room for the campaign's larger armies (CAMPAIGN.maxSoldiersPerSide) in any game.
@@ -127,10 +128,10 @@ export function createWorld(options: WorldOptions): World {
   };
   // The player's arms workshops wait for an order; the computer's work as long as there is room.
   for (const good of ARMS_GOODS) world.towns[PLAYER].orders[good] = 0;
-  for (const side of [PLAYER, COMPUTER] as const) stampBuilding(world.nav, townX(side), townZ(side), TOWN.keepRadiusM, true);
+  for (const town of world.towns) stampBuilding(world.nav, townX(town.side), townZ(town.side), TOWN.keepRadiusM, true);
   // Each keep starts with its household: the first carriers and builders.
-  for (const side of [PLAYER, COMPUTER] as const) {
-    const town = world.towns[side];
+  for (const town of world.towns) {
+    const side = town.side;
     for (let i = 0; i < PEOPLE.keepResidents; i++) spawnPerson(world, side, doorX(town, KEEP) + (i % 4) - 1.5, doorZ(town, KEEP) + Math.floor(i / 4) - 0.5, KEEP);
   }
   if (world.mode === 'campaign') world.campaign = setupCampaign(world, options.campaign ?? { mission: 1, carried: [], gold: 0 });
@@ -305,7 +306,7 @@ function payArmy(world: World): void {
 export function stepWorld(world: World, dtSeconds: number): void {
   if (world.winner !== -1) return;
   world.timeS += dtSeconds;
-  if (world.ai) stepAi(world, world.ai, dtSeconds);
+  for (const ai of world.ais) stepAi(world, ai, dtSeconds);
   if (world.defence) stepDefence(world, world.defence, dtSeconds);
   if (world.campaign) stepCampaign(world, world.campaign, dtSeconds);
   stepPeople(world, dtSeconds);
@@ -341,8 +342,36 @@ export function stepWorld(world: World, dtSeconds: number): void {
   stepMorale(world, dtSeconds);
   for (const town of world.towns) {
     if (town.keepHp <= 0 && !town.absent && world.winner === -1) {
-      world.winner = town.side === PLAYER ? COMPUTER : PLAYER;
-      world.events.push('gameOver', 0, 0, world.winner);
+      if (world.towns.length === 2) {
+        world.winner = town.side === PLAYER ? COMPUTER : PLAYER;
+        world.events.push('gameOver', 0, 0, world.winner);
+      } else if (town.side === PLAYER) {
+        // Three towns: the player's keep fell; the stronger of the others has the field.
+        const others = world.towns.filter((t) => t.side !== PLAYER && !t.absent);
+        world.winner = others.reduce((a, b) => (menAlive(world, b.side) > menAlive(world, a.side) ? b : a)).side;
+        world.events.push('gameOver', 0, 0, world.winner);
+      } else {
+        // A computer's keep fell: its town is out of the game, and the last one standing wins.
+        fallTown(world, town.side);
+        if (world.towns.every((t) => t.side === PLAYER || t.absent)) {
+          world.winner = PLAYER;
+          world.events.push('gameOver', 0, 0, PLAYER);
+        }
+      }
     }
   }
+}
+
+/**
+ * A side out of a game of three: its men desert, its people leave, its buildings stand burnt out (ruins
+ * no one works), its computer stops. The town counts as absent from then on.
+ */
+function fallTown(world: World, side: Side): void {
+  const town = world.towns[side];
+  town.absent = true;
+  world.ais = world.ais.filter((ai) => ai.side !== side);
+  world.regiments = world.regiments.filter((r) => r.side !== side);
+  world.people = world.people.filter((p) => p.side !== side);
+  for (const b of town.plots) if (b) b.ruin = true;
+  world.events.push('townFell', townX(side), townZ(side), side);
 }

@@ -462,7 +462,7 @@ describe('high ground and the computer\'s formations', () => {
   it('the computer\'s pikes form a wall when horse come near, and its horse charge in a wedge', () => {
     const world = createWorld({ seed: 3, difficulty: 'normal', computerPlays: true });
     // Its own errands (the village in the middle) aside for this test.
-    if (world.ai) world.ai.pointsS = 1e9;
+    for (const ai of world.ais) ai.pointsS = 1e9;
     const pikes = spawnRegiment(world, COMPUTER, 'pikemen', 0, -20, 0);
     const horse = spawnRegiment(world, PLAYER, 'lightCavalry', 0, 60, Math.PI);
     const theirHorse = spawnRegiment(world, COMPUTER, 'heavyCavalry', 40, -20, 0);

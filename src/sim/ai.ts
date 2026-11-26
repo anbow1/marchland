@@ -5,9 +5,10 @@ import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, isEngaged, type Regiment } from './regiment.ts';
-import { facingToEnemy, FORWARD_X, FORWARD_Z, rallyX, rallyZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
+import { facingToEnemy, frameX, frameZ, rallyX, rallyZ, SIDE_X, SIDE_Z, nearestFoeKeep, townX, townZ } from './terrain.ts';
+import { SIDE_COUNT } from './layout.ts';
 import { wallCells } from './nav.ts';
-import { type BuildingKind, COMPUTER, enemyOf, PLAYER, RESOURCE_IDS, type Side, type UnitKind, type ResourceId } from './types.ts';
+import { type BuildingKind, COMPUTER, PLAYER, RESOURCE_IDS, type Side, type UnitKind, type ResourceId } from './types.ts';
 import { findRegiment, spawnRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -40,6 +41,8 @@ export interface AiState {
   sinceRecruitS: number;
   /** The wall across the enemy's approach has been tried (built, or no ground for it). */
   walled: boolean;
+  /** The side its waves march on: chosen as a wave sets out (map of three towns). Absent in old saves. */
+  foe?: Side;
 }
 
 export function createAiState(side: Side, character: AiCharacter = 'balanced'): AiState {
@@ -217,10 +220,13 @@ function buildFrontWall(world: World, ai: AiState): void {
   ai.walled = true;
   const [cx, cz] = frontWallMiddle(ai.side);
   const half = AI.wallHalfM;
-  const x0 = cx - SIDE_X * half;
-  const z0 = cz - SIDE_Z * half;
-  const x1 = cx + SIDE_X * half;
-  const z1 = cz + SIDE_Z * half;
+  // Across the approach: along the side's own cross axis (with two towns the map's, as it always was).
+  const ax = SIDE_COUNT === 3 ? frameX(ai.side, 0, 1) : SIDE_X;
+  const az = SIDE_COUNT === 3 ? frameZ(ai.side, 0, 1) : SIDE_Z;
+  const x0 = cx - ax * half;
+  const z0 = cz - az * half;
+  const x1 = cx + ax * half;
+  const z1 = cz + az * half;
   // Only across open ground: where buildings or water break the line, the stretch is not worth its stone.
   const scratch: number[] = [];
   if (wallCells(world.nav, x0, z0, x1, z1, scratch) < ((half * 2) / ROADS.cellM) * 0.6) return;
@@ -230,8 +236,7 @@ function buildFrontWall(world: World, ai: AiState): void {
 
 /** The middle of the wall across the approach: out from the keep towards the enemy. */
 function frontWallMiddle(side: Side): [number, number] {
-  const t = turnOf(side);
-  return [townX(side) + t * FORWARD_X * AI.wallForwardM, townZ(side) + t * FORWARD_Z * AI.wallForwardM];
+  return [townX(side) + frameX(side, AI.wallForwardM, 0), townZ(side) + frameZ(side, AI.wallForwardM, 0)];
 }
 
 function recruit(world: World, ai: AiState): void {
@@ -296,8 +301,11 @@ function bestTarget(world: World, r: Regiment, withinM: number): Regiment | null
   return best;
 }
 
-export function fight(world: World, army: readonly Regiment[], withinM: number, razeKeep: boolean): void {
-  const foe = enemyOf((army[0] as Regiment).side);
+/**
+ * Each regiment of `army` attacks the best enemy regiment within `withinM`; with none, and `razeKeep`, it
+ * storms the keep of `foe` (by default the enemy keep nearest the army).
+ */
+export function fight(world: World, army: readonly Regiment[], withinM: number, razeKeep: boolean, foe: Side = nearestFoeKeep((army[0] as Regiment).side, (army[0] as Regiment).centreX, (army[0] as Regiment).centreZ)): void {
   for (const r of army) {
     const current = r.order === 'attackRegiment' ? findRegiment(world, r.targetRegimentId) : null;
     // Stay on a target that still stands and fights.
@@ -407,7 +415,8 @@ function raid(world: World, ai: AiState, home: readonly Regiment[]): void {
   const free = home.filter((r) => !r.def.defenceOnly && !r.def.engine && r.garrisonPlot < 0 && r.order !== 'attackBuilding');
   if (free.length < 2) return;
   const raider = free.reduce((a, b) => (b.def.runSpeedMs > a.def.runSpeedMs ? b : a));
-  const foe = enemyOf(ai.side);
+  const foe = ai.foe ?? pickFoe(world, ai.side);
+  if (foe === null) return;
   const town = world.towns[foe];
   let target = -1;
   let best = Number.POSITIVE_INFINITY;
@@ -473,10 +482,51 @@ export function adjustStances(world: World, side: Side): void {
   }
 }
 
+/** A side still in the game: its town stands. */
+function standing(world: World, side: Side): boolean {
+  const town = world.towns[side];
+  return town !== undefined && !town.absent && town.keepHp > 0;
+}
+
+/**
+ * Whom a computer's waves march on. With two towns, the other. With three (each against the others): whoever
+ * has the most men near its town; else the weaker of the two, by men under arms and a little by distance.
+ */
+export function pickFoe(world: World, side: Side): Side | null {
+  const others = world.towns.map((t) => t.side).filter((s) => s !== side && standing(world, s));
+  if (others.length <= 1) return others[0] ?? null;
+  const near = new Map<Side, number>();
+  const men = new Map<Side, number>();
+  for (const r of world.regiments) {
+    if (r.side === side || r.aliveMen === 0) continue;
+    men.set(r.side, (men.get(r.side) ?? 0) + r.aliveMen);
+    if (hypot2(r.centreX - townX(side), r.centreZ - townZ(side)) < AI.defendRadiusM * 2) near.set(r.side, (near.get(r.side) ?? 0) + r.aliveMen);
+  }
+  let best = others[0] as Side;
+  let bestScore = Number.POSITIVE_INFINITY;
+  for (const s of others) {
+    const threat = near.get(s) ?? 0;
+    // Not both on the same one: a side another computer is already marching on counts as that much stronger.
+    const taken = world.ais.some((other) => other.side !== side && other.foe === s && other.mode !== 'gather') ? AI.sharedFoeMen : 0;
+    const score = threat > 0 ? -threat : (men.get(s) ?? 0) + taken + hypot2(townX(s) - townX(side), townZ(s) - townZ(side)) / 8;
+    if (score < bestScore) {
+      best = s;
+      bestScore = score;
+    }
+  }
+  return best;
+}
+
 function command(world: World, ai: AiState): void {
   adjustStances(world, ai.side);
   const side = ai.side;
-  const foe = enemyOf(side);
+  // The foe of the wave out, or (between waves, or once it has fallen) the one it would march on now.
+  if (ai.foe === undefined || ai.mode === 'gather' || !standing(world, ai.foe)) {
+    const chosen = pickFoe(world, side);
+    if (chosen === null) return;
+    ai.foe = chosen;
+  }
+  const foe = ai.foe;
   const tuning = AI_TUNING[world.difficulty];
   // The wave: those of its regiments that still stand in formation. The rest of the army stays home.
   const wave: Regiment[] = [];
@@ -549,7 +599,7 @@ function command(world: World, ai: AiState): void {
     if (contact || arrived >= wave.length * 0.8 || ai.stageS > 240) ai.mode = 'assault';
     return;
   }
-  fight(world, wave, 110, true);
+  fight(world, wave, 110, true, foe);
 }
 
 /** The defence's clock: when the next wave sets out, how many have, and the regiments now marching. */

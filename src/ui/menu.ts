@@ -89,6 +89,16 @@ function siteMap(chosen: number, layout: Layout): string {
     svg += `<path d="${d}" fill="none" stroke="#3f7fa8" stroke-width="4"/>`;
   }
   for (const h of HEAPS) svg += `<circle cx="${px(h.x)}" cy="${px(h.z)}" r="${(h.radiusM / MAP.sizeM) * 150}" fill="#9a9a96" stroke="#5f5f5b"/>`;
+  if (layout === 'triangle') {
+    // Three keeps a third of a circle apart, the player's to the south; no choice of site.
+    for (let side = 0; side < 3; side++) {
+      const a = (side * 2 * Math.PI) / 3;
+      const x = -Math.sin(a) * MAP.triangleRadiusM;
+      const z = Math.cos(a) * MAP.triangleRadiusM;
+      svg += `<circle cx="${px(x)}" cy="${px(z)}" r="${side === 0 ? 8 : 7}" fill="${TEAM_CSS[side as 0 | 1 | 2]}" stroke="#1a120c" stroke-width="1.5"/>`;
+    }
+    return `${svg}</svg>`;
+  }
   MAP.startSites.forEach(([x, z], i) => {
     const on = i === chosen;
     if (on) svg += `<circle cx="${px(-x)}" cy="${px(-z)}" r="7" fill="${TEAM_CSS[1]}" stroke="#1a120c" stroke-width="1.5"/>`;

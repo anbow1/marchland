@@ -98,6 +98,8 @@ interface Strings {
   nextWave: string;
   startSites: readonly [string, string, string];
   mapLabel: string;
+  /** A computer's town fell in a game of three. */
+  townFell: string;
   layouts: Record<'field' | 'river' | 'forest' | 'valley' | 'fortress' | 'triangle', string>;
   loading: string;
   victory: string;
@@ -493,6 +495,7 @@ const pl: Strings = {
   nextWave: 'następna za',
   startSites: ['Róg', 'Zachód', 'Południe'],
   mapLabel: 'Mapa',
+  townFell: 'Zamek jednego z panów padł: jego ludzie się rozeszli, miasto spalone.',
   layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór', valley: 'Dolina', fortress: 'Twierdza', triangle: 'Trzech panów' },
   loading: 'Wczytywanie',
   victory: 'Zwycięstwo',
@@ -918,6 +921,7 @@ const en: Strings = {
   nextWave: 'next in',
   startSites: ['Corner', 'West', 'South'],
   mapLabel: 'Map',
+  townFell: 'One lord\'s keep has fallen: his men have scattered, his town is burnt.',
   layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road', valley: 'The valley', fortress: 'The fortress', triangle: 'Three lords' },
   loading: 'Loading',
   victory: 'Victory',

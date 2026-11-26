@@ -6,7 +6,7 @@ import type { GameEvent } from '../sim/events.ts';
 import { type Formation, frontageM, type Regiment, type Stance } from '../sim/regiment.ts';
 import { cellX, cellZ, gateCells, roadCells, wallCellAt } from '../sim/nav.ts';
 import { checkSite, mayLayRoadAt, nearestOwnBuildingM, reachOf, yawToKeep } from '../sim/placement.ts';
-import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, townX, townZ } from '../sim/terrain.ts';
+import { cliffKind, DEPOSITS, forestCoverAt, heightAtM, isWater, rallyX, rallyZ, SIDES, townX, townZ } from '../sim/terrain.ts';
 import { type BuildingKind, type CommandResult, COMPUTER, type Difficulty, NOWHERE, PLAYER, RESOURCE_IDS, type ResourceId, type Side, type UnitKind } from '../sim/types.ts';
 import { type CampaignSetup, type CampaignState, canPayTribute, payTribute, playerArmy, settlement } from '../sim/campaign.ts';
 import { createWorld, findRegiment, type GameMode, stepWorld, type World } from '../sim/world.ts';
@@ -474,6 +474,10 @@ export class Game implements ControlTarget {
       case 'breach':
         this.hud.toast(`${T.breachMade}!`, 'good', [e.x, e.z]);
         break;
+      case 'townFell':
+        this.hud.toast(T.townFell, 'good', [e.x, e.z]);
+        this.sound.play('horn');
+        break;
       case 'raidCame':
         this.hud.toast(T.raidComing, 'bad', [e.x, e.z]);
         this.sound.play('hornLow');
@@ -494,7 +498,7 @@ export class Game implements ControlTarget {
   private warnOfAttack(): void {
     if (this.world.timeS - this.lastWarningS < WARNING_GAP_S) return;
     for (const r of this.world.regiments) {
-      if (r.side !== COMPUTER || r.aliveMen === 0) continue;
+      if (r.side === PLAYER || r.aliveMen === 0) continue;
       if (Math.hypot(r.centreX - townX(PLAYER), r.centreZ - townZ(PLAYER)) > AI.defendRadiusM) continue;
       this.lastWarningS = this.world.timeS;
       this.sound.play('horn');
@@ -518,7 +522,7 @@ export class Game implements ControlTarget {
     const now = this.world.timeS;
     if (now - this.lastRaidS > RAID_GAP_S) {
       raid: for (const r of this.world.regiments) {
-        if (r.side !== COMPUTER || r.aliveMen === 0) continue;
+        if (r.side === PLAYER || r.aliveMen === 0) continue;
         for (const b of town.plots) {
           if (!b || Math.hypot(b.x - r.centreX, b.z - r.centreZ) > RAID_RADIUS_M) continue;
           this.lastRaidS = now;
@@ -589,7 +593,7 @@ export class Game implements ControlTarget {
       `draw calls ${info.drawCalls} · triangles ${(info.triangles / 1000).toFixed(0)} k`,
       `cpu ms: ${this.timer.summary()}`,
       stage.passTimer.summary(),
-      `soldiers ${men} · regiments ${this.world.regiments.length} · computer: ${this.world.ai?.mode ?? '-'} wave ${this.world.ai?.wave ?? 0}`,
+      `soldiers ${men} · regiments ${this.world.regiments.length} · computer: ${this.world.ais.map((a) => `${a.side} ${a.mode} wave ${a.wave}`).join(', ') || '-'}`,
     ].join('\n');
   }
 
@@ -606,7 +610,7 @@ export class Game implements ControlTarget {
   }
 
   private describeGround(x: number, z: number): string {
-    for (const side of [PLAYER, COMPUTER] as const) {
+    for (const side of SIDES) {
       const whose = side === PLAYER ? T.hover.yours : T.hover.enemy;
       if (Math.hypot(x - townX(side), z - townZ(side)) < TOWN.keepRadiusM) return `${T.keep} (${whose})`;
       const plot = this.plotAt(x, z, side);
@@ -986,7 +990,9 @@ export class Game implements ControlTarget {
     if (!queued) for (const id of ids) cmdClearQueue(this.world, id);
     const x = this.hit.x;
     const z = this.hit.z;
-    const enemy = this.regimentAt(x, z, COMPUTER);
+    // Any enemy's (on the map of three towns, either computer's).
+    let enemy: Regiment | null = null;
+    for (const town of this.world.towns) if (town.side !== PLAYER) enemy ??= this.regimentAt(x, z, town.side);
     if (enemy && faceToX === null) {
       this.attackRegiment(enemy.id);
       return;
@@ -1015,10 +1021,16 @@ export class Game implements ControlTarget {
         ids = ids.filter((id) => !shooters.includes(id));
       }
     }
-    const plot = this.plotAt(x, z, COMPUTER);
+    let foe: Side = COMPUTER;
+    let plot = -2;
+    for (const town of this.world.towns) {
+      if (town.side === PLAYER || town.absent || plot >= -1) continue;
+      plot = this.plotAt(x, z, town.side);
+      foe = town.side;
+    }
     if (plot >= -1 && faceToX === null) {
       let result: CommandResult = 'ok';
-      for (const id of ids) result = queued ? cmdQueue(this.world, id, { kind: 'attackBuilding', side: COMPUTER, plot }) : cmdAttackBuilding(this.world, id, COMPUTER, plot);
+      for (const id of ids) result = queued ? cmdQueue(this.world, id, { kind: 'attackBuilding', side: foe, plot }) : cmdAttackBuilding(this.world, id, foe, plot);
       this.report(result);
       return;
     }

@@ -258,6 +258,12 @@ wysokości.
   odpowiedzi impulsowej (zanikający szum). Każdy dźwięk jest cichszy z odległością i spóźniony o czas
   dojścia dźwięku (343 m/s).
 
+- **Trzy strony** (`layout.ts` `SIDE_COUNT`, `terrain.ts` `turnX`/`frameX`, `ai.ts` `pickFoe`): układ każdej
+  strony to układ gracza obrócony wokół środka; przy dwóch stronach obrót o pół koła to zmiana znaku
+  (stałe COS = [1, −1], SIN = [0, 0]), więc stare mapy liczą się co do bitu tak samo. Przy dodawaniu strony
+  szukać: tablic `[a, b]` na strony (liczniki zerowane co krok!), pętli `for side of [0, 1]`, mieszania dwóch
+  kolorów w shaderze i `enemyOf` (zostało tylko dla kampanii i trybu obrony).
+
 ## 5. Budynki
 
 - **Zestaw skryptów Blendera** (`tools/blender/kit.py`, `parts.py`, `buildings.py`, `build.py`): ściany

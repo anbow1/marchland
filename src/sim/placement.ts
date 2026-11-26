@@ -1,8 +1,8 @@
 import { FIELDS, FORESTRY, GATHER, KEEP_LEVELS, MAP, POINTS, TOWN } from '../config.ts';
 import { grownTreesNear, woodStands } from './trees.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
-import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, riseAcrossM, townX, townZ } from './terrain.ts';
-import { type BuildingKind, type CommandResult, enemyOf, type Side, SITE_NEED } from './types.ts';
+import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, nearestFoeKeep, riseAcrossM, townX, townZ } from './terrain.ts';
+import { type BuildingKind, type CommandResult, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -52,9 +52,10 @@ export function withinReach(world: World, side: Side, kind: BuildingKind, x: num
   return nearOwnBuilding(world, side, x, z);
 }
 
-/** True where a side may lay a road: anywhere on the map but close to the enemy's keep. */
+/** True where a side may lay a road: anywhere on the map but close to an enemy's keep. */
 export function mayLayRoadAt(side: Side, x: number, z: number): boolean {
-  return hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) >= TOWN.enemyKeepClearM && Math.abs(x) < MAP.halfM && Math.abs(z) < MAP.halfM;
+  const foe = nearestFoeKeep(side, x, z);
+  return hypot2(x - townX(foe), z - townZ(foe)) >= TOWN.enemyKeepClearM && Math.abs(x) < MAP.halfM && Math.abs(z) < MAP.halfM;
 }
 
 /** Looks outward from a point for the nearest place where `test` holds, within `reachM`; writes it to `out`. */
@@ -122,7 +123,8 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const r = TOWN.buildingRadiusM;
   if (!withinReach(world, side, kind, x, z)) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('offMap');
-  if (hypot2(x - townX(enemyOf(side)), z - townZ(enemyOf(side))) < TOWN.enemyKeepClearM) return fail('tooFar');
+  const foe = nearestFoeKeep(side, x, z);
+  if (hypot2(x - townX(foe), z - townZ(foe)) < TOWN.enemyKeepClearM) return fail('tooFar');
   for (const [dx, dz] of [[0, 0], [r, 0], [-r, 0], [0, r], [0, -r]] as const) if (isImpassable(x + dx, z + dz)) return fail('blocked');
   if (touchesAnything(world, x, z, r)) return fail('blocked');
   // The places in the middle are no one's to build on.

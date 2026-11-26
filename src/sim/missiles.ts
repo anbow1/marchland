@@ -6,7 +6,7 @@ import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
 import { isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
 import { heightAtM, isForest, townX, townZ } from './terrain.ts';
-import { enemyOf, type Side } from './types.ts';
+import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -372,7 +372,7 @@ function nearestEnemy(world: World, side: Side, x: number, z: number, rangeM: nu
   let victim: Soldier | null = null;
   let bestD2 = rangeM * rangeM;
   for (const r of world.regiments) {
-    if (r.side !== enemyOf(side) || r.aliveMen === 0) continue;
+    if (r.side === side || r.aliveMen === 0) continue;
     const reach = rangeM + r.radiusM;
     if ((r.centreX - x) ** 2 + (r.centreZ - z) ** 2 > reach * reach) continue;
     for (const s of r.soldiers) {
@@ -420,7 +420,7 @@ function stepKeep(world: World, side: Side, dtSeconds: number): void {
   let victim: Soldier | null = null;
   let bestD2 = TOWN.keepRangeM * TOWN.keepRangeM;
   for (const r of world.regiments) {
-    if (r.side !== enemyOf(side) || r.aliveMen === 0) continue;
+    if (r.side === side || r.aliveMen === 0) continue;
     const reach = TOWN.keepRangeM + r.radiusM;
     if ((r.centreX - kx) ** 2 + (r.centreZ - kz) ** 2 > reach * reach) continue;
     for (const s of r.soldiers) {

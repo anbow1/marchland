@@ -2,7 +2,7 @@ import { ROADS, TOWN } from '../config.ts';
 import { streetYaw } from './streets.ts';
 import { keepRules } from './economy.ts';
 import { checkSite, squareYawToKeep, yawToKeep } from './placement.ts';
-import { DEPOSITS, FORWARD_X, FORWARD_Z, forestCoverAt, lakeRadiusAt, lakeX, lakeZ, SIDE_X, SIDE_Z, townX, townZ, turnOf } from './terrain.ts';
+import { DEPOSITS, forestCoverAt, frameX, frameZ, lakeRadiusAt, lakeX, lakeZ, townX, townZ } from './terrain.ts';
 import { type BuildingKind, type Side, SITE_NEED } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -40,19 +40,18 @@ const VILLAGE_SIDE_M = 52;
 const VILLAGE_PITCH_M = 13.5;
 
 function planVillage(world: World, side: Side, kind: BuildingKind): boolean {
-  const t = turnOf(side);
-  const vx = townX(side) + t * (FORWARD_X * VILLAGE_FORWARD_M + SIDE_X * VILLAGE_SIDE_M);
-  const vz = townZ(side) + t * (FORWARD_Z * VILLAGE_FORWARD_M + SIDE_Z * VILLAGE_SIDE_M);
+  const vx = townX(side) + frameX(side, VILLAGE_FORWARD_M, VILLAGE_SIDE_M);
+  const vz = townZ(side) + frameZ(side, VILLAGE_FORWARD_M, VILLAGE_SIDE_M);
   // Farms on the far side of the street, doors to the street, fields running away behind them; pens and
   // stables on the near side, facing them.
   const far = kind === 'farm' || kind === 'vineyard';
   const across = far ? 0 : -15;
-  const yaw = Math.atan2(t * SIDE_X * (far ? -1 : 1), t * SIDE_Z * (far ? -1 : 1));
+  const yaw = Math.atan2(frameX(side, 0, far ? -1 : 1), frameZ(side, 0, far ? -1 : 1));
   for (let k = 0; k < 7; k++) {
     // From the middle of the street outwards.
     const along = (k % 2 === 0 ? 1 : -1) * Math.ceil(k / 2) * VILLAGE_PITCH_M;
-    const x = vx + t * (FORWARD_X * along + SIDE_X * across);
-    const z = vz + t * (FORWARD_Z * along + SIDE_Z * across);
+    const x = vx + frameX(side, along, across);
+    const z = vz + frameZ(side, along, across);
     if (tryAt(world, side, kind, x, z, yaw)) return true;
   }
   return false;
@@ -60,12 +59,11 @@ function planVillage(world: World, side: Side, kind: BuildingKind): boolean {
 
 /** Watchtowers stand out in front of the town, either side of the way the enemy comes. */
 function planTower(world: World, side: Side, kind: BuildingKind): boolean {
-  const t = turnOf(side);
   for (const forward of [72, 84, 60, 96]) {
     for (const across of [34, -34, 48, -48, 22, -22]) {
-      const x = townX(side) + t * (FORWARD_X * forward + SIDE_X * across);
-      const z = townZ(side) + t * (FORWARD_Z * forward + SIDE_Z * across);
-      if (tryAt(world, side, kind, x, z, Math.atan2(t * FORWARD_X, t * FORWARD_Z))) return true;
+      const x = townX(side) + frameX(side, forward, across);
+      const z = townZ(side) + frameZ(side, forward, across);
+      if (tryAt(world, side, kind, x, z, Math.atan2(frameX(side, 1, 0), frameZ(side, 1, 0)))) return true;
     }
   }
   return false;
@@ -107,10 +105,9 @@ const QUARTER_AT: Record<Quarter, readonly [number, number]> = { home: [-26, 0],
 function planQuarter(world: World, side: Side, kind: BuildingKind): boolean {
   const quarter = QUARTER[kind];
   if (!quarter) return false;
-  const t = turnOf(side);
   const [forward, across] = QUARTER_AT[quarter];
-  const qx = townX(side) + t * (FORWARD_X * forward + SIDE_X * across);
-  const qz = townZ(side) + t * (FORWARD_Z * forward + SIDE_Z * across);
+  const qx = townX(side) + frameX(side, forward, across);
+  const qz = townZ(side) + frameZ(side, forward, across);
   const ox = Math.round(townX(side) / ROADS.cellM) * ROADS.cellM;
   const oz = Math.round(townZ(side) / ROADS.cellM) * ROADS.cellM;
   const g = TOWN.gridM;

@@ -1,10 +1,9 @@
-import { abs, attribute, cos, Fn, int, ivec2, max, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
+import { abs, attribute, cos, Fn, int, ivec2, float, max, min, mix, normalLocal, sin, textureLoad, vec3, vec4 } from 'three/tsl';
 import { BufferAttribute, BufferGeometry, Color, DataTexture, InterleavedBuffer, InterleavedBufferAttribute, DynamicDrawUsage, FloatType, InstancedBufferAttribute, InstancedMesh, Matrix4, Vector3, MeshStandardNodeMaterial, NearestFilter, type Node, RGBAFormat, type Scene } from 'three/webgpu';
 import { ARMY, CAMPAIGN, MISSILE, TOWER, UNITS } from '../config.ts';
 import { arrowY } from '../sim/missiles.ts';
 import type { Soldier } from '../sim/regiment.ts';
-import { heightAtM, townX, townZ } from '../sim/terrain.ts';
-import { enemyOf } from '../sim/types.ts';
+import { heightAtM, nearestFoeKeep, townX, townZ } from '../sim/terrain.ts';
 import { groundUnder } from './townView.ts';
 import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
@@ -21,6 +20,12 @@ import { freshUrl } from '../version.ts';
 
 /** The kinds that fight in plate, on the modelled knight's body. */
 /** The least roughness of bare metal on a soldier (worn, not polished, steel). */
+/** A side's colour from its number (0, 1, 2) in the shader: the first two mixed as before, the third past them. */
+function teamColour(teams: readonly [Color, Color, Color], side: Node<'float'>): Node<'vec3'> {
+  const first = mix(vec3(teams[0].r, teams[0].g, teams[0].b), vec3(teams[1].r, teams[1].g, teams[1].b), min(side, float(1)));
+  return mix(first, vec3(teams[2].r, teams[2].g, teams[2].b), max(side.sub(1), float(0)));
+}
+
 const ARMOUR_ROUGHNESS = 0.52;
 const PLATE_KINDS: readonly UnitKind[] = ['swordsmen', 'halberdiers'];
 
@@ -66,7 +71,7 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
   const place = attribute('aPlace', 'vec4') as Node<'vec4'>;
   const anim = attribute('aAnim', 'vec4') as Node<'vec4'>;
   const side = attribute('aSide', 'float') as Node<'float'>;
-  const teams = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1])] as const;
+  const teams = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1]), new Color(TEAM_HEX[2])] as const;
 
   /** A point or a normal taken through the fall and the yaw. */
   const pose = (v: Node<'vec3'>): Node<'vec3'> => {
@@ -92,7 +97,7 @@ function soldierMaterial(mounted: boolean): MeshStandardNodeMaterial {
     normalLocal.assign(pose(attribute('normal', 'vec3') as Node<'vec3'>));
     return pose(swung).add(place.xyz);
   })();
-  m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, mix(vec3(teams[0].r, teams[0].g, teams[0].b), vec3(teams[1].r, teams[1].g, teams[1].b), side), surface.z);
+  m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, teamColour(teams, side), surface.z);
   m.metalnessNode = surface.x;
   // Field armour is scuffed and oiled, not polished: below about 0.5 roughness the plates mirror the sky and
   // read as chrome up close.
@@ -343,7 +348,7 @@ export function skinnedMaterial(bones: DataTexture, mounted = false): MeshStanda
   const anim = attribute('aAnim', 'vec4') as Node<'vec4'>;
   const side = attribute('aSide', 'float') as Node<'float'>;
   const frame = attribute('aFrame', 'float') as Node<'float'>;
-  const teams = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1])] as const;
+  const teams = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1]), new Color(TEAM_HEX[2])] as const;
   const row = (bone: Node<'float'>, r: number): Node<'vec4'> => textureLoad(bones, ivec2(int(bone).mul(3).add(r), int(frame))) as Node<'vec4'>;
   /** A point (w 1) or a direction (w 0) through the four bones. */
   const skinned = (v: Node<'vec3'>, w: number): Node<'vec3'> => {
@@ -374,7 +379,7 @@ export function skinnedMaterial(bones: DataTexture, mounted = false): MeshStanda
     normalLocal.assign(pose(skinned(attribute('normal', 'vec3') as Node<'vec3'>, 0).normalize()));
     return pose(swung).add(place.xyz);
   })();
-  m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, mix(vec3(teams[0].r, teams[0].g, teams[0].b), vec3(teams[1].r, teams[1].g, teams[1].b), side), surface.z);
+  m.colorNode = mix(attribute('color', 'vec3') as Node<'vec3'>, teamColour(teams, side), surface.z);
   m.metalnessNode = surface.x;
   // Field armour is scuffed and oiled, not polished: below about 0.5 roughness the plates mirror the sky and
   // read as chrome up close.
@@ -949,11 +954,11 @@ export class ArmyView {
   /** The men manning each watchtower, on its top: one at each corner, looking out towards the enemy's keep. */
   private writeGarrisons(world: World): void {
     for (const town of world.towns) {
-      const foe = enemyOf(town.side);
       for (const b of town.plots) {
         if (!b || b.kind !== 'tower' || b.garrison <= 0 || b.garrisonKind === null || b.constructionLeftS > 0) continue;
         const k = this.kinds.get(b.garrisonKind) as KindMesh;
         const top = groundUnder(b.x, b.z, b.yawRad)[1] + TOWER.topM;
+        const foe = nearestFoeKeep(town.side, b.x, b.z);
         const look = Math.atan2(townX(foe) - b.x, townZ(foe) - b.z);
         // Drawing and loosing while the tower shoots: a man's arms come up for the first part of each reload.
         const reload = UNITS[b.garrisonKind].reloadS / Math.max(1, b.garrison);

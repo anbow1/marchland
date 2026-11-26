@@ -912,6 +912,8 @@ export const POINTS = {
 } as const;
 
 export const AI = {
+  /** Map of three towns: a side another computer's wave is already marching on counts as this many men stronger (so the two do not always fall on the same one). */
+  sharedFoeMen: 40,
   /** The market: below this much gold the computer sells a lot of a good it has at least `marketSurplus` of. */
   marketSellBelowGold: 120,
   marketSurplus: 120,

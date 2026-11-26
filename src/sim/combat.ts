@@ -3,8 +3,8 @@ import { buildingRadiusM, buildingStands, buildingX, buildingZ } from './movemen
 import { assignSlots, captainOf, facingToward, forwardX, forwardZ, hasCaptain, isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
 import { damageWall, stampBuilding } from './nav.ts';
 import { returnHome } from './people.ts';
-import { heightAtM, townX, townZ } from './terrain.ts';
-import { enemyOf, type Side } from './types.ts';
+import { heightAtM, nearestFoeKeep, townX, townZ } from './terrain.ts';
+import type { Side } from './types.ts';
 import type { World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
 
@@ -228,7 +228,8 @@ function rally(world: World, r: Regiment): void {
   r.state = 'formed';
   r.anchorX = r.centreX;
   r.anchorZ = r.centreZ;
-  r.facingRad = facingToward(r.centreX, r.centreZ, townX(enemyOf(r.side)), townZ(enemyOf(r.side)));
+  const foe = nearestFoeKeep(r.side, r.centreX, r.centreZ);
+  r.facingRad = facingToward(r.centreX, r.centreZ, townX(foe), townZ(foe));
   r.destX = r.anchorX;
   r.destZ = r.anchorZ;
   r.destFacingRad = r.facingRad;

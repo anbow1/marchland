@@ -116,7 +116,7 @@ describe('budget', () => {
 describe('characters and modes', () => {
   it('the defence sends bigger waves from the enemy keep, and standing to the end wins', () => {
     const world = createWorld({ seed: 4, difficulty: 'normal', computerPlays: true, mode: 'defence' });
-    expect(world.ai).toBeNull();
+    expect(world.ais).toEqual([]);
     // No defenders here: the keep is made to hold, so the waves can be counted.
     world.towns[PLAYER].keepHp = 1e6;
     run(world, DEFENCE.firstWaveS + 2);

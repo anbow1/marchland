@@ -92,8 +92,8 @@ function weakGpu(): boolean {
 function prepareScene(game: Game, scene: string): void {
   const world = game.world;
   if (scene === 'town' || scene === 'battle') {
-    for (const side of [PLAYER, COMPUTER] as const) {
-      const town = world.towns[side];
+    for (const town of world.towns) {
+      const side = town.side;
       town.stock.gold = 20000;
       town.stock.wood = 5000;
       town.stock.stone = 5000;
@@ -124,7 +124,7 @@ function prepareScene(game: Game, scene: string): void {
         b.matDelivered = b.matTotal;
       }
     }
-    world.ai = null;
+    world.ais = [];
     // Four minutes of town life: people move in, the fields are broken and sown.
     for (let i = 0; i < 240 * 60; i++) stepWorld(world, SIM.stepSeconds);
   }

@@ -429,6 +429,7 @@ export function stepPeople(world: World, dtSeconds: number): void {
   const living = livingScratch;
   living[0] = 0;
   living[1] = 0;
+  living[2] = 0;
   for (const p of world.people) {
     if (!p.alive) continue;
     const town = world.towns[p.side];

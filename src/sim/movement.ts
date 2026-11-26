@@ -3,7 +3,7 @@ import { reachM } from './missiles.ts';
 import { woodStands } from './trees.ts';
 import { ARMY, COMBAT, FATIGUE, FORMATION, MAP, TOWN } from '../config.ts';
 import { angleDelta, filesOf, frontageM, isArcher, isEngaged, type Regiment, slotX, slotZ, type Soldier, updateCentre } from './regiment.ts';
-import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, offRiver, RIVER_CROSSINGS, townX, townZ } from './terrain.ts';
+import { clampToMap, isForest, isWater, lakeRadiusAt, lakeX, lakeZ, offCliff, offRiver, RIVER_CROSSINGS, SIDES, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
 import { hypot2 } from '../core/hypot.ts';
@@ -538,7 +538,7 @@ function avoidWater(s: Soldier): void {
     s.z = OFF_CLIFF.z;
   }
   if (!isWater(s.x, s.z)) return;
-  for (const side of [0, 1] as const) {
+  for (const side of SIDES) {
     const dx = s.x - lakeX(side);
     const dz = s.z - lakeZ(side);
     const d = hypot2(dx, dz);

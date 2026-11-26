@@ -37,7 +37,7 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 ## 2. Mapa
 
 - Mapa ${MAP.sizeM} × ${MAP.sizeM} m. Trzy miejsca zamku; zamek przeciwnika stoi zawsze naprzeciw (ten sam układ obrócony).
-- Układy: Otwarte pole, Przeprawa (rzeka z groblą i dwoma brodami), Bór, Dolina, Twierdza (kampania).
+- Układy: Otwarte pole, Przeprawa (rzeka z groblą i dwoma brodami), Bór, Dolina, Twierdza (kampania), Trzech panów (mapa 860 m, trzy zamki w trójkącie, każdy z każdym; upadły zamek komputera wypada z gry, wygrywa ostatni).
 - **Woda, skała i góry** są nieprzechodnie; w lesie oddziały idą wolniej (piechota ×${ARMY.forestFootSpeedFactor},
   jazda ×${ARMY.forestHorseSpeedFactor}), a strzały trafiają dwa razy rzadziej (×${MISSILE.forestHitFactor}). Wycięty las
   jest zwykłym polem.

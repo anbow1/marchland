@@ -21,7 +21,7 @@ urządzeniu (grafika) albo przez adres strony (mapa, zamek).
 | **Grafika** | Wysoka · Niska · Bardzo niska | patrz niżej; wybór z menu wygrywa z `q=` w adresie i jest zapamiętany |
 | **Tryb** | Potyczka · Obrona · Samouczek · Kampania | rodzaj gry (§1.1) |
 | **Przeciwnik gra** | z umiarem · jak budowniczy · jak najeźdźca | charakter komputera: budowniczy atakuje później większymi falami (×1,5 ludzi, ×1,35 czasu), najeźdźca wcześniej mniejszymi i co 150 s wysyła oddział palić budynki na skraju miasta |
-| **Mapa** | Otwarte pole · Przeprawa · Bór · Dolina | układ mapy (§1.2); *Twierdza* jest tylko w kampanii |
+| **Mapa** | Otwarte pole · Przeprawa · Bór · Dolina · Trzech panów | układ mapy (§1.2); *Twierdza* jest tylko w kampanii |
 | **Zamek** | 1. Róg · 2. Zachód · 3. Południe | miejsce zamku gracza; zamek komputera stoi zawsze naprzeciw (ten sam układ obrócony o pół koła); obok mała mapka z oboma zamkami, górami i skałami |
 
 Wiersze *Przeciwnik gra*, *Mapa* i *Zamek* znikają w kampanii; w ich miejscu jest **lista misji** (§10).
@@ -59,6 +59,14 @@ ruszy, gra sama przechodzi na WebGL2 i pokazuje okno z raportem grafiki do wysł
 | Bór | las prawie wszędzie, polana przy każdym zamku i wąska droga między nimi |
 | Dolina | dwa grzbiety gór wzdłuż drogi między zamkami, przełęcz przy drugim końcu |
 | Twierdza (kampania) | zamek wroga na płaskowyżu, bez jeziora, złóż i lasu wokół |
+| Trzech panów | większa mapa (860 m zamiast 680 m), trzy zamki w trójkącie: gracz na południu, dwa komputery (czerwony i złoty) |
+
+**Trzech panów: każdy z każdym.** Każdy komputer walczy z obydwoma pozostałymi. Falę wysyła na tego, czyje
+wojsko stoi u jego zamku; inaczej na słabszego (mniej ludzi pod bronią, trochę też liczy się odległość). Gdy
+drugi komputer już maszeruje na kogoś, ten ktoś liczy się dla niego jak silniejszy o 40 ludzi, więc rzadko obaj
+spadają na jednego. Punkty w środku stoją między dwoma zamkami, tak samo daleko od obu. Gdy padnie zamek
+komputera, jego wojsko się rozchodzi, ludzie odchodzą, a miasto zostaje spalone (ruiny); wygrywa ten, czyj
+zamek ostał się ostatni. Upadek własnego zamku to porażka.
 
 Na każdej mapie są trzy **punkty do zajęcia** w środku: bogata kopalnia (ruda), kamieniołom w polu (kamień),
 wieś (złoto i zboże). Oddział postawiony przy punkcie na 20 s, bez wroga w promieniu 30 m, zajmuje go; punkt

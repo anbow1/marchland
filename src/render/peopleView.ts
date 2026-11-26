@@ -1,8 +1,8 @@
 import { BufferAttribute, BufferGeometry, Color, DynamicDrawUsage, InstancedBufferAttribute, InstancedMesh, Matrix4, type MeshStandardNodeMaterial, Quaternion, type Scene, Vector3 } from 'three/webgpu';
 import { PEOPLE } from '../config.ts';
 import type { Person } from '../sim/people.ts';
-import { heightAtM } from '../sim/terrain.ts';
-import { RESOURCE_IDS, type ResourceId, type Side } from '../sim/types.ts';
+import { heightAtM, SIDES } from '../sim/terrain.ts';
+import { RESOURCE_IDS, type ResourceId } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder, type Paint } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
@@ -381,7 +381,7 @@ export class PeopleView {
       scene.add(mesh);
       return mesh;
     };
-    for (const side of [0, 1] as const satisfies readonly Side[]) {
+    for (const side of SIDES) {
       const set = {} as Record<Pose, InstancedMesh>;
       for (const pose of POSES) {
         const mesh = new InstancedMesh(figure(pose, TEAM_HEX[side]).build(), material, PEOPLE.maxPerSide);
@@ -711,7 +711,7 @@ export class PeopleView {
       f.frame.needsUpdate = true;
       f.side.needsUpdate = true;
     }
-    for (const side of [0, 1] as const satisfies readonly Side[]) {
+    for (const side of SIDES) {
       for (const pose of POSES) {
         const mesh = (this.poses[side] as Record<Pose, InstancedMesh>)[pose];
         mesh.count = (this.counts[side] as Record<Pose, number>)[pose];

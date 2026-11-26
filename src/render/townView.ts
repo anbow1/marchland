@@ -1,8 +1,9 @@
 import { Box3, BufferAttribute, BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
+import { SIDE_COUNT } from '../sim/layout.ts';
 import { CAMPAIGN, TOWN } from '../config.ts';
 import { fortressFrame, fortressPoint } from '../sim/fortress.ts';
 import type { Building } from '../sim/economy.ts';
-import { HAS_FORTRESS, heightAtM, townX, townZ } from '../sim/terrain.ts';
+import { facingToEnemy, HAS_FORTRESS, heightAtM, SIDES, townX, townZ } from '../sim/terrain.ts';
 import { BUILDING_KINDS, type BuildingKind, type Side } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -46,23 +47,23 @@ const KEEP_SCALE = [0.8, 0.9, 1];
 export class TownView {
   private readonly material: MeshStandardNodeMaterial;
   private readonly cache = new Map<string, BufferGeometry>();
-  private readonly slots: Mesh[][] = [[], []];
-  private readonly shown: string[][] = [[], []];
+  private readonly slots: Mesh[][] = [[], [], []];
+  private readonly shown: string[][] = [[], [], []];
   private readonly keeps: Mesh[] = [];
   private readonly ghost: Mesh;
   /** Models from Blender by kind, level and side; empty until loadModels() has run. */
   private readonly models = new Map<string, SurfaceModel>();
   /** The moving part of each slot's building, shown when its model has one. */
-  private readonly movers: Mesh[][] = [[], []];
+  private readonly movers: Mesh[][] = [[], [], []];
   /** A rubble-stone plinth under each building, filling the gap where the ground falls away on a slope. */
-  private readonly plinths: Mesh[][] = [[], []];
+  private readonly plinths: Mesh[][] = [[], [], []];
   private plinthCache: BufferGeometry | null = null;
   /** Building sites: the buildings' own material, cut off above each site's height reached (`userData.cutY`). */
   private readonly siteMaterial: MeshStandardNodeMaterial;
   /** A ruin (the campaign's burnt settlement): its walls cut off low and charred. */
   private readonly ruinMaterial: MeshStandardNodeMaterial;
   /** Each slot's scaffold, shown while its building goes up; geometries by the building's size. */
-  private readonly scaffolds: Mesh[][] = [[], []];
+  private readonly scaffolds: Mesh[][] = [[], [], []];
   private readonly scaffoldCache = new Map<string, BufferGeometry>();
 
   /** A rubble-stone block, 8.6 m square and 1 m deep below its top (scaled down to the ground by each building). */
@@ -95,14 +96,14 @@ export class TownView {
     // Soot: the stone and timber darkened, blackest towards the broken tops.
     const ruinOwn = this.ruinMaterial.colorNode as Node<'vec3'>;
     this.ruinMaterial.colorNode = ruinOwn.mul(0.32).add(vec3(0.03, 0.025, 0.02));
-    for (const side of [0, 1] as const satisfies readonly Side[]) {
+    for (const side of SIDES) {
       const tx = townX(side);
       const tz = townZ(side);
       const keep = new Mesh(keepGeometry(TEAM_HEX[side], lib), this.material);
       keep.name = `keep ${side}`;
       keep.position.set(tx, heightAtM(tx, tz), tz);
       // Banner and gate towards the enemy.
-      keep.rotation.y = side === 0 ? Math.PI / 4 : -Math.PI * 0.75;
+      keep.rotation.y = SIDE_COUNT === 3 ? facingToEnemy(side) - Math.PI / 2 : side === 0 ? Math.PI / 4 : -Math.PI * 0.75;
       keep.castShadow = true;
       keep.receiveShadow = true;
       scene.add(keep);
@@ -207,7 +208,7 @@ export class TownView {
         // The keep from Buckstone Castle (tools/blender/keep.py): one model, both sides, each its own flag.
         try {
           const gltf = await loader.loadAsync(freshUrl(base, `buildings/${entry.file}`));
-          for (const side of [0, 1] as const satisfies readonly Side[]) (this.keeps[side] as Mesh).geometry = surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]).body;
+          for (const side of SIDES) (this.keeps[side] as Mesh).geometry = surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]).body;
         } catch (error) {
           console.warn(`[models] ${entry.file} did not load: ${String(error)}`);
         }
@@ -216,7 +217,7 @@ export class TownView {
       if (!(BUILDING_KINDS as readonly string[]).includes(kind)) return;
       try {
         const gltf = await loader.loadAsync(freshUrl(base, `buildings/${entry.file}`));
-        for (const side of [0, 1] as const satisfies readonly Side[]) this.models.set(`${kind}:${level}:${side}`, surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]));
+        for (const side of SIDES) this.models.set(`${kind}:${level}:${side}`, surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]));
       } catch (error) {
         console.warn(`[models] ${entry.file} did not load: ${String(error)}`);
       }
@@ -265,7 +266,7 @@ export class TownView {
 
   /** Makes every geometry the player can call up, so the first click on a building does not hitch. */
   warm(): void {
-    for (const side of [0, 1] as const satisfies readonly Side[]) {
+    for (const side of SIDES) {
       for (const kind of BUILDING_KINDS) {
         this.geometry(kind, 1, side);
       }

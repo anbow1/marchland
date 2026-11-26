@@ -1,6 +1,6 @@
 import { POINTS } from '../config.ts';
 import { hypot2 } from '../core/hypot.ts';
-import { SIDE_X, SIDE_Z } from './terrain.ts';
+import { pointX, pointZ } from './terrain.ts';
 import { RESOURCE_IDS, type Side } from './types.ts';
 import type { World } from './world.ts';
 
@@ -25,7 +25,7 @@ export interface Point {
 }
 
 export function createPoints(): Point[] {
-  return POINTS.list.map((p) => ({ kind: p.kind, x: SIDE_X * p.sideM, z: SIDE_Z * p.sideM, owner: -1, taker: -1, progressS: 0, owed: {} }));
+  return POINTS.list.map((p, i) => ({ kind: p.kind, x: pointX(i, p.sideM), z: pointZ(i, p.sideM), owner: -1, taker: -1, progressS: 0, owed: {} }));
 }
 
 /** Which sides have a formed regiment by the point, and which have any regiment within reach of it. */
@@ -46,7 +46,7 @@ export function stepPoints(world: World, dtSeconds: number): void {
   for (const p of world.points) {
     const { by, near } = presence(world, p);
     // Exactly one side by it and no enemy near: that side gains ground; anything else stops the taking.
-    const side: Side | -1 = by[0] && !near[1] ? 0 : by[1] && !near[0] ? 1 : -1;
+    const side: Side | -1 = by[0] && !near[1] && !near[2] ? 0 : by[1] && !near[0] && !near[2] ? 1 : by[2] && !near[0] && !near[1] ? 2 : -1;
     if (side === -1 || side === p.owner) {
       p.taker = -1;
       p.progressS = 0;

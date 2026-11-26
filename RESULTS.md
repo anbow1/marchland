@@ -5,6 +5,37 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-26 · Mapa „Trzech panów”: większa, trzy zamki, każdy z każdym (krok 2 epok)
+
+- **Strony 0|1|2.** Układ każdej strony to układ gracza obrócony wokół środka mapy: przy dwóch miastach o pół
+  koła (dokładna zmiana znaku, więc wszystkie dotychczasowe mapy, testy i zapisy bez zmian, sprawdzone pełnym
+  `npm test`), przy trzech o 120° i 240°. `towns` to tablica indeksowana stroną (mapa dwóch miast nie ma
+  elementu 2). Teren: zamki, jeziora, złoża, punkty zbiórki, masywy (po jednym na obrzeżu między każdą parą),
+  skały, wzgórki i „pole” (odcinki między zamkami) liczone z kąta strony.
+- **Mapa `triangle`**: 860 m (zamiast 680), zamki 320 m od środka (554 m od siebie), gracz na południu. Punkty
+  do zajęcia między dwoma zamkami, w równej odległości od obu (test).
+- **Walka**: strzelcy, zamek i wieże celują w każdego, kto nie jest swój; budowa i drogi trzymają odstęp od
+  najbliższego wrogiego zamku. **Komputery**: `world.ais` (po jednym na stronę przeciwnika); fala idzie na tego,
+  czyje wojsko stoi u zamku, inaczej na słabszego; strona, na którą już maszeruje drugi komputer, liczy się jak
+  silniejsza o `AI.sharedFoeMen` = 40 ludzi (bez tego obaj zawsze szli na gracza).
+- **Koniec gry**: upadły zamek komputera wypada z gry (wojsko się rozchodzi, ludzie odchodzą, budynki w ruinie),
+  wygrywa ostatni zamek; upadek zamku gracza to porażka.
+- Błędy złapane po drodze: licznik mieszkańców strony 2 nie był zerowany co krok, więc trzecie miasto stało na 8
+  ludziach i 14 budynkach (po poprawce 47 jak pozostałe); start tworzył ludzi tylko dwóm stronom; widok miast miał
+  tablice na dwie strony (gra na mapie trzech nie startowała w przeglądarce); kolor drużyny w shaderze był
+  mieszanką dwóch barw (trzecia wychodziła poza nie) — teraz trzecia barwa, złota.
+- Partia trzech komputerów (ziarno 1), stan co 10 min:
+
+| min | budynki | ludzie pod bronią | fale |
+|---|---|---|---|
+| 20 | 26 / 25 / 25 | 0 / 24 / 24 | — |
+| 40 | 54 / 46 / 47 | 8 / 42 / 56 | 2→0, 1→2 |
+| 60 | 54 / 54 / 54 | 48 / 72 / 56 | 0→1, 1→2, 2→0 |
+| 90 | 54 / 54 / 54 | 49 / 67 / 88 | wszystkie zamki na poziomie 3, żaden nie padł |
+
+- Testy: nowy `triangle.test.ts` (geometria trójkąta, wybór wroga, upadek miasta i zwycięstwo, 40 min trzech
+  komputerów), w `npm test` z `MARCHLAND_MAP=triangle`. Gra wczytuje się w przeglądarce (29 s, SwiftShader).
+
 ## 2026-11-25 · Tekstury KTX2: pamięć karty 307 → 67 MB (krok 1 epok)
 
 - Pierwszy krok rozbudowy o epoki: nowe materiały (cegła, tynk, łupek, żelazo) nie zmieściłyby się w budżecie
