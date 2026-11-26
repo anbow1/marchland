@@ -56,3 +56,8 @@
 - `hussar_rider.json` — the hussars' rider, made by `rigged.py --seated` from **"Hussar - rigged for UE4/5 - free
   download"** by **Andy woodhead** (https://sketchfab.com/3d-models/hussar-rigged-for-ue45-free-download-aa5a353357974d2dbd4b18d34ec9a7bc),
   licensed **CC BY 4.0**: thinned to about 3 200 triangles, colours from its textures, the dolman in the side's colour.
+- `musketeer.json` — the musketeers, made by `tools/blender/autorig.py` (a skeleton for a model that has none)
+  and `rigged.py --arms musket` from **"European Soldier 17th Century"** by **haiphucpham221102**
+  (https://sketchfab.com/3d-models/european-soldier-17th-century-7fc4d303a8654908aa56711c6e3078d8), licensed
+  **CC BY 4.0**: thinned to about 3 450 triangles, colours from its textures, its darkest cloth (hat,
+  stockings) in the side's colour; the musket is the game's own. Motion from Mixamo, as the line infantry's.

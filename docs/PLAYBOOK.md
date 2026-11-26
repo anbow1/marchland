@@ -137,6 +137,18 @@ Blender bez okna (`bl/bin/python -I rigged.py -- postać.gltf wyjście.json klip
    strzemionach, prawa ręka do kopii, lewa do wodzy), zapisana jako ciało z częściami (`limbs`, `pivots`);
    `--gain` rozjaśnia ciemną stal.
 
+### 4.2a Szkielet dla modelu bez szkieletu: `tools/blender/autorig.py`
+
+Postać stojąca w pozie T albo A (Z w górę, przodem do −Y) dostaje szkielet z nazwami Mixamo, a potem idzie
+przez `rigged.py` jak każda inna. Stawy z proporcji samego modelu: nogi z przekrojów poniżej bioder (mediana
+każdej strony, żeby pochwa czy kolba między nogami jej nie ciągnęła): biodro, kolano, kostka, czubek buta;
+kręgosłup na środkowej linii (mediana klatki, w pobliżu środka obrysu) na zwykłych udziałach wysokości; ręka
+od stawu barku do najdalszego punktu dłoni, łokieć i nadgarstek na zwykłych udziałach tej linii, przesunięte
+na środek rękawa. Wagi: każdy wierzchołek do dwóch najbliższych kości (odwrotność czwartej potęgi odległości
+od odcinka kości), nigdy do kończyn drugiej strony, nogi tylko poniżej bioder, ręce tylko poza linią barków.
+Na kamerę strategii wystarcza; na zbliżenia trzeba by wag malowanych. `--preview` rysuje stawy na modelu.
+Pierwszy model: muszkieterowie (27.11).
+
 ### 4.3 Własna animacja modelu: `tools/blender/baked.py` i `horsefall.py`
 
 - `baked.py` wypieka model z jego własną animacją, bez przenoszenia: kości o małej wadze są składane do

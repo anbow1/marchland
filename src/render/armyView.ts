@@ -395,9 +395,9 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
   ['militia', 'soldiers/militia.json'],
   ['archers', 'soldiers/archer.json'],
   ['crossbowmen', 'soldiers/crossbowman.json'],
-  // The musketeers, until their own model: the crossbowman's body aims like a musketeer. The line and the riflemen
-  // are a Napoleonic infantryman with the game's musket (and bayonet).
-  ['musketeers', 'soldiers/crossbowman.json'],
+  // The later ages' foot with the game's musket: a 17th-century soldier (put on a skeleton by autorig.py), and
+  // a Napoleonic infantryman for the line (with a bayonet) and the riflemen.
+  ['musketeers', 'soldiers/musketeer.json'],
   ['lineInfantry', 'soldiers/lineman.json'],
   ['riflemen', 'soldiers/rifleman.json'],
 ];

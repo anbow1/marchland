@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Huzarzy i muszkieterowie z modeli; własny szkielet dla modeli bez szkieletu
+
+- **Huzarzy**: jeździec z „Hussar - rigged for UE4/5” (Andy woodhead, CC BY 4.0) przez `rigged.py --seated`,
+  dolman w barwie strony; `armyView` ładuje własnego jeźdźca rodzaju, gdy go ma (`RIDER_FILES`).
+- **`tools/blender/autorig.py`**: szkielet Mixamo dla modelu stojącego w pozie T/A bez szkieletu — stawy z
+  przekrojów i proporcji, wagi z odległości do kości z zakazem drugiej strony (PLAYBOOK §4.2a).
+- **Muszkieterowie**: „European Soldier 17th Century” (haiphucpham221102, CC BY 4.0) przez `autorig.py` i
+  `rigged.py --arms musket`, klipy jak piechota liniowa; najciemniejsze sukno (kapelusz, pończochy) w barwie
+  strony (`--team-below 0.035`; przy 0.12 barwa zalewała całą postać).
+- **Przegląd przysłanych** (13 modeli w dwóch partiach): w zapasie gotowe do użycia — żołnierz ok. 1700 r. i
+  żołnierz Unii (do `autorig.py`), artylerzysta 1815 ze szkieletem (obsługa dział), działo 1815, joannita ze
+  szkieletem; odrzucone — „Armor Set” (CC BY-NC-SA), „Hafsid Horse General” (model z moda do gry), figury
+  bez tekstur lub zrośnięte z koniem.
+- Przeglądarka: bitwa z muszkieterami i huzarami z bliska, bez błędów.
+
 ## 2026-11-27 · Piechota liniowa i strzelcy z modelu; przegląd przysłanych modeli epok
 
 - **Przysłane modele** (8; licencje CC0 i CC BY 4.0, autorzy w `ASSETS.md`): w grze może iść od razu tylko

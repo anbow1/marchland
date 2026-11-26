@@ -48,7 +48,7 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 | Co | Teraz | Docelowo |
 |---|---|---|
 | Piechota liniowa, strzelcy | **z modelu** (27.11): piechur napoleoński Andy'ego Woodheada (szkielet Unreala), muszkiet gry (piechota z bagnetem), płaszcz albo spodnie w barwie strony | ładowanie i salwa (klip Mixamo) |
-| Muszkieterowie | model kusznika (celuje „jak z karabinu”), dym i huk przy strzale | postać z XVII w. ze szkieletem: przysłany muszkieter elżbietański jest w pozie celowania, bez szkieletu |
+| Muszkieterowie | **z modelu** (27.11): żołnierz XVII w. (haiphucpham221102) na szkielecie z `autorig.py`, muszkiet gry | — |
 | Kirasjerzy | jak rycerze | kirasjer w napierśniku na koniu |
 | Huzarzy | **z modelu** (27.11): jeździec Andy'ego Woodheada w siodle, dolman w barwie strony | — |
 | Dragoni | jak lekka jazda | dragon (pieszo i konno), huzar z szablą |
