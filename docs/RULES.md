@@ -57,7 +57,7 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 - **Łup:** za każdego zabitego wroga do skarbca wpada jego „cena głowy” (kolumna w UNITS.md).
 - **Uzupełnianie:** oddział stojący do 40 m od koszar (milicja — od zamku), 5 s bez walki, dostaje brakujących
   ludzi za złoto i sprzęt; nowi rozwadniają doświadczenie, a poległego kapitana zastępuje jeden z nich.
-- **Przezbrajanie:** do 40 m od koszar, 20 s; płaci się różnicę sprzętu. Drogi: milicja z tarczami → pikinierzy, łucznicy, miecznicy, halabardnicy, kusznicy; pikinierzy → halabardnicy, miecznicy; łucznicy → kusznicy; miecznicy → halabardnicy; halabardnicy → miecznicy; lekka jazda → ciężka jazda.
+- **Przezbrajanie:** do 40 m od koszar, 20 s; płaci się różnicę sprzętu. Drogi: milicja z tarczami → pikinierzy, łucznicy, miecznicy, halabardnicy, kusznicy; pikinierzy → halabardnicy, miecznicy; łucznicy → kusznicy; miecznicy → halabardnicy; halabardnicy → miecznicy; lekka jazda → rycerze.
 - **Łączenie** (kampania): dwa oddziały tego samego rodzaju, do 30 m od siebie, 5 s bez walki; ludzie
   przechodzą do liczniejszego, do 20; doświadczenie i morale — średnia ważona.
 
@@ -84,14 +84,14 @@ Każdy żołnierz zadaje cios co tyle sekund, ile podaje jednostka (±15 %), gdy
   − 1 bez kapitana; przeciw jeździe + premia przeciw jeździe (×2 w ścianie pik); w szarży + premia
   szarży; za tarczami (postawa) − 3; cios pod górę − 1.
 - **Obrona** = obrona jednostki − 3 × zmęczenie + 1 za stopień; szyk luźny − 2, klin
-  − 1.5; ściana pik od przodu + 3; mała tarcza od przodu (milicja z tarczami +1, pikinierzy +1.5);
+  − 1.5; ściana pik od przodu + 3; mała tarcza od przodu (milicja z tarczami +1, pikinierzy +1.5, miecznicy +1.5, halabardnicy +2, lekka jazda +1, rycerze +1.5);
   oddział uciekający broni się ×0.5.
 - **Kierunek ciosu** względem frontu celu: z przodu — bez premii; z boku + 0.15 do szansy (i −0.5
   morale celu za trafienie); od tyłu + 0.3 (−1 morale); w uciekającego + 0.2.
 - **Obrażenia** = obrażenia jednostki × (1 − pancerz celu) × losowo 80 %–120 %; w szarży
   ×1.5. Żołnierz ginie, gdy jego życie spadnie do zera.
 
-**Szarża** (milicja z tarczami, pikinierzy, miecznicy, halabardnicy, lekka jazda, ciężka jazda): pierwszy cios oddziału, który w ostatnich 1.5 s biegł z co najmniej
+**Szarża** (milicja z tarczami, pikinierzy, miecznicy, halabardnicy, lekka jazda, rycerze): pierwszy cios oddziału, który w ostatnich 1.5 s biegł z co najmniej
 70 % prędkości biegu (i od 2 s nie zadał ciosu). Przez 4 s ciosy mają premię szarży do ataku i
 obrażenia ×1.5, a cel traci morale o „wstrząs szarży” jednostki. Klin jazdy: ×1.6. Szarża w czoło
 **ściany pik** nie działa wcale; w czoło stojących włóczni (pikinierzy, halabardnicy, w miejscu, przodem) — tylko 25 %.
@@ -103,7 +103,7 @@ obrażenia ×1.5, a cel traci morale o „wstrząs szarży” jednostki. Klin ja
   zasięgu (moździerz ×3), do jednej trzeciej z bliska; trafia człowieka stojącego do 0.9 m od miejsca upadku.
 - **Szansa trafienia** = 0.75 × (szyk luźny ×0.5) × (1 + 0.12 za stopień strzelca) × (las
   ×0.5) × (1 − blok tarczą).
-- **Blok tarczą:** jednostki z tarczą zatrzymują część pocisków (milicja z tarczami 20 %, pikinierzy 35 %, miecznicy 35 %, kusznicy 30 %); w postawie „Tarcze”
+- **Blok tarczą:** jednostki z tarczą zatrzymują część pocisków (milicja z tarczami 20 %, pikinierzy 35 %, miecznicy 40 %, halabardnicy 45 %, kusznicy 30 %); w postawie „Tarcze”
   dwa razy więcej, najwyżej 85 %, ale oddział idzie ×0.55 i bije słabiej.
 - **Obrażenia** = obrażenia pocisku × (1 − pancerz × (1 − przebicie)); przebicie zależy od broni (kusza i działa
   przebijają lepiej). Każde trafienie strzałą: −0.6 morale.

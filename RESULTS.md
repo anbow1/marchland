@@ -5,6 +5,22 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-26 · Docelowy skład jednostek: milicja, skórzane, ciężkozbrojne (zasady)
+
+- Skład według zamówienia: **milicja** (włócznia, tarcza); **skórzane** — pikinierzy (pika, mała tarcza),
+  łucznicy, kusznicy, lekka jazda (włócznia, miecz, tarcza); **ciężkozbrojne** — miecznicy (pełna zbroja, miecz,
+  tarcza), halabardnicy jako lancknechci (długa pika, duża tarcza), rycerze (kopia, miecz, tarcza).
+- Nowe pole `armourClass` w `UNITS` i kolumna „Klasa” w `docs/UNITS.md`. Zmiany liczb: miecznicy pancerz
+  0,40 → 0,45, tarcza w obronie +1,5, blok strzał 0,35 → 0,40; halabardnicy zasięg 2,3 → 3,4 m, tarcza +2, blok
+  0 → 0,45, premia na jazdę 5 → 8, atak/obrona/obrażenia 10/6/10 → 9/7/8; lekka jazda tarcza +1, blok 0,20;
+  rycerze tarcza +1,5, blok 0,30 → 0,35, szarża 12 → 13. „Ciężka jazda” nazywa się teraz „Rycerze”.
+- Próba: lekka jazda z włócznią 2,3 m odbierała murowi pik przewagę (30 do 31 strat jazdy wobec bloku pik);
+  2,1 m — remis 32:32; zostało 1,9 m (35:32, jak dotąd mur lepszy). Strzała na miecznika w pełnej zbroi: 0,045
+  zabitego na strzał (bełt 0,080, 1,8 raza więcej) — próg testu 0,05 → 0,03, bo to zamierzone.
+- Wygląd broni i tarcz na modelach (mniejsza tarcza pikiniera, duża tarcza i długa pika lancknechta, kopia
+  rycerza, tarcza lekkiej jazdy) czeka na modele: modele są wypiekane z plików źródłowych w Blenderze.
+- Testy: wszystko zielone, łącznie z kampanią.
+
 ## 2026-11-26 · Mapa „Trzech panów”: większa, trzy zamki, każdy z każdym (krok 2 epok)
 
 - **Strony 0|1|2.** Układ każdej strony to układ gracza obrócony wokół środka mapy: przy dwóch miastach o pół

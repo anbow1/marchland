@@ -267,10 +267,11 @@ describe('the wider roster', () => {
       return lost / Math.max(1, shots);
     };
     // Arrows and bolts hit alike; a bolt (30, through most of the mail) kills in two, an arrow (20) in three.
+    // Swordsmen are heavy foot (full armour and a shield that stops 40% of shot): arrows still tell, but little.
     const bolt = perShot('crossbowmen');
     const arrow = perShot('archers');
     expect(bolt).toBeGreaterThan(arrow * 1.3);
-    expect(arrow).toBeGreaterThan(0.05);
+    expect(arrow).toBeGreaterThan(0.03);
   }, 60_000);
 
   it('cannon reach where archers cannot, and shoot nothing inside their minimum range', () => {

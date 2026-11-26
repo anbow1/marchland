@@ -135,7 +135,7 @@ ruda, żelazo, broń, kolczugi, łuki, konie). Każdy to ikona, nazwa i liczba w
 Nad chorągwią każdego oddziału (swojego i wroga) wisi karta:
 
 - **znak rodzaju** na tle barwy strony (ramka też w barwie strony): ⛨ milicja, ↟ pikinierzy, ➶ łucznicy,
-  ⚔ miecznicy, ⚒ halabardnicy, ⌖ kusznicy, ♞ lekka jazda, ♛ ciężka jazda, ⇶ armata, ☄ moździerz;
+  ⚔ miecznicy, ⚒ halabardnicy, ⌖ kusznicy, ♞ lekka jazda, ♛ rycerze (ciężka jazda), ⇶ armata, ☄ moździerz;
 - **gwiazdki** doświadczenia (★ zaprawieni, ★★ weterani);
 - **pasek siły** (żywi / skład początkowy) w kolorze morale: zielony — dobrze, żółty — słabnie, czerwony —
   bliski ucieczki; karta oddziału, który ucieka, jest przygaszona, a pasek szary;
@@ -462,7 +462,7 @@ różnicę sprzętu i po kilku sekundach zmienia rodzaj („przezbraja się → 
 | warsztaty i zbieracze (tempo cyklu) | × 1 | × 1,6 | × 2,3 |
 | chata (mieszkańców) | 8 | 12 | 16 |
 | zagroda, winnica (obrabianych pasków pola) | 4 | 8 | 12 |
-| koszary (milicja szkoli się przy zamku, bez koszar) | pikinierzy, łucznicy | + miecznicy, halabardnicy, kusznicy, lekka jazda | + ciężka jazda |
+| koszary (milicja szkoli się przy zamku, bez koszar) | pikinierzy, łucznicy | + miecznicy, halabardnicy, kusznicy, lekka jazda | + rycerze |
 | ludwisarnia | armata | + moździerz | — |
 | każdy budynek (wytrzymałość) | × 1 | × 2 | × 3 |
 

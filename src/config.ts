@@ -505,6 +505,12 @@ export interface UnitDef {
   missileRollM?: number;
   /** A shield on the arm: defence points added against blows from the front (missileBlock is its use against shot). */
   shieldDefence?: number;
+  /**
+   * How the man is armed and armoured, for the recruiting list and the books: 'militia' (townsmen, no armour),
+   * 'leather' (leather armour: pikes, bows, crossbows, light horse), 'heavy' (plate or mail: swordsmen,
+   * landsknechts, knights), 'engine' (guns). Absent = 'engine'.
+   */
+  armourClass?: 'militia' | 'leather' | 'heavy' | 'engine';
   /** Aim error against the usual (MISSILE.spreadAtRangeM): a mortar's stone is deadly where it falls, but falls wide. */
   missileSpreadFactor?: number;
   /** Damage one missile does to a building. */
@@ -534,19 +540,21 @@ const ENGINE = { trainedAt: 'foundry' as const, defenceOnly: false, cavalry: fal
 export const UNITS: Record<UnitKind, UnitDef> = {
   // Townsmen with a shield and a spear: cheap, steady enough behind the shield, quick to run.
   // A spear and a wooden shield made at the keep (one timber a man), no armour: raised before there is a barracks.
-  militia: { ...FOOT, defenceOnly: true, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.2, shieldDefence: 1, morale: 45, runSpeedMs: 3.1, bounty: 1 },
-  // A hedge of pikes: the answer to horsemen, open to arrows.
-  pikemen: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, shieldDefence: 1.5, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, missileBlock: 0.35, bounty: 2 },
-  archers: { ...FOOT, barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 20, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
-  // Sword, shield and mail: the line that wins a straight fight on foot.
-  swordsmen: { ...FOOT, barracksLevel: 2, goldCost: 90, equipment: { weapon: 1, mailArmor: 1 }, hp: 36, attack: 9, defence: 9, armour: 0.4, damage: 7, attackIntervalS: 1.4, chargeBonus: 2, chargeShock: 3, missileBlock: 0.35, morale: 75, runSpeedMs: 2.7, bounty: 3 },
-  // Two-handed polearms: hit harder than swords and stop horses, but carry no shield.
-  halberdiers: { ...FOOT, barracksLevel: 2, goldCost: 100, equipment: { weapon: 1, mailArmor: 1 }, hp: 34, attack: 10, defence: 6, armour: 0.35, damage: 10, reachM: 2.3, bonusVsCavalry: 5, chargeBonus: 2, chargeShock: 3, morale: 70, runSpeedMs: 2.7, bounty: 3 },
+  militia: { ...FOOT, armourClass: 'militia', defenceOnly: true, barracksLevel: 0, goldCost: 30, equipment: { wood: 1 }, hp: 24, attack: 4, defence: 5, armour: 0, damage: 4, chargeBonus: 1, chargeShock: 1, missileBlock: 0.2, shieldDefence: 1, morale: 45, runSpeedMs: 3.1, bounty: 1 },
+  // In leather: a hedge of pikes with a small shield on the arm, the answer to horsemen, open to arrows.
+  pikemen: { ...FOOT, armourClass: 'leather', barracksLevel: 1, goldCost: 50, equipment: { weapon: 1, leatherArmor: 1 }, hp: 30, attack: 6, defence: 7, shieldDefence: 1.5, armour: 0.2, damage: 5, reachM: 3.0, bonusVsCavalry: 8, chargeBonus: 1, chargeShock: 2, morale: 60, runSpeedMs: 2.9, missileBlock: 0.35, bounty: 2 },
+  archers: { ...FOOT, armourClass: 'leather', barracksLevel: 1, goldCost: 50, equipment: { bow: 1, leatherArmor: 1 }, hp: 24, attack: 3, defence: 3, armour: 0.2, damage: 3, reachM: 1.4, attackIntervalS: 1.6, chargeBonus: 0, chargeShock: 0, missileRangeM: 80, missileDamage: 20, missileSpeedMs: 45, missileSiegeDamage: 1.5, reloadS: 6, morale: 50, runSpeedMs: 3.1, bounty: 2 },
+  // Heavy: sword, shield and full armour: the line that wins a straight fight on foot and stands under shot.
+  swordsmen: { ...FOOT, armourClass: 'heavy', barracksLevel: 2, goldCost: 90, equipment: { weapon: 1, mailArmor: 1 }, hp: 36, attack: 9, defence: 9, armour: 0.45, damage: 7, attackIntervalS: 1.4, chargeBonus: 2, chargeShock: 3, missileBlock: 0.4, shieldDefence: 1.5, morale: 75, runSpeedMs: 2.6, bounty: 3 },
+  // Heavy: landsknechts (called halberdiers): a long pike and a large shield, in armour. They outreach every
+  // other foot, stop horses dead and stand under arrows; slower to turn a blow into a kill than swordsmen.
+  halberdiers: { ...FOOT, armourClass: 'heavy', barracksLevel: 2, goldCost: 100, equipment: { weapon: 1, mailArmor: 1 }, hp: 34, attack: 9, defence: 7, armour: 0.4, damage: 8, reachM: 3.4, bonusVsCavalry: 8, chargeBonus: 2, chargeShock: 3, missileBlock: 0.45, shieldDefence: 2, morale: 72, runSpeedMs: 2.6, bounty: 3 },
   // Slow to span, flat-shooting, and a bolt goes through mail.
-  crossbowmen: { ...FOOT, barracksLevel: 2, goldCost: 80, equipment: { bow: 1, leatherArmor: 1, wood: 1 }, hp: 26, attack: 4, defence: 5, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileBlock: 0.3, missileRangeM: 70, missileDamage: 30, missilePierce: 0.6, missileSpeedMs: 60, missileSiegeDamage: 2, reloadS: 10, morale: 55, runSpeedMs: 2.9, bounty: 3 },
-  lightCavalry: { ...HORSE, barracksLevel: 2, goldCost: 100, equipment: { horse: 1, weapon: 1, leatherArmor: 1 }, hp: 40, attack: 7, defence: 5, armour: 0.2, damage: 6, reachM: 1.9, chargeBonus: 8, chargeShock: 9, morale: 65, runSpeedMs: 8.5, bounty: 4 },
-  // Knights: the charge that breaks a line.
-  heavyCavalry: { ...HORSE, barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 12, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.3, bounty: 6 },
+  crossbowmen: { ...FOOT, armourClass: 'leather', barracksLevel: 2, goldCost: 80, equipment: { bow: 1, leatherArmor: 1, wood: 1 }, hp: 26, attack: 4, defence: 5, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileBlock: 0.3, missileRangeM: 70, missileDamage: 30, missilePierce: 0.6, missileSpeedMs: 60, missileSiegeDamage: 2, reloadS: 10, morale: 55, runSpeedMs: 2.9, bounty: 3 },
+  // In leather: spear, sword and shield on a fast horse.
+  lightCavalry: { ...HORSE, armourClass: 'leather', barracksLevel: 2, goldCost: 100, equipment: { horse: 1, weapon: 1, leatherArmor: 1 }, hp: 40, attack: 7, defence: 5, armour: 0.2, damage: 6, reachM: 1.9, chargeBonus: 8, chargeShock: 9, missileBlock: 0.2, shieldDefence: 1, morale: 65, runSpeedMs: 8.5, bounty: 4 },
+  // Heavy: knights in armour, a lance for the charge that breaks a line, then sword and shield.
+  heavyCavalry: { ...HORSE, armourClass: 'heavy', barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 13, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.35, shieldDefence: 1.5, bounty: 6 },
   // Two field guns cast at the foundry: a ball on a flat line to 120 m that goes through any armour and
   // knocks holes in walls; helpless once reached.
   cannon: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileRollM: 12, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },

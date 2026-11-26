@@ -16,10 +16,10 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 
 - **Mapa:** *Przeprawa* (rzeka, grobla i dwa brody — jest). Twoje miasto na zachodnim brzegu: zamek
   poziomu 1, kilka chat, zagroda, drwal. Obóz najeźdźcy na wschodnim brzegu, **w zasięgu wzroku**
-  zza rzeki: 5–6 dużych oddziałów (ciężka jazda, miecznicy, kusznicy, razem ok. 70 ludzi), bez miasta.
+  zza rzeki: 5–6 dużych oddziałów (rycerze, miecznicy, kusznicy, razem ok. 70 ludzi), bez miasta.
 - **Żądanie:** 600 złota, 200 chleba i 40 sztuk broni w ciągu 30 minut, pasek odliczania u góry.
   Trybut wpłaca się przyciskiem w panelu zamku, gdy wszystko leży w magazynie.
-- **Wygrana:** trybut zapłacony. **Gdy czas minie:** obóz (200 ludzi: 2 ciężka jazda, 3 miecznicy,
+- **Wygrana:** trybut zapłacony. **Gdy czas minie:** obóz (200 ludzi: 2 rycerze, 3 miecznicy,
   2 halabardnicy, 3 kusznicy) rusza na miasto. Misję można wtedy jeszcze wygrać: gdy wszystkie jego
   oddziały uciekają przez 3 minuty (`CAMPAIGN.routWinS`) albo giną; przegrana, gdy padnie zamek.
 - **Obrona (pomiar, tests/campaign.test.ts):** mniejsza armia (1 konnica, 3 piechoty, 3 kusznicy,
@@ -46,7 +46,7 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 > **Stan (19.11):** grywalna na *Dolinie* (`MARCHLAND_MAP=valley`, zamek w drugim miejscu): dwa grzbiety gór wzdłuż
 > drogi między zamkami (szczyt co 52 m, 175 m od osi), przełęcz przy drugim końcu, skąd idzie odsiecz. Osada to
 > wieś w środku mapy (trzy domy, 274 m od zamku), trzymana przez 5 pełnych oddziałów (miecznicy, pikinierzy,
-> halabardnicy, kusznicy, łucznicy) i wieżę z 4 kusznikami. Odsiecz (ciężka jazda, miecznicy, kusznicy) w 12.
+> halabardnicy, kusznicy, łucznicy) i wieżę z 4 kusznikami. Odsiecz (rycerze, miecznicy, kusznicy) w 12.
 > minucie; jeśli zastanie osadę w rękach wroga, po 3 minutach wszystko rusza na miasto. Pomiar: 6 pełnych
 > oddziałów (112 ludzi) wygrywa 4/4 w 3–6 minut, tracąc 50–75 ludzi; 4 oddziały po 15 przegrywają 4/4.
 
@@ -90,10 +90,10 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
 >
 > Załoga i odsiecz:
 > - między murami: kusznicy, miecznicy, pikinierzy, halabardnicy;
-> - przy bramie wypad (ciężka jazda, miecznicy): wychodzi, gdy działo lub moździerz gracza podejdzie na 230 m,
+> - przy bramie wypad (rycerze, miecznicy): wychodzi, gdy działo lub moździerz gracza podejdzie na 230 m,
 >   bije w działa i po 150 s wraca;
-> - na dziedzińcu gwardia: 2 oddziały ciężkiej jazdy;
-> - odsiecz w 15. minucie zza obozu gracza: ciężka jazda, miecznicy, kusznicy.
+> - na dziedzińcu gwardia: 2 oddziały rycerzy;
+> - odsiecz w 15. minucie zza obozu gracza: rycerze, miecznicy, kusznicy.
 >
 > Za murami pracuje miasto wroga (4 chaty, piekarnia, kuźnia, koszary, spichlerz, mieszkańcy): koszary co 5
 > minut wystawiają oddział (miecznicy, kusznicy, pikinierzy na zmianę), dopóki stoją; moździerz może je zburzyć.
@@ -128,7 +128,7 @@ Zasada: kampania nie dokłada nowych jednostek, budynków ani grafiki. Dokłada 
   1. *Podejście*: armia z obozu pod mury, pod ostrzałem wież.
   2. *Wypad*: gdy działa staną w zasięgu, z bramy wychodzi wypad na nie (i odsiecz od tyłu w 15. minucie).
   3. *Zdobycie zamku*: wyłom albo rozbita brama, wejście na dziedziniec.
-  4. *Ostatni bój na dziedzińcu*: tam czeka gwardia pana zamku, ciężka jazda (2–3 pełne oddziały).
+  4. *Ostatni bój na dziedzińcu*: tam czeka gwardia pana zamku, rycerze (2–3 pełne oddziały).
 - **Wygrana:** gwardia na dziedzińcu rozbita (nie trzeba burzyć donżonu). **Przegrana:** cała armia rozbita
   albo stracony obóz z koszarami.
 - **Gwiazdka:** wyłom zrobiony w mniej niż 10 minut, bez utraty dział.

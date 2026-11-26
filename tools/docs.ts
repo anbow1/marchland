@@ -361,22 +361,25 @@ winnica, winiarnia.
 
 export const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
   militia: { name: 'Milicja z tarczami', use: 'Jednostka startowa: włócznia i drewniana tarcza (1 drewno na człowieka), bez zbroi; werbowana w zamku, zanim staną koszary. Trzyma linię za tarczą, szybko ucieka. Później do przezbrojenia.' },
-  pikemen: { name: 'Pikinierzy', use: 'Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła. Bezbronni wobec strzelców.' },
-  archers: { name: 'Łucznicy', use: 'Daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.' },
-  swordsmen: { name: 'Miecznicy', use: 'Miecz, tarcza, kolczuga: wygrywają zwykłą walkę pieszą i znoszą ostrzał.' },
-  halberdiers: { name: 'Halabardnicy', use: 'Biją mocniej niż miecznicy i zatrzymują konie, ale bez tarczy cierpią od strzał.' },
-  crossbowmen: { name: 'Kusznicy', use: 'Wolno ładują, bełt przebija kolczugę: odpowiedź na ciężkozbrojnych.' },
-  lightCavalry: { name: 'Lekka jazda', use: 'Najszybsza: zagony na wsie, strzelców i machiny, pościg za uciekającymi.' },
-  heavyCavalry: { name: 'Ciężka jazda', use: 'Rycerstwo: szarża, która łamie linię. Nie na piki od czoła.' },
+  pikemen: { name: 'Pikinierzy', use: 'Skórzana zbroja, pika i mała tarcza. Las pik zatrzymuje jazdę, zwłaszcza szarżę od czoła; od strzał chroni słabo.' },
+  archers: { name: 'Łucznicy', use: 'Skórzana zbroja i łuk: daleki, szybki ostrzał lekko zbrojnych. W zwarciu giną; trzymać za linią.' },
+  swordsmen: { name: 'Miecznicy', use: 'Ciężkozbrojni: pełna zbroja, miecz i tarcza. Wygrywają zwykłą walkę pieszą i znoszą ostrzał (strzały prawie nie szkodzą; na nich kusze).' },
+  halberdiers: { name: 'Halabardnicy', use: 'Ciężkozbrojni lancknechci: długa pika (3,4 m) i duża tarcza. Sięgają dalej niż każda piechota, zatrzymują jazdę i znoszą strzały; w prostej walce słabsi od mieczników.' },
+  crossbowmen: { name: 'Kusznicy', use: 'Skórzana zbroja i kusza: wolno ładują, bełt przebija zbroję: odpowiedź na ciężkozbrojnych.' },
+  lightCavalry: { name: 'Lekka jazda', use: 'Skórzana zbroja, włócznia, miecz i tarcza. Najszybsza: zagony na wsie, strzelców i machiny, pościg za uciekającymi.' },
+  heavyCavalry: { name: 'Rycerze', use: 'Ciężkozbrojni rycerze: kopia do szarży, która łamie linię, potem miecz i tarcza. Nie na piki od czoła.' },
   cannon: { name: 'Armaty', use: 'Dwa działa z ludwisarni: kula na wprost przebija każdą zbroję i wybija dziury w murach. Bezradne, gdy wróg dojdzie.' },
   mortar: { name: 'Moździerz', use: 'Jedno działo (ludwisarnia poz. 2): ciężka kula stromym torem nad murami rozbija szyk i burzy mury, wieże i zamek.' },
 };
+
+/** The armour classes of the target roster: militia, leather, heavy (and the guns). */
+const CLASS_PL = { militia: 'milicja', leather: 'skórzane', heavy: 'ciężkozbrojne', engine: 'działa' } as const;
 
 export function unitsDoc(): string {
   const table = UNIT_KINDS.map((kind) => {
     const d = UNITS[kind];
     const people = d.men * d.crew;
-    return `| **${UNIT_PL[kind].name}** | ${d.barracksLevel} | ${d.men}${d.engine ? ` (${people} ludzi)` : ''} | ${d.goldCost} zł + ${cost(d.equipment, GOOD_PL, d.men)} | ${d.hp} | ${d.attack} / ${d.defence} | ${Math.round(d.armour * 100)} % | ${d.damage} | ${d.morale} | ${fixed(d.walkSpeedMs)} / ${fixed(d.runSpeedMs)} |`;
+    return `| **${UNIT_PL[kind].name}** | ${CLASS_PL[d.armourClass ?? 'engine']} | ${d.barracksLevel} | ${d.men}${d.engine ? ` (${people} ludzi)` : ''} | ${d.goldCost} zł + ${cost(d.equipment, GOOD_PL, d.men)} | ${d.hp} | ${d.attack} / ${d.defence} | ${Math.round(d.armour * 100)} % | ${d.damage} | ${d.morale} | ${fixed(d.walkSpeedMs)} / ${fixed(d.runSpeedMs)} |`;
   });
   const shooters = UNIT_KINDS.filter((kind) => UNITS[kind].missileRangeM > 0).map((kind) => {
     const d = UNITS[kind];
@@ -413,10 +416,16 @@ zmień konfigurację (albo tekst w \`tools/docs.ts\`) i wygeneruj ponownie.*
 
 ## 2. Tabela
 
+Docelowy skład: **milicja** (włócznia i tarcza, bez zbroi), **skórzane** (pikinierzy z piką i małą tarczą,
+łucznicy, kusznicy, lekka jazda z włócznią, mieczem i tarczą), **ciężkozbrojne** (miecznicy w pełnej zbroi z
+mieczem i tarczą, halabardnicy-lancknechci z długą piką i dużą tarczą, rycerze z kopią, mieczem i tarczą).
+Zbroja skórzana to towar „zbroje skórzane”, ciężka to „kolczugi” z płatnerza. Wygląd broni i tarcz na modelach
+czeka na nowe modele (zasady już działają).
+
 Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu, którą zbiera zbroja.
 
-| Jednostka | Koszary | Ludzi | Cena regimentu | Życie | Atak / obrona | Pancerz | Obrażenia | Morale | Marsz / bieg (m/s) |
-|---|---|---|---|---|---|---|---|---|---|
+| Jednostka | Klasa | Koszary | Ludzi | Cena regimentu | Życie | Atak / obrona | Pancerz | Obrażenia | Morale | Marsz / bieg (m/s) |
+|---|---|---|---|---|---|---|---|---|---|---|
 ${table.join('\n')}
 
 ## 3. Strzelcy i machiny
