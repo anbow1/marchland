@@ -1,4 +1,5 @@
 import { MAP } from '../config.ts';
+import { setting } from './setting.ts';
 
 // Which of the prepared places the keeps stand on (MAP.startSites): the player picks one of three before
 // the game; the computer's keep is always the player's turned half a circle about the middle, so the
@@ -6,13 +7,6 @@ import { MAP } from '../config.ts';
 // them, the forest's clearings, the field between them) is worked out from it once, when the game loads,
 // so a new choice reloads the page with `?start=` set. Outside a browser (tests, tools) it is read from
 // MARCHLAND_START, and defaults to the first.
-
-/** A setting from the page's address, or (outside a browser) from the environment. */
-function setting(param: string, env: string): string | null {
-  const g = globalThis as { location?: { search?: string }; process?: { env?: Record<string, string | undefined> } };
-  const fromPage = g.location?.search ? new URLSearchParams(g.location.search).get(param) : null;
-  return fromPage ?? g.process?.env?.[env] ?? null;
-}
 
 function asked(): number {
   const n = Number(setting('start', 'MARCHLAND_START') ?? '0');
@@ -26,14 +20,20 @@ export const START = asked();
  * The lie of the land between the keeps: the open field (the first), a crossing (a river through the
  * middle, a causeway and two fords), or a road through the forest (two clearings and a ride between them).
  */
-export const LAYOUTS = ['field', 'river', 'forest', 'valley', 'fortress'] as const;
+export const LAYOUTS = ['field', 'river', 'forest', 'valley', 'fortress', 'triangle'] as const;
 /** The layouts a skirmish may be played on (the fortress is the campaign's last mission's; the valley serves both). */
-export const SKIRMISH_LAYOUTS = ['field', 'river', 'forest', 'valley'] as const;
+export const SKIRMISH_LAYOUTS = ['field', 'river', 'forest', 'valley', 'triangle'] as const;
 export type Layout = (typeof LAYOUTS)[number];
 export const LAYOUT: Layout = ((): Layout => {
   const asked = setting('map', 'MARCHLAND_MAP');
   return (LAYOUTS as readonly string[]).includes(asked ?? '') ? (asked as Layout) : 'field';
 })();
 
-/** The player's keep (x, z); the computer's is (−x, −z). */
-export const PLAYER_SITE: readonly [number, number] = MAP.startSites[START] as readonly [number, number];
+/** How many towns the map holds: three on 'triangle' (the player and two computers, each against the others), else two. */
+export const SIDE_COUNT: 2 | 3 = LAYOUT === 'triangle' ? 3 : 2;
+
+/**
+ * The player's keep (x, z). Every other side's town, and everything laid out from a town, is the player's
+ * turned about the middle: half a circle with two towns ((−x, −z)), a third and two thirds with three.
+ */
+export const PLAYER_SITE: readonly [number, number] = SIDE_COUNT === 3 ? [0, MAP.triangleRadiusM] : (MAP.startSites[START] as readonly [number, number]);

@@ -1,4 +1,5 @@
 import type { BuildingKind, Cost, Difficulty, UnitKind } from './sim/types.ts';
+import { THREE_TOWNS } from './sim/setting.ts';
 
 // Every tunable of the game in one place, with units (rules §10). Values marked
 // "tuned" were set by playing the headless balance tests in tests/; the rest
@@ -12,9 +13,11 @@ export const SIM = {
 } as const;
 
 export const MAP = {
-  /** Playable square, centred on the origin. */
-  sizeM: 680,
-  halfM: 340,
+  /** Playable square, centred on the origin: larger on the map of three towns ('triangle'). */
+  sizeM: THREE_TOWNS ? 860 : 680,
+  halfM: THREE_TOWNS ? 430 : 340,
+  /** The map of three towns: the keeps stand this far from the middle, a third of a circle apart (the player's to the south). */
+  triangleRadiusM: 320,
   /** Town centres sit on the diagonal, this far from the origin on each axis (the first place a keep may stand). */
   townOffsetM: 232,
   /**

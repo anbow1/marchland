@@ -1,3 +1,4 @@
+import { SIDE_COUNT } from './layout.ts';
 import { doorOfX, doorOfZ } from './placement.ts';
 import { type AiCharacter, AI_TUNING, ARMS_GOODS, ARMY, CAMPAIGN, MAP, PAY, PEOPLE, TOWER, TOWN, UNITS } from '../config.ts';
 import { Rng } from '../core/rng.ts';
@@ -29,10 +30,17 @@ import { hypot2 } from '../core/hypot.ts';
 //   7. morale, rout and rally; the fallen and the destroyed are cleared
 //   8. victory check
 
+/**
+ * The towns, indexed by side. A map of two towns has no element 2; nothing on it belongs to side 2, so the
+ * type may promise all three (a plain array's index would be 'Town | undefined' at every use).
+ */
+export type Towns = Town[] & { 0: Town; 1: Town; 2: Town };
+
 export interface World {
   timeS: number;
   rng: Rng;
-  towns: [Town, Town];
+  /** One town per side on this map (two, or three on 'triangle'), indexed by side. */
+  towns: Towns;
   regiments: Regiment[];
   /** The townspeople of both sides. */
   people: Person[];
@@ -48,10 +56,10 @@ export interface World {
   /** Null switches the computer player off (tests, sandbox). */
   ai: AiState | null;
   grid: SpatialGrid;
-  keepShotCooldownS: [number, number];
+  keepShotCooldownS: [number, number, number];
   difficulty: Difficulty;
   /** Men each side has brought down, for the end screen. */
-  kills: [number, number];
+  kills: [number, number, number];
   stepCount: number;
   /** Which trees are felled, planted or growing back (trees.ts). */
   stand: Stand;
@@ -94,7 +102,7 @@ export function createWorld(options: WorldOptions): World {
   const world: World = {
     timeS: 0,
     rng: new Rng(options.seed),
-    towns: [createTown(PLAYER), createTown(COMPUTER, tuning.productionFactor)],
+    towns: (SIDE_COUNT === 3 ? [createTown(PLAYER), createTown(COMPUTER, tuning.productionFactor), createTown(2, tuning.productionFactor)] : [createTown(PLAYER), createTown(COMPUTER, tuning.productionFactor)]) as Towns,
     regiments: [],
     people: [],
     rolesS: 0,
@@ -112,9 +120,9 @@ export function createWorld(options: WorldOptions): World {
     campaign: null,
     // Room for the campaign's larger armies (CAMPAIGN.maxSoldiersPerSide) in any game.
     grid: new SpatialGrid(MAP.halfM + 40, 2, 2 * Math.max(ARMY.maxSoldiersPerSide, CAMPAIGN.maxSoldiersPerSide) + 64),
-    keepShotCooldownS: [0, 0],
+    keepShotCooldownS: [0, 0, 0],
     difficulty: options.difficulty,
-    kills: [0, 0],
+    kills: [0, 0, 0],
     stepCount: 0,
   };
   // The player's arms workshops wait for an order; the computer's work as long as there is room.

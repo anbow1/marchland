@@ -54,7 +54,7 @@ export class Markers {
   private readonly q = new Quaternion();
   private readonly s = new Vector3(1, 1, 1);
   private readonly up = new Vector3(0, 1, 0);
-  private readonly teamColours: [Color, Color] = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1])];
+  private readonly teamColours: [Color, Color, Color] = [new Color(TEAM_HEX[0]), new Color(TEAM_HEX[1]), new Color(TEAM_HEX[2])];
   private readonly dim = new Color();
 
   constructor(scene: Scene) {

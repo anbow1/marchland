@@ -1,7 +1,7 @@
 // Shared vocabulary of the simulation. No three.js anywhere under src/sim.
 
-/** 0 = the player, 1 = the computer. */
-export type Side = 0 | 1;
+/** 0 = the player, 1 = the computer; 2 = the second computer on the map of three towns. */
+export type Side = 0 | 1 | 2;
 export const PLAYER: Side = 0;
 export const COMPUTER: Side = 1;
 

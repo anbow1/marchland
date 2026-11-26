@@ -29,9 +29,9 @@ export function createPoints(): Point[] {
 }
 
 /** Which sides have a formed regiment by the point, and which have any regiment within reach of it. */
-function presence(world: World, p: Point): { by: [boolean, boolean]; near: [boolean, boolean] } {
-  const by: [boolean, boolean] = [false, false];
-  const near: [boolean, boolean] = [false, false];
+function presence(world: World, p: Point): { by: [boolean, boolean, boolean]; near: [boolean, boolean, boolean] } {
+  const by: [boolean, boolean, boolean] = [false, false, false];
+  const near: [boolean, boolean, boolean] = [false, false, false];
   for (const r of world.regiments) {
     if (r.aliveMen === 0) continue;
     const d = hypot2(r.centreX - p.x, r.centreZ - p.z);

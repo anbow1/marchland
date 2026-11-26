@@ -7,7 +7,7 @@ import { fortressPoint, INNER, insideRing, OUTER } from '../src/sim/fortress.ts'
 import { blockedBetween, damageWall, findRoute, wallCellAt } from '../src/sim/nav.ts';
 import { buildingCost, isBuilt, rebuildCost } from '../src/sim/economy.ts';
 import { DEPOSITS, facingToEnemy, rallyX, rallyZ, townX, townZ } from '../src/sim/terrain.ts';
-import { COMPUTER, PLAYER, type UnitKind } from '../src/sim/types.ts';
+import { COMPUTER, PLAYER, type Side, type UnitKind } from '../src/sim/types.ts';
 import { createWorld, spawnRegiment, type World } from '../src/sim/world.ts';
 import { campaignRegiment } from '../src/sim/campaign.ts';
 import { doorX, doorZ, KEEP, spawnPerson } from '../src/sim/people.ts';
@@ -17,7 +17,7 @@ function mission(n: number, seed = 1, carried: { kind: UnitKind; men: number; xp
   return createWorld({ seed, difficulty: 'normal', computerPlays: true, mode: 'campaign', campaign: { mission: n, carried, gold: 0 } });
 }
 
-const men = (world: World, side: 0 | 1): number => world.regiments.filter((r) => r.side === side).reduce((n, r) => n + r.aliveMen, 0);
+const men = (world: World, side: Side): number => world.regiments.filter((r) => r.side === side).reduce((n, r) => n + r.aliveMen, 0);
 
 describe('campaign', () => {
   it('mission 1: a working town, the invader camped in sight with two hundred men, a tribute that wins', () => {

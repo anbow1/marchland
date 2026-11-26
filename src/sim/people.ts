@@ -405,7 +405,7 @@ function grow(world: World, town: Town, living: number, dtSeconds: number): void
   }
 }
 
-const livingScratch: [number, number] = [0, 0];
+const livingScratch: [number, number, number] = [0, 0, 0];
 
 export function stepPeople(world: World, dtSeconds: number): void {
   world.nav.budget = ROADS.cellsPerStep;

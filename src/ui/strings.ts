@@ -98,7 +98,7 @@ interface Strings {
   nextWave: string;
   startSites: readonly [string, string, string];
   mapLabel: string;
-  layouts: Record<'field' | 'river' | 'forest' | 'valley' | 'fortress', string>;
+  layouts: Record<'field' | 'river' | 'forest' | 'valley' | 'fortress' | 'triangle', string>;
   loading: string;
   victory: string;
   defeat: string;
@@ -493,7 +493,7 @@ const pl: Strings = {
   nextWave: 'następna za',
   startSites: ['Róg', 'Zachód', 'Południe'],
   mapLabel: 'Mapa',
-  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór', valley: 'Dolina', fortress: 'Twierdza' },
+  layouts: { field: 'Otwarte pole', river: 'Przeprawa', forest: 'Bór', valley: 'Dolina', fortress: 'Twierdza', triangle: 'Trzech panów' },
   loading: 'Wczytywanie',
   victory: 'Zwycięstwo',
   defeat: 'Porażka',
@@ -918,7 +918,7 @@ const en: Strings = {
   nextWave: 'next in',
   startSites: ['Corner', 'West', 'South'],
   mapLabel: 'Map',
-  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road', valley: 'The valley', fortress: 'The fortress' },
+  layouts: { field: 'Open field', river: 'Crossing', forest: 'Forest road', valley: 'The valley', fortress: 'The fortress', triangle: 'Three lords' },
   loading: 'Loading',
   victory: 'Victory',
   defeat: 'Defeat',

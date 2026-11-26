@@ -2,10 +2,15 @@ import { MAP, POINTS, TOWN } from '../config.ts';
 import { fbm2 } from '../core/noise.ts';
 import type { Side } from './types.ts';
 import { hypot2 } from '../core/hypot.ts';
-import { LAYOUT, PLAYER_SITE } from './layout.ts';
+import { LAYOUT, PLAYER_SITE, SIDE_COUNT } from './layout.ts';
 
 /** The sides whose town has a lake beside it: the fortress (the campaign's last map) stands on dry upland. */
-export const LAKE_SIDES: readonly Side[] = LAYOUT === 'fortress' ? [0] : [0, 1];
+/** Every side on this map, the player first. */
+export const SIDES: readonly Side[] = SIDE_COUNT === 3 ? [0, 1, 2] : [0, 1];
+
+export const LAKE_SIDES: readonly Side[] = LAYOUT === 'fortress' ? [0] : SIDES;
+
+const THREE = SIDE_COUNT === 3;
 
 // The map as functions of (x, z): height, forest, water, and the outcrops of
 // stone and ore. The renderer draws from the same functions, so what the
@@ -18,18 +23,50 @@ export const LAKE_SIDES: readonly Side[] = LAYOUT === 'fortress' ? [0] : [0, 1];
 // richer outcrop of each lies out on the flanks. The computer's side is the
 // player's turned half a circle about the middle, so the land is fair.
 
-/** Town centre of a side: the player in the south-west corner, the computer in the north-east. */
+// Each side's layout is the player's turned about the middle of the map: by half a circle with two towns
+// (exactly a sign change, so the two halves are mirror twins to the last bit), by a third of a circle
+// each with three.
+const COS: readonly number[] = THREE ? [1, Math.cos((2 * Math.PI) / 3), Math.cos((4 * Math.PI) / 3)] : [1, -1];
+const SIN: readonly number[] = THREE ? [0, Math.sin((2 * Math.PI) / 3), Math.sin((4 * Math.PI) / 3)] : [0, 0];
+
+/** The player's vector (x, z) turned to a side's half (or third) of the map. */
+export function turnX(side: Side, x: number, z: number): number {
+  return (COS[side] as number) * x - (SIN[side] as number) * z;
+}
+
+export function turnZ(side: Side, x: number, z: number): number {
+  return (SIN[side] as number) * x + (COS[side] as number) * z;
+}
+
+/** The angle a side's half (or third) is turned by: 0 for the player. */
+export function turnAngle(side: Side): number {
+  return THREE ? (side * 2 * Math.PI) / 3 : side === 0 ? 0 : Math.PI;
+}
+
+/** Town centre of a side: the player's site, turned to the side's part of the map. */
 export function townX(side: Side): number {
-  return side === 0 ? PLAYER_SITE[0] : -PLAYER_SITE[0];
+  return turnX(side, PLAYER_SITE[0], PLAYER_SITE[1]);
 }
 
 export function townZ(side: Side): number {
-  return side === 0 ? PLAYER_SITE[1] : -PLAYER_SITE[1];
+  return turnZ(side, PLAYER_SITE[0], PLAYER_SITE[1]);
 }
 
-/** +1 for the player, −1 for the computer: every offset of a side's layout is multiplied by it. */
+/**
+ * +1 for the player, −1 for the computer: every offset of a side's layout is multiplied by it. Two towns
+ * only; with three use `frameX`/`frameZ`.
+ */
 export function turnOf(side: Side): number {
   return side === 0 ? 1 : -1;
+}
+
+/** World offset of (forward, side) metres in a side's own axes (its forward looks at the middle of the map). */
+export function frameX(side: Side, forwardM: number, sideM: number): number {
+  return turnX(side, FORWARD_X * forwardM + SIDE_X * sideM, FORWARD_Z * forwardM + SIDE_Z * sideM);
+}
+
+export function frameZ(side: Side, forwardM: number, sideM: number): number {
+  return turnZ(side, FORWARD_X * forwardM + SIDE_X * sideM, FORWARD_Z * forwardM + SIDE_Z * sideM);
 }
 
 // The player's axes: "forward" looks at the enemy (north-east), "side" is to the right of that (south-east).
@@ -45,11 +82,11 @@ function smoothstep(lo: number, hi: number, v: number): number {
 }
 
 export function lakeX(side: Side): number {
-  return townX(side) + turnOf(side) * (FORWARD_X * TOWN.lakeForwardM - SIDE_X * TOWN.lakeSideM);
+  return townX(side) + frameX(side, TOWN.lakeForwardM, -TOWN.lakeSideM);
 }
 
 export function lakeZ(side: Side): number {
-  return townZ(side) + turnOf(side) * (FORWARD_Z * TOWN.lakeForwardM - SIDE_Z * TOWN.lakeSideM);
+  return townZ(side) + frameZ(side, TOWN.lakeForwardM, -TOWN.lakeSideM);
 }
 
 /**
@@ -57,7 +94,8 @@ export function lakeZ(side: Side): number {
  * points, and a noise round the circle its coves. The computer's lake is the player's turned half a circle, so the two are the same shape.
  */
 export function lakeRadiusAt(side: Side, x: number, z: number): number {
-  const a = Math.atan2(z - lakeZ(side), x - lakeX(side)) + (side === 0 ? 0 : Math.PI);
+  // In the lake's own turned frame, so every side's lake is the same shape.
+  const a = Math.atan2(z - lakeZ(side), x - lakeX(side)) + (THREE ? -turnAngle(side) : side === 0 ? 0 : Math.PI);
   // Slow waves for the bays and points, then a noise walked round the circle (so it closes on itself) for
   // the coves and spits a real shore has: no two stretches alike.
   const c = Math.cos(a);
@@ -68,10 +106,9 @@ export function lakeRadiusAt(side: Side, x: number, z: number): number {
 
 /** Distance from the nearer lake's middle, in that lake's radii in that direction (below 1 = inside the bowl). */
 export function lakeShare(x: number, z: number): number {
-  const s0 = hypot2(x - lakeX(0), z - lakeZ(0)) / lakeRadiusAt(0, x, z);
-  if (!LAKE_SIDES.includes(1)) return s0;
-  const s1 = hypot2(x - lakeX(1), z - lakeZ(1)) / lakeRadiusAt(1, x, z);
-  return Math.min(s0, s1);
+  let best = Number.POSITIVE_INFINITY;
+  for (const side of LAKE_SIDES) best = Math.min(best, hypot2(x - lakeX(side), z - lakeZ(side)) / lakeRadiusAt(side, x, z));
+  return best;
 }
 
 // ---- the river (map layout 'river') -----------------------------------------
@@ -188,6 +225,20 @@ function layOutHeaps(): Heap[] {
     return out;
   }
   const m = MAP.mountainOffsetM;
+  if (THREE) {
+    // Three towns: a massif out on the rim between each two of them, and the player's half of the crags in
+    // every side's third. A heap's outline is not mirrored (`turn` 1): the three are of one seed, turned.
+    for (const side of SIDES) {
+      const a = Math.atan2(PLAYER_SITE[0], PLAYER_SITE[1]) + turnAngle(side) + Math.PI / 3;
+      const r = MAP.triangleRadiusM * 1.12;
+      out.push({ x: Math.sin(a) * r, z: Math.cos(a) * r, radiusM: MAP.mountainRadiusM, heightM: MAP.mountainHeightM, blockShare: MAP.mountainBlockShare, turn: 1, seed: 71 + side });
+      MAP.crags.forEach(([f, sd], i) => {
+        if (f + sd * 0.001 >= 0) return;
+        out.push({ x: frameX(side, f + MAP.triangleRadiusM * 0.5, sd), z: frameZ(side, f + MAP.triangleRadiusM * 0.5, sd), radiusM: MAP.cragRadiusM, heightM: MAP.cragHeightM, blockShare: MAP.cragBlockShare, turn: 1, seed: 80 + i });
+      });
+    }
+    return out;
+  }
   // The massifs sit in the two corners the towns do not hold, (+,+) and (−,−): each is the other half-turned.
   for (const turn of [1, -1]) {
     out.push({ x: turn * m, z: turn * m, radiusM: MAP.mountainRadiusM, heightM: MAP.mountainHeightM, blockShare: MAP.mountainBlockShare, turn, seed: 71 });
@@ -295,11 +346,28 @@ export const WATER_LEVEL_M = -0.45;
 function distanceToNearestTownM(x: number, z: number): number {
   const d0 = hypot2(x - townX(0), z - townZ(0));
   const d1 = hypot2(x - townX(1), z - townZ(1));
-  return Math.min(d0, d1);
+  return THREE ? Math.min(d0, d1, hypot2(x - townX(2), z - townZ(2))) : Math.min(d0, d1);
+}
+
+/** Distance from the segment (ax, az)–(bx, bz). */
+function toSegmentM(x: number, z: number, ax: number, az: number, bx: number, bz: number): number {
+  const dx = bx - ax;
+  const dz = bz - az;
+  const t = Math.min(1, Math.max(0, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz)));
+  return hypot2(x - ax - dx * t, z - az - dz * t);
 }
 
 /** Distance from the straight line between the two towns: the open field where armies meet. */
 function distanceToFieldAxisM(x: number, z: number): number {
+  // Three towns: the fields are the ways between each two of them.
+  if (THREE) {
+    let best = Number.POSITIVE_INFINITY;
+    for (let a = 0; a < 3; a++) {
+      const b = (a + 1) % 3;
+      best = Math.min(best, toSegmentM(x, z, townX(a as Side), townZ(a as Side), townX(b as Side), townZ(b as Side)));
+    }
+    return best;
+  }
   // The towns lie on a line through the middle, along FORWARD.
   return Math.abs(x * FORWARD_Z - z * FORWARD_X);
 }
@@ -319,8 +387,9 @@ export function heightAtM(x: number, z: number): number {
   // The two knolls: either side of the middle, across the field.
   const kx = SIDE_X * MAP.knollOffsetM;
   const kz = SIDE_Z * MAP.knollOffsetM;
-  // On the crossing the river runs where the knolls would stand: they are fords instead.
-  const knolls = RIVER ? 0 : knoll(x, z, kx, kz) + knoll(x, z, -kx, -kz);
+  // On the crossing the river runs where the knolls would stand: they are fords instead. Three towns: a
+  // knoll beside each way between two of them, out from the middle (each town's third turned).
+  const knolls = RIVER ? 0 : THREE ? knoll(x, z, turnX(0, kx, kz), turnZ(0, kx, kz)) + knoll(x, z, turnX(1, kx, kz), turnZ(1, kx, kz)) + knoll(x, z, turnX(2, kx, kz), turnZ(2, kx, kz)) : knoll(x, z, kx, kz) + knoll(x, z, -kx, -kz);
   const town = smoothstep(MAP.townFlatRadiusM, MAP.townBlendRadiusM, distanceToNearestTownM(x, z));
   // The fortress's plateau: level, and raised above the plain it falls away to.
   const fort = FORTRESS ? smoothstep(MAP.fortressFlatRadiusM, MAP.fortressBlendRadiusM, fortressDistanceM(x, z)) : 1;
@@ -357,9 +426,8 @@ export interface Deposit {
 /** Stone and ore behind each town, and a second outcrop of each out on the flanks, nearer the middle. */
 function layOutDeposits(): Deposit[] {
   const out: Deposit[] = [];
-  for (const side of [0, 1] as const) {
-    const t = turnOf(side);
-    const at = (forwardM: number, sideM: number): [number, number] => [townX(side) + t * (FORWARD_X * forwardM + SIDE_X * sideM), townZ(side) + t * (FORWARD_Z * forwardM + SIDE_Z * sideM)];
+  for (const side of SIDES) {
+    const at = (forwardM: number, sideM: number): [number, number] => [townX(side) + frameX(side, forwardM, sideM), townZ(side) + frameZ(side, forwardM, sideM)];
     // Either side of the keep and a little ahead: behind it, in the corner, is the map's edge. Never closer
     // to the edge than their own size and a cart's turn.
     const inside = (v: number): number => Math.max(-MAP.halfM + TOWN.depositRadiusM + 10, Math.min(MAP.halfM - TOWN.depositRadiusM - 10, v));
@@ -369,7 +437,7 @@ function layOutDeposits(): Deposit[] {
     if (!(FORTRESS && side === 1)) out.push({ kind: 'stone', x: inside(sx), z: inside(sz) }, { kind: 'ore', x: inside(ox), z: inside(oz) });
     // A second outcrop out on the flank, at the edge of the side's reach: ore on the player's, stone on the computer's.
     const [fx, fz] = at(118, 96);
-    out.push({ kind: side === 0 ? 'ore' : 'stone', x: fx, z: fz });
+    out.push({ kind: side % 2 === 0 ? 'ore' : 'stone', x: fx, z: fz });
   }
   return out;
 }
@@ -436,14 +504,15 @@ export function clampToMap(v: number): number {
 
 /** Where a side's new regiments form up: in front of the town, towards the enemy. */
 export function rallyX(side: Side): number {
-  return townX(side) + turnOf(side) * TOWN.rallyDistanceM * FORWARD_X;
+  return townX(side) + frameX(side, TOWN.rallyDistanceM, 0);
 }
 
 export function rallyZ(side: Side): number {
-  return townZ(side) + turnOf(side) * TOWN.rallyDistanceM * FORWARD_Z;
+  return townZ(side) + frameZ(side, TOWN.rallyDistanceM, 0);
 }
 
-/** Facing (radians; 0 looks along +Z, π/2 along +X) from a side's town towards the enemy's. */
+/** Facing (radians; 0 looks along +Z, π/2 along +X) from a side's town towards the enemy's: with three towns, towards the middle between them. */
 export function facingToEnemy(side: Side): number {
+  if (THREE) return Math.atan2(-townX(side), -townZ(side));
   return Math.atan2(townX(side === 0 ? 1 : 0) - townX(side), townZ(side === 0 ? 1 : 0) - townZ(side));
 }
