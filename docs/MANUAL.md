@@ -599,6 +599,7 @@ tablecie wybierz grafikę „Bardzo niska”. Gdy coś pójdzie źle, przy nast�
 | budynki z Blendera, etapy budowy, mury pod dowolnym kątem | §5 |
 | skąd assety i na jakich licencjach | §6 i [ASSETS.md](ASSETS.md) |
 | epoki: stan, wygląd zastępczy, czego szukamy | [AGES.md](AGES.md) |
+| co zostało do zrobienia | [PLAN.md](PLAN.md) |
 | pomiary, testy, zrzuty | §7 |
 | wydanie: przeglądarka, iPad, Windows, offline | §8 |
 | pułapki, na które wpadliśmy | §9 |

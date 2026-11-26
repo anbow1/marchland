@@ -130,7 +130,7 @@ RTS z góry widzi całą mapę naraz, więc budżet jest ciaśniejszy. Paczka ur
 
 ## 9. Kolejność budowy
 
-Plan rozgrywki i kamienie milowe M1–M6: [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md).
+Plan rozgrywki i kamienie milowe M1–M7: [`docs/GAMEPLAY.md`](docs/GAMEPLAY.md); co zostało: [`docs/PLAN.md`](docs/PLAN.md).
 Zadania do zrobienia w Blenderze (modele, animacje) i kontrakt plików:
 [`docs/BLENDER.md`](docs/BLENDER.md). Prace rutynowe rozpisane dla słabszego
 modelu: [`docs/ROUTINE.md`](docs/ROUTINE.md). Lista niżej to stan etapów

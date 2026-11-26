@@ -175,7 +175,7 @@ na prawdziwe czasy dostaw. Przełącznik w `config.ts`, oba tryby pod testami.
   grobli); *Bór* — las prawie wszędzie, polany wokół miast (105 m), wąski trakt między
   nimi (24 m) i polany punktów; jazda w lesie słabnie, strzały grzęzną w drzewach.
   Komputer burzy biernego gracza po 32–36 min na polu i w borze, 38 min na przeprawie.
-- **Wzniesienia liczą się** (plan): strzelcy z góry mają +15 % zasięgu,
+- **Wzniesienia liczą się** (zrobione, `ELEVATION` w `config.ts`): strzelcy z góry mają +15 % zasięgu,
   szarża w dół +25 % premii, walka pod górę −1 do ataku.
 - **Wygląd terenu** (zrobione): pagórki z fałdami, dwa wzgórza po bokach pola
   bitwy, dwa szare masywy górskie (do 80 m, z rumowiskami) i cztery skalne grzędy
@@ -281,6 +281,8 @@ Do zrobienia:
   ikoną.
 
 ## 10. Kamienie milowe
+
+Co zostało i w jakiej kolejności: [PLAN.md](PLAN.md).
 
 Kolejność od największego wpływu na grę. „Silny model” to praca wymagająca
 projektu albo nowej techniki; „rutyna” jest rozpisana w `ROUTINE.md`; „Blender”
