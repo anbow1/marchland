@@ -8,6 +8,9 @@ regiments of up to a hundred men a side fight in formation, with morale,
 flanks, charges, archers, crossbows, ballistae and a trebuchet. Every name,
 banner and faction is invented.
 
+Until 27.11.2026 the game lived in `marchland/` of the `anbow1/FPS` repository; it moved here with its
+whole history (177 commits).
+
 ```bash
 npm install
 npm run dev     # http://localhost:5173
@@ -17,8 +20,8 @@ npm run build
 
 ## Play it: web, iPad, Windows — offline after the first start
 
-Every push to `main` publishes the game at **https://anbow1.github.io/FPS/marchland/**
-(`.github/workflows/marchland-web.yml`, pushed to the `gh-pages` branch; once: Settings → Pages →
+Every push to `main` publishes the game at **https://anbow1.github.io/marchland/**
+(`.github/workflows/web.yml`, pushed to the `gh-pages` branch; once: Settings → Pages →
 Source: *Deploy from a branch* → `gh-pages`, `/ (root)`).
 Its service worker (`src/ui/offline.ts`, `tools/pwa/`) keeps every file on the device after the first
 visit, so it plays without the internet; a new version downloads in the background, only the files
@@ -28,7 +31,7 @@ that changed, and starts next time (or at once from the note at the top of the s
   Screen*. Start it from the icon: full screen, offline.
 - **Android:** Chrome → *Install app*.
 - **Windows:** `Marchland.exe` from the *marchland-windows* release (`desktop/`, built by
-  `.github/workflows/marchland-desktop.yml`): a window onto the same address that keeps the game on
+  `.github/workflows/desktop.yml`): a window onto the same address that keeps the game on
   the disk. The first start needs the internet; after that it plays offline and updates itself. Not
   code-signed: Windows asks on the first start (*More info* → *Run anyway*). F11: full screen.
 
@@ -107,4 +110,4 @@ house ─ tax in gold        keep ─ a small income
 `window.__debug.place({x, z, distance, yaw})` and `.spot('town' | 'rally' |
 'field' | 'close' | 'enemy' | 'overview')`, `&scene=battle|town` starts in a
 prepared situation, `&seed=` fixes the random numbers. The scripts in
-`../tools/measure` run it as `--game generic`.
+`tools/measure` run it as `--game generic`.

@@ -1,0 +1,12 @@
+node_modules/
+dist/
+dist-compare/
+*.log
+.env
+.env.*
+shots/
+bench/
+__pycache__/
+*.pyc
+# Marchland asset pack, built by tools/pack-assets.mjs
+asset-pack-out/

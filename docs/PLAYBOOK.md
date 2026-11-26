@@ -333,7 +333,7 @@ Pełna lista z autorami i licencjami jest w `ASSETS.md`, a podpisy w `public/*/C
 
 - **Testy** (`npm test`, vitest): ekonomia, walka, łucznictwo, kamera, całe partie bez gracza. Każda zmiana
   przechodzi testy przed wypchnięciem.
-- **Pomiar wczytania** (`../tools/measure/load.mjs --game generic --url … --extra "&scene=battle"`):
+- **Pomiar wczytania** (`tools/measure/load.mjs --game generic --url … --extra "&scene=battle"`):
   liczba potoków i modułów shaderów, błędy WebGPU, pamięć tekstur, czas do gotowości. Każda zmiana grafiki
   ma pomiar na WebGPU (0 błędów) i liczbę potoków w `RESULTS.md`.
 - **Zrzuty**: Playwright z Chromium na SwiftShader (`--use-angle=swiftshader`), strona z `?autostart&debug`,
@@ -353,12 +353,12 @@ Pełna lista z autorami i licencjami jest w `ASSETS.md`, a podpisy w `public/*/C
   zmienione, i przejmuje grę przy następnym uruchomieniu albo od razu z paska „Uruchom teraz”. Pliki
   dopasowuje bez nagłówka `Vary` (moduł JS prosi z nagłówkiem Origin, którego zapisana kopia nie ma).
   Manifest, ikony i znaczniki Apple dają pełny ekran z ekranu początkowego iPada.
-- **GitHub Pages** (`.github/workflows/marchland-web.yml`): każdy push do `main` buduje grę i wypycha ją
+- **GitHub Pages** (`.github/workflows/web.yml`): każdy push do `main` buduje grę i wypycha ją
   jednym commitem na gałąź `gh-pages` (artefakty Actions na koncie są pełne, a gałąź z nich nie korzysta).
-  Adres: https://anbow1.github.io/FPS/marchland/.
+  Adres: https://anbow1.github.io/marchland/.
 - **Windows**: najprościej Edge albo Chrome → „Zainstaluj aplikację” na stronie gry (ikona, offline,
   aktualizacje). `desktop/` to okno Electron na ten sam adres (`Marchland.exe`, przenośny, ok. 102 MB, bez
-  podpisu); proces `.github/workflows/marchland-desktop.yml` buduje go na Linuksie bez Wine, a do
+  podpisu); proces `.github/workflows/desktop.yml` buduje go na Linuksie bez Wine, a do
   publikacji w wydaniu potrzebuje zgody na zapis dla Actions w ustawieniach repozytorium.
 
 ## 9. Pułapki, na które już wpadliśmy

@@ -27,7 +27,7 @@ import { surfaceGeometry } from '../render/surfaceModel.ts';
 // they are other people's work under CC BY, kept out until one is chosen).
 //
 //   npx vite build --config vite.compare.config.ts
-//   node ../tools/measure/serve.mjs dist-compare 4173     (with dist-compare/models linked to the downloads)
+//   node tools/measure/serve.mjs dist-compare 4173     (with dist-compare/models linked to the downloads)
 
 // Where the exhibits stand: two rows on the level ground round the player's keep, clear of the stone
 // outcrop behind it, with a road between the rows.

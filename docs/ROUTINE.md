@@ -30,7 +30,7 @@ według wskazania użytkownika.
 
 ```bash
 cd marchland && npx vite build && cd ..
-node tools/measure/serve.mjs marchland/dist 4173 &
+node tools/measure/serve.mjs dist 4173 &
 export PLAYWRIGHT_MODULE=/ścieżka/do/playwright/index.mjs   # plik .mjs, nie index.js
 node tools/measure/shots.mjs --game generic --gpu webgl --size 1280x720 \
   --extra '&q=high&scene=battle&seed=3&lang=pl&t=14' --out marchland/results/<data>/<nazwa> \

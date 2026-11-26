@@ -4,7 +4,7 @@
 const { app, BrowserWindow, Menu, shell } = require('electron');
 const path = require('node:path');
 
-const GAME = process.env.MARCHLAND_URL || 'https://anbow1.github.io/FPS/marchland/';
+const GAME = process.env.MARCHLAND_URL || 'https://anbow1.github.io/marchland/';
 
 app.setName('Marchland');
 Menu.setApplicationMenu(null);

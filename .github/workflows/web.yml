@@ -1,0 +1,56 @@
+# Publishes Marchland on GitHub Pages at https://anbow1.github.io/marchland/ on every push to main that
+# touches the game (and on demand). From there it installs for offline play: on an iPad from Safari
+# (Share → Add to Home Screen), on Android from Chrome (Install app), and the Windows shell (desktop/, built
+# by desktop.yml) opens it. A new version reaches every installed copy by itself: its service worker
+# downloads only the files that changed (src/ui/offline.ts).
+#
+# One-time setup in the repository: Settings → Pages → Build and deployment → Source: Deploy from a branch →
+# gh-pages, / (root); and Settings → Actions → General → Workflow permissions → "Read and write permissions".
+# The site is pushed to the gh-pages branch as a single commit (force-pushed, so the branch never grows).
+
+name: Marchland on the web
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'desktop/**'
+      - '.github/workflows/desktop.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Build
+        run: |
+          npm ci
+          npm run build
+
+      - name: Push the site to gh-pages
+        working-directory: dist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          touch .nojekyll
+          git init -q -b gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Marchland from ${GITHUB_SHA::7}"
+          git push -q --force "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages
