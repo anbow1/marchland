@@ -40,7 +40,7 @@ export const CANVAS_RED = 0xa8463a;
 export const CANVAS_PALE = 0xd8cfb8;
 export const CANVAS_BLUE = 0x44607a;
 /** Brick, as a plain colour (no scan of brick yet): the 19th century's mills and chimneys. */
-export const BRICK = 0x8a4636;
+export const BRICK = 0x5e3328;
 export const BREAD = 0xc08a4a;
 export const EMBER = 0xb5502a;
 export const CABBAGE = 0x8fb05a;
