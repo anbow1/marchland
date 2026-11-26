@@ -36,6 +36,8 @@ const GOOD_EN: Record<ResourceId, string> = {
   mailArmor: 'mail',
   bow: 'bows',
   horse: 'horses',
+  musket: 'muskets',
+  powder: 'powder',
 };
 
 export const GOOD_PL: Record<ResourceId, string> = {
@@ -60,10 +62,17 @@ export const GOOD_PL: Record<ResourceId, string> = {
   mailArmor: 'kolczuga',
   bow: 'łuk',
   horse: 'koń',
+  musket: 'muszkiety',
+  powder: 'proch',
 };
 
 const BUILDING_EN: Record<BuildingKind, { name: string; role: string }> = {
   house: { name: 'House', role: 'Homes for townspeople. Fed residents pay tax and newcomers move in; every worker, carrier, builder and recruit comes from a house.' },
+  gunsmith: { name: 'Gunsmith', role: 'Second age (keep level 4): bores barrels and fits stocks, a musket from iron and timber. A placeholder shape until its model.' },
+  powderMill: { name: 'Powder Mill', role: 'Second age (keep level 4): grinds charcoal (timber) and saltpetre (stone) into powder. A placeholder shape until its model.' },
+  cathedral: { name: 'Cathedral', role: 'The middle ages\' great building (keep level 3, one to a town): +8 morale to every regiment, houses fill a quarter sooner.' },
+  townHall: { name: 'Town Hall', role: 'The early modern great building (keep level 4, one to a town): a quarter more gold from the town.' },
+  manufactory: { name: 'Manufactory', role: 'The 19th century\'s great building (keep level 5, one to a town): every workshop a fifth faster.' },
   foundry: { name: 'Gun Foundry', role: 'Casts the guns: field cannon at level 1, mortars at level 2, from iron, timber and stone. Like the barracks it has no worker; a gun\'s crew comes from the town. A stone casting house with a tall furnace stack, a casting shed and a new gun on show in the yard.' },
   tavern: { name: 'Tavern', role: 'The innkeeper draws the ale the brewery makes and sells it: gold besides the tax. A long low inn with benches and a sign out front, barrels by the door.' },
   chapel: { name: 'Chapel', role: 'While one stands, every regiment of the side fights with more heart (+6 morale). A small stone chapel with a bell-cote and a churchyard wall.' },
@@ -138,6 +147,8 @@ const BRANCHES: readonly { name: string; pl: string; kinds: readonly BuildingKin
   { name: 'Leather armour and bows', pl: 'Zbroje skórzane i łuki', kinds: ['tannery', 'fletcher'], planned: [] },
   { name: 'Horses', pl: 'Konie', kinds: ['stable'], planned: [] },
   { name: 'Army and defence', pl: 'Wojsko i obrona', kinds: ['barracks', 'foundry', 'tower'], planned: ['Gate (a wall that opens for its own side)', 'Keep, levels 2 and 3'] },
+  { name: 'Firearms (second age)', pl: 'Broń palna (epoka 2)', kinds: ['gunsmith', 'powderMill'], planned: ['Their own models (now shapes from code)'] },
+  { name: 'Great buildings (one an age)', pl: 'Wielkie budowle (jedna na epokę)', kinds: ['cathedral', 'townHall', 'manufactory'], planned: ['Their own models (now shapes from code)'] },
 ];
 
 for (const kind of BUILDING_KINDS) {
@@ -369,11 +380,17 @@ export const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
   lightCavalry: { name: 'Lekka jazda', use: 'Skórzana zbroja, włócznia, miecz i tarcza. Najszybsza: zagony na wsie, strzelców i machiny, pościg za uciekającymi.' },
   heavyCavalry: { name: 'Rycerze', use: 'Ciężkozbrojni rycerze: kopia do szarży, która łamie linię, potem miecz i tarcza. Nie na piki od czoła.' },
   cannon: { name: 'Armaty', use: 'Dwa działa z ludwisarni: kula na wprost przebija każdą zbroję i wybija dziury w murach. Bezradne, gdy wróg dojdzie.' },
+  musketeers: { name: 'Muszkieterowie', use: 'Epoka 2: skórzany kaftan i muszkiet; kula przebija zbroję na 75 m, ładowanie 18 s, strzał szeroki. W zwarciu słabi.' },
+  cuirassiers: { name: 'Kirasjerzy', use: 'Epoka 2: ciężka jazda w kirysie, pałasz i pistolety; szarża łamie szyk.' },
+  dragoons: { name: 'Dragoni', use: 'Epoka 2: muszkieterowie na koniach, strzał z siodła na 60 m.' },
+  lineInfantry: { name: 'Piechota liniowa', use: 'Epoka 3: mundur, karabin z bagnetem: 90 m, 14 s; bagnet trzyma jazdę.' },
+  riflemen: { name: 'Strzelcy', use: 'Epoka 3: gwintowany karabin, celny na 130 m.' },
+  hussars: { name: 'Huzarzy', use: 'Epoka 3: najszybsza jazda z szablą: zagony i pościg.' },
   mortar: { name: 'Moździerz', use: 'Jedno działo (ludwisarnia poz. 2): ciężka kula stromym torem nad murami rozbija szyk i burzy mury, wieże i zamek.' },
 };
 
 /** The armour classes of the target roster: militia, leather, heavy (and the guns). */
-const CLASS_PL = { militia: 'milicja', leather: 'skórzane', heavy: 'ciężkozbrojne', engine: 'działa' } as const;
+const CLASS_PL = { militia: 'milicja', leather: 'skórzane', heavy: 'ciężkozbrojne', uniform: 'mundur', engine: 'działa' } as const;
 
 export function unitsDoc(): string {
   const table = UNIT_KINDS.map((kind) => {

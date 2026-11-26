@@ -61,6 +61,21 @@ export class ShotSmokeView {
   }
 
   /** A shot from (x, z): a gun's flat bank of smoke, or a mortar's upward plume. */
+  /** A musket's shot: a small flash at the muzzle and two puffs that hang over the rank (a volley makes a bank of smoke). */
+  musket(x: number, z: number): void {
+    const y = heightAtM(x, z) + 1.4;
+    this.flashes.push({ x, y, z, vx: 0, vy: 0, vz: 0, size: 0.35, ageS: 0 });
+    if (this.flashes.length > FLASHES) this.flashes.shift();
+    for (let i = 0; i < 2; i++) {
+      const puff: Puff = { x: x + (Math.random() - 0.5) * 0.4, y: y + Math.random() * 0.2, z: z + (Math.random() - 0.5) * 0.4, vx: (Math.random() - 0.5) * 0.3, vy: 0.15 + Math.random() * 0.15, vz: (Math.random() - 0.5) * 0.3, size: 0.28 + Math.random() * 0.15, ageS: 0 };
+      if (this.puffs.length < PUFFS) this.puffs.push(puff);
+      else {
+        this.puffs[this.next] = puff;
+        this.next = (this.next + 1) % PUFFS;
+      }
+    }
+  }
+
   shot(x: number, z: number, mortar: boolean): void {
     const y = heightAtM(x, z) + (mortar ? 1.4 : 1.0);
     this.flashes.push({ x, y, z, vx: 0, vy: 0, vz: 0, size: mortar ? 0.9 : 1.2, ageS: 0 });

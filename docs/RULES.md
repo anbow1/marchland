@@ -9,7 +9,7 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 
 - **Potyczka:** wygrywa strona, która zburzy zamek przeciwnika (1800 punktów wytrzymałości na poziomie 1,
   więcej na wyższych). Zamek bronią łucznicy na murach: strzelają do wroga w promieniu 55 m co
-  1 / 0.75 / 0.5 s (poziom zamku 1 / 2 / 3), za 9 obrażeń.
+  1 / 0.75 / 0.5 / 0.4 / 0.3 s (poziom zamku 1 / 2 / 3), za 9 obrażeń.
 - **Obrona:** 30 min przeciw falom; pierwsza po 7 min, kolejne co
   4 min; fale rosną. Przetrwanie do końca to wygrana, upadek zamku — przegrana.
 - **Samouczek:** kroki od drwala do koszar; bez przeciwnika.
@@ -38,8 +38,8 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 - Budynek stoi w zasięgu zamku (280 m na poziomie 1, dalej na wyższych), na suchym, równym
   terenie, nie bliżej niż 90 m od zamku wroga. Drwal przy lesie, kamieniołom i kopalnia przy
   złożu, rybak nad wodą, zagroda i winnica z ziemią za sobą (rezerwowaną od razu pod wszystkie poziomy).
-- Zamek: poziomy 1–3 (60 s rozbudowy): zasięg budowy 280 / 330 / 380 m, wytrzymałość
-  1800 / 2600 / 3600, koszary do poziomu 1 / 2 / 3.
+- Zamek: poziomy 1–3 (60 s rozbudowy): zasięg budowy 280 / 330 / 380 / 420 / 460 m, wytrzymałość
+  1800 / 2600 / 3600 / 4800 / 6000, koszary do poziomu 1 / 2 / 3 / 4 / 5.
 - Głód (brak racji): produkcja zwalnia, podatki ustają, a górna granica morale wojska spada o
   25. Żołnierz zjada 0.25 racji na minutę.
 
@@ -57,7 +57,7 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 - **Łup:** za każdego zabitego wroga do skarbca wpada jego „cena głowy” (kolumna w UNITS.md).
 - **Uzupełnianie:** oddział stojący do 40 m od koszar (milicja — od zamku), 5 s bez walki, dostaje brakujących
   ludzi za złoto i sprzęt; nowi rozwadniają doświadczenie, a poległego kapitana zastępuje jeden z nich.
-- **Przezbrajanie:** do 40 m od koszar, 20 s; płaci się różnicę sprzętu. Drogi: milicja z tarczami → pikinierzy, łucznicy, miecznicy, halabardnicy, kusznicy; pikinierzy → halabardnicy, miecznicy; łucznicy → kusznicy; miecznicy → halabardnicy; halabardnicy → miecznicy; lekka jazda → rycerze.
+- **Przezbrajanie:** do 40 m od koszar, 20 s; płaci się różnicę sprzętu. Drogi: milicja z tarczami → pikinierzy, łucznicy, miecznicy, halabardnicy, kusznicy; pikinierzy → halabardnicy, miecznicy; łucznicy → kusznicy; miecznicy → halabardnicy; halabardnicy → miecznicy; lekka jazda → rycerze; muszkieterowie → piechota liniowa, strzelcy; piechota liniowa → strzelcy; strzelcy → piechota liniowa.
 - **Łączenie** (kampania): dwa oddziały tego samego rodzaju, do 30 m od siebie, 5 s bez walki; ludzie
   przechodzą do liczniejszego, do 20; doświadczenie i morale — średnia ważona.
 
@@ -91,10 +91,10 @@ Każdy żołnierz zadaje cios co tyle sekund, ile podaje jednostka (±15 %), gdy
 - **Obrażenia** = obrażenia jednostki × (1 − pancerz celu) × losowo 80 %–120 %; w szarży
   ×1.5. Żołnierz ginie, gdy jego życie spadnie do zera.
 
-**Szarża** (milicja z tarczami, pikinierzy, miecznicy, halabardnicy, lekka jazda, rycerze): pierwszy cios oddziału, który w ostatnich 1.5 s biegł z co najmniej
+**Szarża** (milicja z tarczami, pikinierzy, miecznicy, halabardnicy, lekka jazda, rycerze, kirasjerzy, dragoni, piechota liniowa, huzarzy): pierwszy cios oddziału, który w ostatnich 1.5 s biegł z co najmniej
 70 % prędkości biegu (i od 2 s nie zadał ciosu). Przez 4 s ciosy mają premię szarży do ataku i
 obrażenia ×1.5, a cel traci morale o „wstrząs szarży” jednostki. Klin jazdy: ×1.6. Szarża w czoło
-**ściany pik** nie działa wcale; w czoło stojących włóczni (pikinierzy, halabardnicy, w miejscu, przodem) — tylko 25 %.
+**ściany pik** nie działa wcale; w czoło stojących włóczni (pikinierzy, halabardnicy, piechota liniowa, w miejscu, przodem) — tylko 25 %.
 
 ## 7. Ostrzał
 

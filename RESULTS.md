@@ -5,6 +5,36 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Epoki 2 i 3: zamek 4–5, broń palna, wielkie budowle (bez nowych modeli)
+
+- **Zasada** (wybrana): dotychczasowa gra to epoka 1; zamek 4 = wczesna nowożytność, zamek 5 = XIX wiek, wejście
+  w epokę 3 i 4 min, budynki do poziomu 5 (4 i 5 tylko przy zamku tej epoki; × 2,9 / × 3,5, chata 20 / 24).
+- **Jednostki**: epoka 2 (koszary 4) muszkieterowie, kirasjerzy, dragoni; epoka 3 (koszary 5) piechota liniowa,
+  strzelcy, huzarzy. Broń palna: kula (przebicie 0,75–0,85; tarcza zatrzymuje ją tylko w części nieprzebitej),
+  ładowanie 14–20 s, rozrzut 0,6–1,8, trzask i dym (`musketShot`). Nowe towary: muszkiety (rusznikarnia), proch
+  (prochownia).
+- **Wielkie budowle** (jedna na miasto): katedra (zamek 3, +8 morale, domy o ¼ szybciej), ratusz (zamek 4,
+  złoto ×1,25), manufaktura (zamek 5, warsztaty ×1,2).
+- **Wygląd bez modeli**: poziom 4/5 to model poziomu 3 w materiałach epoki (`ERA_LOOK`); nowe budynki to bryły z
+  kodu; nowe jednostki na modelach zastępczych (kusznik celuje jak z karabinu; kirasjerzy jak rycerze).
+- **Komputer w epokach** (`AI.agesAfterS` = 50 min): najpierw nie wchodził wcale. Przyczyny po kolei: złoto
+  wydane na wojsko (oszczędzał tylko do ceny zamku), a deski i żelazo zjadane przez warsztaty (zostawało 0–10).
+  Teraz oszczędza całą cenę epoki (złoto zamku + rynkowa cena brakujących towarów) i dokupuje je na targu.
+  Partia trzech komputerów, epoki od 30. min (do pomiaru):
+
+| min | zamki | nowe budynki (k = katedra, g = rusznikarnia, p = prochownia) | muszkiety / proch |
+|---|---|---|---|
+| 100 | 3 / 3 / 3 | — | 0 / 0 |
+| 110 | 3 / 3 / 3 | k / k (w budowie) / — | 0 / 0 |
+| 120 | 4 / 4 / 3 | kgp / kg / k | 2 / 6 |
+| 130 | 4 / 4 / 4 | kgp / kgp / kgp | 14+8+4 / 86+64+24, koszary 4 |
+
+- Pomiar wczytania (WebGPU): potoki 158 → 170 (6 nowych rodzajów jednostek, każdy z cieniem), tekstury 69,8 MB,
+  0 błędów. Testy: nowe `ages.test.ts` (zamek 4–5, poziomy 4–5 tylko z zamkiem, budynki epok i jedna wielka
+  budowla, katedra +8 morale, manufaktura i ratusz, muszkiet strzela i rani przez tarczę), cała reszta zielona.
+- **Czeka na modele** od użytkownika: postacie i animacje (muszkieter, kirasjer, dragon, piechota liniowa,
+  strzelec, huzar), budynki epok (rusznikarnia, prochownia, katedra, ratusz, manufaktura, poziomy 4–5).
+
 ## 2026-11-26 · Docelowy skład jednostek: milicja, skórzane, ciężkozbrojne (zasady)
 
 - Skład według zamówienia: **milicja** (włócznia, tarcza); **skórzane** — pikinierzy (pika, mała tarcza),

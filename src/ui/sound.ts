@@ -11,7 +11,7 @@ const SPEED_OF_SOUND_MS = 343;
 /** Distance at which a sound has fallen to half its loudness. */
 const HALF_GAIN_M = 70;
 
-export type SoundKind = 'clash' | 'arrow' | 'cannon' | 'mortar' | 'thud' | 'stone' | 'horn' | 'hornLow' | 'fanfare' | 'build' | 'click' | 'deny';
+export type SoundKind = 'clash' | 'arrow' | 'musket' | 'cannon' | 'mortar' | 'thud' | 'stone' | 'horn' | 'hornLow' | 'fanfare' | 'build' | 'click' | 'deny';
 
 /** The recorded takes of each kind (public/sounds/<name>.mp3), and how loud they play. */
 const TAKES: Partial<Record<SoundKind, { files: readonly string[]; level: number }>> = {
@@ -25,7 +25,7 @@ const TAKES: Partial<Record<SoundKind, { files: readonly string[]; level: number
 };
 
 /** Least seconds between two sounds of one kind: a melee would otherwise be one long noise. */
-const MIN_GAP_S: Record<SoundKind, number> = { clash: 0.07, arrow: 0.05, cannon: 0.15, mortar: 0.2, thud: 0.12, stone: 0.15, horn: 1.5, hornLow: 1.5, fanfare: 3, build: 0.3, click: 0.03, deny: 0.2 };
+const MIN_GAP_S: Record<SoundKind, number> = { clash: 0.07, arrow: 0.05, musket: 0.04, cannon: 0.15, mortar: 0.2, thud: 0.12, stone: 0.15, horn: 1.5, hornLow: 1.5, fanfare: 3, build: 0.3, click: 0.03, deny: 0.2 };
 
 export class Sound {
   private ctx: AudioContext | null = null;
@@ -135,6 +135,11 @@ export class Sound {
         if (!this.take('stone', at, gain * 0.9, 0.5)) this.burst(at, 0.06, 1800, 0.8, gain * 0.7);
         this.rumble(at, 1.4, 260, gain * 1.1);
         this.drop(at, 0.5, 90, 38, gain * 0.9);
+        break;
+      case 'musket':
+        // A sharp crack (the recorded stone split, quick and high) and a short roll after it: a small charge.
+        if (!this.take('stone', at, gain * 0.45, 1.6)) this.burst(at, 0.04, 2600, 0.6, gain * 0.5);
+        this.rumble(at, 0.5, 520, gain * 0.35);
         break;
       case 'mortar':
         // Duller and deeper: the charge in a short barrel, aimed at the sky.

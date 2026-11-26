@@ -319,6 +319,9 @@ function horse(f: Figure, coat: number, caparison: boolean): void {
   }
 }
 
+/** The kinds on horseback. */
+const UNITS_MOUNTED: ReadonlySet<UnitKind> = new Set<UnitKind>(['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars']);
+
 const KITS: Record<Exclude<UnitKind, 'cannon' | 'mortar'>, Kit> = {
   militia: { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'spear', shield: true },
   pikemen: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'pike', shield: false },
@@ -328,14 +331,22 @@ const KITS: Record<Exclude<UnitKind, 'cannon' | 'mortar'>, Kit> = {
   crossbowmen: { tunic: TUNIC_GREEN, head: 'helmet', mail: false, weapon: 'crossbow', shield: false },
   lightCavalry: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'spear', shield: true },
   heavyCavalry: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'lance', shield: true },
+  // The later ages, until their own models come: the nearest medieval kit (a crossbow stands for a musket).
+  musketeers: { tunic: LEATHER, head: 'hood', mail: false, weapon: 'crossbow', shield: false },
+  cuirassiers: { tunic: LEATHER, head: 'helmet', mail: true, weapon: 'sword', shield: false },
+  dragoons: { tunic: TUNIC_GREEN, head: 'hood', mail: false, weapon: 'crossbow', shield: false },
+  lineInfantry: { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'spear', shield: false },
+  riflemen: { tunic: TUNIC_GREEN, head: 'hood', mail: false, weapon: 'crossbow', shield: false },
+  hussars: { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'sword', shield: false },
 };
 
 export function soldierGeometry(kind: UnitKind): BufferGeometry {
   const f = new Figure();
   if (kind === 'cannon') cannon(f);
   else if (kind === 'mortar') mortar(f);
-  else if (kind === 'lightCavalry' || kind === 'heavyCavalry') {
-    horse(f, kind === 'heavyCavalry' ? HORSE_GREY : HORSE_BAY, kind === 'heavyCavalry');
+  else if (UNITS_MOUNTED.has(kind)) {
+    const barded = kind === 'heavyCavalry' || kind === 'cuirassiers';
+    horse(f, barded ? HORSE_GREY : HORSE_BAY, barded);
     man(f, KITS[kind], 0.72, true);
   } else {
     man(f, KITS[kind], 0, false);
@@ -464,7 +475,7 @@ export function cavalryGeometryOnModels(kind: UnitKind, rider: BodyModel, horse:
   man(f, KITS[kind as keyof typeof KITS], saddle.y - 0.86, true, true, false, !saddle.fitted);
   if (saddle.halfWidth !== undefined && !saddle.fitted) {
     // The cloth: over the back under the saddle and down both flanks; a heavy horseman's longer and deeper.
-    const heavy = kind === 'heavyCavalry';
+    const heavy = kind === 'heavyCavalry' || kind === 'cuirassiers';
     const [length, drop] = heavy ? [1.1, 0.62] : [0.7, 0.4];
     const x = saddle.halfWidth + 0.02;
     f.team();

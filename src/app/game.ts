@@ -373,6 +373,10 @@ export class Game implements ControlTarget {
         this.sound.play('cannon', distanceM);
         this.view.gunSmoke(e.x, e.z, false);
         break;
+      case 'musketShot':
+        this.sound.play('musket', distanceM);
+        this.view.musketSmoke(e.x, e.z);
+        break;
       case 'mortarShot':
         this.sound.play('mortar', distanceM);
         this.view.gunSmoke(e.x, e.z, true);

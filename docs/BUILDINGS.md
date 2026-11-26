@@ -7,8 +7,8 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 
 | # | Building | Price (level 1) | Ground it needs | What it gives | Workers | Hit points |
 |---|---|---|---|---|---|---|
-| 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Three levels (below). Lose it and the game is lost | — | 1800 / 2600 / 3600 |
-| 2 | **House** | 40 gold, 10 timber | any level ground | 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident | — | 250 |
+| 1 | **Keep** | — (each side starts with one) | — | the town's storehouse; 8 residents; 24 gold a minute; archers who shoot 55 m. Three levels (below). Lose it and the game is lost | — | 1800 / 2600 / 3600 / 4800 / 6000 |
+| 2 | **House** | 40 gold, 10 timber | any level ground | 8 / 12 / 16 / 20 / 24 residents (levels 1–5); tax 1.2 gold a minute from each fed resident | — | 250 |
 | 3 | **Storehouse** | 60 gold, 40 timber, 10 stone | any level ground | — | 1 | 400 |
 | 4 | **Market** | 80 gold, 40 timber, 20 stone | any level ground | — | 1 | 400 |
 | 5 | **Tavern** | 80 gold, 30 timber, 10 stone | any level ground | 1 ale → 2 gold every 5 s | 1 | 300 |
@@ -19,14 +19,14 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | 10 | **Forester's Hut** | 35 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
 | 11 | **Hunter's Lodge** | 40 gold, 10 timber | within 26 m of forest | — | 1 | 250 |
 | 12 | **Quarry** | 40 gold, 10 timber | within 15 m of a stone outcrop | 1 stone every 6 s | 1 | 300 |
-| 13 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 6 grain a harvest from each strip; 4 / 8 / 12 strips (levels 1–3), 60 s to ripen | 1 | 250 |
+| 13 | **Farm** | 40 gold, 10 timber | open ground behind it for its fields | 6 grain a harvest from each strip; 4 / 8 / 12 / 12 / 12 strips (levels 1–5), 60 s to ripen | 1 | 250 |
 | 14 | **Fisher's Hut** | 40 gold, 10 timber | within 16 m of a lake | 3 fish a trip (10 s at the water + the walk) | 1 | 250 |
 | 15 | **Windmill** | 70 gold, 30 timber | any level ground | 2 grain → 2 flour every 6 s | 1 | 300 |
 | 16 | **Bakery** | 50 gold, 15 timber, 5 stone | any level ground | 1 flour → 1 bread every 5 s | 1 | 300 |
 | 17 | **Brewery** | 60 gold, 25 timber, 10 stone | any level ground | 2 grain → 2 ale every 8 s | 1 | 300 |
 | 18 | **Pig Farm** | 60 gold, 20 timber | any level ground | 1 grain → 2 meat, 1 hides every 12 s | 1 | 250 |
 | 19 | **Butcher** | 60 gold, 15 timber, 10 stone | any level ground | 1 meat → 1 sausages every 5 s | 1 | 300 |
-| 20 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 3 grapes a vintage from each strip of vines, every 110 s once planted (15 s to plant a strip); 4 / 8 / 12 strips (levels 1–3) | 1 | 250 |
+| 20 | **Vineyard** | 70 gold, 20 timber | open ground behind it for its fields | 3 grapes a vintage from each strip of vines, every 110 s once planted (15 s to plant a strip); 4 / 8 / 12 / 12 / 12 strips (levels 1–5) | 1 | 250 |
 | 21 | **Winery** | 90 gold, 20 timber, 20 stone | any level ground | 3 grapes → 2 wine every 12 s | 1 | 300 |
 | 22 | **Tannery** | 60 gold, 15 timber, 10 stone | any level ground | 1 hides → 1 leather armour every 8 s | 1 | 300 |
 | 23 | **Iron Mine** | 80 gold, 25 timber | within 15 m of an ore outcrop | 1 iron ore every 6 s | 1 | 300 |
@@ -38,8 +38,13 @@ config (or the text in `tools/docs.ts`) and regenerate.*
 | 29 | **Barracks** | 100 gold, 30 timber, 30 stone | any level ground | regiments (see UNITS.md) | — | 450 |
 | 30 | **Gun Foundry** | 150 gold, 40 timber, 60 stone | any level ground | — | 1 | 500 |
 | 31 | **Watchtower** | 40 gold, 15 timber, 60 stone | any level ground | — | 1 | 900 |
-| 32 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
-| 33 | **Wall** | 15 stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; 260 blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | 260 per 2 m |
+| 32 | **Gunsmith** | 160 gold, 30 planks, 40 stone | any level ground | 1 timber, 1 iron → 1 muskets every 10 s | 1 | 400 |
+| 33 | **Powder Mill** | 140 gold, 30 planks, 30 stone | any level ground | 2 timber, 1 stone → 2 powder every 9 s | 1 | 300 |
+| 34 | **Cathedral** | 900 gold, 120 planks, 500 stone | any level ground | — | 1 | 2400 |
+| 35 | **Town Hall** | 1500 gold, 200 planks, 500 stone, 40 iron | any level ground | — | 1 | 2600 |
+| 36 | **Manufactory** | 2400 gold, 300 planks, 600 stone, 160 iron | any level ground | — | 1 | 2800 |
+| 37 | **Road** | 1.7 stone for 10 m | own land, not water | people walk 1.4× as fast on it and prefer it when finding their way | — | — |
+| 38 | **Wall** | 15 stone for 10 m | anywhere but by the enemy's keep, not water or buildings | stops everyone; 260 blows a 2 m stretch, enemy soldiers batter it, a stone breaks it faster; leave gaps for gates | — | 260 per 2 m |
 
 What each is for:
 
@@ -74,18 +79,23 @@ What each is for:
 - **Barracks** — Townspeople called up walk here, take their equipment and form a regiment. Its level decides which units can be trained.
 - **Gun Foundry** — Casts the guns: field cannon at level 1, mortars at level 2, from iron, timber and stone. Like the barracks it has no worker; a gun's crew comes from the town. A stone casting house with a tall furnace stack, a casting shed and a new gun on show in the yard.
 - **Watchtower** — A stone tower for up to 4 archers or crossbowmen of one kind, who shoot from its top further than from the ground. It may stand anywhere: by the town, an outlying mine or a village.
+- **Gunsmith** — Second age (keep level 4): bores barrels and fits stocks, a musket from iron and timber. A placeholder shape until its model.
+- **Powder Mill** — Second age (keep level 4): grinds charcoal (timber) and saltpetre (stone) into powder. A placeholder shape until its model.
+- **Cathedral** — The middle ages' great building (keep level 3, one to a town): +8 morale to every regiment, houses fill a quarter sooner.
+- **Town Hall** — The early modern great building (keep level 4, one to a town): a quarter more gold from the town.
+- **Manufactory** — The 19th century's great building (keep level 5, one to a town): every workshop a fifth faster.
 - **Road** — drawn from point to point; carriers, workers and builders take it whenever it shortens the walk.
 - **Wall** — drawn from point to point like a road; it blocks people and soldiers of both sides, so leave a gap where your own must pass.
 
 Rules common to all buildings:
 
-- **The keep's levels.** Level 1: reach 280 m (farms 340 m), barracks up to level 1, 1800 hit points, an arrow every 1 s. Level 2: reach 330 m (farms 390 m), barracks up to level 2, 2600 hit points, an arrow every 0.75 s; costs 250 gold, 60 wood, 120 stone. Level 3: reach 380 m (farms 440 m), barracks up to level 3, 3600 hit points, an arrow every 0.5 s; costs 500 gold, 100 wood, 240 stone. Raising it takes 60 s.
+- **The keep's levels.** Level 1: reach 280 m (farms 340 m), barracks up to level 1, 1800 hit points, an arrow every 1 s. Level 2: reach 330 m (farms 390 m), barracks up to level 2, 2600 hit points, an arrow every 0.75 s; costs 250 gold, 60 wood, 120 stone. Level 3: reach 380 m (farms 440 m), barracks up to level 3, 3600 hit points, an arrow every 0.5 s; costs 500 gold, 100 wood, 240 stone. Level 4: reach 420 m (farms 480 m), barracks up to level 4, 4800 hit points, an arrow every 0.4 s; costs 1200 gold, 200 planks, 400 stone, 40 iron. Level 5: reach 460 m (farms 520 m), barracks up to level 5, 6000 hit points, an arrow every 0.3 s; costs 2200 gold, 300 planks, 600 stone, 120 iron. Raising it takes 60 s.
 - **Free placement.** A building goes anywhere within 280 m of its side's keep (farms and vineyards
   340 m; woodcutters, quarries, mines and watchtowers anywhere on the map), and no nearer
   than 90 m to the enemy's) where the ground under it rises no more than 2.2 m, is not
   water, and is 1.5 m clear of other buildings and of farm strips. A side may have 64 buildings.
-- **Three levels.** Level 3 is the top. A level costs ×1 / ×1.5 / ×2.5 of the base price and works
-  ×1 / ×1.6 / ×2.3 as fast; an upgrade takes 15 builder-seconds once its timber and stone are on site.
+- **Three levels.** Level 5 is the top. A level costs ×1 / ×1.5 / ×2.5 / ×3.5 / ×5 of the base price and works
+  ×1 / ×1.6 / ×2.3 / ×2.9 / ×3.5 as fast; an upgrade takes 15 builder-seconds once its timber and stone are on site.
 - **Built by hand.** Gold is paid at once; timber and stone are carried from the keep to the site, and
   up to 3 builders raise the building only as far as the materials delivered allow.
 - **One worker each.** A workshop works only while its worker is there; a hungry worker works at half speed.
@@ -100,7 +110,7 @@ roads serve all of them.
 
 ### Living and the town (Mieszkanie i miasto)
 
-- **House** — 8 / 12 / 16 residents (levels 1–3); tax 1.2 gold a minute from each fed resident. *Model from Blender.*
+- **House** — 8 / 12 / 16 / 20 / 24 residents (levels 1–5); tax 1.2 gold a minute from each fed resident. *Model from Blender.*
 - **Storehouse** — —. *Shapes from code; model to come.*
 - **Market** — —. *Shapes from code; model to come.*
 - **Tavern** — 1 ale → 2 gold. *Shapes from code; model to come.*
@@ -116,7 +126,7 @@ roads serve all of them.
 
 ### Grain and bread (Zboże i chleb)
 
-- **Farm** — 6 grain a harvest from each strip; 4 / 8 / 12 strips (levels 1–3), 60 s to ripen. *Model from Blender.*
+- **Farm** — 6 grain a harvest from each strip; 4 / 8 / 12 / 12 / 12 strips (levels 1–5), 60 s to ripen. *Model from Blender.*
 - **Windmill** — 2 grain → 2 flour. *Model from Blender.*
 - **Bakery** — 1 flour → 1 bread. *Model from Blender.*
 - **Brewery** — 2 grain → 2 ale. *Shapes from code; model to come.*
@@ -133,7 +143,7 @@ roads serve all of them.
 
 ### Wine (Wino)
 
-- **Vineyard** — 3 grapes a vintage from each strip of vines, every 110 s once planted (15 s to plant a strip); 4 / 8 / 12 strips (levels 1–3). *Model from Blender.*
+- **Vineyard** — 3 grapes a vintage from each strip of vines, every 110 s once planted (15 s to plant a strip); 4 / 8 / 12 / 12 / 12 strips (levels 1–5). *Model from Blender.*
 - **Winery** — 3 grapes → 2 wine. *Model from Blender.*
 
 ### Iron, weapons and mail (Żelazo, broń i kolczugi)
@@ -159,6 +169,19 @@ roads serve all of them.
 - **Watchtower** — —. *Model from Blender.*
 - Gate (a wall that opens for its own side) — *planned (§4)*
 - Keep, levels 2 and 3 — *planned (§4)*
+
+### Firearms (second age) (Broń palna (epoka 2))
+
+- **Gunsmith** — 1 timber, 1 iron → 1 muskets. *Shapes from code; model to come.*
+- **Powder Mill** — 2 timber, 1 stone → 2 powder. *Shapes from code; model to come.*
+- Their own models (now shapes from code) — *planned (§4)*
+
+### Great buildings (one an age) (Wielkie budowle (jedna na epokę))
+
+- **Cathedral** — —. *Shapes from code; model to come.*
+- **Town Hall** — —. *Shapes from code; model to come.*
+- **Manufactory** — —. *Shapes from code; model to come.*
+- Their own models (now shapes from code) — *planned (§4)*
 
 ## 3. Production chains
 

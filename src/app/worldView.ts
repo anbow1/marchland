@@ -195,6 +195,10 @@ export class WorldView {
     this.shotSmoke.shot(x, z, mortar);
   }
 
+  musketSmoke(x: number, z: number): void {
+    this.shotSmoke.musket(x, z);
+  }
+
   /** Screen position (CSS pixels) of a world point; false when it is behind the camera. */
   project(x: number, y: number, z: number, out: { x: number; y: number }): boolean {
     this.ndc.set(x, y, z).applyMatrix4(this.stage.camera.matrixWorldInverse);

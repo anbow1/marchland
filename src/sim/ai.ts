@@ -1,7 +1,7 @@
-import { AI, AI_CHARACTERS, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, TOWN, UNITS } from '../config.ts';
+import { AI, AI_CHARACTERS, BUILDINGS, MARKET, type AiCharacter, AI_TUNING, DEFENCE, GATE, KEEP_LEVELS, POINTS, REARM, ROADS, TOWER, TOWN, UNITS } from '../config.ts';
 import { streetWay } from './streets.ts';
-import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildStreet, streetCost, cmdTrade, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
-import { barracksLevel, canAffordBuilding, peopleFor } from './economy.ts';
+import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildStreet, streetCost, cmdTrade, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, lotPrice, missingMen, rearmCost, reinforceCost, roadCost } from './commands.ts';
+import { barracksLevel, canAffordBuilding, peopleFor, type Town } from './economy.ts';
 import { doorX, doorZ, freePeople, KEEP } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, isEngaged, type Regiment } from './regiment.ts';
@@ -120,7 +120,12 @@ const BUILD_ORDER: readonly BuildingKind[] = [
   'forester',
 ];
 
-const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'cannon', 'heavyCavalry', 'archers', 'mortar', 'swordsmen'];
+// The later ages' kinds wait at the end: until the barracks stands at 4 or 5 they are skipped, so the medieval
+// rota runs as it always did.
+const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lightCavalry', 'swordsmen', 'crossbowmen', 'halberdiers', 'cannon', 'heavyCavalry', 'archers', 'mortar', 'swordsmen', 'musketeers', 'cuirassiers', 'musketeers', 'dragoons', 'lineInfantry', 'riflemen', 'lineInfantry', 'hussars'];
+
+/** What the computer builds as it enters the later ages (each when its keep allows): the firearms' workshops and the great buildings. */
+const AGES_ORDER: readonly BuildingKind[] = ['cathedral', 'gunsmith', 'powderMill', 'townHall', 'manufactory'];
 
 /** Upgrades in the order they pay back for an army. */
 const UPGRADE_ORDER: readonly BuildingKind[] = ['barracks', 'house', 'farm', 'windmill', 'bakery', 'smelter', 'pigFarm', 'tannery', 'ironMine', 'smithy', 'armourer', 'foundry', 'stable', 'fletcher', 'butcher', 'woodcutter', 'fisher', 'quarry'];
@@ -163,9 +168,42 @@ function sellSurplus(world: World, ai: AiState): boolean {
   return best !== null && cmdTrade(world, ai.side, best, false) === 'ok';
 }
 
+/**
+ * A long game, the chest full: what the keep's next level needs and the workshops never leave in store
+ * (planks, iron, timber eaten as fast as they come) is bought at the market, a lot a think.
+ */
+function buyForKeep(world: World, ai: AiState): boolean {
+  const town = world.towns[ai.side];
+  const next = KEEP_LEVELS[town.keepLevel];
+  if (!next || world.timeS < AI.agesAfterS || town.keepUpgradeLeftS > 0) return false;
+  const cost = next.cost as Partial<Record<ResourceId, number>>;
+  for (const good of RESOURCE_IDS) {
+    if (good === 'gold' || town.stock[good] >= (cost[good] ?? 0)) continue;
+    // Never into the gold the keep itself needs.
+    if (town.stock.gold - lotPrice(good, true) < (cost.gold ?? 0)) return false;
+    return cmdTrade(world, ai.side, good, true) === 'ok';
+  }
+  return false;
+}
+
+/** What the keep's next level costs in gold all told: its own gold and the market price of whatever else is short. */
+function keepPriceInGold(town: Town): number {
+  const next = KEEP_LEVELS[town.keepLevel];
+  if (!next) return 0;
+  const cost = next.cost as Partial<Record<ResourceId, number>>;
+  let gold = cost.gold ?? 0;
+  for (const good of RESOURCE_IDS) {
+    if (good === 'gold') continue;
+    const short = (cost[good] ?? 0) - town.stock[good];
+    if (short > 0) gold += Math.ceil(short / MARKET.lot) * lotPrice(good, true);
+  }
+  return gold;
+}
+
 function runTown(world: World, ai: AiState): void {
   const town = world.towns[ai.side];
   if (sellSurplus(world, ai)) return;
+  if (buyForKeep(world, ai)) return;
   // The wall across the approach, once the keep stands at its second level and the stone is in: it costs no
   // gold and waits for nothing else.
   if (!ai.walled && town.keepLevel >= 2 && town.stock.stone >= AI.wallStone) {
@@ -199,6 +237,17 @@ function runTown(world: World, ai: AiState): void {
   }
   if (town.stock.gold < AI.upgradeReserveGold) return;
   if (town.keepLevel < 3 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
+  // A long game: into the next ages, their workshops and great buildings, the barracks as high as the keep.
+  if (world.timeS >= AI.agesAfterS) {
+    if (town.keepLevel >= 3 && town.keepUpgradeLeftS === 0 && cmdUpgradeKeep(world, ai.side) === 'ok') return;
+    for (const kind of AGES_ORDER) {
+      const needs = BUILDINGS[kind].keepLevel ?? 1;
+      if (town.keepLevel < needs || town.plots.some((b) => b !== null && b.kind === kind)) continue;
+      if (buildPlanned(world, ai, kind) === 'built') return;
+    }
+    const barracks = town.plots.findIndex((b) => b !== null && b.kind === 'barracks' && b.level < town.keepLevel && b.constructionLeftS <= 0);
+    if (barracks >= 0 && cmdUpgrade(world, ai.side, barracks) === 'ok') return;
+  }
   if (cmdUpgradeTransport(world, ai.side) === 'ok') return;
   for (const kind of UPGRADE_ORDER) {
     for (let plot = 0; plot < town.plots.length; plot++) {
@@ -246,9 +295,14 @@ function recruit(world: World, ai: AiState): void {
   const next = KEEP_LEVELS[town.keepLevel];
   let regiments = 0;
   for (const r of world.regiments) if (r.side === ai.side && r.aliveMen > 0 && !r.def.defenceOnly) regiments++;
-  if (ai.buildIndex >= BARRACKS_UPGRADE_AFTER && town.keepLevel < 2 && next && town.keepUpgradeLeftS === 0 && !ai.homeDefending && regiments >= AI.keepSavingAfterRegiments) {
-    const gold = (next.cost as { gold?: number }).gold ?? 0;
-    if (town.stock.gold < gold + AI.keepSavingMarginGold) return;
+  // The same before a new age (keep 4 and 5): no new regiments while its price is not in the chest.
+  const forAge = world.timeS >= AI.agesAfterS && town.keepLevel >= 3;
+  if ((ai.buildIndex >= BARRACKS_UPGRADE_AFTER && town.keepLevel < 2) || forAge) {
+    if (next && town.keepUpgradeLeftS === 0 && !ai.homeDefending && regiments >= AI.keepSavingAfterRegiments) {
+      // Before a new age, the whole price: what is short of planks, iron and stone is bought with gold.
+      const gold = forAge ? keepPriceInGold(town) : ((next.cost as { gold?: number }).gold ?? 0);
+      if (town.stock.gold < gold + AI.keepSavingMarginGold) return;
+    }
   }
   // Men are not called up while the town would be left without hands to carry for its workshops.
   let buildings = 0;

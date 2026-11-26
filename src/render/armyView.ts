@@ -44,7 +44,7 @@ const SINK_S = 2;
 /** Size of the arrow model for each missile look: arrow, crossbow bolt (looks 2 and 3 are balls). */
 const BOLT_SCALE: readonly number[] = [1, 0.7];
 /** A ball's size by look: a cannonball, a mortar's heavy ball. */
-const BALL_SCALE: readonly number[] = [0, 0, 0.55, 1];
+const BALL_SCALE: readonly number[] = [0, 0, 0.55, 1, 0.12];
 
 interface KindMesh {
   mesh: InstancedMesh;
@@ -395,7 +395,15 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
   ['militia', 'soldiers/militia.json'],
   ['archers', 'soldiers/archer.json'],
   ['crossbowmen', 'soldiers/crossbowman.json'],
+  // The later ages' firearms, until their own models: the crossbowman's body aims like a musketeer.
+  ['musketeers', 'soldiers/crossbowman.json'],
+  ['lineInfantry', 'soldiers/crossbowman.json'],
+  ['riflemen', 'soldiers/crossbowman.json'],
 ];
+
+/** The kinds on horseback, and those of them in armour on a caparisoned horse. */
+const MOUNTED: readonly UnitKind[] = ['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars'];
+const BARDED: ReadonlySet<UnitKind> = new Set<UnitKind>(['heavyCavalry', 'cuirassiers']);
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
@@ -488,7 +496,7 @@ export class ArmyView {
         if (!response.ok) throw new Error(`${file} ${response.status}`);
         return response.json();
       }));
-      for (const kind of ['lightCavalry', 'heavyCavalry'] as const) if (this.useMounted(kind, horse as RiggedModel & { saddle: { bone: number; y: number; z: number } }, rider as BodyModel)) changed++;
+      for (const kind of MOUNTED) if (this.useMounted(kind, horse as RiggedModel & { saddle: { bone: number; y: number; z: number } }, rider as BodyModel)) changed++;
     } catch (error) {
       console.warn(`[soldiers] no skinned horse (${String(error)}): horsemen ride the armoured horse`);
     }
@@ -498,7 +506,7 @@ export class ArmyView {
         if (!response.ok) throw new Error(`${file} ${response.status}`);
         return response.json();
       }));
-      for (const kind of ['lightCavalry', 'heavyCavalry'] as const) {
+      for (const kind of MOUNTED) {
         const k = this.kinds.get(kind);
         if (!k) continue;
         const geometry = cavalryGeometryOnModels(kind, rider as BodyModel, horse as HorseModel);
@@ -676,7 +684,7 @@ export class ArmyView {
     const saddle: Saddle = { y: horse.saddle.y, z: horse.saddle.z, halfWidth, fitted: true };
     const man = cavalryGeometryOnModels(kind, rider, null, saddle);
     const nr = man.getAttribute('position').count;
-    const cloth = caparison(horse, kind === 'heavyCavalry');
+    const cloth = caparison(horse, BARDED.has(kind));
     const nc = cloth.skin.length / 4;
     const total = nh + nc + nr;
     // The horse, its cloth (on the horse's bones), then the rider and his kit (on the saddle's bone).

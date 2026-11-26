@@ -1,4 +1,4 @@
-import { ARMY, BUILDINGS, DEMOLISH_REFUND, FIELDS, FOOD, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, PEOPLE, TOWN, TRANSPORT, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
+import { ARMY, BUILDINGS, DEMOLISH_REFUND, GREAT, FIELDS, FOOD, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, KEEP_UPGRADE_SECONDS_BY_LEVEL, LEVEL_COST, LEVEL_SPEED, MAX_LEVEL, MEDIEVAL_MAX_LEVEL, PEOPLE, TOWN, TRANSPORT, UNITS, UPGRADE_SECONDS, VINES, WINE } from '../config.ts';
 import { type BuildingKind, type CommandResult, type Cost, RESOURCE_IDS, type ResourceId, type Side, type Stock, type UnitKind, WORKLESS } from './types.ts';
 
 // A town's economy. The keep is the storehouse (`stock`); every building has
@@ -132,6 +132,8 @@ export interface Town {
   finishedPlots: number[];
   /** The computer's difficulty handicap; 1 for the player. */
   productionFactor: number;
+  /** Which great buildings stand finished (GREAT), worked out each step: absent in old saves. */
+  great?: { cathedral: boolean; townHall: boolean; manufactory: boolean };
   goldRemainder: number;
   /** Townspeople now serving as soldiers: they still count against the houses' room. */
   underArms: number;
@@ -316,6 +318,8 @@ export function startUpgrade(town: Town, plot: number): CommandResult {
   if (!b) return 'plotEmpty';
   if (b.constructionLeftS > 0) return 'underConstruction';
   if (b.level >= MAX_LEVEL) return 'maxLevel';
+  // Past the middle ages a building is rebuilt in the style of its keep's age: never ahead of the keep.
+  if (b.level + 1 > MEDIEVAL_MAX_LEVEL && b.level + 1 > town.keepLevel) return 'needsKeep';
   // The barracks rises no higher than the keep allows.
   if (b.kind === 'barracks' && b.level + 1 > keepRules(town).barracks) return 'needsKeep';
   if (!canAffordBuilding(town.stock, b.kind, b.level + 1)) return 'cannotAfford';
@@ -355,7 +359,7 @@ export function keepRules(town: Town): (typeof KEEP_LEVELS)[number] {
   return KEEP_LEVELS[town.keepLevel - 1] as (typeof KEEP_LEVELS)[number];
 }
 
-/** Starts raising the keep a level: paid now, done in KEEP_UPGRADE_SECONDS. */
+/** Starts raising the keep a level: paid now, done in KEEP_UPGRADE_SECONDS_BY_LEVEL. */
 export function startKeepUpgrade(town: Town): CommandResult {
   if (town.keepHp <= 0) return 'plotEmpty';
   if (town.keepUpgradeLeftS > 0) return 'underConstruction';
@@ -363,7 +367,7 @@ export function startKeepUpgrade(town: Town): CommandResult {
   const cost = (KEEP_LEVELS[town.keepLevel] as (typeof KEEP_LEVELS)[number]).cost as Partial<Record<ResourceId, number>>;
   for (const id of RESOURCE_IDS) if (town.stock[id] < (cost[id] ?? 0)) return 'cannotAfford';
   for (const id of RESOURCE_IDS) town.stock[id] -= cost[id] ?? 0;
-  town.keepUpgradeLeftS = KEEP_UPGRADE_SECONDS;
+  town.keepUpgradeLeftS = KEEP_UPGRADE_SECONDS_BY_LEVEL[town.keepLevel] ?? KEEP_UPGRADE_SECONDS;
   return 'ok';
 }
 
@@ -579,7 +583,7 @@ function produce(town: Town, b: Building, dtSeconds: number): void {
     b.cycleStarted = true;
     b.cycleProgressS = 0;
   }
-  b.cycleProgressS += dtSeconds * (LEVEL_SPEED[b.level - 1] as number) * b.workRate * town.productionFactor;
+  b.cycleProgressS += dtSeconds * (LEVEL_SPEED[b.level - 1] as number) * b.workRate * town.productionFactor * greatFactor(town, b.kind);
   if (b.cycleProgressS >= recipe.cycleSeconds) {
     for (const id of RESOURCE_IDS) {
       b.out[id] += recipe.outputs[id] ?? 0;
@@ -622,7 +626,28 @@ function construct(town: Town, b: Building, plot: number, dtSeconds: number): vo
 }
 
 /** One fixed step of a town. `soldiers` is the number of its men alive on the field. */
+/** What the town's finished great buildings give (GREAT): looked at once a step. */
+function noteGreat(town: Town): void {
+  const great = (town.great ??= { cathedral: false, townHall: false, manufactory: false });
+  great.cathedral = great.townHall = great.manufactory = false;
+  for (const b of town.plots) {
+    if (!b || b.constructionLeftS > 0 || b.ruin) continue;
+    if (b.kind === 'cathedral') great.cathedral = true;
+    else if (b.kind === 'townHall') great.townHall = true;
+    else if (b.kind === 'manufactory') great.manufactory = true;
+  }
+}
+
+/** A workshop's pace from the great buildings: the town hall's gold (the houses' tax), the manufactory's workshops. */
+export function greatFactor(town: Town, kind: BuildingKind): number {
+  const great = town.great;
+  if (!great) return 1;
+  if (kind === 'house') return great.townHall ? GREAT.townHallGoldFactor : 1;
+  return great.manufactory ? GREAT.manufactoryProductionFactor : 1;
+}
+
 export function stepEconomy(town: Town, dtSeconds: number, soldiers: number): void {
+  noteGreat(town);
   if (town.transportUpgradeLeftS > 0) {
     town.transportUpgradeLeftS = Math.max(0, town.transportUpgradeLeftS - dtSeconds * town.productionFactor);
     if (town.transportUpgradeLeftS === 0) {
@@ -712,4 +737,9 @@ export function workState(b: Building): WorkState {
   if (outputFull(b)) return 'yardFull';
   if (!hasInputs(b.inp, recipe.inputs)) return 'noInput';
   return 'waiting';
+}
+
+/** The age a town is in, 1…3 (ERAS): its keep's level, the middle ages lasting three. */
+export function eraOf(town: Town): number {
+  return town.keepLevel <= MEDIEVAL_MAX_LEVEL ? 1 : town.keepLevel - MEDIEVAL_MAX_LEVEL + 1;
 }

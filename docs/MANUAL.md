@@ -445,7 +445,8 @@ różnicę sprzętu i po kilku sekundach zmienia rodzaj („przezbraja się → 
 ### 7.5 Ulepszanie budynków
 
 - **Jak:** klik w budynek → **Ulepsz** (w przycisku koszt następnego poziomu; brakujące towary na czerwono).
-  Każdy budynek ma 3 poziomy; na trzecim zamiast przycisku jest napis „Najwyższy poziom”. Na dotyku tak samo.
+  Każdy budynek ma 3 poziomy średniowiecza i 2 poziomy kolejnych epok (4 i 5, §7.6); na najwyższym zamiast
+  przycisku jest napis „Najwyższy poziom”. Na dotyku tak samo.
 - **Koszt:** poziom 2 kosztuje 1,5 ×, poziom 3 — 2,5 × ceny budowy (każdy towar). Od poziomu 2 połowa drewna
   przychodzi jako **deski**, więc do ulepszeń potrzebny jest tartak.
 - **Przebieg:** złoto schodzi od razu, a drewno, deski i kamień tragarze niosą na plac jak na nową budowę.
@@ -453,7 +454,7 @@ różnicę sprzętu i po kilku sekundach zmienia rodzaj („przezbraja się → 
   dostarczony/potrzebny”, a budynek ma rusztowanie. **W tym czasie budynek nie pracuje.** Koszary i ludwisarnia
   szkolą wtedy dalej na starym poziomie. Nowy poziom widać od razu w nagłówku, działa po ukończeniu.
 - **Warunki:** koszary nie mogą być wyżej niż pozwala zamek (zamek poziomu N → koszary do poziomu N); inne
-  budynki tylko 3 poziomy.
+  budynki do poziomu 3 bez warunków, poziom 4 i 5 dopiero przy zamku 4 i 5 (nowa epoka).
 
 **Co daje poziom:**
 
@@ -474,6 +475,32 @@ wytrzymałość, szybsze strzały, wyższe koszary; 60 s, §4.6) i **transport**
 §4.3).
 
 **Rozbierz** oddaje połowę ceny budowy. Komputer też ulepsza swoje budynki, tym wyżej, im dłużej trwa wojna.
+
+### 7.6 Epoki
+
+Cała dotychczasowa gra to **epoka 1 (średniowiecze)**: zamek 1–3, budynki 1–3. Podniesienie zamku na
+**poziom 4** otwiera **wczesną nowożytność**, na **poziom 5** — **XIX wiek**. Każde wejście w epokę trwa
+dłużej (3 i 4 minuty) i kosztuje dużo: zamek 4 — 1200 zł, 200 desek, 400 kamienia, 40 żelaza; zamek 5 —
+2200 zł, 300 desek, 600 kamienia, 120 żelaza. Nazwa epoki jest w nagłówku panelu zamku.
+
+| Epoka | Zamek | Budynki | Jednostki (koszary) | Wielka budowla (jedna na miasto) |
+|---|---|---|---|---|
+| Średniowiecze | 1–3 | poziomy 1–3 | milicja … rycerze (1–3) | **Katedra** (od zamku 3): +8 morale wszystkim oddziałom, domy zapełniają się o ¼ szybciej |
+| Wczesna nowożytność | 4 | poziom 4: dachówka, bielony tynk; **rusznikarnia** (żelazo + drewno → muszkiet), **prochownia** (2 drewna + kamień → 2 prochu) | muszkieterowie, kirasjerzy, dragoni (4) | **Ratusz**: miasto płaci o 25% więcej złota |
+| XIX wiek | 5 | poziom 5: kamień, szary łupek, malowane belki | piechota liniowa, strzelcy, huzarzy (5) | **Manufaktura**: każdy warsztat o 20% szybciej |
+
+- **Broń palna** (muszkieterowie, dragoni, piechota liniowa, strzelcy): kula przebija zbroję (75–85%), leci
+  szybko i płasko, ale ładowanie trwa 14–20 s, a muszkiet strzela szeroko (strzelcy — celnie na 130 m). Każdy
+  strzał to błysk, huk i dym nad szeregiem. Uzbrojenie przy werbunku: muszkiet i proch (zbroja skórzana dla
+  epoki 2; epoka 3 bez zbroi — mundur).
+- **Poziom 4 i 5 budynku** pracuje szybciej (× 2,9 i × 3,5), chata mieści 20 i 24 osoby, kosztuje 3,5 i 5 ×
+  ceny budowy. Wygląd: ten sam budynek w materiałach epoki (do czasu własnych modeli).
+- **Przezbrajanie**: muszkieterowie → piechota liniowa albo strzelcy (przy koszarach 5).
+- **Komputer** wchodzi w kolejne epoki po 50. minucie, gdy ma zbudowany plan średniowieczny i złoto w zapasie;
+  wtedy stawia katedrę, rusznikarnię, prochownię, ratusz i manufakturę, podnosi koszary i werbuje nowe wojska.
+- **Modele zastępcze**: nowe jednostki chodzą na modelach średniowiecznych (piechota z bronią palną na kuszniku,
+  który celuje jak z karabinu; kirasjerzy jak rycerze; dragoni i huzarzy jak lekka jazda), a rusznikarnia,
+  prochownia i wielkie budowle mają bryły z kodu — do czasu własnych modeli.
 
 ---
 

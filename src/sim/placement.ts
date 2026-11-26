@@ -1,4 +1,4 @@
-import { FIELDS, FORESTRY, GATHER, KEEP_LEVELS, MAP, POINTS, TOWN } from '../config.ts';
+import { BUILDINGS, FIELDS, FORESTRY, GATHER, KEEP_LEVELS, MAP, POINTS, TOWN } from '../config.ts';
 import { grownTreesNear, woodStands } from './trees.ts';
 import { type Building, canAffordBuilding, freePlot, type Site } from './economy.ts';
 import { depositNear, DEPOSITS, forestCoverAt, isImpassable, isWater, nearestFoeKeep, riseAcrossM, townX, townZ } from './terrain.ts';
@@ -121,6 +121,11 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
   const site: Site = { x, z, yawRad, spotX: x, spotZ: z, strips: [] };
   const fail = (result: CommandResult): SiteCheck => ({ result, site });
   const r = TOWN.buildingRadiusM;
+  // The later ages' buildings wait for their keep; a great building stands once to a town.
+  const def = BUILDINGS[kind];
+  const town = world.towns[side];
+  if (def.keepLevel !== undefined && town.keepLevel < def.keepLevel) return fail('needsKeep');
+  if (def.unique && town.plots.some((b) => b !== null && b.kind === kind)) return fail('onlyOne');
   if (!withinReach(world, side, kind, x, z)) return fail('tooFar');
   if (Math.abs(x) > MAP.halfM - r - 2 || Math.abs(z) > MAP.halfM - r - 2) return fail('offMap');
   const foe = nearestFoeKeep(side, x, z);
@@ -168,7 +173,6 @@ export function checkSite(world: World, side: Side, kind: BuildingKind, x: numbe
     }
     if (site.strips.length < (FIELDS.stripsPerLevel[0] as number)) return fail('needsLand');
   }
-  const town = world.towns[side];
   if (freePlot(town) < 0) return fail('townFull');
   if (!canAffordBuilding(town.stock, kind, 1)) return fail('cannotAfford');
   return { result: 'ok', site };

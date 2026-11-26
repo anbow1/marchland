@@ -12,7 +12,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 2. Ludzie
 
-- Zamek ma własną załogę: 8 osób na start. Chata mieści 8 / 12 / 16 osób (poziomy 1–3).
+- Zamek ma własną załogę: 8 osób na start. Chata mieści 8 / 12 / 16 / 20 / 24 osób (poziomy 1–5).
 - Najedzona chata z wolnym miejscem przyjmuje nowego mieszkańca co 30 s.
 - Każdy człowiek ma jedną rolę naraz, przydzielaną automatycznie co sekundę:
   1. **pracownik** — po jednym na każdy czynny budynek produkcyjny (najbliższy wolny człowiek),
@@ -64,7 +64,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 - **Winnica**: winiarz sadzi krzewy na pasie ziemi (15 s, raz). Potem pas sam rodzi co 110 s,
   bez ponownego siewu; zbiór trwa 7 s i daje 3 winogron. Rzędy winorośli zajmują
-  teren za winnicą tak jak pola zagrody (4 / 8 / 12 pasów na poziomach 1–3).
+  teren za winnicą tak jak pola zagrody (4 / 8 / 12 / 12 / 12 pasów na poziomach 1–5).
 - **Winiarnia** tłoczy wino z winogron. Tragarze niosą wino do chat (do 3 beczułek), gdy mają
   zapas — po chlebie, przed surowcami warsztatów.
 - Chata z winem: mieszkaniec wypija 0.05 wina na minutę; podatek ×1.8,
@@ -74,7 +74,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 - **Pole**: rolnik karczuje pas ziemi (7 s, raz), sieje (5 s), zboże rośnie 60 s,
   potem żniwa (6 s) i 6 zboża wraca do zagrody. Pas ma 12 × 3 m;
-  zagroda uprawia 4 / 8 / 12 pasów na poziomach 1–3. Pasy leżą za zagrodą, w stronę przeciwną
+  zagroda uprawia 4 / 8 / 12 / 12 / 12 pasów na poziomach 1–5. Pasy leżą za zagrodą, w stronę przeciwną
   do drzwi, i nic nie można na nich postawić — rolnictwo zużywa teren, więc zagrody buduje się
   jako wieś na otwartej przestrzeni, a rzemiosło przy zamku.
 - **Drwal** musi stać do 26 m od lasu: kurs to 8 s rąbania i 8 drewna.
@@ -99,7 +99,7 @@ i drogi są decyzją gracza, a nie ozdobą.
 
 ## 8. Poziomy budynków
 
-- Poziom kosztuje ×1 / ×1.5 / ×2.5 ceny podstawowej i daje ×1 / ×1.6 / ×2.3 tempa pracy.
+- Poziom kosztuje ×1 / ×1.5 / ×2.5 / ×3.5 / ×5 ceny podstawowej i daje ×1 / ×1.6 / ×2.3 / ×2.9 / ×3.5 tempa pracy.
 - Rozbudowa to 15 sekund pracy budowniczych po dostarczeniu materiałów; budynek w tym czasie stoi.
 - Rozbiórka zwraca 50 % ceny podstawowej.
 

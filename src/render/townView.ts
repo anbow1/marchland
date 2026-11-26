@@ -1,4 +1,4 @@
-import { Box3, BufferAttribute, BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Node, type Scene } from 'three/webgpu';
+import { Box3, BufferAttribute, BufferGeometry, Color, Mesh, Vector3, MeshBasicNodeMaterial, type MeshStandardNodeMaterial, type Node, type Object3D, type Scene } from 'three/webgpu';
 import { SIDE_COUNT } from '../sim/layout.ts';
 import { CAMPAIGN, TOWN } from '../config.ts';
 import { fortressFrame, fortressPoint } from '../sim/fortress.ts';
@@ -53,6 +53,8 @@ export class TownView {
   private readonly ghost: Mesh;
   /** Models from Blender by kind, level and side; empty until loadModels() has run. */
   private readonly models = new Map<string, SurfaceModel>();
+  /** The level-3 models as loaded, to dress them for the later ages (levels 4 and 5) when first needed. */
+  private readonly scenes = new Map<BuildingKind, Object3D>();
   /** The moving part of each slot's building, shown when its model has one. */
   private readonly movers: Mesh[][] = [[], [], []];
   /** A rubble-stone plinth under each building, filling the gap where the ground falls away on a slope. */
@@ -218,6 +220,7 @@ export class TownView {
       try {
         const gltf = await loader.loadAsync(freshUrl(base, `buildings/${entry.file}`));
         for (const side of SIDES) this.models.set(`${kind}:${level}:${side}`, surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]));
+        if (level === '3') this.scenes.set(kind, gltf.scene);
       } catch (error) {
         console.warn(`[models] ${entry.file} did not load: ${String(error)}`);
       }
@@ -252,9 +255,24 @@ export class TownView {
     }
   }
 
+  /**
+   * The model of a building at a level: as loaded for levels 1–3; for 4 and 5 (the later ages) the level-3
+   * model dressed in that age's surfaces (surfaceModel's ERA_LOOK), made the first time it is asked for.
+   */
+  private modelOf(kind: BuildingKind, level: number, side: Side): SurfaceModel | undefined {
+    const key = `${kind}:${level}:${side}`;
+    const known = this.models.get(key);
+    if (known || level <= 3) return known;
+    const scene = this.scenes.get(kind);
+    if (!scene) return undefined;
+    const dressed = surfaceModel(scene, this.lib, TEAM_HEX[side], level - 2);
+    this.models.set(key, dressed);
+    return dressed;
+  }
+
   private geometry(kind: BuildingKind, level: number, side: Side): BufferGeometry {
     const key = `${kind}:${level}:${side}`;
-    const model = this.models.get(key);
+    const model = this.modelOf(kind, level, side);
     if (model) return model.body;
     let g = this.cache.get(key);
     if (!g) {
@@ -293,7 +311,7 @@ export class TownView {
     for (const town of world.towns) {
       for (const b of town.plots) {
         if (!b || b.constructionLeftS > 0) continue;
-        const model = this.models.get(`${b.kind}:${b.level}:${town.side}`);
+        const model = this.modelOf(b.kind, b.level, town.side);
         if (!model || model.smoke.length === 0) continue;
         const busy = b.kind === 'house' ? b.residents > 0 : b.workRate > 0 || b.kind === 'smelter';
         if (!busy) continue;
@@ -350,7 +368,7 @@ export class TownView {
             // A watchtower stands on a narrower footing than a house.
             const wide = b.kind === 'tower' ? 0.62 : 1;
             plinth.scale.set(wide, high - low + 0.4, wide);
-            const part = this.models.get(`${b.kind}:${b.level}:${side}`)?.parts[0];
+            const part = this.modelOf(b.kind, b.level, side)?.parts[0];
             if (part) {
               mover.geometry = part.geometry;
               mover.position.copy(part.pivot);

@@ -11,7 +11,7 @@ import { SIM } from './config.ts';
 import { cmdAttackRegiment, cmdBuild, cmdBuildGate, cmdBuildRoad, cmdBuildWall } from './sim/commands.ts';
 import { doorX, doorZ, KEEP } from './sim/people.ts';
 import { planSite } from './sim/sitePlanner.ts';
-import { BUILDING_KINDS, COMPUTER, type Difficulty, PLAYER, UNIT_KINDS } from './sim/types.ts';
+import { BUILDING_KINDS, type BuildingKind, COMPUTER, type Difficulty, PLAYER, UNIT_KINDS } from './sim/types.ts';
 import { spawnRegiment, stepWorld } from './sim/world.ts';
 import type { Quality } from './render/stage.ts';
 import { Menu } from './ui/menu.ts';
@@ -31,6 +31,8 @@ interface DebugApi {
   spot(name: string): void;
   /** Runs the simulation ahead this many seconds at once (screenshots of a town at work). */
   step(seconds: number): void;
+  /** Builds a building of the player's at once, finished (screenshots); the command's answer. */
+  build(kind: BuildingKind, x: number, z: number, yawRad?: number): string;
   game: Game;
 }
 
@@ -327,6 +329,16 @@ async function run(): Promise<void> {
     window.__debug = {
       place: (v) => game.place(v.x ?? game.camera.goal.targetX, v.z ?? game.camera.goal.targetZ, v.distance ?? v.y ?? game.camera.goal.distanceM, v.yaw ?? game.camera.goal.yawRad),
       spot: (name) => game.spot(name),
+      build: (kind, x, z, yawRad = 0) => {
+        const town = game.world.towns[PLAYER];
+        const result = cmdBuild(game.world, PLAYER, kind, x, z, yawRad);
+        const b = result === 'ok' ? town.plots.find((p) => p !== null && p.x === x && p.z === z) : null;
+        if (b) {
+          b.constructionLeftS = 0;
+          b.matDelivered = b.matTotal;
+        }
+        return result;
+      },
       step: (seconds) => {
         for (let i = 0; i < Math.round(seconds / SIM.stepSeconds); i++) stepWorld(game.world, SIM.stepSeconds);
       },

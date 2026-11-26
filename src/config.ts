@@ -143,8 +143,8 @@ export const TOWN = {
 export const PEOPLE = {
   /** The keep's own household: the people a game starts with, and who they are again after a disaster. */
   keepResidents: 8,
-  /** People a house holds at levels 1…3. */
-  houseResidents: [8, 12, 16] as readonly number[],
+  /** People a house holds at levels 1…5. */
+  houseResidents: [8, 12, 16, 20, 24] as readonly number[],
   /** A fed house with room takes in a newcomer this often. */
   growSeconds: 30,
   /** Rations one person eats a minute at home (tuned with the soldiers' 0.25: work makes hungrier). */
@@ -249,7 +249,7 @@ export const TOWER = {
 export const FIELDS = {
   /** Strips of land a farm works at levels 1…3: four narrow strips at first, so the corn stands at four
    * stages (each sown a quarter of a season after the last), more as the farm grows. */
-  stripsPerLevel: [4, 8, 12] as readonly number[],
+  stripsPerLevel: [4, 8, 12, 12, 12] as readonly number[],
   maxStrips: 12,
   /** A strip: this long across the back of the farm, this wide; the first lies this far behind the farm. */
   stripLengthM: 12,
@@ -327,12 +327,32 @@ export interface BuildingDef {
   buildSeconds: number;
   hp: number;
   recipe: Recipe | null;
+  /** May be built only once the keep stands at this level (the later ages' buildings). */
+  keepLevel?: number;
+  /** One to a town: the great building of an age. */
+  unique?: boolean;
 }
 
-/** Cycle speed and price by level 1…3 (tuned: level 3 pays back in about four minutes). */
-export const LEVEL_SPEED: readonly number[] = [1, 1.6, 2.3];
-export const LEVEL_COST: readonly number[] = [1, 1.5, 2.5];
-export const MAX_LEVEL = 3;
+/**
+ * Cycle speed and price by level 1…5 (tuned: level 3 pays back in about four minutes). Levels 1–3 are the
+ * middle ages; 4 and 5 rebuild the building in the style of the next ages (ERAS), each only once the keep
+ * has entered that age.
+ */
+export const LEVEL_SPEED: readonly number[] = [1, 1.6, 2.3, 2.9, 3.5];
+export const LEVEL_COST: readonly number[] = [1, 1.5, 2.5, 3.5, 5];
+export const MAX_LEVEL = 5;
+/** The highest level of the middle ages: a building rises above it only to the level of its keep (level 4 needs keep 4). */
+export const MEDIEVAL_MAX_LEVEL = 3;
+
+/**
+ * The ages of a game (keep levels 1–3 are the first, 4 the second, 5 the third). Each opens its own regiments
+ * (barracks levels 4 and 5), its buildings' new look (levels 4 and 5) and its one great building.
+ */
+export const ERAS = [
+  { keepLevel: 1, name: 'middleAges' },
+  { keepLevel: 4, name: 'earlyModern' },
+  { keepLevel: 5, name: 'industrial' },
+] as const;
 export const UPGRADE_SECONDS = 15;
 /** Share of the price returned when a building is pulled down. */
 export const DEMOLISH_REFUND = 0.5;
@@ -370,6 +390,15 @@ export const BUILDINGS: Record<BuildingKind, BuildingDef> = {
   tower: { cost: { gold: 40, wood: 15, stone: 60 }, buildSeconds: 18, hp: 900, recipe: null },
   // Casts guns (level 1 cannon, level 2 mortar) from iron, timber and stone; nobody works here between orders.
   foundry: { cost: { gold: 150, wood: 40, stone: 60 }, buildSeconds: 20, hp: 500, recipe: null },
+  // The second age: a gunsmith bores and stocks muskets; a powder mill grinds charcoal (timber) and saltpetre
+  // (scraped from stone cellars and dung heaps) into powder.
+  gunsmith: { keepLevel: 4, cost: { gold: 160, planks: 30, stone: 40 }, buildSeconds: 24, hp: 400, recipe: { inputs: { iron: 1, wood: 1 }, outputs: { musket: 1 }, cycleSeconds: 10 } },
+  powderMill: { keepLevel: 4, cost: { gold: 140, planks: 30, stone: 30 }, buildSeconds: 22, hp: 300, recipe: { inputs: { wood: 2, stone: 1 }, outputs: { powder: 2 }, cycleSeconds: 9 } },
+  // The great building of each age, one to a town (GREAT): a cathedral (from keep level 3), a town hall
+  // (the second age), a manufactory (the third).
+  cathedral: { keepLevel: 3, unique: true, cost: { gold: 900, planks: 120, stone: 500 }, buildSeconds: 240, hp: 2400, recipe: null },
+  townHall: { keepLevel: 4, unique: true, cost: { gold: 1500, planks: 200, stone: 500, iron: 40 }, buildSeconds: 240, hp: 2600, recipe: null },
+  manufactory: { keepLevel: 5, unique: true, cost: { gold: 2400, planks: 300, stone: 600, iron: 160 }, buildSeconds: 300, hp: 2800, recipe: null },
   // Grain to ale for the tavern.
   brewery: { cost: { gold: 60, wood: 25, stone: 10 }, buildSeconds: 12, hp: 300, recipe: { inputs: { grain: 2 }, outputs: { ale: 2 }, cycleSeconds: 8 } },
   // The innkeeper sells the ale: gold besides the tax.
@@ -439,6 +468,13 @@ export const REARM = {
     heavyCavalry: [],
     cannon: [],
     mortar: [],
+    // The later ages' foot take up the new arms at their barracks; horse stays horse.
+    musketeers: ['lineInfantry', 'riflemen'],
+    cuirassiers: [],
+    dragoons: [],
+    lineInfantry: ['riflemen'],
+    riflemen: ['lineInfantry'],
+    hussars: [],
   } as Record<UnitKind, readonly UnitKind[]>,
 } as const;
 
@@ -505,12 +541,14 @@ export interface UnitDef {
   missileRollM?: number;
   /** A shield on the arm: defence points added against blows from the front (missileBlock is its use against shot). */
   shieldDefence?: number;
+  /** A firearm: a ball, a report and a puff of smoke (and powder from the stock) instead of an arrow. */
+  firearm?: boolean;
   /**
    * How the man is armed and armoured, for the recruiting list and the books: 'militia' (townsmen, no armour),
    * 'leather' (leather armour: pikes, bows, crossbows, light horse), 'heavy' (plate or mail: swordsmen,
    * landsknechts, knights), 'engine' (guns). Absent = 'engine'.
    */
-  armourClass?: 'militia' | 'leather' | 'heavy' | 'engine';
+  armourClass?: 'militia' | 'leather' | 'heavy' | 'uniform' | 'engine';
   /** Aim error against the usual (MISSILE.spreadAtRangeM): a mortar's stone is deadly where it falls, but falls wide. */
   missileSpreadFactor?: number;
   /** Damage one missile does to a building. */
@@ -560,6 +598,21 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   cannon: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileRollM: 12, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
   // One mortar (the foundry's second level): it lobs a heavy ball high over walls; it scatters a formation
   // and brings down walls, towers and the keep. Cannot shoot closer than 40 m.
+  // ---- The second age (keep 4, barracks 4): muskets beside the last pikes, armoured horse with pistols. ----
+  // In leather and a felt hat: a musket that kills through any armour to 75 m but loads slowly and throws
+  // wide; in melee they club with the butt.
+  musketeers: { ...FOOT, armourClass: 'leather', firearm: true, barracksLevel: 4, goldCost: 110, equipment: { musket: 1, powder: 1, leatherArmor: 1 }, hp: 28, attack: 4, defence: 4, armour: 0.2, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 75, missileDamage: 34, missilePierce: 0.75, missileSpeedMs: 150, missileSiegeDamage: 2, missileSpreadFactor: 1.6, reloadS: 18, morale: 55, runSpeedMs: 3.0, bounty: 3 },
+  // Heavy: cuirassiers, the knights' heirs in breastplate and helmet; sword and pistols, the charge still.
+  cuirassiers: { ...HORSE, armourClass: 'heavy', barracksLevel: 4, goldCost: 190, equipment: { horse: 1, weapon: 1, mailArmor: 1, powder: 1 }, hp: 54, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.0, chargeBonus: 12, chargeShock: 14, missileBlock: 0.25, morale: 85, runSpeedMs: 7.6, bounty: 6 },
+  // In leather: dragoons, musketeers on horseback: they ride to a place and shoot from the saddle.
+  dragoons: { ...HORSE, armourClass: 'leather', firearm: true, barracksLevel: 4, goldCost: 160, equipment: { horse: 1, musket: 1, powder: 1, leatherArmor: 1 }, hp: 40, attack: 6, defence: 5, armour: 0.2, damage: 5, reachM: 1.9, chargeBonus: 5, chargeShock: 6, missileRangeM: 60, missileDamage: 30, missilePierce: 0.7, missileSpeedMs: 150, missileSiegeDamage: 1, missileSpreadFactor: 1.8, reloadS: 20, morale: 65, runSpeedMs: 8.0, bounty: 5 },
+  // ---- The third age (keep 5, barracks 5): uniform and no armour; flintlocks and rifles. ----
+  // Line infantry: a flintlock with a bayonet, loaded in 14 s, fired by the rank; the bayonet holds horse off.
+  lineInfantry: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 120, equipment: { musket: 1, powder: 1 }, hp: 30, attack: 7, defence: 6, armour: 0.05, damage: 6, reachM: 1.9, bonusVsCavalry: 3, chargeBonus: 2, chargeShock: 3, missileRangeM: 90, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 170, missileSiegeDamage: 2, missileSpreadFactor: 1.2, reloadS: 14, morale: 65, runSpeedMs: 3.0, bounty: 3 },
+  // Riflemen: a rifled barrel, slow to load but true to 130 m; few, in green, for picking off.
+  riflemen: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 150, equipment: { musket: 1, powder: 1, iron: 1 }, hp: 26, attack: 4, defence: 4, armour: 0.05, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 130, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 200, missileSiegeDamage: 1, missileSpreadFactor: 0.6, reloadS: 16, morale: 60, runSpeedMs: 3.2, bounty: 3 },
+  // Hussars: the fastest horse of all, sabre in hand, for raids and pursuit.
+  hussars: { ...HORSE, armourClass: 'uniform', barracksLevel: 5, goldCost: 150, equipment: { horse: 1, weapon: 1 }, hp: 44, attack: 9, defence: 6, armour: 0.1, damage: 7, reachM: 1.9, chargeBonus: 10, chargeShock: 10, morale: 75, runSpeedMs: 9.2, bounty: 4 },
   mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 3.5, missileSpreadFactor: 3, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
 };
 
@@ -865,8 +918,14 @@ export const KEEP_LEVELS = [
   { hp: TOWN.keepHp, territoryM: TOWN.territoryRadiusM, fieldsM: TOWN.fieldTerritoryRadiusM, barracks: 1, shotIntervalS: TOWN.keepShotIntervalS, cost: {} },
   { hp: 2600, territoryM: 330, fieldsM: 390, barracks: 2, shotIntervalS: 0.75, cost: { gold: 250, wood: 60, stone: 120 } },
   { hp: 3600, territoryM: 380, fieldsM: 440, barracks: 3, shotIntervalS: 0.5, cost: { gold: 500, wood: 100, stone: 240 } },
+  // The second age (early modern): the keep becomes a bastioned residence; barracks 4 trains musket and pike.
+  { hp: 4800, territoryM: 420, fieldsM: 480, barracks: 4, shotIntervalS: 0.4, cost: { gold: 1200, planks: 200, stone: 400, iron: 40 } },
+  // The third age (early contemporary, the 19th century): barracks 5 trains line infantry and rifles.
+  { hp: 6000, territoryM: 460, fieldsM: 520, barracks: 5, shotIntervalS: 0.3, cost: { gold: 2200, planks: 300, stone: 600, iron: 120 } },
 ] as const;
 export const KEEP_UPGRADE_SECONDS = 60;
+/** Entering a new age takes longer than raising the keep within one: seconds by the level being raised to. */
+export const KEEP_UPGRADE_SECONDS_BY_LEVEL: readonly number[] = [0, 60, 60, 180, 240];
 
 /**
  * Transport, by level: what a carrier takes in one trip and how much faster he goes. Level 2 gives every
@@ -888,7 +947,7 @@ export const MARKET = {
   lot: 10,
   sellShare: 0.6,
   buyShare: 1.6,
-  value: { gold: 1, wood: 1, planks: 2, stone: 1.5, grain: 1, flour: 1.5, grapes: 1, wine: 4, ale: 2.5, bread: 2, fish: 2, meat: 2, sausage: 3, hide: 2, leatherArmor: 6, ironOre: 2, iron: 5, weapon: 8, mailArmor: 12, bow: 5, horse: 15 },
+  value: { gold: 1, wood: 1, planks: 2, stone: 1.5, grain: 1, flour: 1.5, grapes: 1, wine: 4, ale: 2.5, bread: 2, fish: 2, meat: 2, sausage: 3, hide: 2, leatherArmor: 6, ironOre: 2, iron: 5, weapon: 8, mailArmor: 12, bow: 5, horse: 15, musket: 14, powder: 4 },
 } as const;
 
 /** A chapel: every regiment of the side, at home or away, fights with this much more heart while one stands. */
@@ -946,6 +1005,8 @@ export const AI = {
   retreatLossShare: 0.7,
   /** Gold kept back before spending on upgrades. */
   upgradeReserveGold: 220,
+  /** A long game: the computer starts into the later ages (keep 4 and 5) after this many seconds. */
+  agesAfterS: 50 * 60,
   /** Stone the computer keeps for buildings: roads are laid only with what is left over. */
   roadStoneReserve: 30,
   /** Regiments of militia the computer keeps as a home guard at most. */
@@ -996,4 +1057,16 @@ export const CAMERA = {
   /** Time constant of the smoothing (s): tuned by hand, feels right at 60 fps. */
   smoothingS: 0.12,
   edgeScrollPx: 14,
+} as const;
+
+/**
+ * What a town's great building gives while it stands (BUILDINGS[kind].unique): the cathedral lifts the heart
+ * of every regiment and fills the houses sooner; the town hall brings in more gold; the manufactory makes
+ * every workshop work faster.
+ */
+export const GREAT = {
+  cathedralMorale: 8,
+  cathedralGrowthFactor: 0.75,
+  townHallGoldFactor: 1.25,
+  manufactoryProductionFactor: 1.2,
 } as const;

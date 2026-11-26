@@ -264,6 +264,15 @@ wysokości.
   szukać: tablic `[a, b]` na strony (liczniki zerowane co krok!), pętli `for side of [0, 1]`, mieszania dwóch
   kolorów w shaderze i `enemyOf` (zostało tylko dla kampanii i trybu obrony).
 
+- **Epoki** (`config.ts` `ERAS`, `KEEP_LEVELS` 4–5, `MEDIEVAL_MAX_LEVEL`, `economy.ts` `eraOf`/`greatFactor`):
+  dotychczasowa gra to epoka 1, nowe epoki dobudowane jako zamek 4 i 5, budynki 4 i 5 (tylko przy zamku tej
+  epoki), koszary 4 i 5 (nowe jednostki na końcu rotacji komputera, więc średniowieczna kolejność werbunku się
+  nie zmienia), `BUILDINGS[kind].keepLevel` i `unique` (budynki epok i wielkie budowle). Broń palna to zwykły
+  pocisk z `firearm` (`look` 4: mała kula, zdarzenie `musketShot`: trzask i dwa kłęby dymu); tarcza zatrzymuje
+  kulę tylko w części, której kula nie przebija. **Wygląd epoki bez nowych modeli**: `surfaceModel(..., era)`
+  podmienia nazwy powierzchni w materiałach modelu poziomu 3 (`ERA_LOOK`: strzecha → dachówka, tynk bielony;
+  potem kamień i szary łupek), robione leniwie przy pierwszym budynku poziomu 4/5 (`townView.modelOf`).
+
 ## 5. Budynki
 
 - **Zestaw skryptów Blendera** (`tools/blender/kit.py`, `parts.py`, `buildings.py`, `build.py`): ściany

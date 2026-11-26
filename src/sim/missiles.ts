@@ -62,7 +62,8 @@ function shotOf(r: Regiment): Shot {
 }
 
 function shotOfDef(d: UnitDef): Shot {
-  const look = d.missileSplashM > 0 ? 3 : d.engine ? 2 : d.missilePierce > 0 ? 1 : 0;
+  // 0 arrow, 1 bolt, 2 gun ball, 3 mortar stone, 4 musket ball.
+  const look = d.firearm ? 4 : d.missileSplashM > 0 ? 3 : d.engine ? 2 : d.missilePierce > 0 ? 1 : 0;
   return { speedMs: d.missileSpeedMs, highArc: d.missileHighArc, damage: d.missileDamage, pierce: d.missilePierce, splashM: d.missileSplashM, siegeDamage: d.missileSiegeDamage, look, shooterId: -1, rollM: d.missileRollM ?? 0 };
 }
 
@@ -128,7 +129,7 @@ function launch(world: World, side: Side, shot: Shot, x0: number, y0: number, z0
     a.rollM = shot.rollM;
     // A gun's report and smoke, a mortar's thump, or the twang of a bow.
     const heavy = shot.siegeDamage >= WALLS.breakingShotMin;
-    world.events.push(heavy ? (shot.highArc ? 'mortarShot' : 'gunShot') : 'arrowShot', x0, z0, side);
+    world.events.push(heavy ? (shot.highArc ? 'mortarShot' : 'gunShot') : shot.look === 4 ? 'musketShot' : 'arrowShot', x0, z0, side);
     return true;
   }
   return false;
@@ -244,7 +245,9 @@ function land(world: World, a: Arrow): void {
   if (!victim) return;
   const r = victim.regiment;
   // Open order lets arrows through the gaps; a shield wall turns more of them.
-  const block = r.stance === 'shields' ? Math.min(FORMATION.shieldBlockMax, r.def.missileBlock * FORMATION.shieldBlockFactor) : r.def.missileBlock;
+  const shield = r.stance === 'shields' ? Math.min(FORMATION.shieldBlockMax, r.def.missileBlock * FORMATION.shieldBlockFactor) : r.def.missileBlock;
+  // A musket ball goes through a shield as it goes through armour: only what it does not pierce is stopped.
+  const block = a.look === 4 ? shield * (1 - a.pierce) : shield;
   const loose = r.formation === 'loose' ? FORMATION.looseHitFactor : 1;
   // Seasoned shooters hit more often.
   const shooter = findRegiment(world, a.shooterId);

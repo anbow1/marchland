@@ -39,6 +39,9 @@ export const RESOURCE_IDS = [
   'mailArmor',
   'bow',
   'horse',
+  // The second age: firearms.
+  'musket',
+  'powder',
 ] as const;
 export type ResourceId = (typeof RESOURCE_IDS)[number];
 export type Stock = Record<ResourceId, number>;
@@ -75,10 +78,36 @@ export const BUILDING_KINDS = [
   'barracks',
   'foundry',
   'tower',
+  // The second age's workshops: muskets, and powder from charcoal and saltpetre.
+  'gunsmith',
+  'powderMill',
+  // One great building of each age (BUILDINGS[kind].unique).
+  'cathedral',
+  'townHall',
+  'manufactory',
 ] as const;
 export type BuildingKind = (typeof BUILDING_KINDS)[number];
 
-export const UNIT_KINDS = ['militia', 'pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen', 'lightCavalry', 'heavyCavalry', 'cannon', 'mortar'] as const;
+export const UNIT_KINDS = [
+  'militia',
+  'pikemen',
+  'archers',
+  'swordsmen',
+  'halberdiers',
+  'crossbowmen',
+  'lightCavalry',
+  'heavyCavalry',
+  'cannon',
+  'mortar',
+  // The second age (barracks level 4).
+  'musketeers',
+  'cuirassiers',
+  'dragoons',
+  // The third age (barracks level 5).
+  'lineInfantry',
+  'riflemen',
+  'hussars',
+] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 
 /** Why a command was refused; 'ok' when it was carried out. The HUD turns these into messages. */
@@ -118,6 +147,7 @@ export type CommandResult =
   | 'towerFull'
   | 'needsWall'
   | 'needsKeep'
+  | 'onlyOne'
   | 'notThisUnit'
   | 'fullStrength'
   | 'reinforcing'
@@ -163,4 +193,9 @@ export const SITE_NEED: Record<BuildingKind, SiteNeed> = {
   stable: 'none',
   barracks: 'none',
   tower: 'none',
+  gunsmith: 'none',
+  powderMill: 'none',
+  cathedral: 'none',
+  townHall: 'none',
+  manufactory: 'none',
 };

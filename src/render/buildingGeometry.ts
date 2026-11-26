@@ -16,6 +16,70 @@ import type { SurfaceLibrary } from './surfaces.ts';
 type Build = (b: MeshBuilder, level: number) => void;
 
 const BUILDERS: Record<BuildingKind, Build> = {
+  // ---- The later ages' workshops and the three great buildings: shapes from code until their models. ----
+  gunsmith: (b, level) => {
+    // A brick-red workshop with a boring mill's water wheel housing, muskets racked under an eave.
+    P.house(b, { cx: -0.8, cz: -1.8, sx: 6.4, sz: 4.6, wallH: 3.0, upperH: 2.2, wall: P.OCHRE, roof: P.TILE, pitch: 1.2, frame: false });
+    P.chimney(b, 1.8, -3.0, 7.6, 0.9);
+    b.box(3.6, 0, 0.6, 1.6, 2.4, 2.0, P.STONE);
+    for (let i = 0; i < 6; i++) b.box(-3 + i * 0.5, 0.2, 1.0, 0.06, 1.5, 0.06, P.TIMBER);
+    b.roof(-1.8, 1.8, 1.0, 3.6, 0.9, 0.4, 0, 0.1, 0.08, P.TILE, P.TIMBER);
+    P.yard(b, 0.4, 3.2, 8.6, 3.2, P.YARD, false, true);
+    for (let i = 0; i < (level >= 2 ? 3 : 2); i++) P.crate(b, 2.4 + i * 0.8, 3.4, 0.6);
+  },
+  powderMill: (b, level) => {
+    // Low stone mill sheds set apart behind a blast wall, a tall wheel and a stack of powder casks.
+    P.house(b, { cx: -1.6, cz: -2.2, sx: 4.6, sz: 3.8, wallH: 2.6, wall: P.STONE, roof: P.SHINGLE, pitch: 1.1, frame: false });
+    b.box(2.4, 0, -2.2, 2.6, 2.2, 3.0, P.STONE_DARK);
+    b.box(0.6, 0, 0.2, 7.8, 1.6, 0.6, P.STONE);
+    b.cylinder(4.2, 1.8, -0.4, 1.8, 1.8, 0.3, 14, P.TIMBER);
+    for (let i = 0; i < (level >= 2 ? 6 : 4); i++) P.barrel(b, -2.6 + (i % 3) * 0.9, 2.4 + Math.floor(i / 3) * 0.9, 0.85);
+    P.yard(b, 0.2, 2.8, 9.0, 3.4, P.YARD, false, true);
+  },
+  cathedral: (b) => {
+    // A gothic cathedral: a tall nave and aisles under steep roofs, a crossing spire, two west towers.
+    b.box(0, 0, -0.6, 6.2, 0.6, 9.6, P.STONE_DARK);
+    b.box(0, 0.6, -0.6, 3.6, 9.4, 9.0, P.ASHLAR);
+    b.roof(0, 10, -0.6, 3.8, 9.2, 3.2, 0, 0.2, 0.18, P.SHINGLE, P.STONE_DARK);
+    for (const x of [-2.4, 2.4]) {
+      b.box(x, 0.6, -0.6, 1.4, 5.4, 9.0, P.ASHLAR);
+      b.roof(x, 6.0, -0.6, 1.6, 9.2, 1.2, 0, 0.15, 0.14, P.SHINGLE, P.STONE_DARK);
+      // Flying buttresses along the aisles.
+      for (let i = 0; i < 4; i++) b.box(x * 1.45, 0, -4.4 + i * 2.5, 0.5, 6.4, 0.6, P.STONE_LIGHT);
+    }
+    for (const x of [-1.5, 1.5]) {
+      b.box(x, 0, 4.2, 1.9, 15, 1.9, P.ASHLAR);
+      b.cylinder(x, 15, 4.2, 1.2, 0, 5.5, 8, P.SHINGLE);
+    }
+    b.box(0, 0.6, 4.4, 1.6, 4.2, 0.4, P.BOARDS_DARK);
+    b.cylinder(0, 9.6, 4.25, 1.2, 1.2, 0.2, 16, P.STONE_LIGHT);
+    b.cylinder(0, 11.4, -1.6, 0.9, 0, 9, 8, P.SHINGLE);
+  },
+  townHall: (b) => {
+    // A renaissance town hall: an arcaded ground floor, two storeys of tall windows under a hipped tile roof,
+    // a clock tower with a lantern over the middle.
+    b.box(0, 0, 0, 9.2, 0.5, 6.4, P.STONE_DARK);
+    b.box(0, 0.5, -0.4, 8.6, 3.0, 5.2, P.STONE_LIGHT);
+    for (let i = 0; i < 5; i++) b.box(-3.6 + i * 1.8, 0.5, 2.25, 0.5, 3.0, 0.5, P.ASHLAR);
+    b.box(0, 3.5, -0.4, 8.8, 5.0, 5.6, P.PLASTER);
+    for (let i = 0; i < 5; i++) for (const y of [4.3, 6.6]) b.box(-3.6 + i * 1.8, y, 2.42, 0.8, 1.4, 0.1, P.SOOT);
+    b.roof(0, 8.5, -0.4, 9.0, 5.8, 2.6, 2.0, 0.3, 0.18, P.TILE, P.STONE_DARK);
+    b.box(0, 8.5, 0.2, 2.2, 6.0, 2.2, P.PLASTER);
+    b.cylinder(0, 12.6, 1.32, 0.7, 0.7, 0.1, 14, P.CANVAS_PALE);
+    b.cylinder(0, 14.5, 0.2, 1.3, 0.9, 1.2, 8, P.IRON);
+    b.cylinder(0, 15.7, 0.2, 0.7, 0, 2.6, 8, P.IRON);
+  },
+  manufactory: (b) => {
+    // A 19th-century brick mill: a long block of many windows, a north-light shed roof, a tall square chimney.
+    b.box(-0.8, 0, -1.2, 9.4, 0.4, 6.2, P.STONE_DARK);
+    b.box(-0.8, 0.4, -1.2, 9.0, 6.6, 5.8, P.BRICK);
+    for (let i = 0; i < 7; i++) for (const y of [1.4, 4.0]) b.box(-4.6 + i * 1.27, y, 1.72, 0.7, 1.6, 0.1, P.SOOT);
+    for (let i = 0; i < 4; i++) b.roof(-4.4 + i * 2.4, 7.0, -1.2, 2.4, 6.0, 1.3, 0, 0.05, 0.12, P.SHINGLE, P.IRON);
+    b.box(4.4, 0, -3.0, 1.6, 17, 1.6, P.BRICK);
+    b.box(4.4, 17, -3.0, 1.9, 0.6, 1.9, P.STONE_DARK);
+    P.yard(b, 0.2, 3.4, 9.2, 3.0, P.YARD, false, true);
+    for (let i = 0; i < 4; i++) P.crate(b, -3.6 + i * 0.9, 3.4, 0.7);
+  },
   foundry: (b, level) => {
     // A stone casting house with a tall furnace stack, the casting pit's shed, and a new gun on show.
     P.house(b, { cx: -1.2, cz: -2.0, sx: 6.4, sz: 4.6, wallH: 3.2, wall: P.STONE, roof: P.SHINGLE, pitch: 1.3, frame: false });

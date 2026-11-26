@@ -251,6 +251,8 @@ const GOOD_HEX: Record<ResourceId, number> = {
   mailArmor: 0x8f98a2,
   bow: 0x7d8a3c,
   horse: 0x6b4a34,
+  musket: 0x6a4a2e,
+  powder: 0x3a3632,
 };
 
 /** The modelled loads (public/props/goods, KayKit, CC0): which shape each good travels as, and a tint
@@ -279,6 +281,8 @@ const GOOD_SHAPE: Record<ResourceId, [LoadShape, number]> = {
   mailArmor: ['crate', 0xc0c8d0],
   leatherArmor: ['crate', 0xc09070],
   horse: ['sack', 0x8a6040],
+  musket: ['crate', 0xa08060],
+  powder: ['barrel', 0x606060],
 };
 /** How big a load is (its longest side, metres) and where it rides: on the shoulder, like the built sack. */
 const LOAD_SIZE_M = 0.5;

@@ -17,8 +17,24 @@ export type MovingPart = (typeof MOVING_PARTS)[number];
 
 const PLAIN_DEFAULT = 0x808080;
 
-function paintOf(material: Material, lib: SurfaceLibrary, teamHex: number): { layer: number; repeatsPerM: number; tint: Color } {
-  const [name = '', hex] = material.name.split('#');
+/**
+ * The later ages' look on the middle ages' models (building levels 4 and 5): the same buildings re-dressed.
+ * The early modern town roofs everything in red tile and limewashes its plaster; the 19th-century town builds
+ * its walls in dressed stone under grey slate (shingles darkened), its timbers painted.
+ */
+const ERA_LOOK: readonly (Partial<Record<string, readonly [SurfaceId, number]>> | null)[] = [
+  null,
+  { thatch: ['tiles', 0xffffff], shingles: ['tiles', 0xe8d8d0], plaster: ['plaster', 0xfff6e6], rubble: ['ashlar', 0xffffff] },
+  { thatch: ['shingles', 0x8a9098], shingles: ['shingles', 0x8a9098], tiles: ['shingles', 0x9aa0a8], plaster: ['ashlar', 0xf0ece4], beam: ['beam', 0x6a7078], boards: ['beam', 0x7a8088], rubble: ['ashlar', 0xd8d4cc] },
+];
+
+function paintOf(material: Material, lib: SurfaceLibrary, teamHex: number, era = 1): { layer: number; repeatsPerM: number; tint: Color } {
+  let [name = '', hex] = material.name.split('#');
+  const look = ERA_LOOK[era - 1]?.[name];
+  if (look) {
+    name = look[0];
+    if (look[1] !== 0xffffff) hex = look[1].toString(16).padStart(6, '0');
+  }
   if (name === 'team') return { layer: -1, repeatsPerM: 1, tint: new Color(teamHex) };
   const tintHex = hex ? Number.parseInt(hex, 16) : undefined;
   if ((SURFACES as readonly string[]).includes(name)) {
@@ -40,9 +56,9 @@ export interface SurfaceModel {
   smoke: Vector3[];
 }
 
-export function surfaceModel(root: Object3D, lib: SurfaceLibrary, teamHex: number): SurfaceModel {
+export function surfaceModel(root: Object3D, lib: SurfaceLibrary, teamHex: number, era = 1): SurfaceModel {
   root.updateMatrixWorld(true);
-  const body = surfaceGeometry(root, lib, teamHex, null);
+  const body = surfaceGeometry(root, lib, teamHex, null, era);
   const parts: SurfaceModel['parts'] = [];
   const smoke: Vector3[] = [];
   root.traverse((o) => {
@@ -50,7 +66,7 @@ export function surfaceModel(root: Object3D, lib: SurfaceLibrary, teamHex: numbe
     if ((MOVING_PARTS as readonly string[]).includes(o.name)) {
       const name = o.name as MovingPart;
       const pivot = o.getWorldPosition(new Vector3());
-      const geometry = surfaceGeometry(root, lib, teamHex, name);
+      const geometry = surfaceGeometry(root, lib, teamHex, name, era);
       geometry.translate(-pivot.x, -pivot.y, -pivot.z);
       parts.push({ name, geometry, pivot });
     }
@@ -62,7 +78,7 @@ export function surfaceModel(root: Object3D, lib: SurfaceLibrary, teamHex: numbe
  * One geometry for the model, in its own space (metres, door towards +Z), ready for surfaceMaterial:
  * the building itself (`part` null) or one of its moving parts.
  */
-export function surfaceGeometry(root: Object3D, lib: SurfaceLibrary, teamHex = 0xffffff, part: MovingPart | null = null): BufferGeometry {
+export function surfaceGeometry(root: Object3D, lib: SurfaceLibrary, teamHex = 0xffffff, part: MovingPart | null = null, era = 1): BufferGeometry {
   root.updateMatrixWorld(true);
   const parts: BufferGeometry[] = [];
   root.traverse((o) => {
@@ -80,7 +96,7 @@ export function surfaceGeometry(root: Object3D, lib: SurfaceLibrary, teamHex = 0
     for (const group of groups) {
       const material = materials[group.materialIndex ?? 0] ?? materials[0];
       if (!material) throw new Error(`mesh '${mesh.name}' has no material for its faces`);
-      const paint = paintOf(material, lib, teamHex);
+      const paint = paintOf(material, lib, teamHex, era);
       for (let i = group.start; i < group.start + group.count; i++) {
         colour[i * 3] = paint.tint.r;
         colour[i * 3 + 1] = paint.tint.g;

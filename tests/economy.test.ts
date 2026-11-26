@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ARMY, BUILDINGS, CHAPEL, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, GATHER, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE } from '../src/config.ts';
+import { ARMY, BUILDINGS, CHAPEL, LEVEL_COST, MARKET, FIELDS, FOOD, FORESTRY, GATE, GATHER, TRANSPORT, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, PAY, PEOPLE, REARM, REINFORCE, ROADS, TOWER, TOWN, UNITS, VINES, WINE, KEEP_UPGRADE_SECONDS_BY_LEVEL } from '../src/config.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBombard, cmdBuild, cmdTrade, cmdTurnSite, lotPrice, cmdBuildGate, cmdBuildRoad, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdOrder, cmdOrderRegiments, cmdRearm, cmdRecruit, cmdReinforce, cmdUngarrison, cmdUpgradeTransport, cmdUpgrade, cmdUpgradeKeep, rearmCost, roadCost, wallCost } from '../src/sim/commands.ts';
 import { kill, topMorale } from '../src/sim/combat.ts';
 import { hasCaptain } from '../src/sim/regiment.ts';
@@ -549,6 +549,13 @@ describe('recruiting', () => {
     expect(cmdUpgradeKeep(world, PLAYER)).toBe('ok');
     run(world, KEEP_UPGRADE_SECONDS + 1);
     expect(town.keepLevel).toBe(3);
+    // Then the later ages: keep 4 (early modern) and 5 (the 19th century), each a longer work, then no more.
+    for (const level of [4, 5]) {
+      for (const id of Object.keys(KEEP_LEVELS[level - 1]?.cost ?? {}) as (keyof typeof town.stock)[]) town.stock[id] += 10000;
+      expect(cmdUpgradeKeep(world, PLAYER)).toBe('ok');
+      run(world, (KEEP_UPGRADE_SECONDS_BY_LEVEL[level - 1] as number) + 1);
+      expect(town.keepLevel).toBe(level);
+    }
     expect(cmdUpgradeKeep(world, PLAYER)).toBe('maxLevel');
   });
 

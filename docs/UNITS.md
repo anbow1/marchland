@@ -39,6 +39,12 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 | **Rycerze** | ciężkozbrojne | 3 | 8 | 160 zł + 8 broń, 8 kolczuga, 8 koń | 52 | 10 / 9 | 45 % | 8 | 85 | 3.6 / 7.5 |
 | **Armaty** | działa | 1 | 2 (6 ludzi) | 140 zł + 12 drewno, 12 żelazo | 80 | 0 / 0 | 0 % | 0 | 55 | 0.9 / 0.9 |
 | **Moździerz** | działa | 2 | 1 (5 ludzi) | 200 zł + 8 kamień, 10 żelazo | 120 | 0 / 0 | 0 % | 0 | 60 | 0.6 / 0.6 |
+| **Muszkieterowie** | skórzane | 4 | 12 | 110 zł + 12 zbroja skórzana, 12 muszkiety, 12 proch | 28 | 4 / 4 | 20 % | 4 | 55 | 1.4 / 3 |
+| **Kirasjerzy** | ciężkozbrojne | 4 | 8 | 190 zł + 8 broń, 8 kolczuga, 8 koń, 8 proch | 54 | 10 / 9 | 45 % | 8 | 85 | 3.6 / 7.6 |
+| **Dragoni** | skórzane | 4 | 8 | 160 zł + 8 zbroja skórzana, 8 koń, 8 muszkiety, 8 proch | 40 | 6 / 5 | 20 % | 5 | 65 | 3.6 / 8 |
+| **Piechota liniowa** | mundur | 5 | 12 | 120 zł + 12 muszkiety, 12 proch | 30 | 7 / 6 | 5 % | 6 | 65 | 1.4 / 3 |
+| **Strzelcy** | mundur | 5 | 12 | 150 zł + 12 żelazo, 12 muszkiety, 12 proch | 26 | 4 / 4 | 5 % | 4 | 60 | 1.4 / 3.2 |
+| **Huzarzy** | mundur | 5 | 8 | 150 zł + 8 broń, 8 koń | 44 | 9 / 6 | 10 % | 7 | 75 | 3.6 / 9.2 |
 
 ## 3. Strzelcy i machiny
 
@@ -48,6 +54,10 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 | **Kusznicy** | 70 m | 30 | 60 % | 10 s | — | 2 |
 | **Armaty** | 10–120 m | 55 | 90 % | 10 s | — | 30 |
 | **Moździerz** | 40–150 m | 30 | 50 % | 15 s | 3.5 m | 110 |
+| **Muszkieterowie** | 75 m | 34 | 75 % | 18 s | — | 2 |
+| **Dragoni** | 60 m | 30 | 70 % | 20 s | — | 1 |
+| **Piechota liniowa** | 90 m | 36 | 85 % | 14 s | — | 2 |
+| **Strzelcy** | 130 m | 36 | 85 % | 16 s | — | 1 |
 
 Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 
@@ -63,6 +73,12 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 - **Rycerze** — Ciężkozbrojni rycerze: kopia do szarży, która łamie linię, potem miecz i tarcza. Nie na piki od czoła. *(szarża +13 do ataku, wstrząs 15; 35 % szans zatrzymania pocisku)*
 - **Armaty** — Dwa działa z ludwisarni: kula na wprost przebija każdą zbroję i wybija dziury w murach. Bezradne, gdy wróg dojdzie. *(70 % szans zatrzymania pocisku)*
 - **Moździerz** — Jedno działo (ludwisarnia poz. 2): ciężka kula stromym torem nad murami rozbija szyk i burzy mury, wieże i zamek. *(80 % szans zatrzymania pocisku)*
+- **Muszkieterowie** — Epoka 2: skórzany kaftan i muszkiet; kula przebija zbroję na 75 m, ładowanie 18 s, strzał szeroki. W zwarciu słabi.
+- **Kirasjerzy** — Epoka 2: ciężka jazda w kirysie, pałasz i pistolety; szarża łamie szyk. *(szarża +12 do ataku, wstrząs 14; 25 % szans zatrzymania pocisku)*
+- **Dragoni** — Epoka 2: muszkieterowie na koniach, strzał z siodła na 60 m. *(szarża +5 do ataku, wstrząs 6)*
+- **Piechota liniowa** — Epoka 3: mundur, karabin z bagnetem: 90 m, 14 s; bagnet trzyma jazdę. *(+3 do ataku przeciw jeździe)*
+- **Strzelcy** — Epoka 3: gwintowany karabin, celny na 130 m.
+- **Huzarzy** — Epoka 3: najszybsza jazda z szablą: zagony i pościg. *(szarża +10 do ataku, wstrząs 10)*
 
 ## 5. Przezbrojenie
 
@@ -78,6 +94,9 @@ Wymagany poziom koszar jak przy werbunku.
 - **Miecznicy** → Halabardnicy
 - **Halabardnicy** → Miecznicy
 - **Lekka jazda** → Rycerze
+- **Muszkieterowie** → Piechota liniowa, Strzelcy
+- **Piechota liniowa** → Strzelcy
+- **Strzelcy** → Piechota liniowa
 
 Konni zostają konnymi, machin się nie przezbraja.
 

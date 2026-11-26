@@ -1,7 +1,7 @@
-import { BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
+import { BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, KEEP_UPGRADE_SECONDS_BY_LEVEL, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost, lotPrice } from '../sim/commands.ts';
-import { trainingLevel, type Building, buildingCost, canAffordBuilding, rebuildCost, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
+import { trainingLevel, type Building, buildingCost, canAffordBuilding, eraOf, rebuildCost, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
 import { freePeople } from '../sim/people.ts';
 import { hasCaptain, isEngaged, type Regiment, veteranRank } from '../sim/regiment.ts';
 import { type BuildingKind, BUILDING_KINDS, KEEP, PLAYER, type ResourceId, RESOURCE_IDS, type UnitKind, UNIT_KINDS, WORKLESS } from '../sim/types.ts';
@@ -89,16 +89,16 @@ const RESOURCE_GROUPS: readonly (readonly ResourceId[])[] = [
 /** The build tab's groups: a short row at a time, so the panel leaves the map in view. */
 type BuildGroup = 'town' | 'food' | 'goods' | 'arms' | 'defence';
 const BUILD_GROUPS: Record<BuildGroup, readonly BuildingKind[]> = {
-  town: ['house', 'storehouse', 'market', 'tavern', 'chapel', 'well'],
+  town: ['house', 'storehouse', 'market', 'tavern', 'chapel', 'well', 'cathedral', 'townHall'],
   food: ['farm', 'fisher', 'windmill', 'bakery', 'hunter', 'pigFarm', 'butcher', 'vineyard', 'winery', 'brewery'],
-  goods: ['woodcutter', 'sawmill', 'forester', 'quarry', 'ironMine', 'smelter', 'tannery'],
-  arms: ['smithy', 'armourer', 'fletcher', 'stable', 'barracks', 'foundry'],
+  goods: ['woodcutter', 'sawmill', 'forester', 'quarry', 'ironMine', 'smelter', 'tannery', 'manufactory'],
+  arms: ['smithy', 'armourer', 'fletcher', 'stable', 'barracks', 'foundry', 'gunsmith', 'powderMill'],
   defence: ['tower'],
 };
 const GROUP_OF = new Map<BuildingKind, BuildGroup>(Object.entries(BUILD_GROUPS).flatMap(([g, kinds]) => kinds.map((k) => [k, g as BuildGroup] as const)));
 const COMPACT_KEY = 'marchland.compactBar';
 
-const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', cannon: '⇶', mortar: '☄' };
+const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', cannon: '⇶', mortar: '☄', musketeers: '⁍', cuirassiers: '♜', dragoons: '♘', lineInfantry: '⦿', riflemen: '⊕', hussars: '♝' };
 
 const MAX_CARDS = 48;
 const PANEL_REFRESH_S = 0.25;
@@ -568,10 +568,14 @@ export class Hud {
     for (const g of Object.keys(BUILD_GROUPS) as BuildGroup[]) html += `<button class="group${g === group ? ' on' : ''}" data-act="group" data-arg="${g}">${T.buildGroups[g]}</button>`;
     html += '</div><div class="row wrap">';
     for (const kind of BUILD_GROUPS[group]) {
-      const off = canAffordBuilding(town.stock, kind, 1) ? '' : ' off';
+      // A later age's building: shown with the keep it waits for, until the keep stands at that level.
+      const needs = BUILDINGS[kind].keepLevel;
+      const locked = needs !== undefined && town.keepLevel < needs;
+      const off = !locked && canAffordBuilding(town.stock, kind, 1) ? '' : ' off';
       const on = tool === kind ? ' on' : '';
       const recipe = recipeText(kind);
-      html += `<button class="option${off}${on}" data-act="build" data-arg="${kind}" data-tip="${T.buildings[kind].name}: ${T.buildings[kind].about}${recipe ? ` (${recipe})` : ''}"><span class="name">${T.buildings[kind].name}</span><span class="costs">${costHtml(town, kind, 1)}</span></button>`;
+      const costs = locked ? `<span class="small">${T.keep} ${needs}</span>` : costHtml(town, kind, 1);
+      html += `<button class="option${off}${on}" data-act="build" data-arg="${kind}" data-tip="${T.buildings[kind].name}: ${T.buildings[kind].about}${recipe ? ` (${recipe})` : ''}"><span class="name">${T.buildings[kind].name}</span><span class="costs">${costs}</span></button>`;
     }
     if (group !== 'defence') {
       html += `<button class="option${this.gridOn ? ' on' : ''}" data-act="grid" data-tip="${T.gridTip}"><span class="name">${T.grid} (T)</span><span class="costs"><span class="small">${this.gridOn ? T.gridOn : T.gridOff}</span></span></button>`;
@@ -710,8 +714,9 @@ export class Hud {
     const rules = keepRules(town);
     const pay = Math.round(menAlive(world, town.side) * PAY.goldPerManPerMinute);
     let status = `${T.keepHp} ${Math.ceil(town.keepHp)}/${rules.hp} · ${T.keepReach} ${rules.territoryM} m · ${T.barracksUpTo} ${rules.barracks} · ${T.payTip} ${pay}/min${town.unpaid ? ` (${Math.ceil(town.payOwed)})` : ''}`;
-    if (town.keepUpgradeLeftS > 0) status += ` · ${T.keepRaising}: ${Math.round((1 - town.keepUpgradeLeftS / KEEP_UPGRADE_SECONDS) * 100)}%`;
-    let html = `<div class="heading">${T.keep} · ${T.level} ${town.keepLevel}/${KEEP_LEVELS.length} <span class="status">${status}</span></div><div class="status">${T.keepAbout}</div>`;
+    if (town.keepUpgradeLeftS > 0) status += ` · ${T.keepRaising}: ${Math.round((1 - town.keepUpgradeLeftS / (KEEP_UPGRADE_SECONDS_BY_LEVEL[town.keepLevel] ?? KEEP_UPGRADE_SECONDS)) * 100)}%`;
+    const era = eraOf(town);
+    let html = `<div class="heading">${T.keep} · ${T.level} ${town.keepLevel}/${KEEP_LEVELS.length} · ${T.eras[era - 1]} <span class="status">${status}</span></div><div class="status">${T.keepAbout}</div>`;
     const next = KEEP_LEVELS[town.keepLevel];
     if (next && town.keepUpgradeLeftS === 0) {
       const cost = next.cost as Partial<Record<ResourceId, number>>;
@@ -723,7 +728,9 @@ export class Hud {
         if (town.stock[id] < amount) short = true;
         costs += `<span class="cost${town.stock[id] < amount ? ' short' : ''}"><i class="ico">${resourceIcon(id)}</i>${amount}</span>`;
       }
-      html += `<div class="row"><button class="option${short ? ' off' : ''}" data-act="upgradeKeep" data-tip="${T.keepUpgrade}: ${T.level} ${town.keepLevel + 1} · ${T.keepReach} ${next.territoryM} m · ${T.barracksUpTo} ${next.barracks}"><span class="name">${T.keepUpgrade}</span><span class="costs">${costs}</span></button></div>`;
+      // Raising the keep past the middle ages begins the next age.
+      const newAge = town.keepLevel + 1 > 3 ? ` · ${T.newAge}: ${T.eras[era]}` : '';
+      html += `<div class="row"><button class="option${short ? ' off' : ''}" data-act="upgradeKeep" data-tip="${T.keepUpgrade}: ${T.level} ${town.keepLevel + 1}${newAge} · ${T.keepReach} ${next.territoryM} m · ${T.barracksUpTo} ${next.barracks}"><span class="name">${T.keepUpgrade}${newAge ? ` → ${T.eras[era]}` : ''}</span><span class="costs">${costs}</span></button></div>`;
     }
     return html;
   }
