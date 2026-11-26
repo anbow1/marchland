@@ -1,4 +1,4 @@
-import { BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, KEEP_UPGRADE_SECONDS_BY_LEVEL, LEVEL_SPEED, MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
+import { BUILDINGS, FIELDS, FOOD, FORMATION, GATE, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, KEEP_UPGRADE_SECONDS_BY_LEVEL, LEVEL_SPEED, MAX_LEVEL, MEDIEVAL_MAX_LEVEL, PAY, PEOPLE, REARM, ROADS, TOWER, TRANSPORT, UNITS, WALLS, MARKET } from '../config.ts';
 import { resourceIcon } from './icons.ts';
 import { canRearm, canReinforce, missingMen, orderedGoodsFor, rearmCost, reinforceCost, lotPrice } from '../sim/commands.ts';
 import { trainingLevel, type Building, buildingCost, canAffordBuilding, eraOf, rebuildCost, canAffordUnit, emptyStock, flowRates, keepRules, lackingInput, peopleFor, rationsIn, type Town, workState } from '../sim/economy.ts';
@@ -822,9 +822,10 @@ export class Hud {
 
   /** Re-arm buttons for one selected regiment: what it may become, and what that costs. */
   private rearmHtml(world: World, r: Regiment): string {
-    const targets = REARM.paths[r.kind];
-    if (r.side !== PLAYER || targets.length === 0 || r.rearmTo !== null) return '';
     const town = world.towns[PLAYER];
+    // The later ages' arms show once the keep has entered that age (the middle ages' always).
+    const targets = REARM.paths[r.kind].filter((to) => UNITS[to].barracksLevel <= Math.max(MEDIEVAL_MAX_LEVEL, town.keepLevel));
+    if (r.side !== PLAYER || targets.length === 0 || r.rearmTo !== null) return '';
     let html = `<div class="row wrap"><span class="label">${T.rearm}</span>`;
     for (const to of targets) {
       const able = canRearm(world, r.id, to);

@@ -458,22 +458,26 @@ export const REARM = {
   /** How near a finished barracks (or the keep) the regiment must stand. */
   radiusM: 40,
   seconds: 20,
-  /** What each kind may become. Mounted stay mounted; engines are not re-armed. */
+  /**
+   * What each kind may become. Mounted stay mounted; engines are not re-armed. Across the ages a regiment keeps
+   * its men and its record: the foot of the middle ages take up the musket (with barracks of the second age) and
+   * the line infantry's or rifleman's arms (the third), from the militia's levy to the line; the horse go on to
+   * cuirassiers, dragoons and hussars. The barracks' level (UNITS[to].barracksLevel) says when.
+   */
   paths: {
-    militia: ['pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen'],
-    pikemen: ['halberdiers', 'swordsmen'],
-    archers: ['crossbowmen'],
-    swordsmen: ['halberdiers'],
-    halberdiers: ['swordsmen'],
-    crossbowmen: [],
-    lightCavalry: ['heavyCavalry'],
-    heavyCavalry: [],
+    militia: ['pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen', 'musketeers', 'lineInfantry', 'riflemen'],
+    pikemen: ['halberdiers', 'swordsmen', 'musketeers', 'lineInfantry'],
+    archers: ['crossbowmen', 'musketeers', 'riflemen'],
+    swordsmen: ['halberdiers', 'musketeers', 'lineInfantry'],
+    halberdiers: ['swordsmen', 'musketeers', 'lineInfantry'],
+    crossbowmen: ['musketeers', 'riflemen'],
+    lightCavalry: ['heavyCavalry', 'dragoons', 'hussars'],
+    heavyCavalry: ['cuirassiers', 'hussars'],
     cannon: [],
     mortar: [],
-    // The later ages' foot take up the new arms at their barracks; horse stays horse.
     musketeers: ['lineInfantry', 'riflemen'],
-    cuirassiers: [],
-    dragoons: [],
+    cuirassiers: ['hussars'],
+    dragoons: ['hussars'],
     lineInfantry: ['riflemen'],
     riflemen: ['lineInfantry'],
     hussars: [],

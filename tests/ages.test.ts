@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BUILDINGS, GREAT, KEEP_UPGRADE_SECONDS_BY_LEVEL, SIM, UNITS } from '../src/config.ts';
-import { cmdBuild, cmdUpgrade, cmdUpgradeKeep } from '../src/sim/commands.ts';
+import { BUILDINGS, GREAT, KEEP_UPGRADE_SECONDS_BY_LEVEL, REARM, SIM, UNITS } from '../src/config.ts';
+import { canRearm, cmdBuild, cmdRearm, cmdUpgrade, cmdUpgradeKeep } from '../src/sim/commands.ts';
 import { topMorale } from '../src/sim/combat.ts';
 import { eraOf, greatFactor, startBuilding } from '../src/sim/economy.ts';
 import { checkSite } from '../src/sim/placement.ts';
@@ -121,5 +121,33 @@ describe('the later ages', () => {
     expect(shots).toBeGreaterThan(5);
     expect(target.aliveMen).toBeLessThan(12);
     expect(UNITS.musketeers.missilePierce).toBeGreaterThan(UNITS.crossbowmen.missilePierce);
+  });
+
+  it('a regiment is re-armed from age to age: the militia\'s levy to musketeers, then to the line', () => {
+    const world = richWorld();
+    const town = world.towns[PLAYER];
+    const plot = standing(world, 'barracks', 40, 0);
+    const barracks = town.plots[plot];
+    if (!barracks) throw new Error('no barracks');
+    const r = spawnRegiment(world, PLAYER, 'militia', barracks.x + Math.sin(barracks.yawRad) * 14, barracks.z + Math.cos(barracks.yawRad) * 14, 0);
+    stepWorld(world, SIM.stepSeconds);
+    // The musket waits for barracks of the second age.
+    expect(canRearm(world, r.id, 'musketeers')).toBe('needsBarracks');
+    raiseKeepTo(world, 5);
+    barracks.level = 4;
+    expect(cmdRearm(world, r.id, 'musketeers')).toBe('ok');
+    run(world, REARM.seconds + 1);
+    expect(r.kind).toBe('musketeers');
+    expect(r.def.defenceOnly).toBeFalsy();
+    expect(canRearm(world, r.id, 'lineInfantry')).toBe('needsBarracks');
+    barracks.level = 5;
+    expect(cmdRearm(world, r.id, 'lineInfantry')).toBe('ok');
+    run(world, REARM.seconds + 1);
+    expect(r.kind).toBe('lineInfantry');
+    // Every medieval kind has a way into a later age, the foot to the musket and the horse to the new horse.
+    for (const kind of ['pikemen', 'archers', 'swordsmen', 'halberdiers', 'crossbowmen', 'lightCavalry', 'heavyCavalry'] as const) {
+      expect(REARM.paths[kind].some((to) => UNITS[to].barracksLevel >= 4)).toBe(true);
+      for (const to of REARM.paths[kind]) expect(UNITS[to].cavalry).toBe(UNITS[kind].cavalry);
+    }
   });
 });

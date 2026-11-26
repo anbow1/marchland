@@ -57,7 +57,7 @@ misje: [CAMPAIGN.md](CAMPAIGN.md).*
 - **Łup:** za każdego zabitego wroga do skarbca wpada jego „cena głowy” (kolumna w UNITS.md).
 - **Uzupełnianie:** oddział stojący do 40 m od koszar (milicja — od zamku), 5 s bez walki, dostaje brakujących
   ludzi za złoto i sprzęt; nowi rozwadniają doświadczenie, a poległego kapitana zastępuje jeden z nich.
-- **Przezbrajanie:** do 40 m od koszar, 20 s; płaci się różnicę sprzętu. Drogi: milicja z tarczami → pikinierzy, łucznicy, miecznicy, halabardnicy, kusznicy; pikinierzy → halabardnicy, miecznicy; łucznicy → kusznicy; miecznicy → halabardnicy; halabardnicy → miecznicy; lekka jazda → rycerze; muszkieterowie → piechota liniowa, strzelcy; piechota liniowa → strzelcy; strzelcy → piechota liniowa.
+- **Przezbrajanie:** do 40 m od koszar, 20 s; płaci się różnicę sprzętu. Drogi: milicja z tarczami → pikinierzy, łucznicy, miecznicy, halabardnicy, kusznicy, muszkieterowie, piechota liniowa, strzelcy; pikinierzy → halabardnicy, miecznicy, muszkieterowie, piechota liniowa; łucznicy → kusznicy, muszkieterowie, strzelcy; miecznicy → halabardnicy, muszkieterowie, piechota liniowa; halabardnicy → miecznicy, muszkieterowie, piechota liniowa; kusznicy → muszkieterowie, strzelcy; lekka jazda → rycerze, dragoni, huzarzy; rycerze → kirasjerzy, huzarzy; muszkieterowie → piechota liniowa, strzelcy; kirasjerzy → huzarzy; dragoni → huzarzy; piechota liniowa → strzelcy; strzelcy → piechota liniowa.
 - **Łączenie** (kampania): dwa oddziały tego samego rodzaju, do 30 m od siebie, 5 s bez walki; ludzie
   przechodzą do liczniejszego, do 20; doświadczenie i morale — średnia ważona.
 

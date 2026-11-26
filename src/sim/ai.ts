@@ -2,7 +2,7 @@ import { AI, AI_CHARACTERS, BUILDINGS, MARKET, type AiCharacter, AI_TUNING, DEFE
 import { squareAt } from './streets.ts';
 import { layTrack, pruneTracks, streetLaid, streetPlan, trackCells, trackFor } from './streetNet.ts';
 import { cmdAttackBuilding, cmdAttackRegiment, cmdBuild, cmdBuildStreet, streetCost, cmdTrade, cmdBuildGate, cmdBuildWall, cmdGarrison, cmdMove, cmdMoveGroup, cmdRearm, cmdRecruit, cmdReinforce, cmdStance, cmdUpgrade, cmdUpgradeKeep, cmdUpgradeTransport, lotPrice, missingMen, rearmCost, reinforceCost } from './commands.ts';
-import { barracksLevel, canAffordBuilding, peopleFor, type Town } from './economy.ts';
+import { barracksLevel, canAffordBuilding, eraOf, peopleFor, type Town } from './economy.ts';
 import { freePeople } from './people.ts';
 import { planSite } from './sitePlanner.ts';
 import { isArcher, isEngaged, type Regiment } from './regiment.ts';
@@ -404,7 +404,58 @@ function enemyWithin(world: World, side: Side, x: number, z: number, radiusM: nu
 }
 
 /** What the computer re-arms its militia as, best first: whichever it has the barracks and the arms for. */
-const REARM_PREFERENCE: readonly UnitKind[] = ['swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'archers'];
+const REARM_PREFERENCE: readonly UnitKind[] = ['lineInfantry', 'musketeers', 'swordsmen', 'pikemen', 'halberdiers', 'crossbowmen', 'archers'];
+
+/**
+ * In a later age, what the computer re-arms an older regiment as, best first (only kinds of a later age than its
+ * own, and only those REARM.paths allows): the foot take up muskets, the shooters rifles, the horse the new horse.
+ */
+const MODERNISE: Partial<Record<UnitKind, readonly UnitKind[]>> = {
+  pikemen: ['lineInfantry', 'musketeers'],
+  swordsmen: ['lineInfantry', 'musketeers'],
+  halberdiers: ['lineInfantry', 'musketeers'],
+  archers: ['riflemen', 'musketeers'],
+  crossbowmen: ['riflemen', 'musketeers'],
+  musketeers: ['lineInfantry'],
+  lightCavalry: ['hussars', 'dragoons'],
+  heavyCavalry: ['cuirassiers', 'hussars'],
+  cuirassiers: ['hussars'],
+  dragoons: ['hussars'],
+};
+
+/** The age a kind belongs to: 1 the middle ages, 2 and 3 the later ones (by the barracks it needs). */
+function ageOfKind(kind: UnitKind): number {
+  const level = UNITS[kind].barracksLevel;
+  return level >= 5 ? 3 : level >= 4 ? 2 : 1;
+}
+
+/** Sends a regiment to its barracks to be re-armed as `to`, or re-arms it there; true when it did either. */
+function rearmAtBarracks(world: World, town: Town, r: Regiment, to: UnitKind): boolean {
+  if (cmdRearm(world, r.id, to) === 'ok') return true;
+  const barracks = town.plots.find((b) => b !== null && b.kind === 'barracks' && b.constructionLeftS <= 0);
+  if (!barracks) return false;
+  return cmdMove(world, r.id, barracks.x + Math.sin(barracks.yawRad) * 16, barracks.z + Math.cos(barracks.yawRad) * 16, null, false) === 'ok';
+}
+
+/**
+ * In a later age, in quiet times, an older regiment at home (not the militia, rearmGuards has those) takes up the
+ * arms of the age when the town has them: one regiment a think, so the army changes over without standing idle.
+ */
+function modernise(world: World, ai: AiState, home: readonly Regiment[]): void {
+  const town = world.towns[ai.side];
+  const age = eraOf(town);
+  if (age < 2) return;
+  for (const r of home) {
+    if (r.def.defenceOnly || r.def.engine || r.rearmTo !== null || r.order === 'move' || r.garrisonPlot >= 0) continue;
+    if (ageOfKind(r.kind) >= age) continue;
+    for (const to of MODERNISE[r.kind] ?? []) {
+      if (!REARM.paths[r.kind].includes(to) || ageOfKind(to) <= ageOfKind(r.kind) || barracksLevel(town) < UNITS[to].barracksLevel) continue;
+      const cost = rearmCost(r, to);
+      if (RESOURCE_IDS.some((id) => town.stock[id] < (cost[id] ?? 0))) continue;
+      if (rearmAtBarracks(world, town, r, to)) return;
+    }
+  }
+}
 
 /**
  * In quiet times the militia walks to the barracks and is re-armed there as soon as the town has the
@@ -418,10 +469,8 @@ function rearmGuards(world: World, ai: AiState, home: readonly Regiment[]): void
       if (!REARM.paths[r.kind].includes(to) || barracksLevel(town) < UNITS[to].barracksLevel) continue;
       const cost = rearmCost(r, to);
       if (RESOURCE_IDS.some((id) => town.stock[id] < (cost[id] ?? 0))) continue;
-      if (cmdRearm(world, r.id, to) === 'ok') return;
-      // Affordable but not at the barracks: march there first.
-      const barracks = town.plots.find((b) => b !== null && b.kind === 'barracks' && b.constructionLeftS <= 0);
-      if (barracks) cmdMove(world, r.id, barracks.x + Math.sin(barracks.yawRad) * 16, barracks.z + Math.cos(barracks.yawRad) * 16, null, false);
+      // Re-armed there, or (affordable but not at the barracks) marching there first.
+      rearmAtBarracks(world, town, r, to);
       return;
     }
   }
@@ -634,6 +683,7 @@ function command(world: World, ai: AiState): void {
     if (home.length > 0) cmdMoveGroup(world, home.map((r) => r.id), rallyX(side), rallyZ(side), facingToEnemy(side), false);
   } else {
     rearmGuards(world, ai, home);
+    modernise(world, ai, home);
     reinforceHome(world, ai, home);
     manTowers(world, ai, home);
     seizePoints(world, ai, home);

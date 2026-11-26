@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Przezbrajanie przez epoki: od milicji do piechoty liniowej
+
+- **Prośba**: jednostki można ulepszać między epokami, od milicji do piechura. `REARM.paths`: każda piechota
+  średniowiecza (milicja, pikinierzy, miecznicy, halabardnicy) → muszkieterowie (koszary 4) → piechota liniowa
+  (koszary 5); łucznicy i kusznicy → muszkieterowie albo strzelcy; lekka jazda → rycerze, dragoni, huzarzy;
+  rycerze → kirasjerzy, huzarzy; kirasjerzy, dragoni → huzarzy. Oddział zachowuje ludzi, rany (jako część),
+  morale, doświadczenie i kapitana; płaci różnicę złota i sprzętu.
+- Panel wojska pokazuje przyciski epok dopiero, gdy zamek wejdzie w tę epokę. Komputer w nowej epoce przezbraja
+  stare oddziały w spokojnych chwilach (`modernise`), a milicję woli od razu w piechotę liniową lub muszkieterów.
+- Test (`ages.test.ts`): milicja → muszkieterowie dopiero przy koszarach 4, → piechota liniowa przy 5; każdy
+  rodzaj średniowiecza ma drogę do późniejszej epoki, piechota zostaje piechotą, jazda jazdą. Wszystkie testy zielone.
+
 ## 2026-11-27 · Ulice od skrzyżowania do skrzyżowania, polne drogi; dokument o epokach
 
 - **Problem** (uwaga właściciela: „drogi wyglądają mało naturalnie”): każdy budynek dostawał własną drogę w kształcie

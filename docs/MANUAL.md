@@ -367,7 +367,11 @@ reszta czeka 12 m przed nią, najbliższy następny; nikt nie czeka dłużej ni�
 
 - **Uzupełnij** — przerzedzony oddział dostaje ludzi z miasta przy koszarach (milicja przy zamku): złoto i broń
   za każdego, nowi rozwadniają doświadczenie.
-- **Przezbrój** — przy koszarach oddział zmienia rodzaj (np. milicja → miecznicy), płacąc różnicę sprzętu.
+- **Przezbrój** — przy koszarach oddział zmienia rodzaj (np. milicja → miecznicy), płacąc różnicę sprzętu. Ludzie,
+  doświadczenie i kapitan zostają, także **między epokami**: piechota średniowiecza bierze muszkiety (koszary 4:
+  muszkieterowie), potem broń piechoty liniowej albo strzelców (koszary 5) — od milicji do piechoty liniowej;
+  jazda: lekka → dragoni albo huzarzy, rycerze → kirasjerzy albo huzarzy. Przyciski epok pojawiają się, gdy zamek
+  wejdzie w tę epokę.
 - **Połącz** (kampania) — dwa oddziały tego samego rodzaju, do 30 m od siebie, 5 s bez walki: ludzie
   przechodzą do liczniejszego (do 20); doświadczenie i morale — średnia ważona; nadmiar zostaje z kapitanem.
 
@@ -500,7 +504,10 @@ dłużej (3 i 4 minuty) i kosztuje dużo: zamek 4 — 1200 zł, 200 desek, 400 k
   epoki 2; epoka 3 bez zbroi — mundur).
 - **Poziom 4 i 5 budynku** pracuje szybciej (× 2,9 i × 3,5), chata mieści 20 i 24 osoby, kosztuje 3,5 i 5 ×
   ceny budowy. Wygląd: ten sam budynek w materiałach epoki (do czasu własnych modeli).
-- **Przezbrajanie**: muszkieterowie → piechota liniowa albo strzelcy (przy koszarach 5).
+- **Przezbrajanie przez epoki** (§6.7): każda piechota średniowiecza (od milicji) → muszkieterowie (koszary 4) →
+  piechota liniowa albo strzelcy (koszary 5); łucznicy i kusznicy prosto też w strzelców; lekka jazda → dragoni,
+  huzarzy; rycerze → kirasjerzy, huzarzy; kirasjerzy i dragoni → huzarzy. Komputer w nowej epoce przezbraja swoje
+  stare oddziały w spokojnych chwilach, jeden naraz, gdy ma broń.
 - **Komputer** wchodzi w kolejne epoki po 50. minucie, gdy ma zbudowany plan średniowieczny i złoto w zapasie;
   wtedy stawia katedrę, rusznikarnię, prochownię, ratusz i manufakturę, podnosi koszary i werbuje nowe wojska.
 - **Modele zastępcze** (stan i lista potrzebnych modeli: [AGES.md](AGES.md)): nowe jednostki chodzą na modelach średniowiecznych (piechota z bronią palną na kuszniku,

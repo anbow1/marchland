@@ -88,13 +88,17 @@ tylko za to, czego jeszcze nie mają: ekwipunek nowego rodzaju minus ten, który
 oraz różnicę w złocie, jeśli nowy rodzaj jest droższy. Wydawanie broni trwa 20 s; oddział stoi.
 Wymagany poziom koszar jak przy werbunku.
 
-- **Milicja z tarczami** → Pikinierzy, Łucznicy, Miecznicy, Halabardnicy, Kusznicy
-- **Pikinierzy** → Halabardnicy, Miecznicy
-- **Łucznicy** → Kusznicy
-- **Miecznicy** → Halabardnicy
-- **Halabardnicy** → Miecznicy
-- **Lekka jazda** → Rycerze
+- **Milicja z tarczami** → Pikinierzy, Łucznicy, Miecznicy, Halabardnicy, Kusznicy, Muszkieterowie, Piechota liniowa, Strzelcy
+- **Pikinierzy** → Halabardnicy, Miecznicy, Muszkieterowie, Piechota liniowa
+- **Łucznicy** → Kusznicy, Muszkieterowie, Strzelcy
+- **Miecznicy** → Halabardnicy, Muszkieterowie, Piechota liniowa
+- **Halabardnicy** → Miecznicy, Muszkieterowie, Piechota liniowa
+- **Kusznicy** → Muszkieterowie, Strzelcy
+- **Lekka jazda** → Rycerze, Dragoni, Huzarzy
+- **Rycerze** → Kirasjerzy, Huzarzy
 - **Muszkieterowie** → Piechota liniowa, Strzelcy
+- **Kirasjerzy** → Huzarzy
+- **Dragoni** → Huzarzy
 - **Piechota liniowa** → Strzelcy
 - **Strzelcy** → Piechota liniowa
 

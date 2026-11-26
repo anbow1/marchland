@@ -39,6 +39,8 @@ surowe pliki Mixamo nie trafiają do repozytorium.
 
 ## 3. Do zrobienia bez zasobów (mogę zaczynać od razu)
 
+Zrobione z tej listy: przezbrajanie przez epoki (od milicji do piechoty liniowej, jazda do huzarów), 27.11.
+
 ### 3.1 Interfejs ([GAMEPLAY.md §9](GAMEPLAY.md) „Do zrobienia”)
 
 1. **Stały pasek kart oddziałów** na dole ekranu: siła, morale, stopień, postawa; klik zaznacza, dwuklik

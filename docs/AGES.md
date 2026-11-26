@@ -31,6 +31,10 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 - **Broń palna**: muszkiet i proch to nowe towary (rusznikarnia: drewno + żelazo → muszkiet; prochownia:
   2 drewna + kamień → 2 prochu; oba także na targu). Kula przebija zbroję **i tarczę** (część równa przebiciu),
   leci płasko i szybko, ładowanie trwa 14–20 s. Strzał: błysk, huk i dym nad szeregiem.
+- **Przezbrajanie przez epoki**: oddział zachowuje ludzi, doświadczenie i kapitana; piechota od milicji przez
+  muszkieterów do piechoty liniowej (albo strzelców), jazda od lekkiej do dragonów i huzarów, rycerze do
+  kirasjerów (`REARM.paths`; kiedy — decyduje poziom koszar). Komputer przezbraja stare oddziały w nowej epoce
+  (`modernise` w `ai.ts`).
 - **Komputer** wchodzi w epoki po 50. minucie: odkłada pełną cenę zamku w złocie, brakujące deski, kamień i żelazo
   kupuje na targu, potem stawia katedrę, rusznikarnię, prochownię, ratusz i manufakturę, podnosi koszary
   i werbuje nowe wojska. W próbie z epokami od 30. minuty doszedł do zamku 4 około 115.–125. minuty.
