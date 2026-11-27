@@ -5,6 +5,26 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Przodek i pole ostrzału dział; zaprzęgi koni
+
+- **Zasada** (`stepLimber` w `movement.ts`, ostrzał w `missiles.ts`): działo maszeruje zaprzęgnięte, strzela
+  odprzęgnięte. Zaprzęganie przed ruszeniem i odprzęganie po zatrzymaniu trwa: działa konne 5 s, falkonety 6 s,
+  armaty polowe 10 s, armaty 12 s, kolubryny 15 s, moździerz 20 s. Strzał tylko w pasie ±15° od kierunku. Do
+  innego celu obsługa obraca działo ręcznie, z szybkością od 17°/s (falkonety, działa konne) do 5°/s (moździerz).
+  Odprzęgnięte działo nie rusza się o mniej niż 2 m ani do celu w zasięgu. Panel pokazuje „zaprzęga” albo
+  „odprzęga” z sekundami.
+- **Obraz**: działa epok 2–3 jadą lawetą naprzód, a przed nimi idą 2 konie (falkonety) albo 4 (cięższe). To ten
+  sam model konia co u jazdy, bez jeźdźca. Wszystkie zaprzęgi to jedna siatka instancjonowana, czyli jedno
+  dodatkowe wywołanie rysowania. Konie są widoczne tylko w marszu i przy zaprzęganiu.
+- **Koszt**: w symulacji kilka porównań na działo w kroku; w obrazie jedna siatka do 240 koni.
+- **Testy** (`tests/limber.test.ts`): działo stoi przez czas zaprzęgania, potem idzie; po dojściu nie strzela, dopóki
+  się nie odprzęgnie. Kolubryna zwrócona tyłem do wroga nie strzela, dopóki się nie obróci.
+- **Misja 1 w otwartym polu**: na ziarnach 1–4 gracz wygrał 3 razy, a próg testu to najwyżej 2. Na 12 ziarnach
+  wersja przed zmianą i po niej wygrywa tak samo: 6 na 12. Wróg w misji 1 nie ma dział, więc o wyniku decyduje
+  losowanie, a 4 próby to za mało. Test sprawdza teraz 8 ziaren w otwartym polu i najwyżej połowę wygranych. Za
+  murami gracz traci więcej ludzi (zostaje średnio 73 zamiast 102 ze 160): jego moździerze i armata strzelają
+  teraz tylko przed siebie. Wygrywa nadal 4 na 4.
+
 ## 2026-11-27 · Działa epoki 3 ciemniejsze: koła nie srebrne
 
 - Uwaga właściciela: koła armat srebrne, armaty zielono-brązowe, za jasne. Działo 1815 miało jasność tekseli

@@ -195,7 +195,13 @@ modelu. Modele: muszkieterowie, jeździec kirasjerów (27.11).
   wycięty z trójkątów skóry konia (`caparison`), lekko odsunięty wzdłuż normalnych i na tych samych
   kościach, więc leży na koniu i się z nim rusza. **Wapenrok** jeźdźca jest tak samo wycięty z trójkątów
   jego tułowia (`cavalryGeometryOnModels`).
-- **Obsługa dział** to mieszczanie ze szkieletem przy dziale (`loadCrew`, `writeCrews`).
+- **Obsługa dział** to mieszczanie ze szkieletem przy dziale (`loadCrew`, `writeCrews`), a przy działach epoki 3
+  artylerzyści (`CREW_FILES`).
+- **Zaprzęg działa** (`useTeam`, `writeTeams`): ten sam `warhorse.json` bez jeźdźca, jedna dodatkowa siatka
+  instancjonowana dla koni wszystkich dział (do 240 koni, jedno wywołanie rysowania). Konie są rysowane tylko
+  przy dziale zaprzęgniętym albo w trakcie zaprzęgania. Stoją parami przed lawetą (`TEAM_LIMBER_M`,
+  `TEAM_PAIR_M`), chód zgrany z drogą działa. Zaprzęgnięte działo ma model obrócony o 180°: jedzie lawetą
+  naprzód. Wspólny kod siatki ze szkieletem to `skinnedInstances` (obsługa i konie).
 - **Brak modelu = bryły z kodu** (`soldierGeometry.ts`): każda jednostka ma wersję z prostopadłościanów,
   która rysuje się, dopóki model się nie wczyta albo gdy go nie ma.
 
@@ -231,6 +237,12 @@ wysokości.
   oddział jego strony albo inny jest bliżej wejścia. Reguła nie ma stanu: liczy się co krok z położeń, więc
   jest deterministyczna i nie trzeba jej zapisywać. `tests/crossing.test.ts` puszcza po 4 oddziały przez
   bród i przez bramę.
+- **Przodek działa** (`stepLimber` w `movement.ts`): dwa pola stanu na oddział (`limbered`, `limberLeftS`).
+  Działo, które chce ruszyć, stoi `limberS` sekund (zaprzęga), a po dojściu tyle samo odprzęga. Gdy w trakcie
+  zmieni zamiar, wraca do stanu sprzed czynności bez czekania. Strzał (`stepArchers`) tylko po odprzęgnięciu i
+  w pasie ±15° od kierunku. Kierunek celu (`aimRad`) ustala ostrzał, a `stepAnchor` obraca działo na postoju z
+  szybkością `aimTurnRadS`. Odprzęgnięte działo nie rusza się o mniej niż 2 m ani do celu, który ma w zasięgu,
+  więc nie zaprzęga się bez potrzeby. Koszt: kilka porównań na działo w kroku.
 - **Front przeciągnięciem** (`dragFacing` w `commands.ts`): przeciągnięcie wyznacza front, a oddział patrzy
   zawsze w lewo od kierunku przeciągnięcia. Jedna reguła daje płynny obrót przez 360°. Wcześniejsza reguła
   „od środka oddziałów” przeskakiwała o 180°. Na dotyku to samo robi przytrzymany palec (350 ms), potem

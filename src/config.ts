@@ -579,6 +579,15 @@ export interface UnitDef {
   walkSpeedMs: number;
   runSpeedMs: number;
   turnRateRadS: number;
+  /**
+   * A gun travels limbered (hitched behind its team) and fires unlimbered: the seconds its crew takes to unhitch
+   * it on stopping, and as long again to hitch it before it can move off. Absent = no limber (everything not a gun).
+   */
+  limberS?: number;
+  /** Unlimbered, a gun fires only at what lies within ±GUNS.arcRad of its facing; its crew heaves it round this fast (rad/s). */
+  aimTurnRadS?: number;
+  /** Horses drawing the gun and its limber on the march (0 = dragged by the crew or by oxen off the board). */
+  teamHorses?: number;
   bodyRadiusM: number;
   /** Gold paid to the enemy for each man of this unit they bring down. */
   bounty: number;
@@ -616,7 +625,7 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   heavyCavalry: { ...HORSE, armourClass: 'heavy', barracksLevel: 3, goldCost: 160, equipment: { horse: 1, weapon: 1, mailArmor: 1 }, hp: 52, attack: 10, defence: 9, armour: 0.45, damage: 8, reachM: 2.1, chargeBonus: 13, chargeShock: 15, morale: 85, runSpeedMs: 7.5, missileBlock: 0.35, shieldDefence: 1.5, bounty: 6 },
   // Two field guns cast at the foundry: a ball on a flat line to 120 m that goes through any armour and
   // knocks holes in walls; helpless once reached.
-  cannon: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileRollM: 12, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
+  cannon: { ...ENGINE, limberS: 12, aimTurnRadS: 0.12, teamHorses: 0, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 1, goldCost: 140, equipment: { iron: 6, wood: 6 }, hp: 80, missileBlock: 0.7, missileRangeM: 120, missileMinRangeM: 10, missileDamage: 55, missilePierce: 0.9, missileSpeedMs: 110, missileHighArc: false, missileSplashM: 0, missileRollM: 12, missileSiegeDamage: 30, reloadS: 10, morale: 55, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.4, bounty: 8 },
   // One mortar (the foundry's second level): it lobs a heavy ball high over walls; it scatters a formation
   // and brings down walls, towers and the keep. Cannot shoot closer than 40 m.
   // ---- The second age (keep 4, barracks 4): muskets beside the last pikes, armoured horse with pistols. ----
@@ -634,16 +643,19 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   riflemen: { ...FOOT, armourClass: 'uniform', firearm: true, barracksLevel: 5, goldCost: 150, equipment: { musket: 1, powder: 1, iron: 1 }, hp: 26, attack: 3, defence: 3, armour: 0.05, damage: 4, reachM: 1.4, chargeBonus: 0, chargeShock: 0, missileRangeM: 130, missileDamage: 36, missilePierce: 0.85, missileSpeedMs: 200, missileSiegeDamage: 1, missileSpreadFactor: 0.6, reloadS: 20, morale: 50, runSpeedMs: 3.2, bounty: 3 },
   // Hussars: the fastest horse of all, sabre in hand, for raids and pursuit.
   hussars: { ...HORSE, armourClass: 'uniform', barracksLevel: 5, goldCost: 150, equipment: { horse: 1, weapon: 1 }, hp: 46, attack: 10, defence: 7, armour: 0.1, damage: 7, reachM: 1.9, chargeBonus: 12, chargeShock: 12, morale: 90, runSpeedMs: 9.2, bounty: 4 },
-  mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 3.5, missileSpreadFactor: 3, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
+  mortar: { ...ENGINE, limberS: 20, aimTurnRadS: 0.08, teamHorses: 0, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 3.5, missileSpreadFactor: 3, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
   // The second age's guns (foundry 4). Falconets: small guns a horse can pull at a trot, cheap, a light ball
   // to 110 m. Culverins: long heavy guns on a siege carriage, the age's reach (170 m), dear and slow.
-  falconets: { ...ENGINE, crew: 2, men: 2, files: 2, fileSpacingM: 4, rankSpacingM: 4, barracksLevel: 4, goldCost: 110, equipment: { iron: 4, wood: 3, powder: 3 }, hp: 60, missileBlock: 0.6, missileRangeM: 110, missileMinRangeM: 8, missileDamage: 45, missilePierce: 0.85, missileSpeedMs: 120, missileHighArc: false, missileSplashM: 0, missileRollM: 10, missileSiegeDamage: 14, reloadS: 7, morale: 60, walkSpeedMs: 1.8, runSpeedMs: 1.8, bodyRadiusM: 1.1, bounty: 6 },
-  culverins: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 4, goldCost: 220, equipment: { iron: 8, wood: 5, powder: 6 }, hp: 90, missileBlock: 0.7, missileRangeM: 170, missileMinRangeM: 12, missileDamage: 60, missilePierce: 0.9, missileSpeedMs: 140, missileHighArc: false, missileSplashM: 0, missileRollM: 16, missileSiegeDamage: 40, reloadS: 11, morale: 60, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.5, bounty: 11 },
+  falconets: { ...ENGINE, limberS: 6, aimTurnRadS: 0.3, teamHorses: 2, crew: 2, men: 2, files: 2, fileSpacingM: 4, rankSpacingM: 4, barracksLevel: 4, goldCost: 110, equipment: { iron: 4, wood: 3, powder: 3 }, hp: 60, missileBlock: 0.6, missileRangeM: 110, missileMinRangeM: 8, missileDamage: 45, missilePierce: 0.85, missileSpeedMs: 120, missileHighArc: false, missileSplashM: 0, missileRollM: 10, missileSiegeDamage: 14, reloadS: 7, morale: 60, walkSpeedMs: 1.8, runSpeedMs: 1.8, bodyRadiusM: 1.1, bounty: 6 },
+  culverins: { ...ENGINE, limberS: 15, aimTurnRadS: 0.1, teamHorses: 4, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 4, goldCost: 220, equipment: { iron: 8, wood: 5, powder: 6 }, hp: 90, missileBlock: 0.7, missileRangeM: 170, missileMinRangeM: 12, missileDamage: 60, missilePierce: 0.9, missileSpeedMs: 140, missileHighArc: false, missileSplashM: 0, missileRollM: 16, missileSiegeDamage: 40, reloadS: 11, morale: 60, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.5, bounty: 11 },
   // The third age's guns (foundry 5). Horse guns: light guns galloping with the cavalry, cheap, to 140 m.
   // Field guns: the heavy battery, the farthest reach of all (210 m), a ball that rolls on through a column.
-  horseGuns: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 4.5, rankSpacingM: 4.5, barracksLevel: 5, goldCost: 150, equipment: { iron: 5, wood: 3, powder: 4 }, hp: 70, missileBlock: 0.65, missileRangeM: 140, missileMinRangeM: 8, missileDamage: 52, missilePierce: 0.9, missileSpeedMs: 150, missileHighArc: false, missileSplashM: 0, missileRollM: 14, missileSiegeDamage: 18, reloadS: 6, morale: 65, walkSpeedMs: 2.8, runSpeedMs: 2.8, bodyRadiusM: 1.2, bounty: 8 },
-  fieldGuns: { ...ENGINE, crew: 4, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 5, goldCost: 260, equipment: { iron: 10, wood: 5, powder: 8 }, hp: 100, missileBlock: 0.7, missileRangeM: 210, missileMinRangeM: 12, missileDamage: 65, missilePierce: 0.95, missileSpeedMs: 170, missileHighArc: false, missileSplashM: 0, missileRollM: 20, missileSiegeDamage: 45, reloadS: 8, morale: 65, walkSpeedMs: 1.4, runSpeedMs: 1.4, bodyRadiusM: 1.5, bounty: 12 },
+  horseGuns: { ...ENGINE, limberS: 5, aimTurnRadS: 0.3, teamHorses: 4, crew: 3, men: 2, files: 2, fileSpacingM: 4.5, rankSpacingM: 4.5, barracksLevel: 5, goldCost: 150, equipment: { iron: 5, wood: 3, powder: 4 }, hp: 70, missileBlock: 0.65, missileRangeM: 140, missileMinRangeM: 8, missileDamage: 52, missilePierce: 0.9, missileSpeedMs: 150, missileHighArc: false, missileSplashM: 0, missileRollM: 14, missileSiegeDamage: 18, reloadS: 6, morale: 65, walkSpeedMs: 2.8, runSpeedMs: 2.8, bodyRadiusM: 1.2, bounty: 8 },
+  fieldGuns: { ...ENGINE, limberS: 10, aimTurnRadS: 0.18, teamHorses: 4, crew: 4, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 5, goldCost: 260, equipment: { iron: 10, wood: 5, powder: 8 }, hp: 100, missileBlock: 0.7, missileRangeM: 210, missileMinRangeM: 12, missileDamage: 65, missilePierce: 0.95, missileSpeedMs: 170, missileHighArc: false, missileSplashM: 0, missileRollM: 20, missileSiegeDamage: 45, reloadS: 8, morale: 65, walkSpeedMs: 1.4, runSpeedMs: 1.4, bodyRadiusM: 1.5, bounty: 12 },
 };
+
+/** Guns in the field: they fire only at what lies within this of the way they face (±15°). */
+export const GUNS = { arcRad: (15 * Math.PI) / 180 };
 
 export const ARMY = {
   /** 100 a side: 200 soldiers on the field at most (the brief's ceiling); the campaign allows CAMPAIGN.maxSoldiersPerSide. */

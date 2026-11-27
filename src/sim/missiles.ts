@@ -1,10 +1,10 @@
 import { damageWall, wallCellAt } from './nav.ts';
 import { keepRules } from './economy.ts';
 import { woodStands } from './trees.ts';
-import { ELEVATION, FORMATION, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, VETERANS, WALLS } from '../config.ts';
+import { ELEVATION, FORMATION, GUNS, MISSILE, MORALE, TOWER, TOWN, type UnitDef, UNITS, VETERANS, WALLS } from '../config.ts';
 import { damageBuilding, wound } from './combat.ts';
 import { buildingStands, buildingX, buildingZ } from './movement.ts';
-import { isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
+import { angleDelta, isArcher, isEngaged, type Regiment, type Soldier, veteranRank } from './regiment.ts';
 import { heightAtM, isForest, townX, townZ } from './terrain.ts';
 import type { Side } from './types.ts';
 import { findRegiment, type World } from './world.ts';
@@ -348,6 +348,25 @@ function shootAtBuilding(world: World, r: Regiment): void {
   }
 }
 
+/** The bearing from a gun to what it would fire at this step (its building, its wall, its mark); NaN for nothing. */
+function aimBearing(world: World, r: Regiment): number {
+  let x: number;
+  let z: number;
+  if (r.order === 'attackBuilding' && buildingStands(world, r.targetSide, r.targetPlot)) {
+    x = buildingX(world, r.targetSide, r.targetPlot);
+    z = buildingZ(world, r.targetSide, r.targetPlot);
+  } else if (r.order === 'bombard') {
+    x = r.bombardX;
+    z = r.bombardZ;
+  } else {
+    const target = findRegiment(world, r.fireTargetId);
+    if (!target || target.aliveMen === 0) return Number.NaN;
+    x = target.centreX;
+    z = target.centreZ;
+  }
+  return Math.atan2(x - r.anchorX, z - r.anchorZ);
+}
+
 function stepArchers(world: World, r: Regiment, dtSeconds: number): void {
   r.fireSearchS -= dtSeconds;
   if (r.fireSearchS <= 0) {
@@ -355,6 +374,12 @@ function stepArchers(world: World, r: Regiment, dtSeconds: number): void {
     const ordered = r.order === 'attackRegiment' ? findRegiment(world, r.targetRegimentId) : null;
     // At will they choose their own mark; held, they shoot only at what they are sent against.
     r.fireTargetId = ordered && ordered.aliveMen > 0 ? ordered.id : r.order === 'attackBuilding' || !r.fireAtWill ? -1 : nearestInRange(world, r);
+  }
+  // A gun: the crew swings it to bear on its mark, and it fires only unlimbered and within its arc.
+  if (r.def.limberS) {
+    r.aimRad = aimBearing(world, r);
+    if (r.limbered || (r.limberLeftS ?? 0) > 0) return;
+    if (!Number.isNaN(r.aimRad) && Math.abs(angleDelta(r.aimRad, r.facingRad)) > GUNS.arcRad) return;
   }
   // Archers shoot standing, and not while someone is at their throats.
   if (isEngaged(r) || r.speedMs > 0.3) return;

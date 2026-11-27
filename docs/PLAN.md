@@ -14,7 +14,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | M4 — obraz (postacie z Mixamo na GPU, konie, wozy, las, trawa, budynki z modeli, etapy budowy) | ✔ |
 | M5 — przeciwnik i tryby (charaktery, kontry, Obrona, samouczek) | ✔ |
 | M6 — telefon i wydanie (KTX2, ustawienia, zapis, PWA, Windows) | ✔ poza przyciskiem Benchmark (§3.4) i pomiarem na telefonie (W3) |
-| M7 — epoki | zasady ✔, pojedynki i epoka na start ✔; wszystkie jednostki epok z modeli ✔; **budynki epok — czekają** |
+| M7 — epoki | zasady ✔, pojedynki i epoka na start ✔; wszystkie jednostki epok z modeli ✔; przodek i pole ostrzału dział ✔; **budynki epok — czekają** |
 | Kampania — pięć misji | ✔ grywalne ([CAMPAIGN.md](CAMPAIGN.md)); drobiazgi w §3.5 |
 | Miasto — szachownica, ulice od skrzyżowania do skrzyżowania, polne drogi, ulice gracza na później | ✔ |
 
@@ -26,7 +26,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | W1 | **Działa z XVII w.** (falkonet, kolubryna) — dziś model działa średniowiecznego, mniejszy i większy | wygląd artylerii epoki 2 |
 | W2 | **Broń i tarcze**: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia, tarcza lekkiej jazdy, szabla | wygląd broni średniowiecza jest dawny |
 | W3 | **Budynki epok**: rusznikarnia, prochownia, katedra, ratusz, manufaktura; domy i warsztaty w wyglądzie epoki 2 i 3 | dziś bryły z kodu i podmiana materiałów |
-| W4 | **Kłus konia** (zapętlony) | jazda w marszu chodzi stępem albo galopem |
+| W4 | **Kłus konia** (zapętlony); opcjonalnie **przodek** (dwukołowy wózek z amunicją) | jazda i zaprzęgi dział chodzą stępem albo galopem; dziś zaprzęg to same konie przed lawetą |
 | W5 | Pomiar na prawdziwym telefonie i karcie graficznej (przycisk Benchmark, gdy będzie) | liczby klatek są dziś z programowego GPU |
 | W6 | Opcjonalnie: towary do obejść (ryby w koszu, winogrona, sztabki, ruda, snopki) | dziś zastępcze skrzynie |
 | W7 | Usunięcie scalonej gałęzi `claude/close-camera-from-marchland` w mediveal-village | porządek |

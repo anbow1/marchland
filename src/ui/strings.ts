@@ -273,6 +273,8 @@ interface Strings {
   rearm: string;
   rearmed: string;
   rearmingState: string;
+  limberingState: string;
+  unlimberingState: string;
   reinforce: string;
   reinforceTip: string;
   reinforced: string;
@@ -729,6 +731,8 @@ const pl: Strings = {
   rearm: 'Przezbrój',
   rearmed: 'Oddział przezbrojony',
   rearmingState: 'przezbraja się',
+  limberingState: 'zaprzęga',
+  unlimberingState: 'odprzęga',
   reinforce: 'Uzupełnij',
   reinforceTip: 'Uzupełnia oddział do pełnego składu: złoto i broń za każdego nowego, ludzie przychodzą z miasta. Nowi rozwadniają doświadczenie; poległego kapitana zastępuje jeden z nich.',
   reinforced: 'Oddział uzupełniony',
@@ -1184,6 +1188,8 @@ const en: Strings = {
   rearm: 'Re-arm',
   rearmed: 'Regiment re-armed',
   rearmingState: 're-arming',
+  limberingState: 'limbering up',
+  unlimberingState: 'unlimbering',
   reinforce: 'Reinforce',
   reinforceTip: 'Fills the regiment to full strength: gold and arms for every new man, the men come from the town. They dilute its experience; a fallen captain is replaced by one of them.',
   reinforced: 'Regiment reinforced',

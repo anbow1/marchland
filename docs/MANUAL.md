@@ -391,6 +391,15 @@ wręcz albo z dział; wyłom zostaje gruzem, przez który się przechodzi. Wież
 sięgają dalej. Armata bije prosto (kula toczy się i powala kilku), moździerz stromo nad murami (zabójczy, ale
 niecelny); oba strzelają z miejsca.
 
+**Przodek i pole ostrzału.** Działo maszeruje zaprzęgnięte, a strzela odprzęgnięte. Po rozkazie marszu obsługa
+najpierw je zaprzęga, a po zatrzymaniu odprzęga. Każda z tych czynności trwa: działa konne 5 s, falkonety 6 s,
+armaty polowe 10 s, armaty 12 s, kolubryny 15 s, moździerz 20 s. W tym czasie działo stoi, nie strzela, a panel
+pokazuje „zaprzęga” albo „odprzęga” z pozostałymi sekundami. Działa epok 2–3 ciągną konie przed lawetą (2 przy
+falkonetach, 4 przy cięższych), a działa średniowieczne ciągnie obsługa. Odprzęgnięte działo strzela tylko w pasie
+±15° od swojego kierunku. Do innego celu obsługa obraca je ręcznie, powoli, a ciężkie działa wolniej. Zanim
+przeciwnik podejdzie z boku, warto więc ustawić baterię przodem do niego. Działo nie rusza się do celu, który ma
+w zasięgu, ani o mniej niż 2 m: nie traci czasu na zaprzęganie.
+
 ---
 
 ## 7. Gospodarka w skrócie
@@ -509,7 +518,8 @@ dłużej (3 i 4 minuty) i kosztuje dużo: zamek 4 — 1200 zł, 200 desek, 400 k
 
 - **Artyleria**: w każdej epoce dwa działa — lżejsze i tańsze, szybsze w marszu, i cięższe, droższe, o większym
   zasięgu: armaty (120 m) i moździerz (150 m); falkonety (110 m) i kolubryny (170 m); działa konne (140 m) i armaty
-  polowe (210 m). Działa epok lane w ludwisarni na poziomie 4 i 5; proch na każdy strzał.
+  polowe (210 m). Działa epok lane w ludwisarni na poziomie 4 i 5; proch na każdy strzał. Lżejsze działo szybciej
+  się zaprzęga i obraca (działa konne 5 s, falkonety 6 s), a cięższe wolniej (kolubryny 15 s, moździerz 20 s); §6.8.
 - **Broń palna** (muszkieterowie, dragoni, piechota liniowa, strzelcy): kula przebija zbroję (75–85%), leci
   szybko i płasko, ale ładowanie trwa 14–20 s, a muszkiet strzela szeroko (strzelcy — celnie na 130 m). Każdy
   strzał to błysk, huk i dym nad szeregiem. Uzbrojenie przy werbunku: muszkiet i proch (zbroja skórzana dla

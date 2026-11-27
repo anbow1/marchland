@@ -235,6 +235,13 @@ function withRider(horse: RiggedModel & { saddle: { bone: number; y: number; z: 
  * (the take's 3.6 m would show a charge at a march's speed in slow motion). */
 const GALLOP_FROM_MS = 1.8;
 const GALLOP_CYCLE_M = 3;
+/** A gun's team: room for 60 guns of four horses; the limber's length between trail and wheelers, a pair's
+ * length, the half-gap between the two of a pair (m); above this pace (m/s) the team gallops. */
+const TEAM_CAPACITY = 240;
+const TEAM_LIMBER_M = 2;
+const TEAM_PAIR_M = 2.7;
+const TEAM_ABREAST_M = 0.48;
+const TEAM_GALLOP_FROM_MS = 3;
 
 /** The frame of a clip in which a weapon's tip (a vertex on its joint, the furthest forward at rest)
  * reaches furthest forward (−Z) while staying about chest high. */
@@ -425,6 +432,8 @@ export class ArmyView {
   private crew: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: Record<'idle' | 'walk' | 'pickup' | 'putdown', Clip & { fps: number }> } | null = null;
   private readonly crews = new Map<string, NonNullable<ArmyView['crew']>>();
   private readonly gunSizes = new Map<GunKind, number[]>();
+  /** The guns' teams of horses (soldiers/warhorse.json unridden), once loaded. */
+  private team: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: Record<'idle' | 'walk' | 'gallop', Clip & { fps: number }> } | null = null;
   private readonly arrows: InstancedMesh;
   private readonly stones: InstancedMesh;
 
@@ -520,6 +529,7 @@ export class ArmyView {
           // Keeps the common rider.
         }
       }));
+      this.useTeam(horse as RiggedModel);
       for (const kind of MOUNTED) if (this.useMounted(kind, horse as RiggedModel & { saddle: { bone: number; y: number; z: number } }, own.get(kind) ?? (rider as BodyModel))) changed++;
     } catch (error) {
       console.warn(`[soldiers] no skinned horse (${String(error)}): horsemen ride the armoured horse`);
@@ -609,47 +619,109 @@ export class ArmyView {
       const named = (name: string) => model.clips.find((c) => c.name === name);
       const [idle, walk, pickup, putdown] = [named('idle'), named('walk'), named('pickup'), named('putdown')];
       if (!idle || !walk || !pickup || !putdown) throw new Error('townsman lacks a clip');
-      const n = model.positions.length / 3;
-      const g = new BufferGeometry();
-      interleave(g, [
-        ['position', 3, model.positions],
-        ['normal', 3, model.normals],
-        ['color', 3, model.colours],
-        ['aSurface', 3, model.surface],
-      ]);
-      interleave(g, [
-        ['aSkin', 4, model.skin],
-        ['aWeight', 4, model.weights],
-        ['aPart', 4, new Float32Array(n * 4)],
-      ]);
-      g.setIndex(model.triangles);
-      g.computeBoundingSphere();
-      const capacity = 120;
-      const instanced = (size: number): InstancedBufferAttribute => {
-        const a = new InstancedBufferAttribute(new Float32Array(capacity * size), size);
-        a.setUsage(DynamicDrawUsage);
-        return a;
-      };
-      const place = instanced(4);
-      const frame = instanced(1);
-      const side = instanced(1);
-      packVertices(g);
-      g.setAttribute('aPlace', place);
-      g.setAttribute('aAnim', instanced(4));
-      g.setAttribute('aSide', side);
-      g.setAttribute('aFrame', frame);
-      const mesh = new InstancedMesh(g, skinnedMaterial(boneTexture(model)), capacity);
-      mesh.name = 'gun crews';
-      mesh.count = 0;
-      mesh.frustumCulled = false;
-      mesh.castShadow = true;
-      mesh.receiveShadow = true;
-      this.scene.add(mesh);
+      const { mesh, place, frame, side } = this.skinnedInstances(model, 120, 'gun crews');
       this.crew = { mesh, place, frame, side, clips: { idle, walk, pickup, putdown } };
     } catch (error) {
       console.warn(`[soldiers] no modelled gun crews (${String(error)}): they stay built into the guns`);
       this.crew = null;
     }
+  }
+
+  /** A rigged model as one instanced skinned mesh in the scene: each instance's place, clip frame and side. */
+  private skinnedInstances(model: RiggedModel, capacity: number, name: string): { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute } {
+    const n = model.positions.length / 3;
+    const g = new BufferGeometry();
+    interleave(g, [
+      ['position', 3, model.positions],
+      ['normal', 3, model.normals],
+      ['color', 3, model.colours],
+      ['aSurface', 3, model.surface],
+    ]);
+    interleave(g, [
+      ['aSkin', 4, model.skin],
+      ['aWeight', 4, model.weights],
+      ['aPart', 4, new Float32Array(n * 4)],
+    ]);
+    g.setIndex(model.triangles);
+    g.computeBoundingSphere();
+    const instanced = (size: number): InstancedBufferAttribute => {
+      const a = new InstancedBufferAttribute(new Float32Array(capacity * size), size);
+      a.setUsage(DynamicDrawUsage);
+      return a;
+    };
+    const place = instanced(4);
+    const frame = instanced(1);
+    const side = instanced(1);
+    packVertices(g);
+    g.setAttribute('aPlace', place);
+    g.setAttribute('aAnim', instanced(4));
+    g.setAttribute('aSide', side);
+    g.setAttribute('aFrame', frame);
+    const mesh = new InstancedMesh(g, skinnedMaterial(boneTexture(model)), capacity);
+    mesh.name = name;
+    mesh.count = 0;
+    mesh.frustumCulled = false;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+    this.scene.add(mesh);
+    return { mesh, place, frame, side };
+  }
+
+  /** The guns' teams: the warhorse again, unridden, drawn in pairs ahead of every limbered gun. */
+  private useTeam(horse: RiggedModel): void {
+    const named = (name: string): (Clip & { fps: number }) | null => horse.clips.find((c) => c.name === name) ?? null;
+    const [idle, walk, gallop] = [named('idle'), named('walk'), named('gallop')];
+    if (!idle || !walk || !gallop || this.team) return;
+    this.team = { ...this.skinnedInstances(horse, TEAM_CAPACITY, 'gun teams'), clips: { idle, walk, gallop } };
+  }
+
+  /**
+   * Each limbered gun's team ahead of its trail, a pair abreast and the next pair before them, walking in
+   * step with the gun (the horse guns at the gallop); standing while they are put to or taken off.
+   */
+  private writeTeams(world: World): void {
+    const team = this.team;
+    if (!team) return;
+    const p = team.place.array as Float32Array;
+    const f = team.frame.array as Float32Array;
+    const sides = team.side.array as Float32Array;
+    const { idle, walk, gallop } = team.clips;
+    const cycle = (c: Clip & { fps: number }, phase: number): number => c.start + (Math.floor((((phase % 1) + 1) % 1) * c.frames) % c.frames);
+    let n = 0;
+    for (const r of world.regiments) {
+      const horses = r.def.teamHorses ?? 0;
+      if (horses === 0 || !(r.limbered || (r.limberLeftS ?? 0) > 0)) continue;
+      const size = this.gunSizes.get(r.kind as GunKind);
+      const ahead = (size ? (size[2] as number) / 2 : 1.5) + TEAM_LIMBER_M;
+      for (const s of r.soldiers) {
+        if (!s.alive) continue;
+        const dx = Math.sin(s.headingRad);
+        const dz = Math.cos(s.headingRad);
+        const speed = Math.hypot(s.vx, s.vz);
+        for (let h = 0; h < horses && n < TEAM_CAPACITY; h++) {
+          const along = ahead + Math.floor(h / 2) * TEAM_PAIR_M;
+          const across = h % 2 === 0 ? TEAM_ABREAST_M : -TEAM_ABREAST_M;
+          const x = s.x + dx * along + dz * across;
+          const z = s.z + dz * along - dx * across;
+          p[n * 4] = x;
+          p[n * 4 + 1] = heightAtM(x, z);
+          p[n * 4 + 2] = z;
+          // As every model, it looks along −Z: turned by heading + π, the way the gun goes.
+          p[n * 4 + 3] = s.headingRad + Math.PI;
+          sides[n] = r.side;
+          const offset = s.slot * 0.41 + h * 0.23;
+          f[n] =
+            speed > TEAM_GALLOP_FROM_MS ? cycle(gallop, s.strideM / GALLOP_CYCLE_M + offset)
+            : speed > 0.25 ? cycle(walk, s.strideM / Math.max(0.5, walk.travelM ?? 1) + offset)
+            : cycle(idle, world.timeS / (idle.frames / idle.fps) + offset);
+          n++;
+        }
+      }
+    }
+    team.mesh.count = n;
+    team.place.needsUpdate = true;
+    team.frame.needsUpdate = true;
+    team.side.needsUpdate = true;
   }
 
   /** Each living gun's crew about it, each crew model drawing the guns that are its own. */
@@ -900,8 +972,8 @@ export class ArmyView {
     p[i * 4] = s.x - Math.sin(s.headingRad) * back;
     p[i * 4 + 1] = y;
     p[i * 4 + 2] = s.z - Math.cos(s.headingRad) * back;
-    // The models face −Z; a heading h looks along (sin h, cos h): turn by h + π.
-    p[i * 4 + 3] = s.headingRad + Math.PI;
+    // The models face −Z; a heading h looks along (sin h, cos h): turn by h + π. A limbered gun goes trail first.
+    p[i * 4 + 3] = s.headingRad + (r.def.engine && r.limbered && r.def.teamHorses ? 0 : Math.PI);
     const a = k.anim.array as Float32Array;
     const speed = s.alive ? Math.hypot(s.vx, s.vz) : 0;
     const stride = r.def.cavalry ? HORSE_STRIDE_M : FOOT_STRIDE_M;
@@ -990,6 +1062,7 @@ export class ArmyView {
     }
     this.writeGarrisons(world);
     this.writeCrews(world);
+    this.writeTeams(world);
     for (const k of this.kinds.values()) {
       if (k.skinned) k.skinned.frame.needsUpdate = true;
       k.place.needsUpdate = true;

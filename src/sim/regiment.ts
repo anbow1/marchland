@@ -104,6 +104,11 @@ export interface Regiment {
   /** The kind it is being re-armed as, and the seconds left; null when it is not. */
   rearmTo: UnitKind | null;
   rearmLeftS: number;
+  /** A gun: hitched to its team (true: it may move, not fire), and the seconds left to hitch or unhitch it (0 = not doing so). */
+  limbered?: boolean;
+  limberLeftS?: number;
+  /** A gun: the bearing of what it would fire at (NaN = nothing), for its crew to heave it round to. */
+  aimRad?: number;
   /** The tower (its place in the town's list) it is marching to man; -1 none. */
   garrisonPlot: number;
   /** Men in its front rank as ordered (the ranks follow from the men left); the formation and the stance. */

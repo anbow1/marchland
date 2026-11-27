@@ -140,6 +140,33 @@ function updateFatigue(r: Regiment, running: boolean, dtSeconds: number): void {
   r.fatigue = Math.min(1, Math.max(0, r.fatigue));
 }
 
+/**
+ * A gun's limber: whether it wants to move (beyond a step, and not while its mark is still in reach), and the
+ * hitching or unhitching that takes `limberS` either way. True while the team is being put to or taken off.
+ */
+function stepLimber(r: Regiment, onLeg: boolean, faceGoal: boolean, goalX: number, goalZ: number, distanceM: number, stopDistanceM: number, dtSeconds: number): boolean {
+  const limberS = r.def.limberS ?? 0;
+  if (limberS <= 0) return false;
+  let wants = distanceM > stopDistanceM + 0.05;
+  if (wants && !r.limbered && !onLeg) {
+    // Unhitched, it shifts for nothing short of a couple of metres, nor for a mark still within its reach.
+    if (distanceM - stopDistanceM < LIMBER_SLACK_M) wants = false;
+    else if (faceGoal && r.order !== 'move' && distanceM <= reachM(r, goalX, goalZ) * 0.97) wants = false;
+  }
+  if (wants === (r.limbered === true)) {
+    r.limberLeftS = 0;
+    return false;
+  }
+  r.limberLeftS = ((r.limberLeftS ?? 0) > 0 ? (r.limberLeftS as number) : limberS) - dtSeconds;
+  if (r.limberLeftS > 0) return true;
+  r.limberLeftS = 0;
+  r.limbered = wants;
+  return false;
+}
+
+/** Metres short of its place an unlimbered gun is left standing rather than hitched up again. */
+const LIMBER_SLACK_M = 2;
+
 function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
   let goalX = r.destX;
   let goalZ = r.destZ;
@@ -251,7 +278,14 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
   const running = run && distanceM > stopDistanceM + 0.05;
   // A pike wall stands where it is: it only turns to face.
   if (r.stance === 'pikeWall') stopDistanceM = Math.max(stopDistanceM, distanceM + 1);
-  if (distanceM > stopDistanceM + 0.05) {
+  // A gun moves only hitched to its team and fires only unhitched: putting the team to, or taking it off, it stands.
+  const hitching = stepLimber(r, leg !== null, faceGoal, goalX, goalZ, distanceM, stopDistanceM, dtSeconds);
+  // Unlimbered and still in reach of its mark, or a step off its place: it stays and fires rather than hitch up.
+  if (r.def.limberS && !r.limbered && !hitching) stopDistanceM = Math.max(stopDistanceM, distanceM);
+  // Hitching up it stands as it is; unhitching, the team first swings it round to bear (the halt below).
+  if (hitching && !r.limbered) {
+    desiredFacing = r.facingRad;
+  } else if (distanceM > stopDistanceM + 0.05) {
     let speed = (run ? runSpeedMs(r) : r.def.walkSpeedMs) * terrainSpeedFactor(world, r, r.anchorX, r.anchorZ);
     // Behind a shield wall the ranks shuffle forward.
     if (r.stance === 'shields') speed *= FORMATION.shieldSpeedFactor;
@@ -267,6 +301,8 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
     if (faceGoal || distanceM - stopDistanceM > 2) desiredFacing = Math.atan2(dx, dz);
   } else {
     if (faceGoal && distanceM > 0.01) desiredFacing = Math.atan2(dx, dz);
+    // A gun at a halt is swung round to bear on what it would fire at.
+    if (r.def.limberS && Number.isFinite(r.aimRad)) desiredFacing = r.aimRad as number;
     if (r.order === 'move' && !leg) {
       r.order = 'hold';
       r.run = false;
@@ -275,7 +311,8 @@ function stepAnchor(world: World, r: Regiment, dtSeconds: number): void {
   if (!leg && (r.columnLeftM ?? 0) > 0) r.columnLeftM = Math.max(0, (r.columnLeftM ?? 0) - movedM);
   r.speedMs = movedM / dtSeconds;
   r.sinceChargeSpeedS = r.speedMs >= COMBAT.chargeMinSpeedShare * runSpeedMs(r) ? 0 : r.sinceChargeSpeedS + dtSeconds;
-  const turnRate = isEngaged(r) ? ARMY.engagedTurnRateRadS : r.def.turnRateRadS;
+  // Unlimbered, the crew heaves the trail round by hand: slowly, the heavy pieces slower.
+  const turnRate = isEngaged(r) ? ARMY.engagedTurnRateRadS : r.def.limberS && !r.limbered ? (r.def.aimTurnRadS ?? r.def.turnRateRadS) : r.def.turnRateRadS;
   const turn = angleDelta(desiredFacing, r.facingRad);
   const maxTurn = turnRate * dtSeconds;
   r.facingRad += Math.min(maxTurn, Math.max(-maxTurn, turn));

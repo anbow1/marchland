@@ -1,6 +1,6 @@
 // docs/RULES.md: every rule of the game in one place (Polish), the numbers read from src/config.ts so the
 // document cannot drift from the game. Written by tools/docs.ts (npm run docs).
-import { AI, AI_CHARACTERS, ERAS, START_AGE, MAP, AI_TUNING, ARMY, CAMPAIGN, CAPTAIN, CARTS, CHAPEL, COMBAT, DEFENCE, ELEVATION, FATIGUE, FOOD, FORMATION, GATE, KEEP_BAYS, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MISSILE, MORALE, PAY, POINTS, REARM, REINFORCE, TOWER, TOWN, UNITS, VETERANS, WALLS } from '../src/config.ts';
+import { AI, AI_CHARACTERS, ERAS, START_AGE, MAP, AI_TUNING, ARMY, CAMPAIGN, CAPTAIN, CARTS, CHAPEL, COMBAT, DEFENCE, GUNS, ELEVATION, FATIGUE, FOOD, FORMATION, GATE, KEEP_BAYS, KEEP_LEVELS, KEEP_UPGRADE_SECONDS, MISSILE, MORALE, PAY, POINTS, REARM, REINFORCE, TOWER, TOWN, UNITS, VETERANS, WALLS } from '../src/config.ts';
 import { type ResourceId, UNIT_KINDS, type UnitKind } from '../src/sim/types.ts';
 import { GOOD_PL, UNIT_PL } from './docs.ts';
 
@@ -10,6 +10,7 @@ const num = (v: number): string => String(Math.round(v * 100) / 100);
 const sec = (s: number): string => (s >= 60 && s % 60 === 0 ? `${s / 60} min` : `${s} s`);
 
 export function rulesDoc(): string {
+  const guns = UNIT_KINDS.filter((k) => (UNITS[k].limberS ?? 0) > 0);
   const shields = UNIT_KINDS.filter((k) => UNITS[k].missileBlock > 0 && !UNITS[k].cavalry && !UNITS[k].engine);
   const braced = UNIT_KINDS.filter((k) => UNITS[k].bonusVsCavalry > 0);
   const chargers = UNIT_KINDS.filter((k) => UNITS[k].chargeBonus > 0);
@@ -133,6 +134,13 @@ obrażenia ×${COMBAT.chargeDamageFactor}, a cel traci morale o „wstrząs szar
   ${MISSILE.ballMaxStruck}, z obrażeniami malejącymi do połowy; każdy trafiony oddział −${num(MORALE.arrowHitShock * 3)} morale.
 - **Moździerz** strzela stromo nad murami (najmniej ${UNITS.mortar.missileMinRangeM} m), bardzo niecelnie; kula rani wszystkich w promieniu
   ${UNITS.mortar.missileSplashM} m (słabiej dalej od środka), a każdy oddział, w który spadnie, traci ${MORALE.stoneShock} morale.
+- **Przodek:** działo maszeruje zaprzęgnięte, a strzela odprzęgnięte. Zanim ruszy, obsługa je zaprzęga; po zatrzymaniu
+  odprzęga. Każda z tych czynności trwa: ${guns.map((k) => `${name(k)} ${UNITS[k].limberS} s`).join(', ')}.
+  W tym czasie działo stoi i nie strzela. Odprzęgnięte nie rusza się o mniej niż 2 m ani do celu, który ma w zasięgu.
+  Działa epok 2–3 ciągną konie (2 przy falkonetach, 4 przy cięższych), a działa średniowieczne ciągnie obsługa.
+- **Pole ostrzału:** odprzęgnięte działo strzela tylko w pasie ±${num((GUNS.arcRad * 180) / Math.PI)}° od swojego kierunku. Do celu spoza
+  pasa obsługa obraca je ręcznie, w stopniach na sekundę: ${guns.map((k) => `${name(k)} ${Math.round(((UNITS[k].aimTurnRadS ?? 0) * 180) / Math.PI)}°/s`).join(', ')}.
+  Zaprzęg nawraca szybciej, przed odprzęgnięciem ustawiając działo na cel.
 
 ## 8. Zmęczenie
 

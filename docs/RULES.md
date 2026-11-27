@@ -114,6 +114,13 @@ obrażenia ×1.5, a cel traci morale o „wstrząs szarży” jednostki. Klin ja
   4, z obrażeniami malejącymi do połowy; każdy trafiony oddział −1.8 morale.
 - **Moździerz** strzela stromo nad murami (najmniej 40 m), bardzo niecelnie; kula rani wszystkich w promieniu
   3.5 m (słabiej dalej od środka), a każdy oddział, w który spadnie, traci 6 morale.
+- **Przodek:** działo maszeruje zaprzęgnięte, a strzela odprzęgnięte. Zanim ruszy, obsługa je zaprzęga; po zatrzymaniu
+  odprzęga. Każda z tych czynności trwa: armaty 12 s, moździerz 20 s, falkonety 6 s, kolubryny 15 s, działa konne 5 s, armaty polowe 10 s.
+  W tym czasie działo stoi i nie strzela. Odprzęgnięte nie rusza się o mniej niż 2 m ani do celu, który ma w zasięgu.
+  Działa epok 2–3 ciągną konie (2 przy falkonetach, 4 przy cięższych), a działa średniowieczne ciągnie obsługa.
+- **Pole ostrzału:** odprzęgnięte działo strzela tylko w pasie ±15° od swojego kierunku. Do celu spoza
+  pasa obsługa obraca je ręcznie, w stopniach na sekundę: armaty 7°/s, moździerz 5°/s, falkonety 17°/s, kolubryny 6°/s, działa konne 17°/s, armaty polowe 10°/s.
+  Zaprzęg nawraca szybciej, przed odprzęgnięciem ustawiając działo na cel.
 
 ## 8. Zmęczenie
 

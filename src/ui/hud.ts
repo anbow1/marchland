@@ -832,6 +832,8 @@ export class Hud {
     if (world.towns[r.side].recruitQueue.some((o) => o.reinforceId === r.id)) return T.reinforcingState;
     if (r.rearmTo !== null) return `${T.rearmingState} → ${T.units[r.rearmTo].name} (${Math.ceil(r.rearmLeftS)} s)`;
     if (isEngaged(r)) return T.state.fighting;
+    // A gun: its team being put to or taken off, and how long yet.
+    if ((r.limberLeftS ?? 0) > 0) return `${r.limbered ? T.unlimberingState : T.limberingState} (${Math.ceil(r.limberLeftS ?? 0)} s)`;
     if (r.order === 'move') return r.run ? T.runningState : T.state.move;
     if (r.order === 'attackRegiment') return T.state.attack;
     if (r.order === 'attackBuilding' || r.order === 'bombard') return T.state.siege;

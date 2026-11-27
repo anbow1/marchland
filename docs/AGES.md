@@ -39,6 +39,10 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
   muszkieterów do piechoty liniowej (albo strzelców), jazda od lekkiej do dragonów i huzarów, rycerze do
   kirasjerów (`REARM.paths`; kiedy — decyduje poziom koszar). Komputer przezbraja stare oddziały w nowej epoce
   (`modernise` w `ai.ts`).
+- **Przodek i pole ostrzału** (wszystkie działa): zaprzęganie przed marszem i odprzęganie po nim trwa
+  (`limberS`: działa konne 5 s, falkonety 6 s, armaty polowe 10 s, armaty 12 s, kolubryny 15 s, moździerz 20 s).
+  Działo strzela tylko odprzęgnięte, w pasie ±15° od kierunku (`GUNS.arcRad`), i obraca się do celu powoli
+  (`aimTurnRadS`). Działa epok 2–3 ciągną konie (2 przy falkonetach, 4 przy cięższych, `teamHorses`).
 - **Komputer** wchodzi w epoki po 50. minucie: odkłada pełną cenę zamku w złocie, brakujące deski, kamień i żelazo
   kupuje na targu, potem stawia katedrę, rusznikarnię, prochownię, ratusz i manufakturę, podnosi koszary
   i werbuje nowe wojska. W próbie z epokami od 30. minuty doszedł do zamku 4 około 115.–125. minuty.
