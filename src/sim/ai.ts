@@ -131,8 +131,8 @@ const RECRUIT_ROTA: readonly UnitKind[] = ['pikemen', 'archers', 'pikemen', 'lig
  */
 const AGE_ROTA: readonly (readonly UnitKind[])[] = [
   [],
-  ['musketeers', 'pikemen', 'cuirassiers', 'musketeers', 'dragoons', 'halberdiers', 'cannon'],
-  ['lineInfantry', 'riflemen', 'lineInfantry', 'hussars', 'cuirassiers', 'cannon'],
+  ['musketeers', 'pikemen', 'cuirassiers', 'musketeers', 'dragoons', 'halberdiers', 'falconets', 'culverins'],
+  ['lineInfantry', 'riflemen', 'lineInfantry', 'hussars', 'cuirassiers', 'horseGuns', 'fieldGuns'],
 ];
 
 /** What the computer builds as it enters the later ages (each when its keep allows): the firearms' workshops and the great buildings. */
@@ -269,6 +269,9 @@ function runTown(world: World, ai: AiState): void {
     }
     const barracks = town.plots.findIndex((b) => b !== null && b.kind === 'barracks' && b.level < town.keepLevel && b.constructionLeftS <= 0);
     if (barracks >= 0 && cmdUpgrade(world, ai.side, barracks) === 'ok') return;
+    // And the foundry, for the age's guns.
+    const foundry = town.plots.findIndex((b) => b !== null && b.kind === 'foundry' && b.level < town.keepLevel && b.constructionLeftS <= 0);
+    if (foundry >= 0 && cmdUpgrade(world, ai.side, foundry) === 'ok') return;
   }
   const next = BUILD_ORDER[ai.buildIndex];
   if (next !== undefined) {

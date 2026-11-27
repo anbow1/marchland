@@ -23,7 +23,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | # | Co | Po co |
 |---|---|---|
 | W0 | **Po przeniesieniu**: w `anbow1/marchland` Settings → Pages → `gh-pages`, `/ (root)`; Settings → Actions → General → Workflow permissions → *Read and write*; uruchomić „Marchland for Windows”; potem `anbow1/FPS` na prywatne | gra pod https://anbow1.github.io/marchland/, nowy Marchland.exe |
-| W1 | (zrobione 27.11: wszystkie sześć jednostek epok jest z modeli) | — |
+| W1 | **Działa z XVII w.** (falkonet, kolubryna) — dziś model działa średniowiecznego, mniejszy i większy | wygląd artylerii epoki 2 |
 | W2 | **Broń i tarcze**: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia, tarcza lekkiej jazdy, szabla | wygląd broni średniowiecza jest dawny |
 | W3 | **Budynki epok**: rusznikarnia, prochownia, katedra, ratusz, manufaktura; domy i warsztaty w wyglądzie epoki 2 i 3 | dziś bryły z kodu i podmiana materiałów |
 | W4 | **Kłus konia** (zapętlony) | jazda w marszu chodzi stępem albo galopem |
@@ -39,7 +39,7 @@ CC BY z autorem, albo Mixamo; nic z gier i modów, żadnych cudzych postaci, nic
 ### 3.1 Z modeli, które już są (w zapasie, ASSETS.md)
 
 1. **Obsługa dział** z artylerzysty 1815 (ma szkielet) zamiast mieszczan przy działach epok 2–3.
-2. **Armata epok 2–3** z „British field cannon 1815”.
+2. ~~Armata epok 2–3~~ — zrobione 27.11: dwa działa na epokę (lekkie i ciężkie), epoka 3 z modelu działa 1815.
 3. ~~Dragoni~~ — zrobione 27.11.
 4. **Rycerze / ciężka jazda** z joannity (szkielet Unreala), krzyż zakonu pod barwą strony.
 

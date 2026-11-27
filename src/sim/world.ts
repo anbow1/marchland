@@ -142,10 +142,12 @@ export function createWorld(options: WorldOptions): World {
       town.keepHp = keepRules(town).hp;
       const extra = START_AGE.stock[age - 1] ?? {};
       for (const id of RESOURCE_IDS) town.stock[id] += extra[id] ?? 0;
-      // And barracks of the age, standing where the town's planner puts them: the age's arms from the start.
-      const site = planSite(world, town.side, 'barracks');
-      if (site && cmdBuild(world, town.side, 'barracks', site.x, site.z, site.yawRad) === 'ok') {
-        const b = town.plots.find((p) => p !== null && p.kind === 'barracks');
+      // And barracks and a foundry of the age, standing where the town's planner puts them: the age's arms and
+      // guns from the start.
+      for (const kind of ['barracks', 'foundry'] as const) {
+        const site = planSite(world, town.side, kind);
+        if (!site || cmdBuild(world, town.side, kind, site.x, site.z, site.yawRad) !== 'ok') continue;
+        const b = town.plots.find((p) => p !== null && p.kind === kind);
         if (b) {
           b.level = town.keepLevel;
           b.constructionLeftS = 0;

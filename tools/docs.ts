@@ -389,6 +389,10 @@ export const UNIT_PL: Record<UnitKind, { name: string; use: string }> = {
   riflemen: { name: 'Strzelcy', use: 'Epoka 3: gwintowany karabin, celny na 130 m.' },
   hussars: { name: 'Huzarzy', use: 'Epoka 3: najszybsza jazda z szablą: zagony i pościg.' },
   mortar: { name: 'Moździerz', use: 'Jedno działo (ludwisarnia poz. 2): ciężka kula stromym torem nad murami rozbija szyk i burzy mury, wieże i zamek.' },
+  falconets: { name: 'Falkonety', use: 'Lekkie działa epoki 2 (ludwisarnia poz. 4): tanie i szybkie w marszu, na piechotę w szyku i strzelców.' },
+  culverins: { name: 'Kolubryny', use: 'Ciężkie działa epoki 2 (ludwisarnia poz. 4): drogie i powolne, zasięg 170 m, na mury i działa przeciwnika.' },
+  horseGuns: { name: 'Działa konne', use: 'Lekkie działa epoki 3 (ludwisarnia poz. 5): galopują z jazdą, tanie, szybkie wsparcie na 140 m.' },
+  fieldGuns: { name: 'Armaty polowe', use: 'Ciężka bateria epoki 3 (ludwisarnia poz. 5): najdalszy strzał (210 m), kula toczy się przez kolumnę.' },
 };
 
 /** The armour classes of the target roster: militia, leather, heavy (and the guns). */

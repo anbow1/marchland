@@ -274,16 +274,24 @@ export interface GunModel {
   triangles: number[];
 }
 
+/** The guns: the middle ages' cannon and mortar, the second age's culverins, the third's field guns. */
+export type GunKind = 'cannon' | 'mortar' | 'falconets' | 'culverins' | 'horseGuns' | 'fieldGuns';
+
+/** Each gun's model in public/props (the second age's on the cannon's until models of their own), and its scale:
+ * the light gun of an age smaller, the heavy one larger. */
+export const GUN_PROP: Record<GunKind, string> = { cannon: 'cannon', mortar: 'mortar', falconets: 'cannon', culverins: 'cannon', horseGuns: 'fieldgun', fieldGuns: 'fieldgun' };
+export const GUN_SCALE: Record<GunKind, number> = { cannon: 1, mortar: 1, falconets: 0.75, culverins: 1.2, horseGuns: 0.85, fieldGuns: 1.05 };
+
 /** Where a gun's crew stand about it, in the gun's own space (x, z, turn): beside the carriage and behind. */
-export function gunCrewSpots(kind: 'cannon' | 'mortar', size: readonly number[]): [number, number, number][] {
+export function gunCrewSpots(kind: GunKind, size: readonly number[]): [number, number, number][] {
   const back = (size[2] as number) / 2 + 0.2;
   const side = (size[0] as number) / 2 + 0.6;
-  return kind === 'cannon' ? [[side, 0.6, 0.3], [-side, 0.2, -0.3]] : [[side, 0.9, 0.4], [-side, 0.6, -0.5], [0.4, back + 0.9, 0.2]];
+  return kind !== 'mortar' ? [[side, 0.6, 0.3], [-side, 0.2, -0.3]] : [[side, 0.9, 0.4], [-side, 0.6, -0.5], [0.4, back + 0.9, 0.2]];
 }
 
 /** A gun from its model (barrel along −Z, on the ground) with a small flag in the side's colour, and its crew
  * built in unless they are drawn as modelled men of their own (`crew` false). */
-export function engineGeometryOnModel(kind: 'cannon' | 'mortar', model: GunModel, crew = true): BufferGeometry {
+export function engineGeometryOnModel(kind: GunKind, model: GunModel, crew = true): BufferGeometry {
   const f = new Figure();
   f.cloth();
   f.b.model(model, 0, 0, 0, 0, 1);
@@ -322,7 +330,7 @@ function horse(f: Figure, coat: number, caparison: boolean): void {
 /** The kinds on horseback. */
 const UNITS_MOUNTED: ReadonlySet<UnitKind> = new Set<UnitKind>(['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars']);
 
-const KITS: Record<Exclude<UnitKind, 'cannon' | 'mortar'>, Kit> = {
+const KITS: Record<Exclude<UnitKind, GunKind>, Kit> = {
   militia: { tunic: TUNIC_BROWN, head: 'hood', mail: false, weapon: 'spear', shield: true },
   pikemen: { tunic: LEATHER, head: 'helmet', mail: false, weapon: 'pike', shield: false },
   archers: { tunic: TUNIC_GREEN, head: 'hood', mail: false, weapon: 'bow', shield: false },
@@ -342,8 +350,8 @@ const KITS: Record<Exclude<UnitKind, 'cannon' | 'mortar'>, Kit> = {
 
 export function soldierGeometry(kind: UnitKind): BufferGeometry {
   const f = new Figure();
-  if (kind === 'cannon') cannon(f);
-  else if (kind === 'mortar') mortar(f);
+  if (kind === 'mortar') mortar(f);
+  else if (kind === 'cannon' || kind === 'falconets' || kind === 'culverins' || kind === 'horseGuns' || kind === 'fieldGuns') cannon(f);
   else if (UNITS_MOUNTED.has(kind)) {
     const barded = kind === 'heavyCavalry' || kind === 'cuirassiers';
     horse(f, barded ? HORSE_GREY : HORSE_BAY, barded);

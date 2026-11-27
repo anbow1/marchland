@@ -51,7 +51,9 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 | Muszkieterowie | **z modelu** (27.11): żołnierz XVII w. (haiphucpham221102) na szkielecie z `autorig.py`, muszkiet gry | — |
 | Kirasjerzy | **z modelu** (27.11): kirasjer 1812panorama w siodle (szkielet z `autorig.py`) | — |
 | Huzarzy | **z modelu** (27.11): jeździec Andy'ego Woodheada w siodle, dolman w barwie strony | — |
-| Dragoni | **z modelu** (27.11): żołnierz ok. 1700 r. (Christoffer Eriksson) w siodle, kaftan w barwie strony | dragon (pieszo i konno), huzar z szablą |
+| Dragoni | **z modelu** (27.11): żołnierz ok. 1700 r. (Christoffer Eriksson) w siodle, kaftan w barwie strony |
+| Artyleria epoki 2: falkonety (lekkie) i kolubryny (ciężkie) | model armaty średniowiecznej, mniejszy i większy | działa z XVII w. (falkonet, kolubryna) |
+| Artyleria epoki 3: działa konne (lekkie) i armaty polowe (ciężkie) | **z modelu** (27.11): działo 1815 Andy'ego Woodheada, mniejsze i większe | obsługa z artylerzysty 1815 (już w zapasie) | dragon (pieszo i konno), huzar z szablą |
 | Budynki na poziomie 4 i 5 | ten sam budynek w materiałach epoki: 4 — dachówka i bielony tynk, 5 — kamień, łupek, malowane belki (`ERA_LOOK` w `surfaceModel.ts`) | spójne modele epoki: szachulec i cegła, potem cegła i tynk |
 | Rusznikarnia, prochownia, katedra, ratusz, manufaktura | bryły z kodu (`buildingGeometry.ts`); manufaktura z cegły z kominem | modele |
 | Broń i tarcze średniowiecza: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia rycerza, tarcza lekkiej jazdy | zasady działają, na modelach broń dotychczasowa | modele broni dopięte do istniejących szkieletów |

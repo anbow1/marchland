@@ -100,7 +100,7 @@ const BUILD_GROUPS: Record<BuildGroup, readonly BuildingKind[]> = {
 const GROUP_OF = new Map<BuildingKind, BuildGroup>(Object.entries(BUILD_GROUPS).flatMap(([g, kinds]) => kinds.map((k) => [k, g as BuildGroup] as const)));
 const COMPACT_KEY = 'marchland.compactBar';
 
-const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', cannon: '⇶', mortar: '☄', musketeers: '⁍', cuirassiers: '♜', dragoons: '♘', lineInfantry: '⦿', riflemen: '⊕', hussars: '♝' };
+const UNIT_GLYPH: Record<UnitKind, string> = { militia: '⛨', pikemen: '↟', archers: '➶', swordsmen: '⚔', halberdiers: '⚒', crossbowmen: '⌖', lightCavalry: '♞', heavyCavalry: '♛', cannon: '⇶', mortar: '☄', musketeers: '⁍', cuirassiers: '♜', dragoons: '♘', lineInfantry: '⦿', riflemen: '⊕', hussars: '♝', falconets: '⇢', culverins: '⇉', horseGuns: '⇝', fieldGuns: '⇛' };
 
 const MAX_CARDS = 48;
 const PANEL_REFRESH_S = 0.25;

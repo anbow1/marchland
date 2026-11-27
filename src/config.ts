@@ -492,6 +492,10 @@ export const REARM = {
     lineInfantry: ['riflemen'],
     riflemen: ['lineInfantry'],
     hussars: [],
+    falconets: [],
+    culverins: [],
+    horseGuns: [],
+    fieldGuns: [],
   } as Record<UnitKind, readonly UnitKind[]>,
 } as const;
 
@@ -631,6 +635,14 @@ export const UNITS: Record<UnitKind, UnitDef> = {
   // Hussars: the fastest horse of all, sabre in hand, for raids and pursuit.
   hussars: { ...HORSE, armourClass: 'uniform', barracksLevel: 5, goldCost: 150, equipment: { horse: 1, weapon: 1 }, hp: 46, attack: 10, defence: 7, armour: 0.1, damage: 7, reachM: 1.9, chargeBonus: 12, chargeShock: 12, morale: 90, runSpeedMs: 9.2, bounty: 4 },
   mortar: { ...ENGINE, crew: 5, men: 1, files: 1, fileSpacingM: 8, rankSpacingM: 8, barracksLevel: 2, goldCost: 200, equipment: { iron: 10, stone: 8 }, hp: 120, missileBlock: 0.8, missileRangeM: 150, missileMinRangeM: 40, missileDamage: 30, missilePierce: 0.5, missileSpeedMs: 50, missileHighArc: true, missileSplashM: 3.5, missileSpreadFactor: 3, missileSiegeDamage: 110, reloadS: 15, morale: 60, walkSpeedMs: 0.6, runSpeedMs: 0.6, bodyRadiusM: 2.0, bounty: 15 },
+  // The second age's guns (foundry 4). Falconets: small guns a horse can pull at a trot, cheap, a light ball
+  // to 110 m. Culverins: long heavy guns on a siege carriage, the age's reach (170 m), dear and slow.
+  falconets: { ...ENGINE, crew: 2, men: 2, files: 2, fileSpacingM: 4, rankSpacingM: 4, barracksLevel: 4, goldCost: 110, equipment: { iron: 4, wood: 3, powder: 3 }, hp: 60, missileBlock: 0.6, missileRangeM: 110, missileMinRangeM: 8, missileDamage: 45, missilePierce: 0.85, missileSpeedMs: 120, missileHighArc: false, missileSplashM: 0, missileRollM: 10, missileSiegeDamage: 14, reloadS: 7, morale: 60, walkSpeedMs: 1.8, runSpeedMs: 1.8, bodyRadiusM: 1.1, bounty: 6 },
+  culverins: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 4, goldCost: 220, equipment: { iron: 8, wood: 5, powder: 6 }, hp: 90, missileBlock: 0.7, missileRangeM: 170, missileMinRangeM: 12, missileDamage: 60, missilePierce: 0.9, missileSpeedMs: 140, missileHighArc: false, missileSplashM: 0, missileRollM: 16, missileSiegeDamage: 40, reloadS: 11, morale: 60, walkSpeedMs: 0.9, runSpeedMs: 0.9, bodyRadiusM: 1.5, bounty: 11 },
+  // The third age's guns (foundry 5). Horse guns: light guns galloping with the cavalry, cheap, to 140 m.
+  // Field guns: the heavy battery, the farthest reach of all (210 m), a ball that rolls on through a column.
+  horseGuns: { ...ENGINE, crew: 3, men: 2, files: 2, fileSpacingM: 4.5, rankSpacingM: 4.5, barracksLevel: 5, goldCost: 150, equipment: { iron: 5, wood: 3, powder: 4 }, hp: 70, missileBlock: 0.65, missileRangeM: 140, missileMinRangeM: 8, missileDamage: 52, missilePierce: 0.9, missileSpeedMs: 150, missileHighArc: false, missileSplashM: 0, missileRollM: 14, missileSiegeDamage: 18, reloadS: 6, morale: 65, walkSpeedMs: 2.8, runSpeedMs: 2.8, bodyRadiusM: 1.2, bounty: 8 },
+  fieldGuns: { ...ENGINE, crew: 4, men: 2, files: 2, fileSpacingM: 5, rankSpacingM: 5, barracksLevel: 5, goldCost: 260, equipment: { iron: 10, wood: 5, powder: 8 }, hp: 100, missileBlock: 0.7, missileRangeM: 210, missileMinRangeM: 12, missileDamage: 65, missilePierce: 0.95, missileSpeedMs: 170, missileHighArc: false, missileSplashM: 0, missileRollM: 20, missileSiegeDamage: 45, reloadS: 8, morale: 65, walkSpeedMs: 1.4, runSpeedMs: 1.4, bodyRadiusM: 1.5, bounty: 12 },
 };
 
 export const ARMY = {

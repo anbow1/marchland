@@ -501,12 +501,15 @@ Cała dotychczasowa gra to **epoka 1 (średniowiecze)**: zamek 1–3, budynki 1�
 dłużej (3 i 4 minuty) i kosztuje dużo: zamek 4 — 1200 zł, 200 desek, 400 kamienia, 40 żelaza; zamek 5 —
 2200 zł, 300 desek, 600 kamienia, 120 żelaza. Nazwa epoki jest w nagłówku panelu zamku.
 
-| Epoka | Zamek | Budynki | Jednostki (koszary) | Wielka budowla (jedna na miasto) |
+| Epoka | Zamek | Budynki | Jednostki (koszary; działa — ludwisarnia) | Wielka budowla (jedna na miasto) |
 |---|---|---|---|---|
-| Średniowiecze | 1–3 | poziomy 1–3 | milicja … rycerze (1–3) | **Katedra** (od zamku 3): +8 morale wszystkim oddziałom, domy zapełniają się o ¼ szybciej |
-| Wczesna nowożytność | 4 | poziom 4: dachówka, bielony tynk; **rusznikarnia** (żelazo + drewno → muszkiet), **prochownia** (2 drewna + kamień → 2 prochu) | muszkieterowie, kirasjerzy, dragoni (4) | **Ratusz**: miasto płaci o 25% więcej złota |
-| XIX wiek | 5 | poziom 5: kamień, szary łupek, malowane belki | piechota liniowa, strzelcy, huzarzy (5) | **Manufaktura**: każdy warsztat o 20% szybciej |
+| Średniowiecze | 1–3 | poziomy 1–3 | milicja … rycerze (1–3); armaty i moździerz | **Katedra** (od zamku 3): +8 morale wszystkim oddziałom, domy zapełniają się o ¼ szybciej |
+| Wczesna nowożytność | 4 | poziom 4: dachówka, bielony tynk; **rusznikarnia** (żelazo + drewno → muszkiet), **prochownia** (2 drewna + kamień → 2 prochu) | muszkieterowie, kirasjerzy, dragoni (4); falkonety i kolubryny (ludwisarnia 4) | **Ratusz**: miasto płaci o 25% więcej złota |
+| XIX wiek | 5 | poziom 5: kamień, szary łupek, malowane belki | piechota liniowa, strzelcy, huzarzy (5); działa konne i armaty polowe (ludwisarnia 5) | **Manufaktura**: każdy warsztat o 20% szybciej |
 
+- **Artyleria**: w każdej epoce dwa działa — lżejsze i tańsze, szybsze w marszu, i cięższe, droższe, o większym
+  zasięgu: armaty (120 m) i moździerz (150 m); falkonety (110 m) i kolubryny (170 m); działa konne (140 m) i armaty
+  polowe (210 m). Działa epok lane w ludwisarni na poziomie 4 i 5; proch na każdy strzał.
 - **Broń palna** (muszkieterowie, dragoni, piechota liniowa, strzelcy): kula przebija zbroję (75–85%), leci
   szybko i płasko, ale ładowanie trwa 14–20 s, a muszkiet strzela szeroko (strzelcy — celnie na 130 m). Każdy
   strzał to błysk, huk i dym nad szeregiem. Uzbrojenie przy werbunku: muszkiet i proch (zbroja skórzana dla

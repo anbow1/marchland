@@ -45,6 +45,10 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 | **Piechota liniowa** | mundur | 5 | 12 | 120 zł + 12 muszkiety, 12 proch | 32 | 8 / 7 | 5 % | 6 | 72 | 1.4 / 3 |
 | **Strzelcy** | mundur | 5 | 12 | 150 zł + 12 żelazo, 12 muszkiety, 12 proch | 26 | 3 / 3 | 5 % | 4 | 50 | 1.4 / 3.2 |
 | **Huzarzy** | mundur | 5 | 8 | 150 zł + 8 broń, 8 koń | 46 | 10 / 7 | 10 % | 7 | 90 | 3.6 / 9.2 |
+| **Falkonety** | działa | 4 | 2 (4 ludzi) | 110 zł + 6 drewno, 8 żelazo, 6 proch | 60 | 0 / 0 | 0 % | 0 | 60 | 1.8 / 1.8 |
+| **Kolubryny** | działa | 4 | 2 (6 ludzi) | 220 zł + 10 drewno, 16 żelazo, 12 proch | 90 | 0 / 0 | 0 % | 0 | 60 | 0.9 / 0.9 |
+| **Działa konne** | działa | 5 | 2 (6 ludzi) | 150 zł + 6 drewno, 10 żelazo, 8 proch | 70 | 0 / 0 | 0 % | 0 | 65 | 2.8 / 2.8 |
+| **Armaty polowe** | działa | 5 | 2 (8 ludzi) | 260 zł + 10 drewno, 20 żelazo, 16 proch | 100 | 0 / 0 | 0 % | 0 | 65 | 1.4 / 1.4 |
 
 ## 3. Strzelcy i machiny
 
@@ -58,6 +62,10 @@ Cena obejmuje cały regiment. Atak / obrona to punkty; pancerz to część ciosu
 | **Dragoni** | 75 m | 36 | 70 % | 11 s | — | 1 |
 | **Piechota liniowa** | 90 m | 36 | 85 % | 10 s | — | 2 |
 | **Strzelcy** | 130 m | 36 | 85 % | 20 s | — | 1 |
+| **Falkonety** | 8–110 m | 45 | 85 % | 7 s | — | 14 |
+| **Kolubryny** | 12–170 m | 60 | 90 % | 11 s | — | 40 |
+| **Działa konne** | 8–140 m | 52 | 90 % | 6 s | — | 18 |
+| **Armaty polowe** | 12–210 m | 65 | 95 % | 8 s | — | 45 |
 
 Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 
@@ -79,6 +87,10 @@ Zamek strzela sam: zasięg 55 m, strzała co 1 s, 9 obrażeń.
 - **Piechota liniowa** — Epoka 3: mundur, karabin z bagnetem: 90 m, 14 s; bagnet trzyma jazdę. *(+6 do ataku przeciw jeździe)*
 - **Strzelcy** — Epoka 3: gwintowany karabin, celny na 130 m.
 - **Huzarzy** — Epoka 3: najszybsza jazda z szablą: zagony i pościg. *(szarża +12 do ataku, wstrząs 12)*
+- **Falkonety** — Lekkie działa epoki 2 (ludwisarnia poz. 4): tanie i szybkie w marszu, na piechotę w szyku i strzelców. *(60 % szans zatrzymania pocisku)*
+- **Kolubryny** — Ciężkie działa epoki 2 (ludwisarnia poz. 4): drogie i powolne, zasięg 170 m, na mury i działa przeciwnika. *(70 % szans zatrzymania pocisku)*
+- **Działa konne** — Lekkie działa epoki 3 (ludwisarnia poz. 5): galopują z jazdą, tanie, szybkie wsparcie na 140 m. *(65 % szans zatrzymania pocisku)*
+- **Armaty polowe** — Ciężka bateria epoki 3 (ludwisarnia poz. 5): najdalszy strzał (210 m), kula toczy się przez kolumnę. *(70 % szans zatrzymania pocisku)*
 
 ## 5. Przezbrojenie
 

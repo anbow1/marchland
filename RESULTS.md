@@ -5,6 +5,19 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Artyleria w każdej epoce: lekkie działo i ciężkie
+
+- Prośba: dla każdej epoki dwie artylerie, mniejsza i tańsza oraz droższa o większym zasięgu. Epoka 1: armaty
+  (140 zł, 120 m) i moździerz (200 zł, 150 m). Epoka 2 (ludwisarnia 4): **falkonety** (110 zł, 110 m, szybkie w
+  marszu, ładowanie 7 s) i **kolubryny** (220 zł, 170 m, wolne, mocne na mury). Epoka 3 (ludwisarnia 5): **działa
+  konne** (150 zł, 140 m, 2,8 m/s, ładowanie 6 s) i **armaty polowe** (260 zł, 210 m, kula toczy się 20 m).
+  Działa epok biorą proch na każdy strzał.
+- Wygląd: epoka 3 z „British field cannon - 1815” (Andy woodhead, CC BY 4.0, `prop.py`), epoka 2 na modelu
+  armaty; lekkie działo mniejsze, ciężkie większe (`GUN_SCALE`). Komputer werbuje działa epoki (`AGE_ROTA`) i
+  podnosi ludwisarnię z zamkiem; gra od epoki 2 lub 3 ma od razu ludwisarnię tej epoki.
+- Test w `ages.test.ts` (dwa działa na epokę, tańsze krótsze, każda epoka dalej); wszystkie testy zielone;
+  przeglądarka: cztery nowe działa strzelają, bez błędów.
+
 ## 2026-11-27 · Dragoni z modelu: wszystkie jednostki epok mają własny wygląd
 
 - Jeździec dragonów z „1700th-ish century Soldier” (Christoffer Eriksson, CC BY 4.0): `autorig.py` (poza T) i

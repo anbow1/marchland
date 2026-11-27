@@ -197,4 +197,21 @@ describe('the later ages', () => {
     expect(plain.towns[PLAYER].keepLevel).toBe(1);
     expect(plain.towns[PLAYER].plots.some((b) => b !== null)).toBe(false);
   });
+
+  it('every age has two guns: a light cheap one, and a dear one that reaches farther', () => {
+    const pairs: [UnitKind, UnitKind, number][] = [['cannon', 'mortar', 1], ['falconets', 'culverins', 4], ['horseGuns', 'fieldGuns', 5]];
+    for (const [light, heavy, foundry] of pairs) {
+      expect(UNITS[light].engine && UNITS[heavy].engine).toBe(true);
+      expect(UNITS[light].goldCost).toBeLessThan(UNITS[heavy].goldCost);
+      expect(UNITS[light].missileRangeM).toBeLessThan(UNITS[heavy].missileRangeM);
+      expect(UNITS[light].trainedAt).toBe('foundry');
+      if (foundry > 1) expect(UNITS[light].barracksLevel).toBe(foundry);
+    }
+    // Each age reaches farther than the one before.
+    expect(UNITS.culverins.missileRangeM).toBeGreaterThan(UNITS.mortar.missileRangeM);
+    expect(UNITS.fieldGuns.missileRangeM).toBeGreaterThan(UNITS.culverins.missileRangeM);
+    // A game begun in the second age has a foundry of that age standing: its guns can be cast at once.
+    const world = createWorld({ seed: 2, difficulty: 'normal', computerPlays: false, startAge: 2 });
+    expect(world.towns[PLAYER].plots.find((b) => b !== null && b.kind === 'foundry')?.level).toBe(4);
+  });
 });

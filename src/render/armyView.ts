@@ -9,7 +9,7 @@ import { UNIT_KINDS, type UnitKind } from '../sim/types.ts';
 import type { World } from '../sim/world.ts';
 import { MeshBuilder } from './meshBuilder.ts';
 import { TEAM_HEX } from './palette.ts';
-import { type BodyModel, cavalryGeometryOnModels, type Saddle, engineGeometryOnModel, type GunModel, gunCrewSpots, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
+import { type BodyModel, cavalryGeometryOnModels, type Saddle, engineGeometryOnModel, GUN_PROP, GUN_SCALE, type GunKind, type GunModel, gunCrewSpots, type HorseModel, soldierGeometry, soldierGeometryOnBody } from './soldierGeometry.ts';
 import { freshUrl } from '../version.ts';
 
 // Every soldier on the field, one instanced mesh per kind of unit. The CPU
@@ -413,7 +413,7 @@ export class ArmyView {
   private readonly scene: Scene;
   /** The guns' crews as modelled townsmen (people/townsman.json), once loaded; the size of each gun's model. */
   private crew: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: Record<'idle' | 'walk' | 'pickup' | 'putdown', Clip & { fps: number }> } | null = null;
-  private readonly gunSizes = new Map<'cannon' | 'mortar', number[]>();
+  private readonly gunSizes = new Map<GunKind, number[]>();
   private readonly arrows: InstancedMesh;
   private readonly stones: InstancedMesh;
 
@@ -538,13 +538,16 @@ export class ArmyView {
     // The guns' crews: modelled townsmen drawn on their own, or (without the file) men built into each gun.
     await this.loadCrew(base);
     // The guns from their models (public/props), each with its crew.
-    for (const kind of ['cannon', 'mortar'] as const) {
+    for (const kind of ['cannon', 'mortar', 'falconets', 'culverins', 'horseGuns', 'fieldGuns'] as const) {
       const k = this.kinds.get(kind);
       if (!k) continue;
       try {
-        const response = await fetch(freshUrl(base, `props/${kind}.json`));
+        const response = await fetch(freshUrl(base, `props/${GUN_PROP[kind]}.json`));
         if (!response.ok) throw new Error(`${kind} ${response.status}`);
-        const model = (await response.json()) as GunModel;
+        const raw = (await response.json()) as GunModel;
+        // The light gun of an age smaller, the heavy one larger (GUN_SCALE).
+        const scale = GUN_SCALE[kind];
+        const model: GunModel = scale === 1 ? raw : { ...raw, positions: raw.positions.map((v) => v * scale), size: raw.size.map((v) => v * scale) };
         this.gunSizes.set(kind, model.size);
         const geometry = engineGeometryOnModel(kind, model, this.crew === null);
         packVertices(geometry);
@@ -641,7 +644,7 @@ export class ArmyView {
     let n = 0;
     for (const r of world.regiments) {
       if (!r.def.engine) continue;
-      const kind = r.kind as 'cannon' | 'mortar';
+      const kind = r.kind as GunKind;
       const size = this.gunSizes.get(kind);
       if (!size) continue;
       const spots = gunCrewSpots(kind, size);

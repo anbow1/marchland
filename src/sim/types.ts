@@ -107,6 +107,11 @@ export const UNIT_KINDS = [
   'lineInfantry',
   'riflemen',
   'hussars',
+  // The ages' guns (the foundry at level 4 and 5): a light, cheap one and a heavy one that reaches farther.
+  'falconets',
+  'culverins',
+  'horseGuns',
+  'fieldGuns',
 ] as const;
 export type UnitKind = (typeof UNIT_KINDS)[number];
 

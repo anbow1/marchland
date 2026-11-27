@@ -36,7 +36,7 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | Żołnierz ok. 1700 r. (poza T, bez szkieletu) | „1700th-ish century Soldier”, Christoffer Eriksson | CC BY 4.0 | **w grze**: jeździec dragonów (`dragoon_rider.json`; `autorig.py`, `rigged.py --seated`) |
 | Żołnierz Unii (poza A, bez szkieletu; karabin w osobnej siatce z oporządzeniem) | „Union soldier - free game asset”, Andy woodhead | CC BY 4.0 | w zapasie: gotowy do `autorig.py` |
 | Artylerzysta 1815 (szkielet Unreala) | „Artillery crew 1815 - rigged for UE4/5”, Andy woodhead | CC BY 4.0 | w zapasie: obsługa dział |
-| Działo polowe 1815 | „British field cannon - 1815”, Andy woodhead | CC BY 4.0 | w zapasie: armata epok 2–3 |
+| Działo polowe 1815 | „British field cannon - 1815”, Andy woodhead | CC BY 4.0 | **w grze**: armaty polowe i działa konne epoki 3 (`props/fieldgun.json`) |
 | Husarz węgierski XV–XVI w. (figura na koniu, bez tekstur, 600 tys. tr.) | Ded Makar | CC BY 4.0 | odrzucony: figura bez tekstur |
 | Kirasjer pułku głuchowskiego (figura stojąca, ręce wzdłuż ciała) | „Private soldier of the Glukhovsky cuirassier reg”, 1812panorama | CC BY 4.0 | **w grze**: jeździec kirasjerów (`cuirassier_rider.json`; `autorig.py` z rękami opuszczonymi, `rigged.py --seated`) |
 | Oficer gwardii konnej, szeregowy gwardii litewskiej (figury stojące) | 1812panorama | CC BY 4.0 | w zapasie: do `autorig.py` (np. dragoni pieszo) |
