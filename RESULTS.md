@@ -5,6 +5,20 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Własne modele dział epok 2 i 3; obsługa z artylerzysty
+
+- Od właściciela przyszło siedem dział, wszystkie na CC BY 4.0 z podanym autorem. Do gry weszły trzy:
+  - **falkonet**: lekkie działo z brązu na kołach (Chenchanchong), 2,4 m;
+  - **kolubryna**: hongipo (KCISA), koreańska kopia holenderskiej kolubryny z XVII w., 3,8 m, jasna lufa przyciemniona;
+  - **działa konne**: 12-funtówka (iedalton), 2,8 m.
+  Każde ma 3 000–3 500 trójkątów (`prop.py`). Kierunek lufy sprawdzony z geometrii: wylot wyżej, koniec lawety
+  przy ziemi, wylot w stronę −Z.
+- **Armaty polowe** mają nadal działo 1815. Przeskalowana średniowieczna armata nie służy już żadnemu działu epok 2–3.
+- **Obsługa** falkonetów i kolubryn to teraz artylerzysta 1815, jak w epoce 3 (decyzja właściciela). Przy działach
+  średniowiecznych zostają mieszczanie.
+- W zapasie: półkartauna saska (artfletch), działo XIX w. (Oneironauticus), działo okrętowe (LACooper), dwa małe
+  działa (Nicholas-3D).
+
 ## 2026-11-27 · Przodek i pole ostrzału dział; zaprzęgi koni
 
 - **Zasada** (`stepLimber` w `movement.ts`, ostrzał w `missiles.ts`): działo maszeruje zaprzęgnięte, strzela

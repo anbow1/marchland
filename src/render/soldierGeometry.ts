@@ -277,10 +277,10 @@ export interface GunModel {
 /** The guns: the middle ages' cannon and mortar, the second age's culverins, the third's field guns. */
 export type GunKind = 'cannon' | 'mortar' | 'falconets' | 'culverins' | 'horseGuns' | 'fieldGuns';
 
-/** Each gun's model in public/props (the second age's on the cannon's until models of their own), and its scale:
- * the light gun of an age smaller, the heavy one larger. */
-export const GUN_PROP: Record<GunKind, string> = { cannon: 'cannon', mortar: 'mortar', falconets: 'cannon', culverins: 'cannon', horseGuns: 'fieldgun', fieldGuns: 'fieldgun' };
-export const GUN_SCALE: Record<GunKind, number> = { cannon: 1, mortar: 1, falconets: 0.75, culverins: 1.2, horseGuns: 0.85, fieldGuns: 1.05 };
+/** Each gun's model in public/props, each its own (baked at its length by tools/blender/prop.py), and a scale
+ * on top where one model serves at another size. */
+export const GUN_PROP: Record<GunKind, string> = { cannon: 'cannon', mortar: 'mortar', falconets: 'falconet', culverins: 'culverin', horseGuns: 'horsegun', fieldGuns: 'fieldgun' };
+export const GUN_SCALE: Record<GunKind, number> = { cannon: 1, mortar: 1, falconets: 1, culverins: 1, horseGuns: 1, fieldGuns: 1.05 };
 
 /** Where a gun's crew stand about it, in the gun's own space (x, z, turn): beside the carriage and behind. */
 export function gunCrewSpots(kind: GunKind, size: readonly number[]): [number, number, number][] {

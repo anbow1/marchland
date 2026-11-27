@@ -23,7 +23,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | # | Co | Po co |
 |---|---|---|
 | W0 | Pages ✔ (https://anbow1.github.io/marchland/ odświeża się po każdym pushu); Marchland.exe ✔ (27.11, https://github.com/anbow1/marchland/releases/tag/marchland-windows). Zostało: `anbow1/FPS` na prywatne, jeśli jeszcze nie jest | porządek |
-| W1 | **Działa z XVII w.** (falkonet, kolubryna) i **obsługa z XVII w.** (postać w pozie T/A) — dziś model działa średniowiecznego, mniejszy i większy, przy nim mieszczanie | wygląd artylerii epoki 2 |
+| W1 | ~~Działa z XVII w. i obsługa~~ — zrobione 27.11: falkonet, kolubryna (hongipo), działa konne (12-funtówka); obsługa z artylerzysty 1815 | — |
 | W2 | **Broń i tarcze**: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia, tarcza lekkiej jazdy, szabla | wygląd broni średniowiecza jest dawny |
 | W3 | **Budynki epok**: rusznikarnia, prochownia, katedra, ratusz, manufaktura; domy i warsztaty w wyglądzie epoki 2 i 3 | dziś bryły z kodu i podmiana materiałów |
 | W4 | **Kłus konia** (zapętlony); opcjonalnie **przodek** (dwukołowy wózek z amunicją) | jazda i zaprzęgi dział chodzą stępem albo galopem; dziś zaprzęg to same konie przed lawetą |

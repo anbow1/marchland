@@ -35,8 +35,15 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | Żołnierz europejski XVII w. (poza A, bez szkieletu) | „European Soldier 17th Century”, haiphucpham221102, Sketchfab | CC BY 4.0 | **w grze**: muszkieterowie (`musketeer.json`; szkielet z `autorig.py`) |
 | Żołnierz ok. 1700 r. (poza T, bez szkieletu) | „1700th-ish century Soldier”, Christoffer Eriksson | CC BY 4.0 | **w grze**: jeździec dragonów (`dragoon_rider.json`; `autorig.py`, `rigged.py --seated`) |
 | Żołnierz Unii (poza A, bez szkieletu; karabin w osobnej siatce z oporządzeniem) | „Union soldier - free game asset”, Andy woodhead | CC BY 4.0 | w zapasie: gotowy do `autorig.py` |
-| Artylerzysta 1815 (szkielet Unreala) | „Artillery crew 1815 - rigged for UE4/5”, Andy woodhead | CC BY 4.0 | **w grze**: obsługa dział epoki 3 (`artilleryman.json`, kurtka w barwie strony) |
-| Działo polowe 1815 | „British field cannon - 1815”, Andy woodhead | CC BY 4.0 | **w grze**: armaty polowe i działa konne epoki 3 (`props/fieldgun.json`) |
+| Artylerzysta 1815 (szkielet Unreala) | „Artillery crew 1815 - rigged for UE4/5”, Andy woodhead | CC BY 4.0 | **w grze**: obsługa dział epok 2 i 3 (`artilleryman.json`, kurtka w barwie strony) |
+| Działo polowe 1815 | „British field cannon - 1815”, Andy woodhead | CC BY 4.0 | **w grze**: armaty polowe epoki 3 (`props/fieldgun.json`) |
+| Lekkie działo z brązu na kołach | „Cannon”, Chenchanchong, Sketchfab | CC BY 4.0 | **w grze**: falkonety epoki 2 (`props/falconet.json`) |
+| Hongipo (koreańska kopia holenderskiej kolubryny, XVII w.) | „KCISA Cannon”, Korea Culture Information Service Agency | CC BY 4.0 | **w grze**: kolubryny epoki 2 (`props/culverin.json`, jasna lufa przyciemniona) |
+| Działo 12-funtowe | „12 Pound Cannon”, iedalton | CC BY 4.0 | **w grze**: działa konne epoki 3 (`props/horsegun.json`) |
+| Saxony Demi Cannon (półkartauna) | artfletch | CC BY 4.0 | w zapasie: ciężkie działo XVI–XVII w. (USDZ, 11 siatek) |
+| Historical Cannon (19th century), ~118 tys. tr. | Samuel Francis Johnson (Oneironauticus) | CC BY 4.0 | w zapasie: ciężkie działo oblężnicze |
+| 18th Century Cannon (laweta okrętowa ze skrzyniami) | LACooper | CC BY 4.0 | w zapasie: działo okrętowe, nie polowe |
+| Vintage Cannon 3D Model Free (dwa małe działa) | Nicholas-3D | CC BY 4.0 | w zapasie |
 | Husarz węgierski XV–XVI w. (figura na koniu, bez tekstur, 600 tys. tr.) | Ded Makar | CC BY 4.0 | odrzucony: figura bez tekstur |
 | Kirasjer pułku głuchowskiego (figura stojąca, ręce wzdłuż ciała) | „Private soldier of the Glukhovsky cuirassier reg”, 1812panorama | CC BY 4.0 | **w grze**: jeździec kirasjerów (`cuirassier_rider.json`; `autorig.py` z rękami opuszczonymi, `rigged.py --seated`) |
 | Oficer gwardii konnej, szeregowy gwardii litewskiej (figury stojące) | 1812panorama | CC BY 4.0 | w zapasie: do `autorig.py` (np. dragoni pieszo) |

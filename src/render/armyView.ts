@@ -413,12 +413,12 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
 const MOUNTED: readonly UnitKind[] = ['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars'];
 const BARDED: ReadonlySet<UnitKind> = new Set<UnitKind>(['heavyCavalry', 'cuirassiers']);
 /** Kinds with a rider of their own (rigged.py --seated); the others ride as soldiers/rider.json. */
-/** Who serves each gun: townsmen at the old guns, artillerymen in uniform at the third age's. */
+/** Who serves each gun: townsmen at the medieval guns, artillerymen in uniform at the later ages'. */
 const CREW_FILES: Record<GunKind, string> = {
   cannon: 'people/townsman.json',
   mortar: 'people/townsman.json',
-  falconets: 'people/townsman.json',
-  culverins: 'people/townsman.json',
+  falconets: 'soldiers/artilleryman.json',
+  culverins: 'soldiers/artilleryman.json',
   horseGuns: 'soldiers/artilleryman.json',
   fieldGuns: 'soldiers/artilleryman.json',
 };
