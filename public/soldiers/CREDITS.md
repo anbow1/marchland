@@ -68,3 +68,8 @@
 - `dragoon_rider.json` — the dragoons' rider, made by `autorig.py` and `rigged.py --seated` from **"1700th-ish century
   Soldier"** by **Christoffer Eriksson** (https://sketchfab.com/3d-models/1700th-ish-century-soldier-bfeb4a6d570b446a8ac710890b541371),
   licensed **CC BY 4.0**: thinned to about 3 200 triangles, its darkest cloth in the side's colour.
+- `artilleryman.json` — the crews of the third age's guns, made by `rigged.py --arms none --drop ramrod` from
+  **"Artillery crew 1815 - rigged for UE4/5"** by **Andy woodhead**
+  (https://sketchfab.com/3d-models/artillery-crew-1815-rigged-for-ue45-98747e8ba0e547eaba65136919734bf2), licensed
+  **CC BY 4.0**: thinned to about 1 600 triangles, the jacket in the side's colour. Motion from Mixamo (a standing
+  idle, Walking, Picking Up, Putting Down), as the townsmen who serve the older guns.

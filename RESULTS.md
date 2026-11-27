@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Obsługa dział epoki 3: artylerzyści w mundurach
+
+- „Artillery crew 1815 - rigged for UE4/5” (Andy woodhead, CC BY 4.0) przez `rigged.py --drop ramrod`, kurtka w
+  barwie strony, te same cztery ruchy co mieszczanie przy działach (stanie, marsz, podnoszenie i odkładanie kuli).
+- `armyView`: obsługa zależy od działa (`CREW_FILES`): mieszczanie przy armatach, moździerzach, falkonetach i
+  kolubrynach, artylerzyści przy działach konnych i armatach polowych; bez pliku artylerzysty — mieszczanie.
+- Przeglądarka: działa epoki 3 z artylerzystami, ładowanie po strzale, bez błędów.
+
 ## 2026-11-27 · Artyleria w każdej epoce: lekkie działo i ciężkie
 
 - Prośba: dla każdej epoki dwie artylerie, mniejsza i tańsza oraz droższa o większym zasięgu. Epoka 1: armaty

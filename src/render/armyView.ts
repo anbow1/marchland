@@ -406,13 +406,24 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
 const MOUNTED: readonly UnitKind[] = ['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars'];
 const BARDED: ReadonlySet<UnitKind> = new Set<UnitKind>(['heavyCavalry', 'cuirassiers']);
 /** Kinds with a rider of their own (rigged.py --seated); the others ride as soldiers/rider.json. */
+/** Who serves each gun: townsmen at the old guns, artillerymen in uniform at the third age's. */
+const CREW_FILES: Record<GunKind, string> = {
+  cannon: 'people/townsman.json',
+  mortar: 'people/townsman.json',
+  falconets: 'people/townsman.json',
+  culverins: 'people/townsman.json',
+  horseGuns: 'soldiers/artilleryman.json',
+  fieldGuns: 'soldiers/artilleryman.json',
+};
 const RIDER_FILES: Partial<Record<UnitKind, string>> = { hussars: 'soldiers/hussar_rider.json', cuirassiers: 'soldiers/cuirassier_rider.json', dragoons: 'soldiers/dragoon_rider.json' };
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
   private readonly scene: Scene;
   /** The guns' crews as modelled townsmen (people/townsman.json), once loaded; the size of each gun's model. */
+  /** The guns' crews as modelled men: townsmen at the old guns, artillerymen at the third age's (CREW_FILES). */
   private crew: { mesh: InstancedMesh; place: InstancedBufferAttribute; frame: InstancedBufferAttribute; side: InstancedBufferAttribute; clips: Record<'idle' | 'walk' | 'pickup' | 'putdown', Clip & { fps: number }> } | null = null;
+  private readonly crews = new Map<string, NonNullable<ArmyView['crew']>>();
   private readonly gunSizes = new Map<GunKind, number[]>();
   private readonly arrows: InstancedMesh;
   private readonly stones: InstancedMesh;
@@ -582,9 +593,18 @@ export class ArmyView {
 
   /** The crew model: the townsman with his clips, one instanced skinned mesh for every gun's men. */
   private async loadCrew(base: string): Promise<void> {
+    for (const file of new Set(Object.values(CREW_FILES))) {
+      await this.loadCrewModel(base, file);
+      if (this.crew) this.crews.set(file, this.crew);
+    }
+    // The townsmen are the crew every gun falls back on.
+    this.crew = this.crews.get(CREW_FILES.cannon) ?? null;
+  }
+
+  private async loadCrewModel(base: string, file: string): Promise<void> {
     try {
-      const response = await fetch(freshUrl(base, 'people/townsman.json'));
-      if (!response.ok) throw new Error(`townsman ${response.status}`);
+      const response = await fetch(freshUrl(base, file));
+      if (!response.ok) throw new Error(`${file} ${response.status}`);
       const model = (await response.json()) as RiggedModel;
       const named = (name: string) => model.clips.find((c) => c.name === name);
       const [idle, walk, pickup, putdown] = [named('idle'), named('walk'), named('pickup'), named('putdown')];
@@ -632,10 +652,13 @@ export class ArmyView {
     }
   }
 
-  /** Each living gun's crew about it: walking beside it on the march, loading after a shot, else at ease. */
+  /** Each living gun's crew about it, each crew model drawing the guns that are its own. */
   private writeCrews(world: World): void {
-    const crew = this.crew;
-    if (!crew) return;
+    for (const [file, crew] of this.crews) this.writeCrew(world, crew, (kind) => (this.crews.has(CREW_FILES[kind]) ? CREW_FILES[kind] : CREW_FILES.cannon) === file);
+  }
+
+  /** One crew model's men about their guns: walking beside a gun on the march, loading after a shot, else at ease. */
+  private writeCrew(world: World, crew: NonNullable<ArmyView['crew']>, own: (kind: GunKind) => boolean): void {
     const p = crew.place.array as Float32Array;
     const f = crew.frame.array as Float32Array;
     const sides = crew.side.array as Float32Array;
@@ -645,6 +668,7 @@ export class ArmyView {
     for (const r of world.regiments) {
       if (!r.def.engine) continue;
       const kind = r.kind as GunKind;
+      if (!own(kind)) continue;
       const size = this.gunSizes.get(kind);
       if (!size) continue;
       const spots = gunCrewSpots(kind, size);
