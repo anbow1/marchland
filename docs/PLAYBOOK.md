@@ -95,6 +95,15 @@ Przełączniki w adresie do pomiarów i zrzutów: `?autostart` (bez menu), `&q=h
   słupki, druty i grona, które ciemnieją. **Woda, wychodnie i głazy** (`landView.ts`), **horyzont**
   (`horizonView.ts`), **dym** z kominów pracujących budynków (`smokeView.ts`).
 
+### 3.x Cienie kontaktowe i trawa z bliska (27.11, z mediveal-village)
+
+- **Cienie kontaktowe** (`contactShadows.ts`): pod każdym budynkiem i zamkiem płaski kwadrat na ziemi z
+  zaokrąglonym gradientem (ciemny w obrysie, 38%, zanikający 2,4 m dalej), jedna instancjonowana siatka,
+  przestawiana tylko, gdy zmienią się budynki. Budynek siedzi w ziemi zamiast na niej, w słońcu i w cieniu.
+- **Trawa z bliska**: najbliższy pierścień źdźbeł gęstszy (High 900 na płytkę 4 m zamiast 520), dalsze
+  rzadsze (`RING_KEEP` 1 / 0,3 / 0,12 zamiast 1 / 0,45 / 0,2), źdźbła węższe (3,0 zamiast 3,6): z daleka koszt
+  podobny; Low z bliska bez zmian, dalej taniej.
+
 ## 4. Postacie i animacja
 
 ### 4.1 Skąd są postacie i ruchy

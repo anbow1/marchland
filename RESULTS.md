@@ -5,6 +5,15 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Cienie kontaktowe pod budynkami; gęstsza trawa z bliska
+
+- **Cienie kontaktowe** (`src/render/contactShadows.ts`, technika z mediveal-village): miękkie przyciemnienie
+  ziemi przy ścianach każdego budynku i zamku, jedna siatka instancjonowana, przestawiana przy zmianie budynków.
+  Zrzut z tego samego miejsca z cieniami i bez: podstawy zamku i domów wyraźnie osadzone w ziemi.
+- **Trawa z bliska**: High 900 źdźbeł na płytkę 4 m w najbliższym pierścieniu (było 520), dalsze pierścienie
+  rzadsze (0,3 i 0,12 zamiast 0,45 i 0,2), źdźbła węższe; Low z bliska jak było (220), dalej rzadziej.
+- Testy zielone; przeglądarka bez błędów.
+
 ## 2026-11-27 · Rycerze z modelu joannity
 
 - Jeździec rycerzy z „Hospitaler Talking” (putns, CC BY 4.0) przez `rigged.py --seated`, ~3 200 trójkątów;
