@@ -415,7 +415,7 @@ const CREW_FILES: Record<GunKind, string> = {
   horseGuns: 'soldiers/artilleryman.json',
   fieldGuns: 'soldiers/artilleryman.json',
 };
-const RIDER_FILES: Partial<Record<UnitKind, string>> = { hussars: 'soldiers/hussar_rider.json', cuirassiers: 'soldiers/cuirassier_rider.json', dragoons: 'soldiers/dragoon_rider.json' };
+const RIDER_FILES: Partial<Record<UnitKind, string>> = { hussars: 'soldiers/hussar_rider.json', cuirassiers: 'soldiers/cuirassier_rider.json', dragoons: 'soldiers/dragoon_rider.json', heavyCavalry: 'soldiers/knight_rider.json' };
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();

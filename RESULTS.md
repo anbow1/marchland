@@ -5,6 +5,13 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Rycerze z modelu joannity
+
+- Jeździec rycerzy z „Hospitaler Talking” (putns, CC BY 4.0) przez `rigged.py --seated`, ~3 200 trójkątów;
+  opończa w barwie strony (udział 0,85) zakrywa krzyż zakonu — strony w grze są wymyślone; chorągiew postaci
+  (bez wag) pominięta. Dotąd rycerze jeździli jako wspólny jeździec (Paladin z Mixamo).
+- Przeglądarka: bitwa z rycerzami, bez błędów.
+
 ## 2026-11-27 · Obsługa dział epoki 3: artylerzyści w mundurach
 
 - „Artillery crew 1815 - rigged for UE4/5” (Andy woodhead, CC BY 4.0) przez `rigged.py --drop ramrod`, kurtka w

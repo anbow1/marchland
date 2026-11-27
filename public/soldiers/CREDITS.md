@@ -73,3 +73,7 @@
   (https://sketchfab.com/3d-models/artillery-crew-1815-rigged-for-ue45-98747e8ba0e547eaba65136919734bf2), licensed
   **CC BY 4.0**: thinned to about 1 600 triangles, the jacket in the side's colour. Motion from Mixamo (a standing
   idle, Walking, Picking Up, Putting Down), as the townsmen who serve the older guns.
+- `knight_rider.json` — the knights (heavy cavalry), made by `rigged.py --seated` from **"Hospitaler Talking"** by
+  **putns** (https://sketchfab.com/3d-models/hospitaler-talking-a640ec0a01c1480d8d9531e1c26e4777), licensed
+  **CC BY 4.0**: thinned to about 3 200 triangles, the surcoat in the side's colour (over the order's cross: the
+  game's sides are invented); his flag left out.

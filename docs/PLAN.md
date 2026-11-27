@@ -41,7 +41,7 @@ CC BY z autorem, albo Mixamo; nic z gier i modów, żadnych cudzych postaci, nic
 1. ~~Obsługa dział epoki 3~~ — zrobione 27.11 (artylerzysta 1815); przy działach epoki 2 wciąż mieszczanie (W1: obsługa z XVII w.).
 2. ~~Armata epok 2–3~~ — zrobione 27.11: dwa działa na epokę (lekkie i ciężkie), epoka 3 z modelu działa 1815.
 3. ~~Dragoni~~ — zrobione 27.11.
-4. **Rycerze / ciężka jazda** z joannity (szkielet Unreala), krzyż zakonu pod barwą strony.
+4. ~~Rycerze z joannity~~ — zrobione 27.11.
 
 ### 3.2 Epoki w rozgrywce
 
