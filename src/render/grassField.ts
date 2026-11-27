@@ -160,7 +160,8 @@ export interface GrassOptions {
 }
 
 /** Share of the blades kept at the inner edge of each ring. */
-const RING_KEEP = [1, 0.45, 0.2] as const;
+// Marchland: the near ring denser, the outer ones thinner (close-ups show a carpet; from afar the cost stays).
+const RING_KEEP = [1, 0.3, 0.12] as const;
 const RING_SEGMENTS = [4, 3, 2] as const;
 const RING_SPLIT = [0.3, 0.65, 1] as const;
 /** Trampling map: texels per side and metres per texel (a ~38 m window round the player). */

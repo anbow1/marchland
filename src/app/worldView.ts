@@ -15,6 +15,7 @@ import { shareStaticInstanceShaders } from '../render/instancing.ts';
 import { AFTERNOON, Lighting } from '../render/lighting.ts';
 import { Clearings } from '../render/clearings.ts';
 import { GroundWorks } from '../render/groundWorks.ts';
+import { ContactShadows } from '../render/contactShadows.ts';
 import { buildLand } from '../render/landView.ts';
 import { type GroundTiles, Markers } from '../render/markers.ts';
 import { PeopleView } from '../render/peopleView.ts';
@@ -68,6 +69,8 @@ export class WorldView {
   private points!: PointsView;
   private readonly smokeSources = new Float32Array(220 * 3);
   private readonly works = new GroundWorks();
+  /** Soft shade on the ground round every building (contactShadows.ts). */
+  private contact: ContactShadows | null = null;
   private grass!: GrassView;
   private clockS = 0;
   private readonly clearings = new Clearings();
@@ -108,6 +111,7 @@ export class WorldView {
     t = logStage('forest', t);
     onProgress(0.55);
     this.town = new TownView(scene, surfaces);
+    this.contact = new ContactShadows(scene);
     const models = await this.town.loadModels(import.meta.env.BASE_URL);
     this.town.warm();
     this.people = new PeopleView(scene, surfaces);
@@ -173,6 +177,7 @@ export class WorldView {
     this.grass.update(cam.position, targetY, this.clockS, frameSeconds, cam.fov, this.stage.renderer.domElement.height);
     this.clearings.update(world);
     this.town.update(world, frameSeconds);
+    this.contact?.update(world);
     this.town.setGhost(ghost ? ghost.kind : null, ghost?.x ?? 0, ghost?.z ?? 0, ghost?.yawRad ?? 0, ghost?.allowed ?? false);
     this.people.update(world);
     this.vines.update(world);

@@ -44,13 +44,15 @@ export class GrassView {
       },
       {
         tileM: 4,
-        bladesPerTile: high ? 520 : 220,
+        // Dense close to the camera (RING_KEEP thins the outer rings): on High 900 a 4 m tile near, about 270 and 110
+        // further; on Low the near ring as before (220) and the outer ones thinner, for tablets.
+        bladesPerTile: high ? 900 : 220,
         radiusM: high ? 52 : 34,
         wind: wind.add(vec2(0, 0)),
         time: this.time,
         // Seen from a strategy camera tens of metres up: fewer, broader, leaning blades read as tufts of
         // grass rather than a fine carpet (the Tanks settings, a little stronger again).
-        widthScale: 3.6,
+        widthScale: 3.0,
         heightScale: 0.9,
         leanScale: 2.0,
         rootShade: 0.88,

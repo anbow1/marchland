@@ -52,7 +52,7 @@ CC BY z autorem, albo Mixamo; nic z gier i modów, żadnych cudzych postaci, nic
 
 ### 3.3 Obraz
 
-1. Cienie kontaktowe pod budynkami; gęstsza trawa z bliska.
+1. ~~Cienie kontaktowe pod budynkami; gęstsza trawa z bliska~~ — zrobione 27.11.
 2. Warianty budynków (dwa wyglądy chaty na poziom); poziomy szczegółów z daleka.
 3. Ulice: krawężnik, wydeptany środek, płynniejsze skosy polnych dróg.
 
