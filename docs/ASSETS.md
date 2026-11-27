@@ -40,7 +40,7 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | Lekkie działo z brązu na kołach | „Cannon”, Chenchanchong, Sketchfab | CC BY 4.0 | **w grze**: falkonety epoki 2 (`props/falconet.json`) |
 | Hongipo (koreańska kopia holenderskiej kolubryny, XVII w.) | „KCISA Cannon”, Korea Culture Information Service Agency | CC BY 4.0 | **w grze**: kolubryny epoki 2 (`props/culverin.json`, jasna lufa przyciemniona) |
 | Działo 12-funtowe | „12 Pound Cannon”, iedalton | CC BY 4.0 | **w grze**: działa konne epoki 3 (`props/horsegun.json`) |
-| Katedra gotycka, 530 tys. tr. | „Gothic cathedral”, Gnemegorl | CC BY 4.0 | **w grze**: katedra (`buildings/cathedral_1.glb`, 42 tys. tr., podniesiona 2,4×, jeden plik na wszystkie poziomy) |
+| Katedra gotycka, 530 tys. tr. | „Gothic cathedral”, Gnemegorl | CC BY 4.0 | odrzucona: po uproszczeniu do 42 tys. tr. ściany nieciągłe, jeden kolor, nie pasuje do budynków z zestawu; katedra jest z zestawu Blendera (`buildings.py`) |
 | Katedra Notre-Dame w Sajgonie (cegła, XIX w.), 2,2 tys. tr. | cgart.com | CC BY 4.0 | w zapasie: wielka budowla epoki 3 albo katedra w wyglądzie XIX w. |
 | Koń „Animated Rigged Horse With Saddle” (65 kości, jeden klip 1 s: ze stania w galop) | Ayan | CC BY 4.0 | sprawdzony: bez kłusa; w zapasie |
 | Konie MAXDESIGN-3D (te same co w grze) | MAXDESIGN-3D | CC BY 4.0 | już w grze (`warhorse.json`, upadek); kłusa w nich nie ma |

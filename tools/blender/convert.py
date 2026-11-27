@@ -59,28 +59,10 @@ DEFAULT = "plaster#d8cfc0"
 # Medieval Farm Village (Etherlyte): its cottage, cut out with `around` (anchor r"^Roof_Thatched", k 0.6,
 # dropping the scattered bricks), is a plain box under its thatch once its painted door, windows and
 # timbers are gone with the textures; the town's own houses say more.
+# Gothic cathedral (Gnemegorl): 530 000 triangles brought to 42 000 with cull_hidden, protect_m2 and flat (the
+# keys stay for the next large model), but its thinned walls broke into shells of one stone colour that did not
+# sit with the town; the cathedral is built from the kit instead (buildings.py).
 MODELS = {
-    # The cathedral (Gothic cathedral, Gnemegorl): 70 m long and 29 m high, fitted to a 12 m plot and raised 2.4
-    # times so its towers stand over the town as the cathedral from code did. Stone ashlar, glass. 530 000
-    # triangles: its inside culled, then thinned with its walls held; about 42 000 left (one to a town).
-    "gothic_cathedral": {
-        "kind": "cathedral",
-        "levels": [1, 2, 3],
-        "fit_m": 12,
-        "stretch_z": 2.4,
-        "one_file": True,
-        "cull_hidden": True,
-        "protect_m2": 0.02,
-        "flat": True,
-        "turn_deg": 0,
-        "budget": 20000,
-        "min_part_m": 0.15,
-        "surfaces": [
-            (r"vitral|ventanal|roseton", "glass#1e2328"),
-            (r"metal", "iron#4a4c50"),
-            (r"torre|nave|piedra|^material", "ashlar#c4d0e8"),
-        ],
-    },
     "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke_from": ["rubble#b8a89a", "ember#ff7a2a"]},
     # The enemy's fortress for the campaign's last mission (Medieval Castle, Uğur Yakışık): curtain walls with corner
     # towers, a gatehouse and barbican over a moat, a keep in a large courtyard. Not a building of the town

@@ -260,6 +260,14 @@ kamienny parter, stojaki ze zbrojami; łuczarz — tarcze strzelnicze ze słomy;
 stajnia — długi niski budynek i padok; koszary — hala w palisadzie, plac z
 pelami do ćwiczeń.
 
+### B2a. Wielkie budowle
+
+`cathedral` (27.11, `buildings.py`, ok. 4 tys. trójkątów): katedra gotycka — nawa z
+nawami bocznymi, przypory z łękami i pinaklami, transept, absyda, dwie wieże z
+hełmami od frontu, portal i rozeta, sygnaturka na skrzyżowaniu. Z góry widać ją po
+dwóch hełmach wież (około 19 m) ponad dachami miasta. Poziom 2: krzyże na hełmach;
+poziom 3: murek przed frontem. Ratusz i manufaktura — jeszcze bryły z kodu.
+
 Dzisiejsze wersje z kodu (do podejrzenia układu):
 `src/render/buildingGeometry.ts`.
 

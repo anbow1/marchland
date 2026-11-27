@@ -5,6 +5,18 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Katedra z zestawu Blendera zamiast modelu z zewnątrz
+
+- Właściciel: „katedry wyglądają źle, nieciągłe powłoki i jednorodne, nie pasują do reszty budynków”. Model
+  Gnemegorla wycofany. Katedra jest teraz złożona z części zestawu (`buildings.py`, `cathedral`, poziomy 1–3):
+  - nawa z nawami bocznymi pod łupkiem, cztery przęsła z przyporami, łukami przyporowymi i pinaklami;
+  - ostrołukowe okna w nawach bocznych i w górnej części nawy, transept z oknami w szczytach, absyda pod stożkiem;
+  - od frontu dwie wieże z gzymsami, oknami dzwonnicy i hełmami, między nimi szczyt, portal i rozeta;
+  - sygnaturka na skrzyżowaniu.
+- Poziom 2 dodaje krzyże na hełmach, a poziom 3 niski murek przed frontem.
+- Około 4 tys. trójkątów i 220 KB na poziom, zamiast 42 tys. i 3,3 MB. Kamień i łupek są te same co w domach i
+  wieżach, więc katedra pasuje do miasta. Wieże z hełmami mają około 19 m i widać je ponad dachami.
+
 ## 2026-11-27 · Katedra z modelu; konie i druga katedra sprawdzone
 
 - **Katedra** to teraz „Gothic cathedral” (Gnemegorl, CC BY 4.0). Model ma 530 tys. trójkątów i 70 m długości, a w

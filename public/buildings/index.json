@@ -49,15 +49,15 @@
  },
  "cathedral:1": {
   "file": "cathedral_1.glb",
-  "triangles": 41666
+  "triangles": 3884
  },
  "cathedral:2": {
-  "file": "cathedral_1.glb",
-  "triangles": 41666
+  "file": "cathedral_2.glb",
+  "triangles": 3956
  },
  "cathedral:3": {
-  "file": "cathedral_1.glb",
-  "triangles": 41666
+  "file": "cathedral_3.glb",
+  "triangles": 4044
  },
  "farm:1": {
   "file": "farm_1.glb",

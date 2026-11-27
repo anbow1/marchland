@@ -351,7 +351,9 @@ wysokości.
     smugi), `stretch_z` (budowla dłuższa niż działka, wciśnięta w nią, byłaby niższa od domów) i `one_file`
     (jeden plik dla wszystkich poziomów; `townView` wczytuje każdy plik raz).
   Efekt: 41 700 trójkątów, 3,3 MB, bryła pełna. Usuwanie „małych wysp” nie działa: w tym modelu ściany też są
-  z małych kawałków.
+  z małych kawałków. Mimo to właściciel model odrzucił: po takim uproszczeniu ściany są nieciągłymi skorupami w
+  jednym kolorze i nie pasują do budynków z zestawu. **Wniosek: wielkie, bogate modele z zewnątrz nie nadają się
+  na budynki miasta; lepiej złożyć budowlę z części zestawu** (`buildings.py`, katedra: ok. 4 tys. trójkątów).
 - **Etapy budowy** (`townView.ts`): fundament, potem ściany rosną warstwami w rusztowaniu, dach na końcu.
   To ten sam model ucięty na wysokości postępu: materiał ma `maskNode` z uniformem na obiekt
   (`onObjectUpdate`, `userData.cutY`), więc jeden materiał tnie każdy plac inaczej; cienie są ucinane tak

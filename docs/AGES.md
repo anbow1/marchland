@@ -59,7 +59,7 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 | Artyleria epoki 2: falkonety (lekkie) i kolubryny (ciężkie) | **z modeli** (27.11): falkonet — lekkie działo z brązu (Chenchanchong), kolubryna — hongipo (KCISA); obsługa z artylerzysty 1815 | — |
 | Artyleria epoki 3: działa konne (lekkie) i armaty polowe (ciężkie) | **z modeli** (27.11): działa konne — 12-funtówka (iedalton), armaty polowe — działo 1815 (Andy Woodhead); obsługa z artylerzysty 1815 | — |
 | Budynki na poziomie 4 i 5 | ten sam budynek w materiałach epoki: 4 — dachówka i bielony tynk, 5 — kamień, łupek, malowane belki (`ERA_LOOK` w `surfaceModel.ts`) | spójne modele epoki: szachulec i cegła, potem cegła i tynk |
-| Katedra | **z modelu** (27.11): katedra gotycka Gnemegorla, 42 tys. trójkątów | — |
+| Katedra | **z zestawu Blendera** (27.11, `buildings.py`): nawa z nawami bocznymi, przypory i łuki, transept, absyda, dwie wieże z hełmami, sygnaturka, rozeta; ok. 4 tys. trójkątów, kamień jak domy | — |
 | Rusznikarnia, prochownia, ratusz, manufaktura | bryły z kodu (`buildingGeometry.ts`); manufaktura z cegły z kominem | modele |
 | Broń i tarcze średniowiecza: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia rycerza, tarcza lekkiej jazdy | zasady działają, na modelach broń dotychczasowa | modele broni dopięte do istniejących szkieletów |
 

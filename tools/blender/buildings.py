@@ -769,3 +769,128 @@ def tower(k, level):
 
 
 BUILDERS["tower"] = tower
+
+
+# ---- the great buildings ------------------------------------------------------
+
+GLASS_DARK = "glass#1e2328"
+SLATE = "shingles#8a9098"
+STONE = "ashlar#e4e0d8"
+
+
+def lancet(k, x, y, z, w, h, face):
+    """A tall pointed church window on a wall facing ±Y: dark glass under a pointed head, a stone surround."""
+    out = face * 0.06
+    k.box(x, y + out, z, w, 0.06, h, GLASS_DARK)
+    m = k.mark()
+    k.prism([(-w / 2, 0), (w / 2, 0), (0, w * 0.7)], 0.06, GLASS_DARK)
+    k.move_since(m, at(x, y + out, z + h))
+    for dx in (-w / 2 - 0.06, w / 2 + 0.06):
+        k.box(x + dx, y + out * 1.5, z - 0.05, 0.12, 0.1, h + 0.05, STONE)
+    k.box(x, y + out * 1.5, z - 0.12, w + 0.3, 0.14, 0.1, STONE)
+
+
+def spire(k, x, y, z, r, height, sides=8, surface=SLATE, cross=False):
+    """A pointed spire on a ring of stone, a gilt cross on top for the later levels."""
+    k.cylinder(x, y, z - 0.25, r + 0.12, r + 0.12, 0.25, sides, STONE)
+    k.cylinder(x, y, z, r, 0.02, height, sides, surface)
+    if cross:
+        k.box(x, y, z + height - 0.1, 0.06, 0.06, 0.8, IRON)
+        k.box(x, y, z + height + 0.4, 0.4, 0.06, 0.06, IRON)
+
+
+def cathedral(k, level):
+    # A gothic cathedral (the first age's great building): a tall nave between lower aisles held by buttresses and
+    # flying arches, a transept, a choir ending in an apse, two west towers with spires over a portal and a rose,
+    # a spire on the crossing. Built with its nave along X and its west front at +X, then turned so the front
+    # faces -Y (the game's +Z) like every building's door.
+    start = k.mark()
+    plinth = 0.5
+    k.box(-0.3, 0, -0.5, 10.0, 6.6, plinth + 0.5, STONE_DARK, bevel=0.04)
+    x0, x1 = -3.6, 3.0          # the nave's east and west ends
+    nave_w, nave_h = 3.0, 8.6
+    aisle_w, aisle_h = 1.5, 4.6
+    length = x1 - x0
+    mid = (x0 + x1) / 2
+    # Nave and aisles.
+    k.box(mid, 0, plinth, length, nave_w, nave_h, STONE)
+    for side in (-1, 1):
+        y = side * (nave_w + aisle_w) / 2
+        k.box(mid, y, plinth, length, aisle_w, aisle_h, STONE)
+        # The aisle's lean-to roof against the nave.
+        lo = side * (nave_w / 2 + aisle_w + 0.25)
+        hi = side * nave_w / 2
+        k.slab([(x0, lo, plinth + aisle_h), (x1, lo, plinth + aisle_h), (x1, hi, plinth + aisle_h + 1.3), (x0, hi, plinth + aisle_h + 1.3)][:: -side], 0.16, SLATE, STONE)
+        # Bays: a buttress and its flying arch, a lancet in the aisle and a clerestory window above.
+        bays = 4
+        for i in range(bays + 1):
+            bx = x0 + 0.15 + i * (length - 0.3) / bays
+            wall = side * (nave_w / 2 + aisle_w)
+            k.box(bx, wall + side * 0.3, plinth, 0.4, 0.6, aisle_h + 1.6, STONE, bevel=0.03)
+            k.cylinder(bx, wall + side * 0.3, plinth + aisle_h + 1.6, 0.2, 0.01, 1.0, 6, STONE)
+            k.beam((bx, wall + side * 0.3, plinth + aisle_h + 1.2), (bx, side * nave_w / 2, plinth + nave_h - 1.2), 0.22, 0.3, STONE, bevel=0.0)
+            if i < bays:
+                wx = bx + (length - 0.3) / bays / 2
+                lancet(k, wx, wall, plinth + 1.0, 0.6, 2.0, side)
+                lancet(k, wx, side * nave_w / 2, plinth + aisle_h + 1.6, 0.55, 1.6, side)
+    # The nave's roof, steep, of slate.
+    m = k.mark()
+    ridge = roof(k, length, nave_w, 0, 58, 0.25, 0.1, 0.2, SLATE)
+    k.move_since(m, at(mid, 0, plinth + nave_h))
+    ridge += plinth + nave_h
+    # The transept across the nave, near the east end, with its own roof and a lancet in each end wall.
+    tx = x0 + 1.6
+    t_len, t_w = 6.6, 2.4
+    k.box(tx, 0, plinth, t_w, t_len, nave_h, STONE)
+    m = k.mark()
+    roof(k, t_len, t_w, 0, 58, 0.25, 0.1, 0.2, SLATE)
+    gables(k, t_len, t_w, 0, (t_w / 2) * math.tan(math.radians(58)), STONE, framed=False)
+    k.move_since(m, at(tx, 0, plinth + nave_h, math.pi / 2))
+    for side in (-1, 1):
+        lancet(k, tx, side * t_len / 2, plinth + 2.0, 0.9, 3.4, side)
+    # The choir's apse: a half round of stone under a cone, on the east end.
+    k.cylinder(x0, 0, plinth, nave_w / 2 + 0.1, nave_w / 2 + 0.1, nave_h - 1.0, 10, STONE)
+    k.cylinder(x0, 0, plinth + nave_h - 1.0, nave_w / 2 + 0.35, 0.05, 3.0, 10, SLATE)
+    # The spire on the crossing.
+    spire(k, tx, 0, ridge - 0.6, 0.45, 4.5, cross=level >= 2)
+    # The west front: two towers and the wall between them with the portal and the rose.
+    tw = 1.9
+    tower_h = 12.6
+    fx = x1 + tw / 2 - 0.2
+    for side in (-1, 1):
+        ty = side * (nave_w / 2 + aisle_w - tw / 2 + 0.25)
+        k.box(fx, ty, plinth, tw, tw, tower_h, STONE, bevel=0.04)
+        for z in (plinth + aisle_h, plinth + nave_h, plinth + tower_h - 0.3):
+            k.box(fx, ty, z, tw + 0.14, tw + 0.14, 0.22, STONE_DARK, bevel=0.02)
+        # Corner buttresses and the belfry's openings.
+        for dy in (-1, 1):
+            k.box(fx + tw / 2 + 0.12, ty + dy * (tw / 2 - 0.15), plinth, 0.3, 0.3, tower_h - 1.2, STONE)
+        for face in (-1, 1):
+            lancet(k, fx, ty + face * tw / 2, plinth + nave_h + 0.8, 0.5, 2.0, face)
+        m = k.mark()
+        lancet(k, 0, -tw / 2, plinth + nave_h + 0.8, 0.5, 2.0, -1)
+        k.move_since(m, at(fx, ty, 0, math.pi / 2))
+        spire(k, fx, ty, plinth + tower_h, tw / 2 + 0.05, 6.0, cross=level >= 2)
+        for dx in (-1, 1):
+            for dy in (-1, 1):
+                k.cylinder(fx + dx * (tw / 2 - 0.1), ty + dy * (tw / 2 - 0.1), plinth + tower_h, 0.13, 0.01, 1.1, 6, STONE)
+    # The front between the towers: a gable, the portal, the rose; built facing -Y and turned to face +X.
+    m = k.mark()
+    k.box(0, 0, plinth, nave_w + 0.4, 0.5, nave_h, STONE)
+    k.prism([(-(nave_w + 0.4) / 2, plinth + nave_h), ((nave_w + 0.4) / 2, plinth + nave_h), (0, ridge - 0.1)], 0.5, STONE)
+    door(k, 0, -0.25, plinth, w=1.3, h=2.6, step=True)
+    k.prism([(-0.75, plinth + 2.6), (0.75, plinth + 2.6), (0, plinth + 3.6)], 0.2, STONE_DARK)
+    m2 = k.mark()
+    k.cylinder(0, 0, -0.05, 0.85, 0.85, 0.1, 16, GLASS_DARK)
+    k.cylinder(0, 0, -0.08, 1.0, 1.0, 0.06, 16, STONE)
+    k.move_since(m2, Matrix.Translation((0, -0.3, plinth + nave_h - 2.4)) @ Matrix.Rotation(math.pi / 2, 4, "X"))
+    k.move_since(m, at(x1 + 0.3, 0, 0, math.pi / 2))
+    if level >= 3:
+        # A close of low wall and a gate before the front.
+        for side in (-1, 1):
+            k.box(x1 + 2.6, side * 2.6, 0, 0.3, 1.6, 0.9, STONE_DARK, bevel=0.03)
+    k.move_since(start, Matrix.Rotation(-math.pi / 2, 4, "Z"))
+    return {}
+
+
+BUILDERS["cathedral"] = cathedral
