@@ -49,7 +49,7 @@ Wybrane z właścicielem projektu: **dobudować epoki** do istniejącej gry (dot
 |---|---|---|
 | Piechota liniowa, strzelcy | **z modelu** (27.11): piechur napoleoński Andy'ego Woodheada (szkielet Unreala), muszkiet gry (piechota z bagnetem), płaszcz albo spodnie w barwie strony | ładowanie i salwa (klip Mixamo) |
 | Muszkieterowie | **z modelu** (27.11): żołnierz XVII w. (haiphucpham221102) na szkielecie z `autorig.py`, muszkiet gry | — |
-| Kirasjerzy | jak rycerze | kirasjer w napierśniku na koniu |
+| Kirasjerzy | **z modelu** (27.11): kirasjer 1812panorama w siodle (szkielet z `autorig.py`) | — |
 | Huzarzy | **z modelu** (27.11): jeździec Andy'ego Woodheada w siodle, dolman w barwie strony | — |
 | Dragoni | jak lekka jazda | dragon (pieszo i konno), huzar z szablą |
 | Budynki na poziomie 4 i 5 | ten sam budynek w materiałach epoki: 4 — dachówka i bielony tynk, 5 — kamień, łupek, malowane belki (`ERA_LOOK` w `surfaceModel.ts`) | spójne modele epoki: szachulec i cegła, potem cegła i tynk |

@@ -61,3 +61,7 @@
   (https://sketchfab.com/3d-models/european-soldier-17th-century-7fc4d303a8654908aa56711c6e3078d8), licensed
   **CC BY 4.0**: thinned to about 3 450 triangles, colours from its textures, its darkest cloth (hat,
   stockings) in the side's colour; the musket is the game's own. Motion from Mixamo, as the line infantry's.
+- `cuirassier_rider.json` — the cuirassiers' rider, made by `autorig.py` and `rigged.py --seated` from **"Private
+  soldier of the Glukhovsky cuirassier reg"** by **1812panorama**
+  (https://sketchfab.com/3d-models/private-soldier-of-the-glukhovsky-cuirassier-reg-b7f6029b2baa4c47b63bdcf6f0cd3747),
+  licensed **CC BY 4.0**: thinned to about 3 700 triangles, colours from its texture.

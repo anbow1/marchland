@@ -146,8 +146,10 @@ kręgosłup na środkowej linii (mediana klatki, w pobliżu środka obrysu) na z
 od stawu barku do najdalszego punktu dłoni, łokieć i nadgarstek na zwykłych udziałach tej linii, przesunięte
 na środek rękawa. Wagi: każdy wierzchołek do dwóch najbliższych kości (odwrotność czwartej potęgi odległości
 od odcinka kości), nigdy do kończyn drugiej strony, nogi tylko poniżej bioder, ręce tylko poza linią barków.
-Na kamerę strategii wystarcza; na zbliżenia trzeba by wag malowanych. `--preview` rysuje stawy na modelu.
-Pierwszy model: muszkieterowie (27.11).
+Postać stojąca na baczność (ręce wzdłuż ciała): dłoń to środek przekroju ręki przy udzie, staw barku węższy.
+Oba stawy bioder na jednej głębokości (wysunięta noga obracała postać o 20°, bo `rigged.py` czyta kierunek z linii
+bioder). Na kamerę strategii wystarcza; na zbliżenia trzeba by wag malowanych. `--preview` rysuje stawy na
+modelu. Modele: muszkieterowie, jeździec kirasjerów (27.11).
 
 ### 4.3 Własna animacja modelu: `tools/blender/baked.py` i `horsefall.py`
 

@@ -5,6 +5,17 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Kirasjerzy z modelu; autorig dla postaci stojących na baczność
+
+- `autorig.py`: postać z rękami wzdłuż ciała (figury 1812panorama) — dłoń z przekroju ręki przy udzie, węższy
+  staw barku; oba stawy bioder na jednej głębokości (wysunięta noga obracała jeźdźca o 20°).
+- **Kirasjerzy**: jeździec z „Private soldier of the Glukhovsky cuirassier reg” (1812panorama, CC BY 4.0) przez
+  `autorig.py` i `rigged.py --seated`, ~3 700 trójkątów; `RIDER_FILES` ma teraz huzarów i kirasjerów.
+- Przegląd: oficer gwardii konnej i szeregowy gwardii litewskiej (1812panorama) i dwa hełmy (ernst52) w zapasie;
+  „Hussar of Xth regiment” (Blendswap, CC BY-SA 3.0) odrzucony — licencja „na tych samych warunkach”, plik
+  `.blend` nie otwierany.
+- Przeglądarka: bitwa z kirasjerami, bez błędów.
+
 ## 2026-11-27 · Huzarzy i muszkieterowie z modeli; własny szkielet dla modeli bez szkieletu
 
 - **Huzarzy**: jeździec z „Hussar - rigged for UE4/5” (Andy woodhead, CC BY 4.0) przez `rigged.py --seated`,

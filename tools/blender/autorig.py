@@ -4,7 +4,7 @@ skeleton, so that rigged.py can move it with the Mixamo clips.
     bl/bin/python -I tools/blender/autorig.py -- <character.gltf|glb> <out.glb> [--drop word,word] [--preview out.png]
 
 The model must stand upright (Z up), facing -Y (as Sketchfab's glTF files come into Blender), arms out to the
-sides or hanging a little away from the body. The skeleton is found from the model's own proportions:
+sides (T or A pose) or hanging at its sides (a figure standing to attention: the hand found beside the thigh). The skeleton is found from the model's own proportions:
 
 - the legs from slices of the mesh below the hips, each side's median (a scabbard or a musket's butt hanging
   among the legs does not pull it): hip, knee, ankle, the toe's tip at the front of the shoe;
@@ -96,6 +96,11 @@ def main() -> None:
         joints[name + "Foot"] = ankle
         joints[name + "ToeBase"] = Vector((ankle.x * 0.5 + toe.x * 0.5, ankle.y * 0.4 + toe.y * 0.6, at(0.02)))
         joints[name + "Toe_End"] = Vector((toe.x, toe.y, at(0.02)))
+    # Both hip joints at one depth (a leg set forward must not turn the hips' line, from which the baker reads
+    # which way the man faces).
+    hip_y = (joints["LeftLeg"].y + joints["RightLeg"].y) / 2
+    for name in ("LeftUpLeg", "RightUpLeg"):
+        joints[name].y = hip_y
     body_y = statistics.median(p.y for p in slab(0.6, 0.75) if abs(p.x - xc) < 0.08 * H)
     for name, share in (("Hips", 0.52), ("Spine", 0.58), ("Spine1", 0.65), ("Spine2", 0.72), ("Neck", 0.835), ("Head", 0.875)):
         joints[name] = Vector((xc, body_y, at(share)))
@@ -105,6 +110,14 @@ def main() -> None:
         # The hand: the farthest point of this side between the hips and the head (the fingertips).
         reach = [p for p in pts if at(0.4) < p.z < at(0.9) and (p.x - xc) * side > 0.12 * H]
         tip = max(reach, key=lambda p: (p.x - xc) * side) if reach else shoulder + Vector((side * 0.4 * H, 0, -0.1 * H))
+        if not reach or (tip.x - xc) * side < 0.24 * H:
+            # Arms hanging at the sides (a figure standing to attention): the hand is the middle of the arm's
+            # cross-section at the height a hanging hand reaches, beside the thigh.
+            beside = [p for p in pts if at(0.38) < p.z < at(0.44) and 0.1 * H < (p.x - xc) * side < 0.22 * H]
+            hand = median_point(beside, at(0.41)) if beside else shoulder + Vector((side * 0.04 * H, 0, -0.38 * H))
+            # A narrower shoulder for a figure whose arms hang close: its joint inside the sleeve.
+            shoulder = Vector((xc + side * 0.085 * H, body_y, at(0.8)))
+            tip = hand + (hand - shoulder).normalized() * 0.1 * H
         line = tip - shoulder
 
         def on_arm(share, radius=0.05):

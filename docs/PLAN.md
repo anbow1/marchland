@@ -14,7 +14,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | M4 — obraz (postacie z Mixamo na GPU, konie, wozy, las, trawa, budynki z modeli, etapy budowy) | ✔ |
 | M5 — przeciwnik i tryby (charaktery, kontry, Obrona, samouczek) | ✔ |
 | M6 — telefon i wydanie (KTX2, ustawienia, zapis, PWA, Windows) | ✔ poza przyciskiem Benchmark (§3.4) i pomiarem na telefonie (W3) |
-| M7 — epoki | zasady ✔, pojedynki i epoka na start ✔; z modeli: muszkieterowie, piechota liniowa, strzelcy, huzarzy ✔; **kirasjerzy, dragoni, budynki epok — czekają** |
+| M7 — epoki | zasady ✔, pojedynki i epoka na start ✔; z modeli: muszkieterowie, piechota liniowa, strzelcy, huzarzy, kirasjerzy ✔; **dragoni, budynki epok — czekają** |
 | Kampania — pięć misji | ✔ grywalne ([CAMPAIGN.md](CAMPAIGN.md)); drobiazgi w §3.5 |
 | Miasto — szachownica, ulice od skrzyżowania do skrzyżowania, polne drogi, ulice gracza na później | ✔ |
 
@@ -23,7 +23,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | # | Co | Po co |
 |---|---|---|
 | W0 | **Po przeniesieniu**: w `anbow1/marchland` Settings → Pages → `gh-pages`, `/ (root)`; Settings → Actions → General → Workflow permissions → *Read and write*; uruchomić „Marchland for Windows”; potem `anbow1/FPS` na prywatne | gra pod https://anbow1.github.io/marchland/, nowy Marchland.exe |
-| W1 | **Kirasjer** (jeździec bez konia, poza T/A albo ze szkieletem), **dragon** (jak wyżej, pieszo wystarczy) | dziś jak rycerze i lekka jazda |
+| W1 | **Dragon** (postać w pozie T/A albo stojąca; pieszo wystarczy) — kirasjerzy są już z modelu | dziś jak lekka jazda |
 | W2 | **Broń i tarcze**: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia, tarcza lekkiej jazdy, szabla | wygląd broni średniowiecza jest dawny |
 | W3 | **Budynki epok**: rusznikarnia, prochownia, katedra, ratusz, manufaktura; domy i warsztaty w wyglądzie epoki 2 i 3 | dziś bryły z kodu i podmiana materiałów |
 | W4 | **Kłus konia** (zapętlony) | jazda w marszu chodzi stępem albo galopem |

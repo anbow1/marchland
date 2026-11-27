@@ -38,6 +38,10 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | Artylerzysta 1815 (szkielet Unreala) | „Artillery crew 1815 - rigged for UE4/5”, Andy woodhead | CC BY 4.0 | w zapasie: obsługa dział |
 | Działo polowe 1815 | „British field cannon - 1815”, Andy woodhead | CC BY 4.0 | w zapasie: armata epok 2–3 |
 | Husarz węgierski XV–XVI w. (figura na koniu, bez tekstur, 600 tys. tr.) | Ded Makar | CC BY 4.0 | odrzucony: figura bez tekstur |
+| Kirasjer pułku głuchowskiego (figura stojąca, ręce wzdłuż ciała) | „Private soldier of the Glukhovsky cuirassier reg”, 1812panorama | CC BY 4.0 | **w grze**: jeździec kirasjerów (`cuirassier_rider.json`; `autorig.py` z rękami opuszczonymi, `rigged.py --seated`) |
+| Oficer gwardii konnej, szeregowy gwardii litewskiej (figury stojące) | 1812panorama | CC BY 4.0 | w zapasie: do `autorig.py` (np. dragoni pieszo) |
+| Hełmy: burgonet (XVI w.), zischägge (XVII w.) | ernst52, Sketchfab | CC BY 4.0 | w zapasie: hełm muszkieterów / kirasjerów zamiast kapelusza |
+| „Hussar of Xth regiment” | rkgalery, Blendswap | **CC BY-SA 3.0** | odrzucony: licencja „na tych samych warunkach” (przyjmujemy CC0 i CC BY) |
 | Animacje miecz i tarcza: cięcie, blok, postawa, marsz, bieg, trafienie, śmierć ×2 | Mixamo | Mixamo | w grze (miecznicy, halabardnicy) |
 | Upward Thrust (pchnięcie) | Mixamo | Mixamo | w grze: cios halabardników |
 | Bayonet Stab | Mixamo | Mixamo | w grze: cios pikinierów (oburącz z biodra) |

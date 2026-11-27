@@ -406,7 +406,7 @@ const SKINNED_KINDS: readonly [UnitKind, string][] = [
 const MOUNTED: readonly UnitKind[] = ['lightCavalry', 'heavyCavalry', 'cuirassiers', 'dragoons', 'hussars'];
 const BARDED: ReadonlySet<UnitKind> = new Set<UnitKind>(['heavyCavalry', 'cuirassiers']);
 /** Kinds with a rider of their own (rigged.py --seated); the others ride as soldiers/rider.json. */
-const RIDER_FILES: Partial<Record<UnitKind, string>> = { hussars: 'soldiers/hussar_rider.json' };
+const RIDER_FILES: Partial<Record<UnitKind, string>> = { hussars: 'soldiers/hussar_rider.json', cuirassiers: 'soldiers/cuirassier_rider.json' };
 
 export class ArmyView {
   private readonly kinds = new Map<UnitKind, KindMesh>();
