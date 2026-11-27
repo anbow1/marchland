@@ -1,11 +1,15 @@
 """Turns a static model (a cart, a wagon, an animal standing still) into a small mesh for the game.
 
     bl/bin/python -I tools/blender/prop.py -- <model.gltf|glb> <out.json> [--length 2.2] [--height 1.0]
-        [--turn 90] [--tris 1500] [--source "credit"]
+        [--turn 90] [--tris 1500] [--source "credit"] [--gain 0.5] [--pale 0.2,0.17,0.13]
 
 The model is thinned to about --tris triangles, its colours taken from its textures into the vertices,
 turned by --turn degrees about the vertical (so that its front looks along the game's -Z), scaled so its
 longest horizontal side is --length metres (or its height --height metres) and set on the ground, centred.
+
+--gain: every colour darkened (or brightened) by this factor, in linear light. --pale: pale grey or white
+texels (painted or polished parts that read as silver in the sun: a gun's wheels and carriage) take this sRGB
+colour instead, before the gain.
 
 Output (JSON), in the game's space (metres, Y up): positions, normals, colours (linear), triangles, and
 the size it ended up (x, y, z)."""
@@ -57,6 +61,9 @@ def main() -> None:
     turn = math.radians(float(option("--turn", "0")))
     target = int(option("--tris", "1500"))
     source = option("--source", "")
+    gain = float(option("--gain", "1"))
+    pale = option("--pale", None)
+    pale_linear = [srgb_to_linear(float(x)) for x in pale.split(",")] if pale else None
     bpy.ops.wm.read_factory_settings(use_empty=True)
     if src.endswith(".blend"):
         bpy.ops.wm.open_mainfile(filepath=src, load_ui=False, use_scripts=False)
@@ -117,9 +124,15 @@ def main() -> None:
             if a and a[3]:
                 mean = [a[i] / a[3] for i in range(3)]
                 # Texture pixels are stored sRGB; a material's own colour is already linear.
-                col.append(mean if a[4] else [srgb_to_linear(x) for x in mean])
+                c = mean if a[4] else [srgb_to_linear(x) for x in mean]
+                if pale_linear:
+                    # Pale and grey: bright, and no more colour in it than a tenth of its brightness.
+                    lo, hi = min(c), max(c)
+                    if hi > 0.35 and hi - lo < 0.1 * hi + 0.03:
+                        c = list(pale_linear)
+                col.append([x * gain for x in c])
             else:
-                col.append([0.3, 0.22, 0.15])
+                col.append([0.3 * gain, 0.22 * gain, 0.15 * gain])
         for t in me.loop_triangles:
             tris.append([base + i for i in t.vertices])
         o.evaluated_get(dg).to_mesh_clear()

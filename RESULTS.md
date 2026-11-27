@@ -5,6 +5,14 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Działa epoki 3 ciemniejsze: koła nie srebrne
+
+- Uwaga właściciela: koła armat srebrne, armaty zielono-brązowe, za jasne. Działo 1815 miało jasność tekseli
+  0,6–1,0 (jasno malowane koła i laweta, polerowany brąz), stara armata 0–0,6. `prop.py` ma teraz `--pale`
+  (jasne, szare teksele w zadany kolor: ciemne drewno 0.22, 0.18, 0.14) i `--gain` (przyciemnienie, 0,35); budżet
+  4 000 trójkątów zamiast 1 600 (przy 1 600 znikały szprychy i koła wyglądały jak same obręcze).
+- Przeglądarka: koła ciemne, ze szprychami; laweta i lufa ciemny brąz.
+
 ## 2026-11-27 · Cienie kontaktowe pod budynkami; gęstsza trawa z bliska
 
 - **Cienie kontaktowe** (`src/render/contactShadows.ts`, technika z mediveal-village): miękkie przyciemnienie
