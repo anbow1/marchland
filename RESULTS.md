@@ -5,6 +5,13 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Dragoni z modelu: wszystkie jednostki epok mają własny wygląd
+
+- Jeździec dragonów z „1700th-ish century Soldier” (Christoffer Eriksson, CC BY 4.0): `autorig.py` (poza T) i
+  `rigged.py --seated`, ~3 200 trójkątów, ciemne sukno w barwie strony. Z modeli są teraz wszyscy:
+  muszkieterowie, kirasjerzy, dragoni (epoka 2), piechota liniowa, strzelcy, huzarzy (epoka 3).
+- Przeglądarka: bitwa z dragonami, bez błędów.
+
 ## 2026-11-27 · Kirasjerzy z modelu; autorig dla postaci stojących na baczność
 
 - `autorig.py`: postać z rękami wzdłuż ciała (figury 1812panorama) — dłoń z przekroju ręki przy udzie, węższy

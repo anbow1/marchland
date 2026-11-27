@@ -65,3 +65,6 @@
   soldier of the Glukhovsky cuirassier reg"** by **1812panorama**
   (https://sketchfab.com/3d-models/private-soldier-of-the-glukhovsky-cuirassier-reg-b7f6029b2baa4c47b63bdcf6f0cd3747),
   licensed **CC BY 4.0**: thinned to about 3 700 triangles, colours from its texture.
+- `dragoon_rider.json` — the dragoons' rider, made by `autorig.py` and `rigged.py --seated` from **"1700th-ish century
+  Soldier"** by **Christoffer Eriksson** (https://sketchfab.com/3d-models/1700th-ish-century-soldier-bfeb4a6d570b446a8ac710890b541371),
+  licensed **CC BY 4.0**: thinned to about 3 200 triangles, its darkest cloth in the side's colour.

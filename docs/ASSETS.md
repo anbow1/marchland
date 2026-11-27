@@ -33,7 +33,7 @@ Paczka wszystkich gotowych assetów do nowej gry: `node tools/pack-assets.mjs` (
 | „Armor Set” | gimora | **CC BY-NC-SA** | odrzucony: licencja niekomercyjna |
 | „Hafsid Horse General (Machiavello Mod)” | mylae | CC BY 4.0 | odrzucony: model z moda do gry |
 | Żołnierz europejski XVII w. (poza A, bez szkieletu) | „European Soldier 17th Century”, haiphucpham221102, Sketchfab | CC BY 4.0 | **w grze**: muszkieterowie (`musketeer.json`; szkielet z `autorig.py`) |
-| Żołnierz ok. 1700 r. (poza T, bez szkieletu) | „1700th-ish century Soldier”, Christoffer Eriksson | CC BY 4.0 | w zapasie: gotowy do `autorig.py` (np. dragoni pieszo) |
+| Żołnierz ok. 1700 r. (poza T, bez szkieletu) | „1700th-ish century Soldier”, Christoffer Eriksson | CC BY 4.0 | **w grze**: jeździec dragonów (`dragoon_rider.json`; `autorig.py`, `rigged.py --seated`) |
 | Żołnierz Unii (poza A, bez szkieletu; karabin w osobnej siatce z oporządzeniem) | „Union soldier - free game asset”, Andy woodhead | CC BY 4.0 | w zapasie: gotowy do `autorig.py` |
 | Artylerzysta 1815 (szkielet Unreala) | „Artillery crew 1815 - rigged for UE4/5”, Andy woodhead | CC BY 4.0 | w zapasie: obsługa dział |
 | Działo polowe 1815 | „British field cannon - 1815”, Andy woodhead | CC BY 4.0 | w zapasie: armata epok 2–3 |
