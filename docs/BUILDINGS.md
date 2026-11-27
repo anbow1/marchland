@@ -178,7 +178,7 @@ roads serve all of them.
 
 ### Great buildings (one an age) (Wielkie budowle (jedna na epokę))
 
-- **Cathedral** — —. *Shapes from code; model to come.*
+- **Cathedral** — —. *Model from Blender.*
 - **Town Hall** — —. *Shapes from code; model to come.*
 - **Manufactory** — —. *Shapes from code; model to come.*
 - Their own models (now shapes from code) — *planned (§4)*

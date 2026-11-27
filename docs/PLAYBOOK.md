@@ -337,6 +337,21 @@ wysokości.
 - **Modele z zewnątrz** (zamek z Buckstone Castle, mur, brama i wieża z Tower and Castle Walls, kuźnia):
   `keep.py`, `walls.py`, `convert.py` zdejmują tekstury, przypisują powierzchnie gry po nazwach
   materiałów, upraszczają i skalują.
+- **Duże modele z zewnątrz** (`convert.py`, katedra gotycka: 530 tys. trójkątów). Samo `Decimate` (zwijanie
+  krawędzi) zawodzi na takich modelach na trzy sposoby; każdy ma swój klucz w `MODELS`:
+  - zatrzymuje się na krawędziach wspólnych dla więcej niż dwóch ścian (tam, gdzie po scaleniu wierzchołków
+    stykają się kawałki). Konwerter je rozcina i upraszcza w kolejnych przejściach, biorąc wynik z
+    `new_from_object`, bo `modifier_apply` po pierwszym przejściu nic nie zmieniał;
+  - najpierw zjada duże płaskie ściany z dwóch trójkątów, a zostawia tysiące trójkątów sterczyn.
+    `protect_m2` trzyma wierzchołki ścian większych niż podana powierzchnia (grupa wierzchołków);
+  - liczy też wnętrze (filary, sklepienia), którego kamera nie widzi. `cull_hidden` wyrzuca ściany, do których
+    nie dociera żaden z 25 promieni z zewnątrz (BVH), a ściany widoczne tylko od tyłu odwraca: źródło rysowało
+    obie strony, gra tylko przednią;
+  - do tego `flat` (płaskie cieniowanie: wygładzone normalne na poszarpanych trójkątach ciemnieją i robią
+    smugi), `stretch_z` (budowla dłuższa niż działka, wciśnięta w nią, byłaby niższa od domów) i `one_file`
+    (jeden plik dla wszystkich poziomów; `townView` wczytuje każdy plik raz).
+  Efekt: 41 700 trójkątów, 3,3 MB, bryła pełna. Usuwanie „małych wysp” nie działa: w tym modelu ściany też są
+  z małych kawałków.
 - **Etapy budowy** (`townView.ts`): fundament, potem ściany rosną warstwami w rusztowaniu, dach na końcu.
   To ten sam model ucięty na wysokości postępu: materiał ma `maskNode` z uniformem na obiekt
   (`onObjectUpdate`, `userData.cutY`), więc jeden materiał tnie każdy plac inaczej; cienie są ucinane tak

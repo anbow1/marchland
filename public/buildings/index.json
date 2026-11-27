@@ -47,6 +47,18 @@
   "file": "butcher_3.glb",
   "triangles": 3968
  },
+ "cathedral:1": {
+  "file": "cathedral_1.glb",
+  "triangles": 41666
+ },
+ "cathedral:2": {
+  "file": "cathedral_1.glb",
+  "triangles": 41666
+ },
+ "cathedral:3": {
+  "file": "cathedral_1.glb",
+  "triangles": 41666
+ },
  "farm:1": {
   "file": "farm_1.glb",
   "triangles": 3036

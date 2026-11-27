@@ -18,6 +18,7 @@ import sys
 import bpy  # first: it puts bmesh and mathutils on the path
 import bmesh  # noqa: E402
 from mathutils import Vector  # noqa: E402
+from mathutils.bvhtree import BVHTree  # noqa: E402
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from kit import export_glb  # noqa: E402
@@ -51,13 +52,35 @@ DEFAULT = "plaster#d8cfc0"
 # thinning can remove; `plate_m`: faces lying wholly this low are the source's ground plate, removed;
 # `smoke_from`: surfaces whose highest point smokes (a chimney's brick, a hearth's embers); `around`: an
 # object-name regex, and only meshes whose middle lies within `around_k` of that object's width from its
-# middle are kept (one building out of a scene).
+# middle are kept (one building out of a scene); `stretch_z`: heights times this (a building far longer than a
+# plot, fitted to it, would stand lower than the houses round it).
 # Tried and left out: Medieval house and wine shop (Don_Dzen): 670 000 triangles in 9 457 pieces, its
 # walls under a material named only 'material'; no thinning keeps it whole within a building's budget.
 # Medieval Farm Village (Etherlyte): its cottage, cut out with `around` (anchor r"^Roof_Thatched", k 0.6,
 # dropping the scattered bricks), is a plain box under its thatch once its painted door, windows and
 # timbers are gone with the textures; the town's own houses say more.
 MODELS = {
+    # The cathedral (Gothic cathedral, Gnemegorl): 70 m long and 29 m high, fitted to a 12 m plot and raised 2.4
+    # times so its towers stand over the town as the cathedral from code did. Stone ashlar, glass. 530 000
+    # triangles: its inside culled, then thinned with its walls held; about 42 000 left (one to a town).
+    "gothic_cathedral": {
+        "kind": "cathedral",
+        "levels": [1, 2, 3],
+        "fit_m": 12,
+        "stretch_z": 2.4,
+        "one_file": True,
+        "cull_hidden": True,
+        "protect_m2": 0.02,
+        "flat": True,
+        "turn_deg": 0,
+        "budget": 20000,
+        "min_part_m": 0.15,
+        "surfaces": [
+            (r"vitral|ventanal|roseton", "glass#1e2328"),
+            (r"metal", "iron#4a4c50"),
+            (r"torre|nave|piedra|^material", "ashlar#c4d0e8"),
+        ],
+    },
     "blacksmith": {"kind": "smithy", "levels": [2, 3], "fit_m": 10.5, "turn_deg": 0, "min_part_m": 0.12, "smoke_from": ["rubble#b8a89a", "ember#ff7a2a"]},
     # The enemy's fortress for the campaign's last mission (Medieval Castle, Uğur Yakışık): curtain walls with corner
     # towers, a gatehouse and barbican over a moat, a keep in a large courtyard. Not a building of the town
@@ -193,25 +216,104 @@ def main() -> None:
     bm.free()
     tris_in = sum(len(p.vertices) - 2 for p in body.data.polygons)
     budget = spec.get("budget", BUDGET)
-    if tris_in > budget:
+    # `cull_hidden`: faces no ray from outside reaches (a church's piers, vaults and the inner faces of its
+    # walls), looked for along 25 directions over each face's either side, go: the strategy camera never sees in.
+    if spec.get("cull_hidden") and tris_in > budget:
+        hb = bmesh.new()
+        hb.from_mesh(body.data)
+        bmesh.ops.triangulate(hb, faces=hb.faces)
+        tree = BVHTree.FromBMesh(hb)
+        reach = (Vector(hi_all) - Vector(lo_all)).length * 2
+        rays = [Vector((0, 0, 1))]
+        for el in (0.15, 0.6, 1.2):
+            for k in range(8):
+                a = k * math.pi / 4
+                rays.append(Vector((math.cos(a) * math.cos(el), math.sin(a) * math.cos(el), math.sin(el))))
+        hidden = []
+        flipped = 0
+        eps = reach * 1e-4
+        for f in hb.faces:
+            c, n = f.calc_center_median(), f.normal
+            seen = [any(tree.ray_cast(c + n * side * eps, d, reach)[0] is None for d in rays if d.dot(n * side) > 0.05) for side in (1, -1)]
+            if not any(seen):
+                hidden.append(f)
+            elif not seen[0]:
+                # Seen only from behind: its winding is inside out (the source drew both sides), so the game's
+                # one-sided material would light it from within. Turned to face where it is seen from.
+                f.normal_flip()
+                flipped += 1
+        bmesh.ops.delete(hb, geom=hidden, context="FACES")
+        hb.to_mesh(body.data)
+        hb.free()
+        print(f"   {len(hidden)} faces no one sees from outside left out, {flipped} turned outwards")
+    # `protect_m2`: vertices of faces larger than this (game square metres) are held by the collapse, which
+    # otherwise takes a plain wall of two triangles before the thousand of a finial.
+    if spec.get("protect_m2"):
+        limit = spec["protect_m2"] / (rough_scale * rough_scale)
+        held = set()
+        for p in body.data.polygons:
+            if p.area > limit:
+                held.update(p.vertices)
+        free = body.vertex_groups.new(name="free")
+        free.add([v.index for v in body.data.vertices if v.index not in held], 1.0, "REPLACE")
+    # Thinned again while it is still over (a collapse stops short on the large many-sided faces the dissolve
+    # leaves, so those are cut into triangles first once it does).
+    for attempt in range(8):
+        if attempt >= 1:
+            tb = bmesh.new()
+            tb.from_mesh(body.data)
+            bmesh.ops.triangulate(tb, faces=tb.faces)
+            # Edges shared by more than two faces (where merged pieces meet) the collapse will not touch: cut.
+            crowded = [e for e in tb.edges if len(e.link_faces) > 2]
+            bmesh.ops.split_edges(tb, edges=crowded)
+            print(f"   {len(crowded)} edges of three faces or more cut")
+            tb.to_mesh(body.data)
+            tb.free()
+            # The source's texture coordinates and split normals pin the collapse at every seam; the game
+            # uses neither (its surfaces are mapped by world position).
+            while body.data.uv_layers:
+                body.data.uv_layers.remove(body.data.uv_layers[0])
+            if body.data.has_custom_normals:
+                bpy.context.view_layer.objects.active = body
+                bpy.ops.mesh.customdata_custom_splitnormals_clear()
+        now = sum(len(p.vertices) - 2 for p in body.data.polygons)
+        print(f"   thinning pass {attempt}: {now} triangles")
+        if now <= budget * 1.05:
+            break
         mod = body.modifiers.new("thin", "DECIMATE")
-        mod.ratio = budget / tris_in
+        mod.ratio = budget / now
         mod.use_collapse_triangulate = True
-        bpy.context.view_layer.objects.active = body
-        bpy.ops.object.modifier_apply(modifier="thin")
+        if spec.get("protect_m2"):
+            mod.vertex_group = "free"
+            mod.vertex_group_factor = 10.0
+        # The thinned mesh as evaluated, taken over directly (modifier_apply, after the first pass, left
+        # the mesh as it was).
+        evaluated = body.evaluated_get(bpy.context.evaluated_depsgraph_get())
+        thinned = bpy.data.meshes.new_from_object(evaluated)
+        body.modifiers.remove(mod)
+        old_mesh = body.data
+        body.data = thinned
+        bpy.data.meshes.remove(old_mesh)
+
+    # `flat`: every face shaded flat. Smoothed normals across a heavily thinned mesh's slivers darken and streak
+    # it (the surfaces are mapped along the normal), where flat faces read as cut stone.
+    if spec.get("flat"):
+        for p in body.data.polygons:
+            p.use_smooth = False
 
     # Footprint, ground, turn and size.
     vs = [v.co for v in body.data.vertices]
     lo = Vector((min(v.x for v in vs), min(v.y for v in vs), min(v.z for v in vs)))
     hi = Vector((max(v.x for v in vs), max(v.y for v in vs), max(v.z for v in vs)))
     scale = spec["fit_m"] / max(hi.x - lo.x, hi.y - lo.y)
+    stretch = spec.get("stretch_z", 1.0)
     centre = Vector(((lo.x + hi.x) / 2, (lo.y + hi.y) / 2, lo.z))
     turn = math.radians(spec.get("turn_deg", 0))
     c, s = math.cos(turn), math.sin(turn)
     for v in body.data.vertices:
         p = (v.co - centre) * scale
-        v.co = Vector((p.x * c - p.y * s, p.x * s + p.y * c, p.z))
-    height = (hi.z - lo.z) * scale
+        v.co = Vector((p.x * c - p.y * s, p.x * s + p.y * c, p.z * stretch))
+    height = (hi.z - lo.z) * scale * stretch
     tris = sum(len(p.vertices) - 2 for p in body.data.polygons)
     # Smoke rises from the top of each named surface: the chimney's crown, the hearth's coals.
     smoke = []
@@ -236,8 +338,11 @@ def main() -> None:
             empty = bpy.data.objects.new(f"smoke_{i}", None)
             empty.location = (x, y, z)
             bpy.context.scene.collection.objects.link(empty)
-        file = f"{spec['kind']}_{level}.glb"
-        export_glb(os.path.join(out, file))
+        # `one_file`: every level is this same model, so one file serves them all (a large model, downloaded once).
+        first = spec["levels"][0]
+        file = f"{spec['kind']}_{first if spec.get('one_file') else level}.glb"
+        if not spec.get("one_file") or level == first:
+            export_glb(os.path.join(out, file))
         index[f"{spec['kind']}:{level}"] = {"file": file, "triangles": tris}
     with open(index_path, "w") as f:
         json.dump(dict(sorted(index.items())), f, indent=1)

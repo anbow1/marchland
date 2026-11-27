@@ -5,6 +5,21 @@ Najnowsze na górze. Liczby z `tools/measure` na programowym GPU (SwiftShader):
 porównują przebiegi** na tej samej maszynie — telefonu ani karty graficznej
 jeszcze nie mierzyłem.
 
+## 2026-11-27 · Katedra z modelu; konie i druga katedra sprawdzone
+
+- **Katedra** to teraz „Gothic cathedral” (Gnemegorl, CC BY 4.0). Model ma 530 tys. trójkątów i 70 m długości, a w
+  grze 12 m długości, wieże podniesione 2,4× (około 11,5 m) i 41,7 tys. trójkątów. Jeden plik 3,3 MB służy
+  wszystkim poziomom. Kamień szary, z tym samym odcieniem co twierdza w misji 5.
+- `convert.py` dostał nowe kroki: wycinanie ścian niewidocznych z zewnątrz i odwracanie widocznych tylko od tyłu,
+  ochronę dużych ścian przy upraszczaniu, upraszczanie w kilku przejściach z rozcinaniem przepełnionych krawędzi,
+  płaskie cieniowanie i rozciąganie w pionie (PLAYBOOK §5). Pierwsze próby kończyły się źle: zostawał sam
+  szkielet (wieże i okna bez ścian), a potem brązowe ściany z odwróconymi normalnymi.
+- **Konie**: dwa pliki MAXDESIGN-3D to te same konie, które już są w grze (koń jazdy i upadek). Mają galop, stęp,
+  stanie i skubanie trawy, ale **kłusa nie mają**. Koń Ayana ma jeden klip: 1 s przejścia ze stania w galop. Kłus
+  nadal czeka (PLAN, W4).
+- **Notre-Dame w Sajgonie** (cgart.com, CC BY 4.0, ceglana, 2,2 tys. trójkątów) idzie do zapasu, np. na wielką
+  budowlę epoki 3.
+
 ## 2026-11-27 · Własne modele dział epok 2 i 3; obsługa z artylerzysty
 
 - Od właściciela przyszło siedem dział, wszystkie na CC BY 4.0 z podanym autorem. Do gry weszły trzy:

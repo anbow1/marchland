@@ -204,6 +204,16 @@ export class TownView {
     }
     const index = (await response.json()) as Record<string, { file: string }>;
     const loader = new GLTFLoader();
+    // Several levels may share one file (tools/blender/convert.py's one_file): fetched and parsed once.
+    const files = new Map<string, ReturnType<GLTFLoader['loadAsync']>>();
+    const load = (file: string): ReturnType<GLTFLoader['loadAsync']> => {
+      let job = files.get(file);
+      if (!job) {
+        job = loader.loadAsync(freshUrl(base, `buildings/${file}`));
+        files.set(file, job);
+      }
+      return job;
+    };
     const jobs = Object.entries(index).map(async ([key, entry]) => {
       const [kind, level] = key.split(':') as [BuildingKind, string];
       if ((kind as string) === 'keep') {
@@ -218,7 +228,7 @@ export class TownView {
       }
       if (!(BUILDING_KINDS as readonly string[]).includes(kind)) return;
       try {
-        const gltf = await loader.loadAsync(freshUrl(base, `buildings/${entry.file}`));
+        const gltf = await load(entry.file);
         for (const side of SIDES) this.models.set(`${kind}:${level}:${side}`, surfaceModel(gltf.scene, this.lib, TEAM_HEX[side]));
         if (level === '3') this.scenes.set(kind, gltf.scene);
       } catch (error) {

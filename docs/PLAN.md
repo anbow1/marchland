@@ -25,7 +25,7 @@ Zrobione rzeczy opisują [MANUAL.md](MANUAL.md) (jak grać) i [../RESULTS.md](..
 | W0 | Pages ✔ (https://anbow1.github.io/marchland/ odświeża się po każdym pushu); Marchland.exe ✔ (27.11, https://github.com/anbow1/marchland/releases/tag/marchland-windows). Zostało: `anbow1/FPS` na prywatne, jeśli jeszcze nie jest | porządek |
 | W1 | ~~Działa z XVII w. i obsługa~~ — zrobione 27.11: falkonet, kolubryna (hongipo), działa konne (12-funtówka); obsługa z artylerzysty 1815 | — |
 | W2 | **Broń i tarcze**: mała tarcza pikiniera, długa pika i duża tarcza halabardnika, kopia, tarcza lekkiej jazdy, szabla | wygląd broni średniowiecza jest dawny |
-| W3 | **Budynki epok**: rusznikarnia, prochownia, katedra, ratusz, manufaktura; domy i warsztaty w wyglądzie epoki 2 i 3 | dziś bryły z kodu i podmiana materiałów |
+| W3 | **Budynki epok**: rusznikarnia, prochownia, ratusz, manufaktura (katedra ✔ 27.11); domy i warsztaty w wyglądzie epoki 2 i 3 | dziś bryły z kodu i podmiana materiałów |
 | W4 | **Kłus konia** (zapętlony); opcjonalnie **przodek** (dwukołowy wózek z amunicją) | jazda i zaprzęgi dział chodzą stępem albo galopem; dziś zaprzęg to same konie przed lawetą |
 | W5 | Pomiar na prawdziwym telefonie i karcie graficznej (przycisk Benchmark, gdy będzie) | liczby klatek są dziś z programowego GPU |
 | W6 | Opcjonalnie: towary do obejść (ryby w koszu, winogrona, sztabki, ruda, snopki) | dziś zastępcze skrzynie |

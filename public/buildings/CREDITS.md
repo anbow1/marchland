@@ -45,3 +45,14 @@ every face given one of the game's surfaces (dressed stone for the walls, towers
 stairs, timber for the drawbridge's gear and doors); the piles of cannon balls and the ground plate removed;
 thinned from 64 000 to 30 000 triangles; scaled to 130 m across, the gate towards the game's +Z.
 
+
+## cathedral_1.glb — the cathedral (the first age's great building), every level
+
+From **Gothic cathedral** by **Gnemegorl** (https://sketchfab.com/Gnemegorl), licensed under **CC BY 4.0**
+(http://creativecommons.org/licenses/by/4.0/).
+
+Changes (`tools/blender/convert.py gothic_cathedral`): textures removed and every face given one of the game's
+surfaces (grey dressed stone, glass in the windows and the rose, iron); the faces no one sees from outside (its
+piers, vaults and the inner faces of its walls) removed and those seen only from behind turned outwards; thinned
+from 530 000 to 42 000 triangles with its walls held, shaded flat; scaled to 12 m long and raised 2.4 times, so its
+towers stand over the town; the west front towards the game's +Z.
